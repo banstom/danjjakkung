@@ -31,8 +31,13 @@
   var toastTimer = null;
   var gotMembers = false, gotChecks = false, gotRoutines = false;
   var membersFromServer = false; // 이름을 정했는지는 서버 확인을 받은 뒤에만 판단한다
-  var LS_SEEN = 'jjakkung.lastSeen';
-  function lsGet(k) { try { return root.localStorage.getItem(k); } catch (e) { return null; } }
+  var LS_SEEN = 'danjjakkung.lastSeen';
+  // 예전 이름(짝꿍 그리드 · 도란도란)으로 저장해 둔 값도 이어서 쓴다
+  var LS_OLD = { 'danjjakkung.lastSeen': 'jjakkung.lastSeen', 'danjjakkung.announced': 'dorandoran.announced' };
+  function lsGet(k) {
+    try { var v = root.localStorage.getItem(k); return v != null ? v : (LS_OLD[k] ? root.localStorage.getItem(LS_OLD[k]) : null); }
+    catch (e) { return null; }
+  }
   function lsSet(k, v) { try { root.localStorage.setItem(k, v); } catch (e) { /* 저장 못 해도 화면은 그대로 */ } }
 
   // 사람 이름(members) + 루틴 컬렉션 = 화면 모델이 받는 설정
@@ -170,7 +175,7 @@
 
   // ── 알림 ─────────────────────────────────────────────
   var openedAt = Date.now();
-  var LS_ANN = 'dorandoran.announced';
+  var LS_ANN = 'danjjakkung.announced';
   var announced = Object.create(null);   // 이미 알려 줬거나 화면에서 본 체크 (id@at) — 기기에 최근 200개 보관
   (function () { try { (JSON.parse(lsGet(LS_ANN) || '[]') || []).forEach(function (k) { if (typeof k === 'string') announced[k] = true; }); } catch (e) {} })();
   function saveAnnounced() { lsSet(LS_ANN, JSON.stringify(Object.keys(announced).slice(-200))); }

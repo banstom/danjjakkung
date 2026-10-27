@@ -1,7 +1,7 @@
 /* 서비스 워커 — 앱 화면(파일들)을 기기에 저장해 두고, 오프라인에서도 열리게 한다.
    기록(Firestore)은 Firebase가 따로 기기에 보관하므로 여기서는 손대지 않는다.
    파일을 바꿔서 올릴 때마다 VERSION을 올리면 새 파일로 바뀐다. */
-var VERSION = 'jjakkung-v4';
+var VERSION = 'danjjakkung-v5';
 var FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'styles/tokens.css', 'styles/app.css',

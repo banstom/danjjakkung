@@ -1,9 +1,9 @@
 /* Firebase 연결 — 로그인(이메일 · 비밀번호)과 Firestore만 여기서 만진다.
-   설정 값은 js/firebase-config.js 의 window.JJ_FIREBASE_CONFIG. */
+   설정 값은 js/firebase-config.js 의 window.DANJJAKKUNG_FIREBASE_CONFIG. */
 (function (root) {
   'use strict';
   var RT = root.RT = root.RT || {};
-  var cfg = root.JJ_FIREBASE_CONFIG;
+  var cfg = root.DANJJAKKUNG_FIREBASE_CONFIG;
   var fb = root.firebase;
 
   var ERRORS = {
