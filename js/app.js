@@ -92,7 +92,7 @@
     var sheetOpen = !!((m.sheet || m.manage || state.notifyOpen) && state.status === 'ready');
     var entering = state.sheetEntering;
     m.header.canSignOut = state.status === 'ready';
-    m.header.bell = state.status === 'ready' && RT.push ? (RT.push.isOn() ? 'on' : 'off') : null;
+    m.header.bell = state.status === 'ready' && RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? 'on' : 'off') : null;
     if (state.status !== 'ready') m.header.meName = '';
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, notify: state.notifyOpen ? notifyModel() : null });
     state.push.errorFresh = false;
