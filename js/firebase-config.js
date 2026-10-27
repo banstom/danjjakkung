@@ -2,5 +2,10 @@
    비밀번호가 아니라 "어느 프로젝트에 붙을지" 알려 주는 주소라서 공개돼도 괜찮다.
    누가 기록을 보고 쓸 수 있는지는 firestore.rules 가 막는다. */
 window.JJ_FIREBASE_CONFIG = {
-  // 아직 비어 있음 — 준민 님이 보내 준 값을 여기에 넣는다
+  apiKey: 'AIzaSyB05rn4QLZelgyUTCiRx81grcqjNm9jT6M',
+  authDomain: 'jjakkung-grid.firebaseapp.com',
+  projectId: 'jjakkung-grid',
+  storageBucket: 'jjakkung-grid.firebasestorage.app',
+  messagingSenderId: '570851475931',
+  appId: '1:570851475931:web:4cd5456e5e8758501627fe'
 };
