@@ -1,0 +1,110 @@
+/* 푸시 알림 — 이 기기를 알림 받는 기기로 등록하거나 뺀다.
+   알림을 보내는 쪽은 서버(functions/)이고, 여기서는 "이 기기 주소(토큰)"만 저장소에 남긴다.
+   기기마다 하나씩 저장하므로, 나중에 iOS · 안드로이드 앱이 생겨도 같은 자리에 platform만 달리해 넣으면 된다. */
+(function (root) {
+  'use strict';
+  var RT = root.RT = root.RT || {};
+  var LS_DEV = 'danjjakkung.device', LS_ON = 'danjjakkung.pushOn', LS_TOK = 'danjjakkung.pushToken';
+
+  function lsGet(k) { try { return root.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { root.localStorage.setItem(k, v); } catch (e) {} }
+
+  function isIOS() {
+    var ua = root.navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) || (root.navigator.platform === 'MacIntel' && root.navigator.maxTouchPoints > 1);
+  }
+  function standalone() {
+    return (root.matchMedia && root.matchMedia('(display-mode: standalone)').matches) || root.navigator.standalone === true;
+  }
+  function messaging() {
+    try {
+      var fb = root.firebase;
+      if (!fb || !fb.messaging || !fb.messaging.isSupported()) return null;
+      return fb.messaging();
+    } catch (e) { return null; }
+  }
+
+  /** 'standalone-needed'(아이폰 사파리 탭) | 'unsupported' | 'denied' | 'ok' */
+  function support() {
+    if (isIOS() && !standalone()) return 'standalone-needed';
+    if (!('Notification' in root) || !('serviceWorker' in root.navigator) || !messaging()) return 'unsupported';
+    if (root.Notification.permission === 'denied') return 'denied';
+    return 'ok';
+  }
+  function isOn() { return support() === 'ok' && root.Notification.permission === 'granted' && lsGet(LS_ON) === '1'; }
+
+  function deviceId() {
+    var id = lsGet(LS_DEV);
+    if (!id) { id = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); lsSet(LS_DEV, id); }
+    return id;
+  }
+  function shortUA() {
+    var ua = root.navigator.userAgent || '';
+    return (isIOS() ? 'iOS' : /Android/.test(ua) ? 'Android' : 'Desktop') + (standalone() ? ' app' : ' web');
+  }
+
+  function token() {
+    var m = messaging();
+    if (!m) return Promise.reject({ code: 'unsupported' });
+    return root.navigator.serviceWorker.register('sw.js')
+      .then(function () { return root.navigator.serviceWorker.ready; })
+      .then(function (reg) { return m.getToken({ vapidKey: root.DANJJAKKUNG_VAPID_KEY, serviceWorkerRegistration: reg }); });
+  }
+  function save(store, uid, t) {
+    return store.saveDevice(uid, deviceId(), { token: t, platform: 'web', ua: shortUA() }).then(function () { lsSet(LS_ON, '1'); lsSet(LS_TOK, t); });
+  }
+
+  /** 알림 켜기 — 반드시 버튼을 누른 그 순간에 부른다 (아이폰 규칙) */
+  function enable(store, uid) {
+    var ask;
+    try { ask = root.Notification.requestPermission(); } catch (e) { return Promise.reject({ code: 'unsupported' }); }
+    return Promise.resolve(ask).then(function (p) {
+      if (p !== 'granted') throw { code: p === 'denied' ? 'denied' : 'dismissed' };
+      return token();
+    }).then(function (t) {
+      if (!t) throw { code: 'no-token' };
+      return save(store, uid, t);
+    });
+  }
+
+  /** 앱을 열 때마다: 켜 둔 기기면 주소가 바뀌었는지 확인해 새로 남긴다 */
+  function refresh(store, uid) {
+    if (!isOn()) return Promise.resolve(false);
+    return token().then(function (t) {
+      if (t && t !== lsGet(LS_TOK)) return save(store, uid, t).then(function () { return true; });
+      return false;
+    }).catch(function () { return false; });
+  }
+
+  function disable(store, uid) {
+    var m = messaging();
+    var del = m ? Promise.resolve(m.deleteToken()).catch(function () {}) : Promise.resolve();
+    return del.then(function () { return uid ? store.deleteDevice(uid, deviceId()) : null; })
+      .then(function () { lsSet(LS_ON, '0'); lsSet(LS_TOK, ''); });
+  }
+
+  function errorText(e) {
+    var c = e && e.code;
+    if (c === 'denied') return '알림을 허용하지 않았어요. 휴대폰 설정에서 허용한 뒤 다시 눌러 주세요';
+    if (c === 'dismissed') return '알림 허용 창이 닫혔어요. 다시 눌러 주세요';
+    if (c === 'unsupported') return '이 브라우저에서는 알림을 받을 수 없어요';
+    return '알림을 켜지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요';
+  }
+
+  /** 앱을 보고 있을 때 온 알림은 휴대폰 알림 대신 화면 안내로 보여 준다.
+      (짝꿍 체크는 앱이 이미 실시간으로 알려 주므로 겹치지 않게 뺀다) */
+  var fgBound = false;
+  function onForeground(cb) {
+    var m = messaging();
+    if (!m || fgBound || !isOn()) return;
+    fgBound = true;
+    m.onMessage(function (payload) {
+      var d = (payload && payload.data) || {};
+      if (d.kind === 'check') return;
+      var text = d.body || (payload.notification && payload.notification.body);
+      if (text) cb(text);
+    });
+  }
+
+  RT.push = { support: support, isOn: isOn, enable: enable, refresh: refresh, disable: disable, errorText: errorText, deviceId: deviceId, onForeground: onForeground };
+})(window);

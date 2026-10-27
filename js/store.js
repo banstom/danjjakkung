@@ -54,6 +54,26 @@
       saveMember: function (uid, name) {
         return db.doc('members/' + uid).set({ name: name, joinedAt: new Date().toISOString() });
       },
+      // ── 알림 ──
+      // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, updatedAt }  — 내 모든 기기에 같이 적용
+      // users/<uid>/devices/<기기>   : { token, platform, ua, updatedAt }                     — 기기마다 하나 (웹 · 나중에 iOS/안드로이드 앱)
+      // users/<uid>/pings/<id>      : { at }                                                — 테스트 알림 요청 (서버가 보내고 지운다)
+      watchUser: function (uid, next, fail) {
+        return listen(db.doc('users/' + uid), function (snap) {
+          next(snap.exists ? snap.data() : null, !!(snap.metadata && snap.metadata.fromCache));
+        }, fail);
+      },
+      saveNotify: function (uid, notify) {
+        return db.doc('users/' + uid).set({
+          notify: { partner: !!notify.partner, remindAt: notify.remindAt || null, hide: !!notify.hide },
+          tz: 'Asia/Seoul', updatedAt: new Date().toISOString()
+        });
+      },
+      saveDevice: function (uid, deviceId, d) {
+        return db.doc('users/' + uid + '/devices/' + deviceId).set({ token: d.token, platform: d.platform || 'web', ua: String(d.ua || '').slice(0, 80), updatedAt: new Date().toISOString() });
+      },
+      deleteDevice: function (uid, deviceId) { return db.doc('users/' + uid + '/devices/' + deviceId).delete(); },
+      ping: function (uid) { return db.doc('users/' + uid + '/pings/' + newKey()).set({ at: new Date().toISOString() }); },
       /** 루틴 목록: routines/<key> 문서들 → next([{ key, icon, name, who, owner, start, end, order }]) */
       watchRoutines: function (next, fail) {
         return db.collection('routines').onSnapshot(function (q) {

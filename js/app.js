@@ -25,6 +25,10 @@
     sheetEntering: false,
     routineDocs: [],     // routines 컬렉션
     manage: null,        // 「내 루틴」 시트 { open, form: { key, name, icon, start, error, saving, confirmDelete } }
+    notifyOpen: false,   // 「알림」 시트
+    prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
+    prefsReady: false,
+    push: { busy: false, error: '', info: '' },
     toast: ''
   };
   var store = null;
@@ -58,7 +62,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name'];
+  var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind'];
   function typing() {
     var el = document.activeElement;
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
@@ -84,11 +88,14 @@
     document.documentElement.setAttribute('data-season', m.header.season.key);
     var focus = focusOf(document.activeElement);
     if (state.manage && !m.manage) state.manage = null;
-    var sheetOpen = !!((m.sheet || m.manage) && state.status === 'ready');
+    if (state.status !== 'ready') state.notifyOpen = false;
+    var sheetOpen = !!((m.sheet || m.manage || state.notifyOpen) && state.status === 'ready');
     var entering = state.sheetEntering;
     m.header.canSignOut = state.status === 'ready';
+    m.header.bell = state.status === 'ready' && RT.push ? (RT.push.isOn() ? 'on' : 'off') : null;
     if (state.status !== 'ready') m.header.meName = '';
-    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true });
+    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, notify: state.notifyOpen ? notifyModel() : null });
+    state.push.errorFresh = false;
     state.sheetEntering = false;
     state.auth.errorFresh = false; state.setup.errorFresh = false; state.verify.errorFresh = false;
     setThemeColor();
@@ -102,7 +109,8 @@
   // 다시 그려도 누르던 버튼에 포커스가 남도록
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
-    'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null };
+    'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
+    'open-notify': null, 'close-notify': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -134,6 +142,7 @@
       // 시트가 열려 있으면 포커스는 시트 안에 둔다
       // (입력칸에는 저절로 들어가지 않는다 — 폰 키보드가 갑자기 뜨지 않게)
       target = appEl.querySelector('.sheet [data-act="toggle"]:not([disabled]):not([aria-disabled="true"])') ||
+        appEl.querySelector('.sheet [data-act="push-on"]:not([disabled])') ||
         appEl.querySelector('.sheet [data-act="save-routine"]:not([disabled])') || appEl.querySelector('.sheet [data-act="new-routine"]') || appEl.querySelector('.sheet .close-btn');
     }
     if (target && !target.disabled && document.activeElement !== target) target.focus({ preventScroll: true });
@@ -265,7 +274,7 @@
     else if (act === 'toggle') toggle(btn.getAttribute('data-key'));
     else if (act === 'close') closeSheet();
     else if (act === 'auth-mode') { state.auth.mode = btn.getAttribute('data-id'); state.auth.error = ''; state.auth.info = ''; render(true); }
-    else if (act === 'sign-out') { if (RT.firebase.signOut) RT.firebase.signOut(); }
+    else if (act === 'sign-out') signOut();
     else if (act === 'retry') { retries = 0; state.status = 'loading'; render(true); subscribe(); }
     else if (act === 'verify-check') checkVerified();
     else if (act === 'verify-resend') resendVerification();
@@ -279,7 +288,90 @@
     else if (act === 'stop-routine') stopRoutine();
     else if (act === 'resume-routine') resumeRoutine(btn.getAttribute('data-key'));
     else if (act === 'delete-routine') deleteRoutine();
+    else if (act === 'open-notify') openNotify();
+    else if (act === 'close-notify') closeNotify();
+    else if (act === 'push-on') pushOn();
+    else if (act === 'push-off') pushOff();
+    else if (act === 'push-test') pushTest();
+    else if (act === 'pref-partner') setPref({ partner: !(currentPrefs().partner) });
+    else if (act === 'pref-hide') setPref({ hide: !(currentPrefs().hide) });
   });
+
+  // ── 「알림」 시트 ───────────────────────────────────────
+  var REMIND_TIMES = [];
+  for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
+  var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}); }
+  function notifyModel() {
+    var P = RT.push;
+    return {
+      support: P ? P.support() : 'unsupported', on: !!(P && P.isOn()),
+      busy: state.push.busy, error: state.push.error, errorFresh: state.push.errorFresh, info: state.push.info,
+      prefs: currentPrefs(), prefsReady: state.prefsReady, times: REMIND_TIMES
+    };
+  }
+  function openNotify() {
+    state.sheetDay = null; state.manage = null;
+    state.push = { busy: false, error: '', info: '' };
+    state.notifyOpen = true; state.sheetEntering = true; render(true);
+  }
+  function closeNotify() {
+    state.notifyOpen = false; render(true);
+    var back = appEl.querySelector('[data-act="open-notify"]');
+    if (back) back.focus({ preventScroll: true });
+  }
+  function pushFail(msg) { state.push.busy = false; state.push.error = msg; state.push.errorFresh = true; state.push.info = ''; render(true); }
+  function pushOn() {
+    if (!store || !state.uid || state.push.busy || !RT.push) return;
+    state.push = { busy: true, error: '', info: '' };
+    var job = RT.push.enable(store, state.uid); // 허용 창은 누른 순간에 띄운다 (render보다 먼저)
+    render(true);
+    job.then(function () {
+      state.push.busy = false;
+      state.push.info = '알림을 켰어요. 「테스트 알림 보내기」로 확인해 보세요';
+      RT.push.onForeground(function (t) { showToast(t, 3600); });
+      // 처음 켜는 거라면 기본 설정을 같이 남긴다 (저녁 알림은 밤 9시)
+      if (!state.prefs) return savePrefs({ partner: true, remindAt: '21:00', hide: false });
+    }).then(function () { render(true); }, function (e) { pushFail(RT.push.errorText(e)); });
+  }
+  function pushOff() {
+    if (!store || state.push.busy || !RT.push) return;
+    state.push = { busy: true, error: '', info: '' }; render(true);
+    RT.push.disable(store, state.uid).then(function () {
+      state.push.busy = false; state.push.info = '이 기기에서는 알림을 받지 않아요'; render(true);
+    }, function () { pushFail('끄지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요'); });
+  }
+  function pushTest() {
+    if (!store || state.push.busy) return;
+    state.push = { busy: true, error: '', info: '' }; render(true);
+    store.ping(state.uid).then(function () {
+      state.push.busy = false; state.push.info = '테스트 알림을 보냈어요. 몇 초 안에 도착해요'; render(true);
+    }, function () { pushFail('보내지 못했어요. 잠시 뒤 다시 눌러 주세요'); });
+  }
+  function savePrefs(next) {
+    var before = state.prefs;
+    state.prefs = next; render(true);
+    return store.saveNotify(state.uid, next).catch(function () {
+      state.prefs = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요');
+    });
+  }
+  function setPref(patch) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    savePrefs(Object.assign(currentPrefs(), patch));
+  }
+  appEl.addEventListener('change', function (ev) {
+    if (ev.target.id !== 'nt-remind') return;
+    var v = ev.target.value || null;
+    ev.target.blur();
+    setPref({ remindAt: v });
+  });
+
+  function signOut() {
+    if (!RT.firebase.signOut) return;
+    // 로그아웃하면 이 기기로는 알림이 가지 않게 한다
+    var off = RT.push && RT.push.isOn() && store && state.uid ? RT.push.disable(store, state.uid).catch(function () {}) : Promise.resolve();
+    off.then(function () { RT.firebase.signOut(); });
+  }
 
   // ── 「내 루틴」 ─────────────────────────────────────────
   function rawRoutine(key) { return state.routineDocs.filter(function (r) { return r.key === key; })[0] || null; }
@@ -392,12 +484,12 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.manage) || !appEl.querySelector('.sheet')) return;
-    if (ev.key === 'Escape') { ev.preventDefault(); if (state.manage) closeManage(); else closeSheet(); return; }
+    if ((state.sheetDay === null && !state.manage && !state.notifyOpen) || !appEl.querySelector('.sheet')) return;
+    if (ev.key === 'Escape') { ev.preventDefault(); if (state.notifyOpen) closeNotify(); else if (state.manage) closeManage(); else closeSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
     if (ev.key === 'Tab') {
       // 시트가 열려 있으면 포커스를 시트 안에서만 돈다
-      var items = Array.prototype.slice.call(appEl.querySelectorAll('.sheet button:not([disabled]), .sheet input'));
+      var items = Array.prototype.slice.call(appEl.querySelectorAll('.sheet button:not([disabled]), .sheet input, .sheet select:not([disabled])'));
       if (!items.length) return;
       var first = items[0], last = items[items.length - 1];
       var inside = items.indexOf(document.activeElement) >= 0;
@@ -498,6 +590,12 @@
         resolveIdentity(); ready();
       }, lost),
       store.watchRoutines(function (list) { state.routineDocs = list; gotRoutines = true; ready(); }, lost),
+      // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
+      store.watchUser(state.uid, function (doc, fromCache) {
+        state.prefs = doc && doc.notify ? doc.notify : null;
+        if (!fromCache) state.prefsReady = true;
+        if (state.notifyOpen) render();
+      }, function () { state.prefsReady = false; }),
       store.watchChecks(function (map, meta, changes, first, fromCache) {
         state.server = map; state.meta = meta; gotChecks = true;
         if (!fromCache) { checksDefinitive = true; retries = 0; }
@@ -538,12 +636,16 @@
     checksDefinitive = false; caughtUpOnce = false;
     state.members = {}; state.routineDocs = []; state.server = {}; state.meta = {}; state.pending = {};
     state.me = null; state.sheetDay = null; state.manage = null;
+    state.notifyOpen = false; state.prefs = null; state.prefsReady = false;
   }
 
   function startSession() {
     state.status = 'loading';
     render(true);
     subscribe();
+    // 알림을 켜 둔 기기면 주소가 바뀌었는지 확인한다
+    if (RT.push && store && state.uid) RT.push.refresh(store, state.uid);
+    if (RT.push && RT.push.onForeground) RT.push.onForeground(function (text) { showToast(text, 3600); });
   }
 
   if (!RT.firebase || !RT.firebase.configured) {

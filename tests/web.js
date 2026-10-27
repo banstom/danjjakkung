@@ -93,19 +93,41 @@ const FAKE_FIREBASE = `
   window.firebase = fb;
 })();`;
 
+// 가짜 푸시(FCM): 토큰을 바로 돌려주고, 앞에 떠 있을 때 받는 알림을 흉내 낸다
+const FAKE_MESSAGING = `
+(function () {
+  var m = {
+    getToken: function () { var u = JSON.parse(localStorage.getItem('fake.user') || '{}'); return Promise.resolve('tok-' + (u.uid || 'x')); },
+    deleteToken: function () { return Promise.resolve(true); },
+    onMessage: function (cb) { window.__fg = cb; }
+  };
+  window.firebase.messaging = function () { return m; };
+  window.firebase.messaging.isSupported = function () { return true; };
+})();`;
+// 서비스 워커 없이도 알림 켜기 흐름을 볼 수 있게 등록만 흉내 낸다
+// (헤드리스 크롬은 알림 권한을 늘 'denied'로 보고하므로 허용 창도 흉내 낸다)
+const FAKE_SW = `Object.defineProperty(navigator, 'serviceWorker', { value: { register: function () { return Promise.resolve({}); }, ready: Promise.resolve({}) } });
+  (function () { var perm = 'default'; function N() {} Object.defineProperty(N, 'permission', { get: function () { return perm; } });
+    N.requestPermission = function () { window.__asked = (window.__asked || 0) + 1; perm = 'granted'; return Promise.resolve('granted'); }; window.Notification = N; })();`;
+
 async function open(browser, name, opts = {}) {
-  const ctx = opts.ctx || await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Asia/Seoul', serviceWorkers: opts.sw ? 'allow' : 'block' });
+  const ctx = opts.ctx || await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Asia/Seoul', serviceWorkers: opts.sw ? 'allow' : 'block', userAgent: opts.ua });
+  if (opts.push) await ctx.grantPermissions(['notifications']);
   const page = await ctx.newPage();
+  if (opts.push) await page.addInitScript(FAKE_SW);
+  if (opts.user) await page.addInitScript((u) => localStorage.setItem('fake.user', u), JSON.stringify(opts.user));
   page.on('pageerror', (e) => console.log(name, 'PAGE ERROR', e.message));
   await page.clock.install({ time: new Date('2026-10-27T21:00:00+09:00') });
   await page.route('**/vendor/firebase/firebase-app-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: FAKE_FIREBASE }));
   await page.route('**/vendor/firebase/firebase-auth-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('**/vendor/firebase/firebase-firestore-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: '' }));
+  await page.route('**/vendor/firebase/firebase-messaging-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: FAKE_MESSAGING }));
   await page.route('**/js/firebase-config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: 'window.DANJJAKKUNG_FIREBASE_CONFIG={apiKey:"test"};' }));
   await page.exposeFunction('__set', async (p, v, uid) => {
     // 규칙 흉내: 루틴 · 체크는 자기 것만
     const d = v === null ? null : JSON.parse(v);
     if (p.startsWith('routines/')) { const old = docs.get(p); if ((old && old.owner !== uid) || (d && d.owner !== uid)) throw new Error('permission-denied'); }
+    if (p.startsWith('users/') && p.split('/')[1] !== uid) throw new Error('permission-denied');
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
     if (d === null) docs.delete(p); else docs.set(p, d);
     await pushAll([p]);
@@ -206,6 +228,49 @@ async function tick(page, dateKey, key) {
   console.log('준민 시트 스쿼트 잠김:', await jm.getAttribute('.sheet [data-key]:not([data-key^="r"])', 'aria-disabled').catch(() => null),
     '| 잠긴 버튼들:', await jm.$$eval('.sheet [aria-disabled="true"]', (e) => e.length));
   await jm.click('.close-btn');
+
+  // 4-2) 알림: 켜기 → 기기 저장 · 기본 설정(밤 9시) → 설정 바꾸기 → 테스트 → 끄기
+  const jmUid = accounts.get('junmin@example.com').uid;
+  const jp = await open(browser, '준민(알림)', { push: true, user: { uid: jmUid, email: 'junmin@example.com', emailVerified: true } });
+  await jp.waitForSelector('[data-act="open-notify"]');
+  console.log('종 버튼(켜기 전):', await jp.getAttribute('[data-act="open-notify"]', 'aria-label'));
+  await jp.click('[data-act="open-notify"]');
+  await jp.waitForSelector('#notify-title');
+  console.log('알림 시트:', await jp.textContent('#notify-title'), '| 켜기 버튼:', await jp.textContent('[data-act="push-on"]'));
+  await jp.click('[data-act="push-on"]');
+  await jp.waitForSelector('.nbox--on', { timeout: 3000 });
+  await jp.waitForTimeout(200);
+  console.log('켠 뒤:', await jp.textContent('.nbox--on .nbox__title'), '|', await jp.textContent('.nbox__info'), '| 허용 창:', await jp.evaluate(() => window.__asked));
+  const devKeys = [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/devices/'));
+  console.log('기기 저장:', devKeys.length, docs.get(devKeys[0]) && docs.get(devKeys[0]).token, '| 기본 설정:', JSON.stringify(docs.get('users/' + jmUid).notify));
+  await jp.click('[data-act="pref-partner"]');
+  await jp.waitForTimeout(150);
+  await jp.selectOption('#nt-remind', '22:30');
+  await jp.waitForTimeout(150);
+  await jp.click('[data-act="pref-hide"]');
+  await jp.waitForTimeout(150);
+  console.log('설정 바꿈:', JSON.stringify(docs.get('users/' + jmUid).notify), '| 스위치:', await jp.getAttribute('[data-act="pref-partner"]', 'aria-checked'), await jp.inputValue('#nt-remind'));
+  await jp.click('[data-act="push-test"]');
+  await jp.waitForTimeout(200);
+  console.log('테스트 요청:', [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/pings/')).length, '|', await jp.textContent('.nbox__info'));
+  await jp.evaluate(() => window.__fg && window.__fg({ data: { kind: 'test', body: '🔔 알림이 잘 와요!' } }));
+  await jp.waitForTimeout(100);
+  console.log('앱을 보고 있을 때 온 테스트 알림:', await jp.textContent('.toast').catch(() => '(없음)'));
+  await jp.evaluate(() => window.__fg && window.__fg({ data: { kind: 'check', body: '🎉 다진 님이 스쿼트 100개 완료!' } }));
+  await jp.screenshot({ path: path.join(OUT, 'web-notify.png') });
+  await jp.click('[data-act="push-off"]');
+  await jp.waitForTimeout(200);
+  console.log('끈 뒤:', await jp.textContent('[data-act="push-on"]'), '| 남은 기기:', [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/devices/')).length);
+  await jp.keyboard.press('Escape');
+  console.log('Esc로 닫힘:', !(await jp.$('#notify-title')), '| 종:', await jp.getAttribute('[data-act="open-notify"]', 'aria-label'));
+  await jp.close();
+
+  // 4-3) 아이폰 사파리 탭에서는 홈 화면 앱으로 열라고 안내
+  const ip = await open(browser, '아이폰 사파리', { ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', user: { uid: accounts.get('dajin@example.com').uid, email: 'dajin@example.com', emailVerified: true } });
+  await ip.waitForSelector('[data-act="open-notify"]');
+  await ip.click('[data-act="open-notify"]');
+  console.log('아이폰 사파리 탭:', await ip.textContent('.nbox__title'));
+  await ip.close();
 
   // 5) 초대 안 된 계정
   const x = await open(browser, '모르는 사람');

@@ -1,0 +1,6 @@
+{
+  "firestore": { "rules": "firestore.rules.local" },
+  "functions": [
+    { "source": "functions", "codebase": "default", "ignore": ["node_modules", ".git", "*.test.js"] }
+  ]
+}

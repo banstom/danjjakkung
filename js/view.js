@@ -21,8 +21,58 @@
       '<div class="top__text"><p class="caption">' + esc(h.date) + (h.meName ? ' · ' + esc(h.meName) + ' 님으로 접속' : '') +
       (h.canRepick ? ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') +
       (h.canSignOut ? ' · <button type="button" class="link-btn" data-act="sign-out">로그아웃</button>' : '') + '</p><h1 class="title">' + esc(TITLE) + '</h1></div>' +
-      '<span class="season-chip">' + esc(h.season.icon + ' ' + h.season.name) + '</span>' +
+      '<div class="top__side">' +
+      (h.bell ? '<button type="button" class="bell-btn" data-act="open-notify" aria-label="알림 설정' + (h.bell === 'on' ? ' (켜짐)' : ' (꺼짐)') + '">' + (h.bell === 'on' ? '🔔' : '🔕') + '</button>' : '') +
+      '<span class="season-chip">' + esc(h.season.icon + ' ' + h.season.name) + '</span></div>' +
       '</header>';
+  }
+
+  // 「알림」 시트 — 이 기기 알림 켜기/끄기 + 내 알림 설정(모든 기기 공통)
+  var SUPPORT_TEXT = {
+    'standalone-needed': ['홈 화면 앱에서 켤 수 있어요', '사파리 공유 버튼 › 「홈 화면에 추가」로 설치한 뒤, 홈 화면의 단짝꿍 아이콘으로 열어 주세요.'],
+    unsupported: ['이 브라우저에서는 알림을 받을 수 없어요', '안드로이드는 크롬, 아이폰은 홈 화면에 추가한 단짝꿍 앱에서 켤 수 있어요.'],
+    denied: ['알림이 막혀 있어요', '휴대폰 설정 › 알림에서 단짝꿍(또는 브라우저)을 허용한 뒤 다시 열어 주세요.']
+  };
+  function switchRow(act, on, title, desc, disabled) {
+    return '<div class="nrow"><div class="nrow__text"><span class="nrow__title" id="' + act + '-label">' + esc(title) + '</span><span class="nrow__desc">' + esc(desc) + '</span></div>' +
+      '<button type="button" class="switch" role="switch" aria-checked="' + !!on + '" aria-labelledby="' + act + '-label" data-act="' + act + '"' + (disabled ? ' disabled' : '') + '><span class="switch__knob"></span></button></div>';
+  }
+  function notifySheet(n, entering) {
+    if (!n) return '';
+    var dev;
+    if (SUPPORT_TEXT[n.support]) {
+      dev = '<div class="nbox"><p class="nbox__title">' + esc(SUPPORT_TEXT[n.support][0]) + '</p><p class="nbox__body">' + esc(SUPPORT_TEXT[n.support][1]) + '</p></div>';
+    } else if (n.on) {
+      dev = '<div class="nbox nbox--on"><p class="nbox__title">✅ 이 기기에서 알림을 받고 있어요</p>' +
+        '<div class="nbox__actions"><button type="button" class="small-btn" data-act="push-test"' + (n.busy ? ' disabled' : '') + '>테스트 알림 보내기</button>' +
+        '<button type="button" class="text-btn" data-act="push-off"' + (n.busy ? ' disabled' : '') + '>이 기기 알림 끄기</button></div></div>';
+    } else {
+      dev = '<button type="button" class="solid-btn solid-btn--full" data-act="push-on"' + (n.busy ? ' disabled' : '') + '>' + (n.busy ? '켜는 중…' : '🔔 이 기기에서 알림 켜기') + '</button>';
+    }
+    var p = n.prefs || { partner: true, remindAt: null, hide: false };
+    var off = !n.prefsReady;
+    var opts = '<option value=""' + (!p.remindAt ? ' selected' : '') + '>끄기</option>' + n.times.map(function (t) {
+      return '<option value="' + t + '"' + (p.remindAt === t ? ' selected' : '') + '>' + esc(t) + '</option>';
+    }).join('');
+    return '<div class="sheet-layer">' +
+      '<button type="button" class="scrim" data-act="close-notify" aria-label="닫기"></button>' +
+      '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="notify-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<div class="sheet__head"><h2 id="notify-title" class="sheet__title">알림</h2></div>' +
+      '<p class="sheet__sub">짝꿍이 체크하거나, 내가 깜빡했을 때 휴대폰으로 알려 줘요</p>' +
+      dev +
+      (n.error ? '<p class="rform__error"' + (n.errorFresh ? ' role="alert"' : '') + '>' + esc(n.error) + '</p>' : '') +
+      (n.info ? '<p class="nbox__info" role="status">' + esc(n.info) + '</p>' : '') +
+      '<h3 class="mgroup">받을 알림</h3>' +
+      '<div class="nlist">' +
+      switchRow('pref-partner', p.partner, '짝꿍 완료 알림', '짝꿍이 루틴을 체크하면 바로 알려 줘요', off) +
+      '<div class="nrow"><div class="nrow__text"><label class="nrow__title" for="nt-remind">저녁 미완료 알림</label><span class="nrow__desc">이 시간까지 내 루틴을 체크하지 않았으면 알려 줘요</span></div>' +
+      '<select id="nt-remind" class="nselect"' + (off ? ' disabled' : '') + '>' + opts + '</select></div>' +
+      switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요', off) +
+      '</div>' +
+      '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +
+      '<button type="button" class="close-btn" data-act="close-notify">닫기</button>' +
+      '</section></div>';
   }
 
   function chips(list, canManage) {
@@ -241,7 +291,8 @@
         (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : m.cards.map(routineCard).join('')) + both(m.both);
     }
     if (status === 'ready') {
-      out += m.manage ? manageSheet(m.manage, m.header.meName, opts && opts.sheetEntering) : (!m.empty ? sheet(m.sheet, opts && opts.sheetEntering) : '');
+      out += opts.notify ? notifySheet(opts.notify, opts.sheetEntering)
+        : m.manage ? manageSheet(m.manage, m.header.meName, opts && opts.sheetEntering) : (!m.empty ? sheet(m.sheet, opts && opts.sheetEntering) : '');
     }
     out += toast(toastText);
     return out;

@@ -1,13 +1,23 @@
 /* 서비스 워커 — 앱 화면(파일들)을 기기에 저장해 두고, 오프라인에서도 열리게 한다.
    기록(Firestore)은 Firebase가 따로 기기에 보관하므로 여기서는 손대지 않는다.
    파일을 바꿔서 올릴 때마다 VERSION을 올리면 새 파일로 바뀐다. */
-var VERSION = 'danjjakkung-v6';
+var VERSION = 'danjjakkung-v7';
+
+/* 푸시 알림: 앱이 닫혀 있을 때 서버(functions/)가 보낸 알림을 휴대폰 알림으로 띄운다.
+   불러오기에 실패해도 오프라인 기능은 그대로 돌아가게 감싼다. */
+try {
+  importScripts('vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/firebase-config.js');
+  if (self.firebase && self.DANJJAKKUNG_FIREBASE_CONFIG && firebase.messaging.isSupported()) {
+    firebase.initializeApp(self.DANJJAKKUNG_FIREBASE_CONFIG);
+    firebase.messaging(); // 알림 내용(notification)이 있으면 SDK가 알아서 띄우고, 누르면 앱을 연다
+  }
+} catch (e) { /* 알림 없이 계속 */ }
 var FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'styles/tokens.css', 'styles/app.css',
   'js/firebase-config.js', 'js/firebase.js', 'js/dates.js', 'js/seasons.js', 'js/streak.js', 'js/icons.js',
   'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/store.js', 'js/app.js',
-  'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js',
+  'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/push.js',
   'fonts/PretendardVariable.woff2', 'fonts/tossface-00.woff2', 'fonts/tossface-04.woff2', 'fonts/tossface-05.woff2',
   'fonts/tossface-06.woff2', 'fonts/tossface-07.woff2', 'fonts/tossface-09.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'

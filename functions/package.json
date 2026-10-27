@@ -1,0 +1,12 @@
+{
+  "name": "danjjakkung-functions",
+  "private": true,
+  "description": "단짝꿍 알림 서버 — 짝꿍 체크 알림 · 저녁 미완료 알림 · 테스트 알림",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": { "test": "node --test" },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  }
+}
