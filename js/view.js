@@ -180,26 +180,38 @@
   function authScreen(a) {
     var signup = a.mode === 'signup', reset = a.mode === 'reset';
     var title = signup ? '처음이라면 계정 만들기' : reset ? '비밀번호 다시 만들기' : '로그인';
-    return '<section class="card auth" aria-labelledby="auth-title">' +
+    return '<form class="card auth" data-form="auth" aria-labelledby="auth-title" novalidate>' +
       '<h2 id="auth-title" class="notice__title">' + title + '</h2>' +
       '<p class="notice__body">' + (reset ? '가입한 이메일로 비밀번호를 바꾸는 링크를 보내 드려요.' : '초대된 두 사람만 들어올 수 있어요. 한 번 로그인하면 이 기기에서는 계속 유지돼요.') + '</p>' +
-      '<label class="field"><span class="field__label">이메일</span><input id="au-email" class="field__input" type="email" autocomplete="email" inputmode="email" value="' + esc(a.email) + '"></label>' +
-      (reset ? '' : '<label class="field"><span class="field__label">비밀번호' + (signup ? ' (6자 이상)' : '') + '</span><input id="au-pass" class="field__input" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" value="' + esc(a.password) + '"></label>') +
+      '<label class="field"><span class="field__label">이메일</span><input id="au-email" name="email" class="field__input" type="email" autocomplete="username" inputmode="email" autocapitalize="off" value="' + esc(a.email) + '"></label>' +
+      (reset ? '' : '<label class="field"><span class="field__label">비밀번호' + (signup ? ' (6자 이상)' : '') + '</span><input id="au-pass" name="password" class="field__input" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" value="' + esc(a.password) + '"></label>') +
       (a.error ? '<p id="au-error" class="rform__error"' + (a.errorFresh ? ' role="alert"' : '') + '>' + esc(a.error) + '</p>' : '') +
       (a.info ? '<p class="auth__info" role="status">' + esc(a.info) + '</p>' : '') +
-      '<button type="button" class="solid-btn solid-btn--full" data-act="auth-submit"' + (a.busy ? ' disabled' : '') + '>' + (a.busy ? '잠시만요…' : signup ? '계정 만들기' : reset ? '링크 보내기' : '로그인') + '</button>' +
+      '<button type="submit" class="solid-btn solid-btn--full"' + (a.busy ? ' disabled' : '') + '>' + (a.busy ? '잠시만요…' : signup ? '계정 만들기' : reset ? '링크 보내기' : '로그인') + '</button>' +
       '<div class="auth__links">' +
       (signup || reset ? '<button type="button" class="text-btn" data-act="auth-mode" data-id="login">로그인으로 돌아가기</button>'
         : '<button type="button" class="text-btn" data-act="auth-mode" data-id="signup">처음이에요 (계정 만들기)</button><button type="button" class="text-btn" data-act="auth-mode" data-id="reset">비밀번호를 잊었어요</button>') +
-      '</div></section>';
+      '</div></form>';
   }
   function setupScreen(s) {
-    return '<section class="card auth" aria-labelledby="setup-title">' +
+    return '<form class="card auth" data-form="setup" aria-labelledby="setup-title" novalidate>' +
       '<h2 id="setup-title" class="notice__title">반가워요! 이름을 알려 주세요</h2>' +
       '<p class="notice__body">짝꿍에게 보일 이름이에요. 나중에 바꿀 수 없으니 정확히 적어 주세요.</p>' +
       '<label class="field"><span class="field__label">이름</span><input id="me-name" class="field__input" type="text" maxlength="10" autocomplete="nickname" value="' + esc(s.name) + '"></label>' +
       (s.error ? '<p id="setup-error" class="rform__error"' + (s.errorFresh ? ' role="alert"' : '') + '>' + esc(s.error) + '</p>' : '') +
-      '<button type="button" class="solid-btn solid-btn--full" data-act="setup-submit"' + (s.busy ? ' disabled' : '') + '>' + (s.busy ? '잠시만요…' : '시작하기') + '</button>' +
+      '<button type="submit" class="solid-btn solid-btn--full"' + (s.busy ? ' disabled' : '') + '>' + (s.busy ? '잠시만요…' : '시작하기') + '</button>' +
+      '<div class="auth__links"><button type="button" class="text-btn" data-act="sign-out">다른 계정으로 로그인</button></div>' +
+      '</form>';
+  }
+  function verifyScreen(v, email) {
+    return '<section class="card auth" aria-labelledby="verify-title">' +
+      '<h2 id="verify-title" class="notice__title">메일함을 확인해 주세요</h2>' +
+      '<p class="notice__body">' + esc(email) + ' 로 인증 메일을 보냈어요. 메일의 링크를 누른 뒤 아래 버튼을 눌러 주세요. 메일이 안 보이면 스팸함도 확인해 주세요.</p>' +
+      (v.error ? '<p class="rform__error"' + (v.errorFresh ? ' role="alert"' : '') + '>' + esc(v.error) + '</p>' : '') +
+      (v.info ? '<p class="auth__info" role="status">' + esc(v.info) + '</p>' : '') +
+      '<button type="button" class="solid-btn solid-btn--full" data-act="verify-check"' + (v.busy ? ' disabled' : '') + '>' + (v.busy ? '확인하는 중…' : '인증했어요') + '</button>' +
+      '<div class="auth__links"><button type="button" class="text-btn" data-act="verify-resend">메일 다시 보내기</button>' +
+      '<button type="button" class="text-btn" data-act="sign-out">다른 계정으로 로그인</button></div>' +
       '</section>';
   }
 
@@ -209,11 +221,18 @@
     opts = opts || {};
     if (status === 'login') return out + authScreen(opts.auth) + toast(toastText);
     if (status === 'setup') return out + setupScreen(opts.setup) + toast(toastText);
+    if (status === 'verify') return out + verifyScreen(opts.verify, opts.email) + toast(toastText);
     if (status === 'denied') return out + notice('초대되지 않은 계정이에요', (opts.email || '이 계정') + '은(는) 짝꿍 그리드에 들어올 수 없어요. 다른 계정으로 로그인해 주세요.') +
       '<button type="button" class="add-btn" data-act="sign-out">로그아웃</button>' + toast(toastText);
     if (status === 'unconfigured') return out + notice('아직 연결 설정이 비어 있어요', 'js/firebase-config.js에 Firebase 설정을 넣어야 해요.');
-    if (status === 'loading') out += skeleton();
-    else if (status === 'nodb') out += notice('기록 저장소에 연결할 수 없어요', 'claude.ai나 Claude 앱에서 이 페이지를 열면 기록을 불러와요.');
+    if (status === 'loading') out += skeleton() + (opts.web ? '<div class="auth__links auth__links--center"><button type="button" class="text-btn" data-act="sign-out">로그아웃</button></div>' : '');
+    else if (status === 'nodb') {
+      out += opts.web
+        ? notice('기록을 불러오지 못했어요', '인터넷 연결을 확인한 뒤 다시 시도해 주세요.') +
+          '<button type="button" class="add-btn" data-act="retry">다시 시도</button>' +
+          '<div class="auth__links auth__links--center"><button type="button" class="text-btn" data-act="sign-out">로그아웃</button></div>'
+        : notice('기록 저장소에 연결할 수 없어요', 'claude.ai나 Claude 앱에서 이 페이지를 열면 기록을 불러와요.');
+    }
     else if (m.empty) {
       out += (m.needsPick ? picker(m.people) : '') + notice('아직 등록된 루틴이 없어요', '「＋ 내 루틴」에서 첫 루틴을 추가해 보세요.') +
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');

@@ -27,6 +27,11 @@
   function createStore(db, opts) {
     var retryDelay = (opts && opts.retryDelay) || function () { return 400 + Math.random() * 600; };
     var queues = {}; // 문서마다 쓰기를 한 줄로 세워 순서가 뒤바뀌지 않게
+    // Firestore는 '캐시 → 서버 확인'을 알리려면 옵션이 필요하다 (artifact db는 옵션을 받지 않는다)
+    var withMeta = !!(opts && opts.metadataChanges);
+    function listen(ref, next, fail) {
+      return withMeta ? ref.onSnapshot({ includeMetadataChanges: true }, next, fail) : ref.onSnapshot(next, fail);
+    }
 
     function write(ref, done, routine, dateKey, who) {
       return done
@@ -40,10 +45,10 @@
       },
       /** 사람 목록: members/<uid> → next({ uid: { name } }) */
       watchMembers: function (next, fail) {
-        return db.collection('members').onSnapshot(function (q) {
+        return listen(db.collection('members'), function (q) {
           var out = {};
           q.docs.forEach(function (doc) { var v = doc.data(); if (v && typeof v.name === 'string') out[doc.id] = { name: v.name }; });
-          next(out);
+          next(out, !!(q.metadata && q.metadata.fromCache));
         }, fail);
       },
       saveMember: function (uid, name) {
@@ -67,7 +72,7 @@
        *  changes: 이번에 새로 생기거나 바뀐 체크 [{ routine, date, done, by, at }] (첫 전달은 first=true) */
       watchChecks: function (next, fail) {
         var first = true;
-        return db.collection('checks').onSnapshot(function (q) {
+        return listen(db.collection('checks'), function (q) {
           var map = {}, meta = {};
           q.docs.forEach(function (doc) {
             var v = valid(doc.data());

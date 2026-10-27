@@ -29,7 +29,7 @@ const FAKE_FIREBASE = `
   var user = null, authCbs = [];
   try { var saved = localStorage.getItem('fake.user'); if (saved) user = JSON.parse(saved); } catch (e) {}
   function snapDoc(p) { return { id: p.split('/').pop(), exists: local.has(p), data: function () { return local.get(p); } }; }
-  function allowed() { return user && ${JSON.stringify(ALLOWED)}.indexOf(user.email) >= 0; }
+  function allowed() { return user && user.emailVerified && ${JSON.stringify(ALLOWED)}.indexOf(user.email) >= 0; }
   function denied() { return { code: 'permission-denied', message: 'denied' }; }
   window.__push = function (s, changed) {
     local = new Map(JSON.parse(s));
@@ -42,27 +42,41 @@ const FAKE_FIREBASE = `
     try { if (u) localStorage.setItem('fake.user', JSON.stringify(u)); else localStorage.removeItem('fake.user'); } catch (e) {}
     authCbs.forEach(function (cb) { setTimeout(function () { cb(user); }, 0); });
   }
+  function verifiedFlag(u) { return !!(u && u.emailVerified); }
   var auth = {
     onAuthStateChanged: function (cb) { authCbs.push(cb); setTimeout(function () { cb(user); }, 20); return function () {}; },
     setPersistence: function () { return Promise.resolve(); },
     signInWithEmailAndPassword: function (e, p) { return window.__auth('in', e, p).then(function (u) { setAuth(u); return { user: u }; }, toCode); },
     createUserWithEmailAndPassword: function (e, p) { return window.__auth('up', e, p).then(function (u) { setAuth(u); return { user: u }; }, toCode); },
     sendPasswordResetEmail: function () { return Promise.resolve(); },
-    signOut: function () { setAuth(null); return Promise.resolve(); }
+    signOut: function () { setAuth(null); return Promise.resolve(); },
+    get currentUser() {
+      if (!user) return null;
+      return {
+        emailVerified: verifiedFlag(user),
+        sendEmailVerification: function () { window.__sentVerify = (window.__sentVerify || 0) + 1; return Promise.resolve(); },
+        reload: function () { return window.__isVerified(user.email).then(function (v) { user.emailVerified = v; try { localStorage.setItem('fake.user', JSON.stringify(user)); } catch (e) {} }); },
+        getIdToken: function () { return Promise.resolve('t'); }
+      };
+    }
   };
   var db = {
     enablePersistence: function () { return Promise.resolve(); },
+    terminate: function () { return Promise.resolve(); },
+    clearPersistence: function () { return Promise.resolve(); },
     doc: function (p) {
       return {
         set: function (v) { if (!allowed()) return Promise.reject(denied()); return window.__set(p, JSON.stringify(v), user.uid); },
         delete: function () { if (!allowed()) return Promise.reject(denied()); return window.__set(p, null, user.uid); },
-        onSnapshot: function (next, err) { if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
+        onSnapshot: function (x, y, z) { var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z; if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
           var f = function () { next(snapDoc(p)); }; docL.add(f); window.__hello(); return function () { docL.delete(f); }; }
       };
     },
     collection: function (c) {
       return {
-        onSnapshot: function (next, err) {
+        onSnapshot: function (x, y, z) {
+          // (x, y, z): 옵션을 먼저 받는 형태도 지원 — 바깥의 c(컬렉션 이름)를 가리지 않게 이름을 다르게 둔다
+          var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z;
           if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
           var f = function (changed) {
             var list = Array.from(local.keys()).filter(function (k) { return k.indexOf(c + '/') === 0; }).sort().map(snapDoc);
@@ -101,13 +115,14 @@ async function open(browser, name, opts = {}) {
     const a = accounts.get(email);
     if (kind === 'up') {
       if (a) throw new Error('auth/email-already-in-use');
-      const u = { uid: 'u' + (accounts.size + 1) + 'x'.repeat(20), password: pw };
+      const u = { uid: 'u' + (accounts.size + 1) + 'x'.repeat(20), password: pw, verified: false };
       accounts.set(email, u);
-      return { uid: u.uid, email };
+      return { uid: u.uid, email, emailVerified: false };
     }
     if (!a || a.password !== pw) throw new Error('auth/invalid-credential');
-    return { uid: a.uid, email };
+    return { uid: a.uid, email, emailVerified: a.verified };
   });
+  await page.exposeFunction('__isVerified', async (email) => !!(accounts.get(email) || {}).verified);
   pages.push(page);
   await page.goto(URL);
   await page.waitForSelector('.title');
@@ -119,11 +134,15 @@ async function signUp(page, email, pw, name) {
   await page.click('[data-act="auth-mode"][data-id="signup"]');
   await page.fill('#au-email', email);
   await page.fill('#au-pass', pw);
-  await page.click('[data-act="auth-submit"]');
+  await page.click('form[data-form="auth"] button[type="submit"]');
+  await page.waitForSelector('#verify-title');
+  // 메일의 인증 링크를 눌렀다고 치고 [인증했어요]
+  accounts.get(email).verified = true;
+  await page.click('[data-act="verify-check"]');
   await page.waitForSelector('#me-name');
   await page.fill('#me-name', name);
-  await page.click('[data-act="setup-submit"]');
-  await page.waitForSelector('[data-act="open-manage"]');
+  await page.press('#me-name', 'Enter');
+  await page.waitForSelector('[data-act="open-manage"]', { timeout: 4000 });
 }
 
 async function addRoutine(page, name, icon, start) {
@@ -157,7 +176,7 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'web-login.png') });
   await jm.fill('#au-email', 'junmin@example.com');
   await jm.fill('#au-pass', 'wrongpw');
-  await jm.click('[data-act="auth-submit"]');
+  await jm.click('form[data-form="auth"] button[type="submit"]');
   await jm.waitForSelector('#au-error');
   console.log('없는 계정 로그인:', await jm.textContent('#au-error'));
   await signUp(jm, 'junmin@example.com', 'pass1234', '준민');
@@ -193,17 +212,24 @@ async function tick(page, dateKey, key) {
   await x.click('[data-act="auth-mode"][data-id="signup"]');
   await x.fill('#au-email', 'stranger@example.com');
   await x.fill('#au-pass', 'pass0000');
-  await x.click('[data-act="auth-submit"]');
+  await x.click('form[data-form="auth"] button[type="submit"]');
+  await x.waitForSelector('#verify-title');
+  console.log('가입 직후(인증 전):', await x.textContent('#verify-title'));
+  await x.click('[data-act="verify-check"]');
+  await x.waitForTimeout(200);
+  console.log('인증 안 하고 누르면:', await x.textContent('.rform__error').catch(() => '(없음)'));
+  accounts.get('stranger@example.com').verified = true;
+  await x.click('[data-act="verify-check"]');
   await x.waitForTimeout(300);
-  console.log('모르는 계정:', await x.textContent('.notice__title').catch(() => '(없음)'));
+  console.log('모르는 계정(인증 후):', await x.textContent('.notice__title').catch(() => '(없음)'));
 
   // 6) 로그아웃 → 다시 로그인하면 이름 그대로
-  await jm.click('[data-act="sign-out"]');
+  await Promise.all([jm.waitForNavigation(), jm.click('[data-act="sign-out"]')]);
   await jm.waitForSelector('#auth-title');
   await jm.fill('#au-email', 'junmin@example.com');
   await jm.fill('#au-pass', 'pass1234');
-  await jm.click('[data-act="auth-submit"]');
-  await jm.waitForSelector('[data-act="open-manage"]', { timeout: 5000 }).catch(async () => console.log('DBG 화면:', (await jm.textContent('#app')).slice(0, 200)));
+  await jm.click('form[data-form="auth"] button[type="submit"]');
+  await jm.waitForSelector('[data-act="open-manage"]');
   console.log('다시 로그인:', await jm.textContent('.caption'));
 
   // 7) 앱처럼: 서비스 워커가 파일을 저장해서 인터넷이 끊겨도 열린다

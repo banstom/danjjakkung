@@ -7,11 +7,11 @@ GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 
 
 1. **Firebase 콘솔**
    - Authentication › 로그인 방법 › **이메일/비밀번호** 사용 설정
-   - Firestore Database › 규칙 탭에 `firestore.rules` 내용을 붙여 넣고, `__EMAIL_1__`, `__EMAIL_2__` 를 두 사람 이메일로 바꾼 뒤 **게시**
-   - Authentication › 설정 › 승인된 도메인에 `<GitHub 아이디>.github.io` 추가
+   - Firestore Database › 규칙 탭에 `firestore.rules` 내용을 붙여 넣고, `__EMAIL_1__`, `__EMAIL_2__` 를 두 사람 이메일(**소문자**)로 바꾼 뒤 **게시**
 2. `js/firebase-config.js` 에 Firebase 웹 앱 설정을 넣는다.
 3. GitHub 저장소 › Settings › Pages › Branch: `main` / `(root)` › Save
-4. `https://<GitHub 아이디>.github.io/jjakkung-grid/` 접속 → 「처음이에요」로 각자 계정을 만들고 이름을 정한다.
+4. `https://<GitHub 아이디>.github.io/jjakkung-grid/` 접속 → 「처음이에요」로 각자 계정을 만들고, **메일함의 인증 링크**를 누른 뒤 이름을 정한다.
+5. 아이폰은 홈 화면에 추가한 앱이 사파리와 저장 공간이 따로라서, 앱에서 한 번 더 로그인한다.
 
 ## 폴더
 

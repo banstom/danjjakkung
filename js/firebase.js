@@ -40,9 +40,31 @@
     db: db,
     onAuth: function (cb) { return auth.onAuthStateChanged(cb); },
     signIn: function (email, pw) { return auth.signInWithEmailAndPassword(email, pw); },
-    signUp: function (email, pw) { return auth.createUserWithEmailAndPassword(email, pw); },
+    // 가입하면 바로 인증 메일을 보낸다 (남의 이메일로 먼저 가입하는 것을 막기 위해 규칙이 인증을 요구한다)
+    signUp: function (email, pw) {
+      return auth.createUserWithEmailAndPassword(email, pw).then(function (cred) {
+        return cred.user.sendEmailVerification().catch(function () {}).then(function () { return cred; });
+      });
+    },
+    sendVerification: function () { return auth.currentUser ? auth.currentUser.sendEmailVerification() : Promise.reject({ code: 'auth/no-user' }); },
+    /** 인증했는지 다시 확인. 인증됐으면 새 토큰을 받아 규칙에 바로 반영되게 한다. */
+    checkVerified: function () {
+      var u = auth.currentUser;
+      if (!u) return Promise.resolve(false);
+      return u.reload().then(function () {
+        if (!auth.currentUser.emailVerified) return false;
+        return auth.currentUser.getIdToken(true).then(function () { return true; });
+      });
+    },
     reset: function (email) { return auth.sendPasswordResetEmail(email); },
-    signOut: function () { return auth.signOut(); },
+    // 로그아웃: 이 기기에 남은 기록까지 지우고 처음 화면으로
+    signOut: function () {
+      return auth.signOut()
+        .then(function () { return db.terminate(); })
+        .then(function () { return db.clearPersistence(); })
+        .catch(function () {})
+        .then(function () { root.location.reload(); });
+    },
     errorText: errorText
   };
 })(window);

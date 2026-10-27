@@ -223,3 +223,4 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .auth__links { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
 .auth__info { margin: 0; font-size: 13px; font-weight: 600; color: var(--tint-text); }
 .solid-btn--full { flex: none; width: 100%; }
+.auth__links--center { justify-content: center; }

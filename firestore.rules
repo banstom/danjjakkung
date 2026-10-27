@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // 짝꿍 그리드 Firestore 접근 규칙
-// - 아래 두 이메일로 로그인한 사람만 읽고 쓸 수 있다
+// - 아래 두 이메일로 로그인하고, 메일 인증까지 마친 사람만 읽고 쓸 수 있다
+// - 이메일은 꼭 소문자로 적는다
 // - 각자 자기 이름(members), 자기 루틴(routines), 자기 루틴의 체크(checks)만 바꿀 수 있다
 // Firebase 콘솔 › Firestore Database › 규칙 탭에 그대로 붙여 넣고 [게시]
 service cloud.firestore {
@@ -10,6 +11,7 @@ service cloud.firestore {
     function isMember() {
       return request.auth != null
         && request.auth.token.email != null
+        && request.auth.token.email_verified == true
         && request.auth.token.email.lower() in ['__EMAIL_1__', '__EMAIL_2__'];
     }
 
@@ -19,6 +21,12 @@ service cloud.firestore {
 
     function routineOwner(key) {
       return get(/databases/$(database)/documents/routines/$(key)).data.owner;
+    }
+
+    // 체크하는 날짜: 루틴 시작일 이후이고, 내일(한국 시간 기준 여유 포함)보다 앞
+    function notFuture(dateStr) {
+      let p = dateStr.split('-');
+      return timestamp.date(int(p[0]), int(p[1]), int(p[2])) < request.time + duration.value(1, 'd');
     }
 
     // 사람 이름: 자기 문서만, 한 번 만들면 바꾸지 않는다
@@ -55,10 +63,15 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['routine', 'date', 'done', 'by', 'byUid', 'at'])
         && request.resource.data.done == true
         && request.resource.data.by == request.auth.uid
+        && (request.resource.data.byUid == null || request.resource.data.byUid == request.auth.uid)
+        && request.resource.data.at is string && request.resource.data.at.size() <= 40
         && isDate(request.resource.data.date)
+        && notFuture(request.resource.data.date)
         && id == request.resource.data.routine + '_' + request.resource.data.date
-        && routineOwner(request.resource.data.routine) == request.auth.uid;
-      allow delete: if isMember() && routineOwner(resource.data.routine) == request.auth.uid;
+        && routineOwner(request.resource.data.routine) == request.auth.uid
+        && request.resource.data.date >= get(/databases/$(database)/documents/routines/$(request.resource.data.routine)).data.start;
+      // 지우기: 내가 남긴 체크만 (이미 없는 문서를 지우는 것도 허용 — 두 기기에서 동시에 지운 경우)
+      allow delete: if isMember() && (resource == null || resource.data.by == request.auth.uid);
     }
   }
 }

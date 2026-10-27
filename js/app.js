@@ -17,6 +17,7 @@
     email: '',
     auth: { mode: 'login', email: '', password: '', error: '', busy: false, info: '' },
     setup: { name: '', error: '', busy: false },
+    verify: { error: '', info: '', busy: false },
     today: D.fromLocal(new Date()),
     filter: 'all',
     page: 0,
@@ -29,6 +30,7 @@
   var store = null;
   var toastTimer = null;
   var gotMembers = false, gotChecks = false, gotRoutines = false;
+  var membersFromServer = false; // 이름을 정했는지는 서버 확인을 받은 뒤에만 판단한다
   var LS_SEEN = 'jjakkung.lastSeen';
   function lsGet(k) { try { return root.localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { root.localStorage.setItem(k, v); } catch (e) { /* 저장 못 해도 화면은 그대로 */ } }
@@ -81,9 +83,9 @@
     var entering = state.sheetEntering;
     m.header.canSignOut = state.status === 'ready';
     if (state.status !== 'ready') m.header.meName = '';
-    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, email: state.email });
+    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true });
     state.sheetEntering = false;
-    state.auth.errorFresh = false; state.setup.errorFresh = false;
+    state.auth.errorFresh = false; state.setup.errorFresh = false; state.verify.errorFresh = false;
     setThemeColor();
     if (state.manage && state.manage.form) state.manage.form.errorFresh = false;
     var newSheet = appEl.querySelector('.sheet');
@@ -258,9 +260,10 @@
     else if (act === 'toggle') toggle(btn.getAttribute('data-key'));
     else if (act === 'close') closeSheet();
     else if (act === 'auth-mode') { state.auth.mode = btn.getAttribute('data-id'); state.auth.error = ''; state.auth.info = ''; render(true); }
-    else if (act === 'auth-submit') submitAuth();
-    else if (act === 'setup-submit') submitSetup();
     else if (act === 'sign-out') { if (RT.firebase.signOut) RT.firebase.signOut(); }
+    else if (act === 'retry') { retries = 0; state.status = 'loading'; render(true); subscribe(); }
+    else if (act === 'verify-check') checkVerified();
+    else if (act === 'verify-resend') resendVerification();
     else if (act === 'open-manage') { state.sheetDay = null; state.manage = { open: true, form: null }; state.sheetEntering = true; render(); }
     else if (act === 'close-manage') closeManage();
     else if (act === 'new-routine') { setForm({ key: null, name: '', icon: '', start: D.toKey(state.today) }); focusName(); }
@@ -384,11 +387,6 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    // 로그인 · 이름 칸에서 엔터 = 확인
-    if (ev.key === 'Enter' && !ev.isComposing && !composing) {
-      if (ev.target.id === 'au-email' || ev.target.id === 'au-pass') { ev.preventDefault(); ev.target.blur(); submitAuth(); return; }
-      if (ev.target.id === 'me-name') { ev.preventDefault(); ev.target.blur(); submitSetup(); return; }
-    }
     if ((state.sheetDay === null && !state.manage) || !appEl.querySelector('.sheet')) return;
     if (ev.key === 'Escape') { ev.preventDefault(); if (state.manage) closeManage(); else closeSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
@@ -421,6 +419,21 @@
 
   // ── 로그인 ─────────────────────────────────────────────
   function authFail(msg) { state.auth.busy = false; state.auth.error = msg; state.auth.errorFresh = true; render(true); }
+  // 로그인 · 이름 칸은 진짜 <form>: 엔터 · 비밀번호 자동 완성 · 저장이 되게 하고, 값은 제출할 때 화면에서 읽는다
+  appEl.addEventListener('submit', function (ev) {
+    var form = ev.target.closest('[data-form]');
+    if (!form) return;
+    ev.preventDefault();
+    if (composing) return;
+    var get = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+    var focused = document.activeElement;
+    var values = { email: get('au-email'), password: get('au-pass'), name: get('me-name') };
+    // 입력칸에서 나가야 화면이 다시 그려진다 (입력 중에는 다시 그리지 않으므로)
+    if (focused && focused.blur && appEl.contains(focused)) focused.blur();
+    if (form.getAttribute('data-form') === 'auth') { state.auth.email = values.email; state.auth.password = values.password; submitAuth(); }
+    else if (form.getAttribute('data-form') === 'setup') { state.setup.name = values.name; submitSetup(); }
+  });
+
   function submitAuth() {
     var a = state.auth;
     if (a.busy) return;
@@ -444,11 +457,27 @@
     if (!name) { s.error = '이름을 적어 주세요'; s.errorFresh = true; render(true); return; }
     if (name.length > 10) { s.error = '이름은 10자까지 쓸 수 있어요'; s.errorFresh = true; render(true); return; }
     s.busy = true; s.error = ''; render(true);
-    store.saveMember(state.uid, name).then(function () { s.busy = false; showToast('🌱 ' + name + ' 님, 환영해요!'); }, function (e) {
-      s.busy = false;
-      if (e && e.code === 'permission-denied') { state.status = 'denied'; render(true); return; }
-      s.error = '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'; s.errorFresh = true; render(true);
+    store.saveMember(state.uid, name).then(function () { s.busy = false; showToast('🌱 ' + name + ' 님, 환영해요!'); }, function () {
+      // (이미 이름이 있는데 서버 확인 전에 이 화면이 뜬 경우도 여기로 온다 → 초대 거절로 보지 않는다)
+      s.busy = false; s.error = '저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'; s.errorFresh = true; render(true);
     });
+  }
+
+  // ── 이메일 인증 ──
+  function checkVerified() {
+    var v = state.verify;
+    if (v.busy) return;
+    v.busy = true; v.error = ''; v.info = ''; render(true);
+    RT.firebase.checkVerified().then(function (ok) {
+      v.busy = false;
+      if (!ok) { v.error = '아직 인증되지 않았어요. 메일의 링크를 눌렀는지 확인해 주세요'; v.errorFresh = true; render(true); return; }
+      startSession();
+    }, function (e) { v.busy = false; v.error = RT.firebase.errorText(e); v.errorFresh = true; render(true); });
+  }
+  function resendVerification() {
+    var v = state.verify;
+    RT.firebase.sendVerification().then(function () { v.info = '인증 메일을 다시 보냈어요'; v.error = ''; render(true); },
+      function (e) { v.error = e && e.code === 'auth/too-many-requests' ? '메일을 너무 자주 보냈어요. 조금 뒤 다시 해 주세요' : RT.firebase.errorText(e); v.errorFresh = true; render(true); });
   }
 
   // ── 저장소 연결 (끊기면 몇 번까지 다시 붙는다) ─────────────
@@ -458,7 +487,11 @@
   function subscribe() {
     unsubscribe();
     subs = [
-      store.watchMembers(function (members) { state.members = members; gotMembers = true; resolveIdentity(); ready(); }, lost),
+      store.watchMembers(function (members, fromCache) {
+        state.members = members; gotMembers = true;
+        if (!fromCache) membersFromServer = true;
+        resolveIdentity(); ready();
+      }, lost),
       store.watchRoutines(function (list) { state.routineDocs = list; gotRoutines = true; ready(); }, lost),
       store.watchChecks(function (map, meta, changes, first, fromCache) {
         state.server = map; state.meta = meta; gotChecks = true;
@@ -473,10 +506,14 @@
   function runCatchUpOnce() { if (!caughtUpOnce && checksDefinitive && state.me) { caughtUpOnce = true; runCatchUp(); } }
   function ready() {
     if (state.status === 'denied' || !state.uid) return render();
-    if (gotMembers && gotChecks && gotRoutines) state.status = state.me ? 'ready' : 'setup';
-    render();
+    var before = state.status;
+    if (gotMembers && gotChecks && gotRoutines) {
+      if (state.me) state.status = 'ready';
+      else if (membersFromServer) state.status = 'setup';   // 캐시만 보고 이름 화면을 띄우지 않는다
+    }
+    render(state.status !== before); // 화면이 바뀌는 순간은 입력 중이어도 그린다
   }
-  var reconnecting = false;
+  var reconnecting = false, reconnectTimer = null;
   function lost(e) {
     var code = e && e.code;
     if (code === 'permission-denied' || code === 'unauthenticated') { unsubscribe(); state.status = 'denied'; render(true); return; }
@@ -485,22 +522,30 @@
     reconnecting = true;
     retries++;
     showToast('연결이 잠시 끊겼어요. 다시 연결하는 중이에요.');
-    setTimeout(function () { reconnecting = false; subscribe(); }, 2000 * retries);
+    reconnectTimer = setTimeout(function () { reconnecting = false; reconnectTimer = null; if (state.uid) subscribe(); }, 2000 * retries);
   }
 
   function resetSession() {
     unsubscribe();
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    reconnecting = false; retries = 0; membersFromServer = false;
     gotMembers = gotChecks = gotRoutines = false;
     checksDefinitive = false; caughtUpOnce = false;
     state.members = {}; state.routineDocs = []; state.server = {}; state.meta = {}; state.pending = {};
     state.me = null; state.sheetDay = null; state.manage = null;
   }
 
+  function startSession() {
+    state.status = 'loading';
+    render(true);
+    subscribe();
+  }
+
   if (!RT.firebase || !RT.firebase.configured) {
     state.status = 'unconfigured';
     render(true);
   } else {
-    store = RT.store.createStore(RT.firebase.db);
+    store = RT.store.createStore(RT.firebase.db, { metadataChanges: true });
     RT.firebase.onAuth(function (user) {
       resetSession();
       if (!user) {
@@ -512,10 +557,15 @@
         return;
       }
       state.uid = user.uid; state.email = user.email || '';
-      state.status = 'loading';
       state.setup = { name: '', error: '', busy: false };
-      render(true);
-      subscribe();
+      if (!user.emailVerified) {
+        // 이메일 인증 전에는 기록을 열지 않는다 (규칙도 막는다)
+        state.verify = { error: '', info: '', busy: false };
+        state.status = 'verify';
+        render(true);
+        return;
+      }
+      startSession();
     });
   }
 })(window);
