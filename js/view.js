@@ -8,7 +8,7 @@
     });
   }
 
-  var TITLE = '짝꿍 그리드';
+  var TITLE = '단짝꿍';
 
   var CHECK_SVG = '<svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   var CHEVRON = {
@@ -222,7 +222,7 @@
     if (status === 'login') return out + authScreen(opts.auth) + toast(toastText);
     if (status === 'setup') return out + setupScreen(opts.setup) + toast(toastText);
     if (status === 'verify') return out + verifyScreen(opts.verify, opts.email) + toast(toastText);
-    if (status === 'denied') return out + notice('초대되지 않은 계정이에요', (opts.email || '이 계정') + '은(는) 짝꿍 그리드에 들어올 수 없어요. 다른 계정으로 로그인해 주세요.') +
+    if (status === 'denied') return out + notice('초대되지 않은 계정이에요', (opts.email || '이 계정') + '은(는) 단짝꿍에 들어올 수 없어요. 다른 계정으로 로그인해 주세요.') +
       '<button type="button" class="add-btn" data-act="sign-out">로그아웃</button>' + toast(toastText);
     if (status === 'unconfigured') return out + notice('아직 연결 설정이 비어 있어요', 'js/firebase-config.js에 Firebase 설정을 넣어야 해요.');
     if (status === 'loading') out += skeleton() + (opts.web ? '<div class="auth__links auth__links--center"><button type="button" class="text-btn" data-act="sign-out">로그아웃</button></div>' : '');

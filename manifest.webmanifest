@@ -1,6 +1,6 @@
 {
-  "name": "짝꿍 그리드",
-  "short_name": "짝꿍 그리드",
+  "name": "단짝꿍",
+  "short_name": "단짝꿍",
   "description": "둘이 함께 매일 루틴을 체크하고 계절 색 달력으로 물들여 가는 루틴 트래커",
   "lang": "ko",
   "start_url": "./",

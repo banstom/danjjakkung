@@ -226,10 +226,10 @@ test('[사용자 지적] 한 사람만 루틴을 하던 기간은 전체 보기�
   assert.equal(both.grid.cells.find((x) => x.day === day(10, 27)).level, 'full'); // 둘 다 한 날만 진한 색
 });
 
-test('머리말: 짝꿍 그리드, 서브 카피 없음', () => {
+test('머리말: 단짝꿍, 서브 카피 없음', () => {
   const V = require('../js/view.js');
   const html = V.page('ready', M.build({ config, checks, today: day(10, 27) }), '');
-  assert.match(html, /<h1 class="title">짝꿍 그리드<\/h1>/);
+  assert.match(html, /<h1 class="title">단짝꿍<\/h1>/);
   assert.doesNotMatch(html, /사계절|도란도란|달성 그리드<\/h1>/);
 });
 
