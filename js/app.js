@@ -306,7 +306,8 @@
     var P = RT.push;
     return {
       support: P ? P.support() : 'unsupported', on: !!(P && P.isOn()),
-      busy: state.push.busy, error: state.push.error, errorFresh: state.push.errorFresh, info: state.push.info,
+      busy: state.push.busy, error: state.push.error || (state.prefsError ? '알림 설정을 불러오지 못했어요. 잠시 뒤 다시 열어 주세요' : ''),
+      errorFresh: state.push.errorFresh, info: state.push.info,
       prefs: currentPrefs(), prefsReady: state.prefsReady, times: REMIND_TIMES
     };
   }
@@ -329,9 +330,9 @@
     job.then(function () {
       state.push.busy = false;
       state.push.info = '알림을 켰어요. 「테스트 알림 보내기」로 확인해 보세요';
-      RT.push.onForeground(function (t) { showToast(t, 3600); });
       // 처음 켜는 거라면 기본 설정을 같이 남긴다 (저녁 알림은 밤 9시)
-      if (!state.prefs) return savePrefs({ partner: true, remindAt: '21:00', hide: false });
+      // (설정을 아직 못 읽었으면 덮어쓰지 않는다 — 다른 기기에서 정한 값을 지키기 위해)
+      if (state.prefsReady && !state.prefs) return savePrefs({ partner: true, remindAt: '21:00', hide: false });
     }).then(function () { render(true); }, function (e) { pushFail(RT.push.errorText(e)); });
   }
   function pushOff() {
@@ -345,7 +346,7 @@
     if (!store || state.push.busy) return;
     state.push = { busy: true, error: '', info: '' }; render(true);
     store.ping(state.uid).then(function () {
-      state.push.busy = false; state.push.info = '테스트 알림을 보냈어요. 몇 초 안에 도착해요'; render(true);
+      state.push.busy = false; state.push.info = '테스트 알림을 보냈어요. 몇 초 안에 휴대폰 알림으로 와요'; render(true);
     }, function () { pushFail('보내지 못했어요. 잠시 뒤 다시 눌러 주세요'); });
   }
   function savePrefs(next) {
@@ -361,16 +362,15 @@
   }
   appEl.addEventListener('change', function (ev) {
     if (ev.target.id !== 'nt-remind') return;
-    var v = ev.target.value || null;
-    ev.target.blur();
-    setPref({ remindAt: v });
+    setPref({ remindAt: ev.target.value || null });
   });
 
   function signOut() {
     if (!RT.firebase.signOut) return;
     // 로그아웃하면 이 기기로는 알림이 가지 않게 한다
+    // (인터넷이 끊겨 있어도 로그아웃이 멈추지 않게 1.5초까지만 기다린다)
     var off = RT.push && RT.push.isOn() && store && state.uid ? RT.push.disable(store, state.uid).catch(function () {}) : Promise.resolve();
-    off.then(function () { RT.firebase.signOut(); });
+    Promise.race([off, new Promise(function (res) { setTimeout(res, 1500); })]).then(function () { RT.firebase.signOut(); });
   }
 
   // ── 「내 루틴」 ─────────────────────────────────────────
@@ -593,9 +593,9 @@
       // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
       store.watchUser(state.uid, function (doc, fromCache) {
         state.prefs = doc && doc.notify ? doc.notify : null;
-        if (!fromCache) state.prefsReady = true;
+        if (!fromCache) { state.prefsReady = true; state.prefsError = false; }
         if (state.notifyOpen) render();
-      }, function () { state.prefsReady = false; }),
+      }, function () { state.prefsReady = false; state.prefsError = true; if (state.notifyOpen) render(); }),
       store.watchChecks(function (map, meta, changes, first, fromCache) {
         state.server = map; state.meta = meta; gotChecks = true;
         if (!fromCache) { checksDefinitive = true; retries = 0; }
@@ -645,7 +645,6 @@
     subscribe();
     // 알림을 켜 둔 기기면 주소가 바뀌었는지 확인한다
     if (RT.push && store && state.uid) RT.push.refresh(store, state.uid);
-    if (RT.push && RT.push.onForeground) RT.push.onForeground(function (text) { showToast(text, 3600); });
   }
 
   if (!RT.firebase || !RT.firebase.configured) {

@@ -253,10 +253,6 @@ async function tick(page, dateKey, key) {
   await jp.click('[data-act="push-test"]');
   await jp.waitForTimeout(200);
   console.log('테스트 요청:', [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/pings/')).length, '|', await jp.textContent('.nbox__info'));
-  await jp.evaluate(() => window.__fg && window.__fg({ data: { kind: 'test', body: '🔔 알림이 잘 와요!' } }));
-  await jp.waitForTimeout(100);
-  console.log('앱을 보고 있을 때 온 테스트 알림:', await jp.textContent('.toast').catch(() => '(없음)'));
-  await jp.evaluate(() => window.__fg && window.__fg({ data: { kind: 'check', body: '🎉 다진 님이 스쿼트 100개 완료!' } }));
   await jp.screenshot({ path: path.join(OUT, 'web-notify.png') });
   await jp.click('[data-act="push-off"]');
   await jp.waitForTimeout(200);

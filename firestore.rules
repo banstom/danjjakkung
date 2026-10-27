@@ -99,7 +99,8 @@ service cloud.firestore {
       }
       // 테스트 알림 요청 (서버가 보고 지운다)
       match /pings/{pid} {
-        allow create: if isMember() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['at']);
+        allow create: if isMember() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['at'])
+          && request.resource.data.at is string && request.resource.data.at.size() <= 40;
       }
     }
     // notifyLog: 서버만 쓴다 (규칙에 없으므로 앱에서는 읽기 · 쓰기 모두 막힘)

@@ -1,17 +1,33 @@
 /* 서비스 워커 — 앱 화면(파일들)을 기기에 저장해 두고, 오프라인에서도 열리게 한다.
    기록(Firestore)은 Firebase가 따로 기기에 보관하므로 여기서는 손대지 않는다.
    파일을 바꿔서 올릴 때마다 VERSION을 올리면 새 파일로 바뀐다. */
-var VERSION = 'danjjakkung-v7';
+var VERSION = 'danjjakkung-v8';
 
-/* 푸시 알림: 앱이 닫혀 있을 때 서버(functions/)가 보낸 알림을 휴대폰 알림으로 띄운다.
-   불러오기에 실패해도 오프라인 기능은 그대로 돌아가게 감싼다. */
-try {
-  importScripts('vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/firebase-config.js');
-  if (self.firebase && self.DANJJAKKUNG_FIREBASE_CONFIG && firebase.messaging.isSupported()) {
-    firebase.initializeApp(self.DANJJAKKUNG_FIREBASE_CONFIG);
-    firebase.messaging(); // 알림 내용(notification)이 있으면 SDK가 알아서 띄우고, 누르면 앱을 연다
-  }
-} catch (e) { /* 알림 없이 계속 */ }
+/* 푸시 알림: 서버(functions/)가 보낸 알림을 휴대폰 알림으로 띄운다.
+   아이폰은 받은 알림을 화면에 띄우지 않으면 몇 번 뒤 알림 구독을 끊어 버리므로,
+   앱을 보고 있을 때도 언제나 띄운다. (서버는 data만 보내고, 문구는 여기서 그린다) */
+self.addEventListener('push', function (e) {
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = {}; }
+  var m = (d && d.data) || d || {};
+  var title = m.title || '단짝꿍';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: m.body || '새 소식이 있어요',
+    icon: 'icons/icon-192.png',
+    tag: m.tag || m.kind || 'danjjakkung',
+    renotify: true,
+    data: { link: m.link || './' }
+  }));
+});
+// 알림을 누르면: 열려 있는 단짝꿍 창으로, 없으면 새로 연다
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var link = (e.notification.data && e.notification.data.link) || './';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) { if ('focus' in list[i]) return list[i].focus(); }
+    return self.clients.openWindow ? self.clients.openWindow(link) : null;
+  }));
+});
 var FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'styles/tokens.css', 'styles/app.css',

@@ -4,7 +4,7 @@
 (function (root) {
   'use strict';
   var RT = root.RT = root.RT || {};
-  var LS_DEV = 'danjjakkung.device', LS_ON = 'danjjakkung.pushOn', LS_TOK = 'danjjakkung.pushToken';
+  var LS_DEV = 'danjjakkung.device', LS_ON = 'danjjakkung.pushOn', LS_TOK = 'danjjakkung.pushToken', LS_UID = 'danjjakkung.pushUid';
 
   function lsGet(k) { try { return root.localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { root.localStorage.setItem(k, v); } catch (e) {} }
@@ -51,7 +51,7 @@
       .then(function (reg) { return m.getToken({ vapidKey: root.DANJJAKKUNG_VAPID_KEY, serviceWorkerRegistration: reg }); });
   }
   function save(store, uid, t) {
-    return store.saveDevice(uid, deviceId(), { token: t, platform: 'web', ua: shortUA() }).then(function () { lsSet(LS_ON, '1'); lsSet(LS_TOK, t); });
+    return store.saveDevice(uid, deviceId(), { token: t, platform: 'web', ua: shortUA() }).then(function () { lsSet(LS_ON, '1'); lsSet(LS_TOK, t); lsSet(LS_UID, uid); });
   }
 
   /** 알림 켜기 — 반드시 버튼을 누른 그 순간에 부른다 (아이폰 규칙) */
@@ -67,12 +67,15 @@
     });
   }
 
-  /** 앱을 열 때마다: 켜 둔 기기면 주소가 바뀌었는지 확인해 새로 남긴다 */
+  /** 앱을 열 때마다: 켜 둔 기기면 주소를 다시 남긴다 (서버에서 지워졌거나 주소가 바뀌었어도 되살아나게).
+      이 기기에서 다른 계정이 알림을 켰던 적이 있으면, 옛 주소를 버리고 새 주소를 받아 그 계정으로 알림이 가지 않게 한다. */
   function refresh(store, uid) {
     if (!isOn()) return Promise.resolve(false);
-    return token().then(function (t) {
-      if (t && t !== lsGet(LS_TOK)) return save(store, uid, t).then(function () { return true; });
-      return false;
+    var m = messaging();
+    var other = lsGet(LS_UID) && lsGet(LS_UID) !== uid;
+    var reset = other && m ? Promise.resolve(m.deleteToken()).catch(function () {}) : Promise.resolve();
+    return reset.then(token).then(function (t) {
+      return t ? save(store, uid, t).then(function () { return true; }) : false;
     }).catch(function () { return false; });
   }
 
@@ -80,7 +83,7 @@
     var m = messaging();
     var del = m ? Promise.resolve(m.deleteToken()).catch(function () {}) : Promise.resolve();
     return del.then(function () { return uid ? store.deleteDevice(uid, deviceId()) : null; })
-      .then(function () { lsSet(LS_ON, '0'); lsSet(LS_TOK, ''); });
+      .then(function () { lsSet(LS_ON, '0'); lsSet(LS_TOK, ''); lsSet(LS_UID, ''); });
   }
 
   function errorText(e) {
@@ -91,20 +94,5 @@
     return '알림을 켜지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요';
   }
 
-  /** 앱을 보고 있을 때 온 알림은 휴대폰 알림 대신 화면 안내로 보여 준다.
-      (짝꿍 체크는 앱이 이미 실시간으로 알려 주므로 겹치지 않게 뺀다) */
-  var fgBound = false;
-  function onForeground(cb) {
-    var m = messaging();
-    if (!m || fgBound || !isOn()) return;
-    fgBound = true;
-    m.onMessage(function (payload) {
-      var d = (payload && payload.data) || {};
-      if (d.kind === 'check') return;
-      var text = d.body || (payload.notification && payload.notification.body);
-      if (text) cb(text);
-    });
-  }
-
-  RT.push = { support: support, isOn: isOn, enable: enable, refresh: refresh, disable: disable, errorText: errorText, deviceId: deviceId, onForeground: onForeground };
+  RT.push = { support: support, isOn: isOn, enable: enable, refresh: refresh, disable: disable, errorText: errorText, deviceId: deviceId };
 })(window);
