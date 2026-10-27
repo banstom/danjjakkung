@@ -1,0 +1,64 @@
+rules_version = '2';
+
+// 짝꿍 그리드 Firestore 접근 규칙
+// - 아래 두 이메일로 로그인한 사람만 읽고 쓸 수 있다
+// - 각자 자기 이름(members), 자기 루틴(routines), 자기 루틴의 체크(checks)만 바꿀 수 있다
+// Firebase 콘솔 › Firestore Database › 규칙 탭에 그대로 붙여 넣고 [게시]
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email.lower() in ['__EMAIL_1__', '__EMAIL_2__'];
+    }
+
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function routineOwner(key) {
+      return get(/databases/$(database)/documents/routines/$(key)).data.owner;
+    }
+
+    // 사람 이름: 자기 문서만, 한 번 만들면 바꾸지 않는다
+    match /members/{uid} {
+      allow read: if isMember();
+      allow create: if isMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name', 'joinedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 10;
+      allow update, delete: if false;
+    }
+
+    // 루틴: 만든 사람(owner)만 고치고 지운다
+    function validRoutine() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'updatedAt'])
+        && d.owner == request.auth.uid
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 20
+        && d.icon is string && d.icon.size() <= 8
+        && isDate(d.start)
+        && (d.end == null || isDate(d.end));
+    }
+    match /routines/{key} {
+      allow read: if isMember();
+      allow create: if isMember() && validRoutine();
+      allow update: if isMember() && resource.data.owner == request.auth.uid && validRoutine();
+      allow delete: if isMember() && resource.data.owner == request.auth.uid;
+    }
+
+    // 체크: 자기 루틴만, 문서 이름은 <루틴>_<날짜>, 체크한 사람(by)은 자기 자신
+    match /checks/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember()
+        && request.resource.data.keys().hasOnly(['routine', 'date', 'done', 'by', 'byUid', 'at'])
+        && request.resource.data.done == true
+        && request.resource.data.by == request.auth.uid
+        && isDate(request.resource.data.date)
+        && id == request.resource.data.routine + '_' + request.resource.data.date
+        && routineOwner(request.resource.data.routine) == request.auth.uid;
+      allow delete: if isMember() && routineOwner(resource.data.routine) == request.auth.uid;
+    }
+  }
+}

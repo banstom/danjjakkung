@@ -1,0 +1,17 @@
+{
+  "name": "짝꿍 그리드",
+  "short_name": "짝꿍 그리드",
+  "description": "둘이 함께 매일 루틴을 체크하고 계절 색 달력으로 물들여 가는 루틴 트래커",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F2F4F6",
+  "theme_color": "#F2F4F6",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

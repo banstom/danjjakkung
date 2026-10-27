@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>짝꿍 그리드</title>
+<meta name="description" content="둘이 함께 매일 루틴을 체크하고 계절 색 달력으로 물들여 가는 짝꿍 루틴 트래커">
+<meta name="theme-color" content="#F2F4F6">
+<meta name="color-scheme" content="light dark">
+<!-- 홈 화면에 추가했을 때 앱처럼 열리게 -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="짝꿍 그리드">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/app.css">
+<style>
+  /* 노치 · 홈 막대 자리 비우기 (artifact 판에서는 호스트가 해 주던 부분) */
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; min-height: 100vh; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main id="app" class="app"></main>
+
+<!-- Firebase (vendor/에 같이 올려 둔 공식 배포본 10.14.1) -->
+<script src="vendor/firebase/firebase-app-compat.js"></script>
+<script src="vendor/firebase/firebase-auth-compat.js"></script>
+<script src="vendor/firebase/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase.js"></script>
+
+<!-- 화면 계산 · 그리기 (artifact 판과 같은 부품) -->
+<script src="js/dates.js"></script>
+<script src="js/seasons.js"></script>
+<script src="js/streak.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/people.js"></script>
+<script src="js/model.js"></script>
+<script src="js/news.js"></script>
+<script src="js/view.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+<script>
+  // 오프라인에서도 열리게 (홈 화면 앱)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+</body>
+</html>

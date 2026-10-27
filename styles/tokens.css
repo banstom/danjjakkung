@@ -1,0 +1,73 @@
+/* 색표 · 글꼴 — 이 파일 밖에서는 색 값을 쓰지 않는다.
+   계절마다 한 계열(연한 · 중간 · 진한)만 쓰고, 빨강은 경고 전용. */
+
+@font-face { font-family: 'Pretendard'; src: url('../fonts/PretendardVariable.woff2') format('woff2'); font-weight: 45 920; font-display: swap; }
+/* 토스페이스(© Viva Republica) — 모양을 바꾸지 않고 쓴다. 쓰는 이모지만 잘라 둔 파일. 루틴 아이콘은 js/icons.js 목록과 같다. */
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-00.woff2') format('woff2'); unicode-range: U+1F9B5, U+1F4AA, U+1F634, U+1F64F, U+1F44F; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-04.woff2') format('woff2'); unicode-range: U+1F525; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-05.woff2') format('woff2'); unicode-range: U+1F9D8; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-06.woff2') format('woff2'); unicode-range: U+1F3C3, U+1F6B4, U+1F3CA; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-07.woff2') format('woff2'); unicode-range: U+1F4A7, U+1F957, U+1F331, U+1F338, U+1F33B, U+1F341, U+26C4; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-09.woff2') format('woff2'); unicode-range: U+1F3BE, U+26BD, U+1F4DA, U+1F4DD, U+1F9F9, U+1F3B8, U+1F3C6, U+1F3AF, U+1F389, U+1F4C5; }
+
+:root {
+  --font: 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+
+  /* 바탕 · 글자 (라이트) */
+  --bg: #F2F4F6;
+  --surface: #FFFFFF;
+  --raised: #F2F4F6;
+  --text: #191F28;
+  --sub: #6B7684;
+  --faint: #C5CBD3;
+  --line: #E5E8EB;
+  --empty: #E3E6EA;        /* 쉰 날: 카드 위에서 시작 전(투명)과 구분되게 한 단계 진하게 */
+  --empty-text: #4E5968;
+  --toast-bg: #191F28;
+  --toast-shadow: 0 8px 24px rgba(25, 31, 40, 0.18);
+  --toast-fg: #FFFFFF;
+  --scrim: rgba(25, 31, 40, 0.4);
+  --shadow: 0 -8px 24px rgba(25, 31, 40, 0.08);
+  --warn: #D1343A;        /* 흰 바탕 대비 4.9:1 */
+
+  /* 계절 기본값 = 가을 (data-season이 덮어쓴다) */
+  --pale: #F8D3B4; --mid: #DDA137; --deep: #A34A2A; --soft: #FCEBDD; --dsoft: #3A2219;
+
+  /* 역할 (라이트): 진한 색이 주인공 */
+  --accent: var(--deep);
+  --on-accent: #FFFFFF;
+  --tint: var(--soft);
+  --tint-text: var(--deep);
+  --her: var(--deep);
+  --me: var(--mid);
+  --lv-half: var(--mid);
+  --lv-half-text: #191F28;
+  --lv-full: var(--deep);
+  --lv-full-text: #FFFFFF;
+}
+
+/* 계절 색표 — Habit Tracker 팔레트 */
+:root[data-season="spring"] { --pale: #BFE6CF; --mid: #8CC063; --deep: #2F6B3A; --soft: #E8F5EC; --dsoft: #1C3323; }
+:root[data-season="summer"] { --pale: #CFE6F2; --mid: #6DB8E6; --deep: #1B5A85; --soft: #EAF4FA; --dsoft: #14304A; }
+:root[data-season="autumn"] { --pale: #F8D3B4; --mid: #DDA137; --deep: #A34A2A; --soft: #FCEBDD; --dsoft: #3A2219; }
+:root[data-season="winter"] { --pale: #C9CFF0; --mid: #7F8CDB; --deep: #232C6E; --soft: #ECEEFA; --dsoft: #1E2350; }
+
+/* 다크 모드: 더 많이 할수록 더 밝게 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
+    --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
+    --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
+    --her: var(--pale); --me: var(--mid);
+    --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
+  --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
+  --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
+  --her: var(--pale); --me: var(--mid);
+  --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
+}
