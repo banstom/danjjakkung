@@ -179,6 +179,26 @@
     return blocks.filter(function (b) { return !(b.full && b.dup); });
   }
 
+  /** 일 보기: 함께 일정이 양쪽 자리 모두에서 혼자(나란히 놓인 일정 없음)면 두 조각을 하나로 합쳐 두 칸에 걸친다 (full).
+      어느 한쪽에서라도 그 사람 일정과 겹치면 지금처럼 양쪽에 한 조각씩 (가려서 못 누르는 일이 없게). */
+  function mergeBoth(blocks) {
+    var whole = {};
+    blocks.forEach(function (b) {
+      if (b.owner !== 'both') return;
+      whole[b.id] = (whole[b.id] === undefined ? true : whole[b.id]) && b.cols === 1;
+    });
+    return blocks.filter(function (b) {
+      if (b.owner === 'both' && whole[b.id]) { if (b.dup) return false; b.full = true; }
+      return true;
+    });
+  }
+
+  /** '10월 26일 – 11월 1일' */
+  function rangeText(weekStart) {
+    var p0 = D.parts(weekStart), p6 = D.parts(weekStart + 6);
+    return p0.m + '월 ' + p0.d + '일 – ' + (p6.m !== p0.m ? p6.m + '월 ' : '') + p6.d + '일';
+  }
+
   /** 주 보기: weekStart(월요일)부터 7일. opts.pick = 아래 목록에 보일 요일, opts.names = { 사람 키: 이름 } */
   function week(events, persons, me, weekStart, today, opts) {
     opts = opts || {};
@@ -189,7 +209,7 @@
       days.push({ day: day, wd: WD[i], date: D.parts(day).d, isToday: day === today, picked: day === pick });
       all = all.concat(widen(blocksFor(list, persons, me, i, day)));
     }
-    var p0 = D.parts(weekStart), p6 = D.parts(weekStart + 6), pp = D.parts(pick), names = opts.names || {};
+    var pp = D.parts(pick), names = opts.names || {};
     // 고른 요일 목록: 두 사람 일정을 시간 순서로 (색 막대 = 사람, 함께는 강조)
     // 쉬는 날로 뺀 일정도 「쉬어요」로 같이 보인다 (눌러서 되돌릴 수 있게)
     var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
@@ -200,7 +220,7 @@
       });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
       now: today >= weekStart && today <= weekStart + 6 && typeof opts.now === 'number' ? { idx: today - weekStart, min: opts.now } : null,
-      range: p0.m + '월 ' + p0.d + '일 – ' + (p6.m !== p0.m ? p6.m + '월 ' : '') + p6.d + '일', isThisWeek: weekStart === monStart(today),
+      range: rangeText(weekStart), isThisWeek: weekStart === monStart(today),
       pick: { day: pick, title: WD[pick - weekStart] + '요일 · ' + pp.m + '월 ' + pp.d + '일', isToday: pick === today, items: items } };
   }
 
@@ -220,7 +240,7 @@
   /** 일 보기: 그날 두 줄 + (오늘이면) 지금 상태 */
   function day(events, persons, names, me, dayN, today, nowMin) {
     var list = on(events, dayN);
-    var blocks = blocksFor(list, persons, me, 0, dayN);
+    var blocks = mergeBoth(blocksFor(list, persons, me, 0, dayN));
     var skipped = on(events, dayN, { skipped: true }).map(function (e) { return { id: e.id, title: e.title, time: e.start + '–' + e.end, day: dayN }; });
     var status = null;
     if (dayN === today) {
@@ -232,7 +252,7 @@
     }
     var ws = monStart(dayN), strip = [];
     for (var i = 0; i < 7; i++) strip.push({ day: ws + i, wd: WD[i], date: D.parts(ws + i).d, on: ws + i === dayN, isToday: ws + i === today });
-    return { day: dayN, title: D.full(dayN), blocks: blocks, hours: hoursFor(list), status: status, now: dayN === today ? nowMin : null, strip: strip, empty: !list.length, skipped: skipped };
+    return { day: dayN, title: D.full(dayN), range: rangeText(ws), isThisWeek: ws === monStart(today), isToday: dayN === today, blocks: blocks, hours: hoursFor(list), status: status, now: dayN === today ? nowMin : null, strip: strip, empty: !list.length, skipped: skipped };
   }
 
   function validate(f) {
@@ -256,7 +276,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -110,6 +110,24 @@ test('일 보기: 지금 상태', () => {
   assert.strictEqual(d.strip.length, 7); assert.ok(d.strip[2].on);
 });
 
+test('일 보기: 함께 일정은 혼자면 한 블록으로 두 칸에 걸치고, 그 사람 일정과 겹치면 양쪽 조각 그대로', () => {
+  const list = S.fromDocs([ev('글쓰기', 'both', { start: '12:00', end: '13:00' }), ev('저녁', 'both', { start: '18:00', end: '19:00' }), ev('과외', 'jm', { start: '18:30', end: '20:00' })]);
+  const d = S.day(list, P, {}, 'jm', today, today, 600);
+  const g = d.blocks.filter((b) => b.title === '글쓰기');
+  assert.deepStrictEqual(g.map((b) => [b.full, b.dup]), [[true, false]]); // 하나만, 두 칸 전체
+  const e = d.blocks.filter((b) => b.title === '저녁');
+  assert.strictEqual(e.length, 2); assert.ok(e.every((b) => !b.full)); // 준민 칸에서 과외와 겹침 → 양쪽 조각
+  assert.ok(!d.blocks.find((b) => b.title === '과외').full); // 각자 일정은 자기 칸만
+});
+
+test('일 보기: 주 범위 · 이번 주 · 오늘', () => {
+  const d = S.day([], P, {}, 'jm', today, today, 600);
+  assert.strictEqual(d.range, '10월 26일 – 11월 1일'); assert.ok(d.isThisWeek); assert.ok(d.isToday);
+  const n = S.day([], P, {}, 'jm', today + 7, today, 600);
+  assert.strictEqual(n.range, '11월 2일 – 8일'); assert.ok(!n.isThisWeek); assert.ok(!n.isToday);
+  assert.strictEqual(n.strip[2].day, today + 7); assert.ok(n.strip[2].on);
+});
+
 test('일정 확인', () => {
   assert.strictEqual(S.validate({ title: '', weekly: true, weekday: 1, start: '10:00', end: '11:00' }), '일정 이름을 적어 주세요');
   assert.strictEqual(S.validate({ title: '수업', weekly: true, weekday: 1, start: '11:00', end: '10:00' }), '끝 시간이 시작보다 늦어야 해요');

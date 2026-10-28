@@ -352,15 +352,25 @@
     else if (act === 'todo-due') { if (state.todoForm) { state.todoForm.choice = btn.getAttribute('data-v'); state.todoForm.error = ''; render(true); } }
     else if (act === 'todo-cancel') closePlanSheet();
     else if (act === 'todo-delete') deleteTodo();
-    else if (act === 'sched-mode') { schedState().mode = btn.getAttribute('data-mode'); render(true); }
+    else if (act === 'sched-mode') { setSchedMode(btn.getAttribute('data-mode')); render(true); }
     else if (act === 'sched-day' && schedState().mode === 'week') { schedState().pick = Number(btn.getAttribute('data-day')); render(true); } // 주 보기: 아래 목록만 바꾼다
     else if (act === 'sched-day' || act === 'sched-open-day') {
       var sd = Number(btn.getAttribute('data-day')); schedState().day = sd; schedState().weekStart = RT.schedule.monStart(sd); schedState().mode = 'day';
       if (act === 'sched-open-day') focusAfter = ['.sstrip__btn[data-day="' + sd + '"]']; // 「크게 보기」 버튼이 사라지므로 그날 요일 버튼으로
       render(true);
     }
-    else if (act === 'sched-week') { schedState().weekStart += 7 * Number(btn.getAttribute('data-dir')); render(true); }
-    else if (act === 'sched-thisweek') { schedState().weekStart = RT.schedule.monStart(state.today); render(true); }
+    else if (act === 'sched-week') {
+      var sw = schedState(), dir = 7 * Number(btn.getAttribute('data-dir'));
+      if (sw.mode === 'day') { sw.day += dir; sw.weekStart = RT.schedule.monStart(sw.day); } // 일 보기: 지난주 · 다음 주의 같은 요일
+      else sw.weekStart += dir;
+      render(true);
+    }
+    else if (act === 'sched-thisweek') {
+      var st0 = schedState(); st0.weekStart = RT.schedule.monStart(state.today);
+      if (st0.mode === 'day') st0.day = state.today;
+      focusAfter = ['[data-act="sched-week"][data-dir="-1"]']; // 버튼이 숨으므로 옆 화살표로
+      render(true);
+    }
     else if (act === 'event-add') addEvent();
     else if (act === 'event-open') openEvent(btn.getAttribute('data-id'), false, btn.getAttribute('data-at'), btn.getAttribute('data-day'));
     else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true, null, state.eventForm.occDay); }
@@ -398,6 +408,17 @@
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
+  }
+  /** 주 ↔ 일 바꿀 때 보던 주를 이어서 본다 (일 → 주: 그 날짜의 주 · 그 요일 목록, 주 → 일: 고른 요일 · 오늘 · 월요일) */
+  function setSchedMode(mode) {
+    var st = schedState(), S = RT.schedule;
+    if (mode === st.mode) return;
+    if (mode === 'week') { st.weekStart = S.monStart(st.day); st.pick = st.day; }
+    else if (S.monStart(st.day) !== st.weekStart) {
+      var ws = st.weekStart, inWeek = function (d) { return typeof d === 'number' && d >= ws && d <= ws + 6; };
+      st.day = inWeek(st.pick) ? st.pick : (inWeek(state.today) ? state.today : ws);
+    }
+    st.mode = mode;
   }
   function schedState() {
     if (!state.sched) state.sched = { mode: 'week', weekStart: RT.schedule.monStart(state.today), day: state.today };
@@ -1041,10 +1062,86 @@
     setTimeout(function () { if (deferred && !typing()) render(); }, 0);
   });
 
+  function sheetIsOpen() {
+    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet) && !!appEl.querySelector('.sheet');
+  }
+  /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
+  function closeTopSheet() {
+    if (state.catSheet) { if (state.catSheet.edit) { state.catSheet.edit = null; render(true); } else closeCats(); }
+    else if (state.todoForm || state.eventForm) closePlanSheet();
+    else if (state.notifyOpen) closeNotify();
+    else if (state.themeOpen) closeTheme();
+    else if (state.manage) closeManage();
+    else closeSheet();
+  }
+
+  // ── 뒤로가기: 바로 나가지 않게 ──
+  // 첫 화면 위에 「지킴이」 기록을 하나 얹어 둔다. 뒤로가기를 누르면 그 기록만 빠지고(popstate),
+  //  시트가 열려 있으면 시트를 닫고 지킴이를 다시 얹는다 / 아니면 「나갈까요?」를 묻는다.
+  //  묻는 동안엔 지킴이가 없어서 한 번 더 누르면 그대로 나간다.
+  // 크롬은 손대기 전에 얹은 기록을 뒤로가기에서 건너뛸 수 있어서, 처음 화면을 누를 때 얹는다.
+  var guardOn = false, exitEl = null, exitTimer = null;
+  function pushGuard() {
+    if (guardOn) return;
+    try { root.history.pushState({ dj: 'guard' }, ''); guardOn = true; } catch (e) { /* 기록을 못 남기면 그냥 둔다 */ }
+  }
+  ['pointerdown', 'keydown'].forEach(function (t) { document.addEventListener(t, function () { if (!exitEl) pushGuard(); }, true); });
+  function hideExit(stay) {
+    if (!exitEl) return;
+    exitEl.remove(); exitEl = null; document.body.classList.remove('has-exit');
+    if (stay) pushGuard();
+  }
+  function askExit() {
+    if (exitEl) return;
+    exitEl = document.createElement('div');
+    exitEl.className = 'exit-layer';
+    exitEl.innerHTML = '<button type="button" class="scrim" data-exit="stay" aria-label="머무르기"></button>' +
+      '<section class="exit-box" role="alertdialog" aria-modal="true" aria-labelledby="exit-title" aria-describedby="exit-sub">' +
+      '<h2 id="exit-title" class="exit-box__title">단짝꿍을 나갈까요?</h2>' +
+      '<p id="exit-sub" class="exit-box__sub">뒤로를 한 번 더 눌러도 나가요</p>' +
+      '<div class="rform__actions"><button type="button" class="ghost-btn" data-exit="stay">머무르기</button>' +
+      '<button type="button" class="solid-btn" data-exit="leave">나가기</button></div></section>';
+    exitEl.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-exit]');
+      if (!b) return;
+      if (b.getAttribute('data-exit') === 'stay') { hideExit(true); return; }
+      hideExit(false);
+      try { root.history.back(); } catch (e) {}
+      // 홈 화면 앱처럼 더 돌아갈 곳이 없으면 창 닫기를 해 보고, 그래도 남아 있으면 안내 후 다시 지킨다
+      setTimeout(function () {
+        try { root.close(); } catch (e) {}
+        setTimeout(function () {
+          if (document.hidden) return;
+          showToast('뒤로를 한 번 더 누르면 나가요');
+          clearTimeout(exitTimer); exitTimer = setTimeout(function () { if (!document.hidden && !exitEl) pushGuard(); }, 3000);
+        }, 300);
+      }, 300);
+    });
+    exitEl.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') { ev.preventDefault(); hideExit(true); }
+      if (ev.key === 'Tab') { // 포커스는 두 버튼 안에서만
+        var bs = exitEl.querySelectorAll('.exit-box button'), first = bs[0], last = bs[bs.length - 1];
+        if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+        else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+      }
+    });
+    document.body.appendChild(exitEl);
+    document.body.classList.add('has-exit');
+    var stayBtn = exitEl.querySelector('.ghost-btn'); if (stayBtn) stayBtn.focus({ preventScroll: true });
+  }
+  root.addEventListener('popstate', function (ev) {
+    if (ev.state && ev.state.dj === 'guard') { guardOn = true; return; } // 앞으로 가기로 지킴이에 돌아옴
+    guardOn = false;
+    clearTimeout(exitTimer);
+    if (exitEl) return;
+    if (sheetIsOpen()) { closeTopSheet(); pushGuard(); return; }
+    askExit();
+  });
+
   appEl.addEventListener('keydown', function (ev) {
     if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm && !state.catSheet) || !appEl.querySelector('.sheet')) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
-    if (ev.key === 'Escape') { ev.preventDefault(); if (state.catSheet) { if (state.catSheet.edit) { state.catSheet.edit = null; render(true); } else closeCats(); } else if (state.todoForm || state.eventForm) closePlanSheet(); else if (state.notifyOpen) closeNotify(); else if (state.themeOpen) closeTheme(); else if (state.manage) closeManage(); else closeSheet(); return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
     if (ev.key === 'Tab') {
       // 시트가 열려 있으면 포커스를 시트 안에서만 돈다

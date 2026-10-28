@@ -120,7 +120,7 @@
   function blockHtml(b, H, opts) {
     var span = H.to - H.from;
     var top = pct((b.s - H.from) / span * 100), h = pct((b.e - b.s) / span * 100);
-    var w = b.full && opts.compact ? 100 : 50 / b.cols, left = b.full && opts.compact ? 0 : b.lane * 50 + w * b.col;
+    var w = b.full ? 100 : 50 / b.cols, left = b.full ? 0 : b.lane * 50 + w * b.col; // full: 주 보기 넓은 칸 · 일 보기 합친 함께 일정
     var showIco = b.icon && !(opts.compact && b.e - b.s < 50); // 주 보기에서 짧은 일정은 이름이 먼저
     var label = (showIco ? '<span class="sblock__ico" aria-hidden="true">' + esc(b.icon) + '</span>' : '') + '<span class="sblock__name">' + esc(opts.compact && b.short ? b.short : b.title) + '</span>'; // 주 보기는 표시할 이름
     return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' + (typeof b.day === 'number' ? ' data-day="' + b.day + '"' : '') +
@@ -155,7 +155,7 @@
     return '<section class="card scard" aria-label="한 주 시간표">' +
       '<div class="grid-head">' +
       '<button type="button" class="icon-btn" data-act="sched-week" data-dir="-1" aria-label="지난주">‹</button>' +
-      '<span class="grid-title"><span class="grid-range">' + esc(w.range) + '</span>' + (w.isThisWeek ? '' : '<button type="button" class="mini-btn" data-act="sched-thisweek">이번 주</button>') + '</span>' +
+      '<span class="grid-title"><span class="grid-range">' + esc(w.range) + '</span></span>' +
       '<button type="button" class="icon-btn" data-act="sched-week" data-dir="1" aria-label="다음 주">›</button></div>' +
       '<div class="sweek"><span></span>' + heads + '</div>' +
       '<div class="sweek sweek--body" style="height:' + hpx + 'px"><div class="shours">' + hourLines(H, true, false) + '</div>' +
@@ -181,6 +181,11 @@
   function dayView(s) {
     var d = s.day, H = d.hours;
     var hpx = (H.to - H.from) / 60 * 40;
+    // 주 옮기기 (지난주 · 다음 주의 같은 요일로) — 주 보기와 같은 ‹ 범위 › 줄
+    var nav = '<div class="grid-head sweeknav">' +
+      '<button type="button" class="icon-btn" data-act="sched-week" data-dir="-1" aria-label="지난주">‹</button>' +
+      '<span class="grid-title"><span class="grid-range">' + esc(d.range) + '</span></span>' +
+      '<button type="button" class="icon-btn" data-act="sched-week" data-dir="1" aria-label="다음 주">›</button></div>';
     var strip = '<div class="sstrip" role="group" aria-label="요일">' + d.strip.map(function (x) {
       return '<button type="button" class="sstrip__btn' + (x.isToday ? ' is-today' : '') + '" data-act="sched-day" data-day="' + x.day + '" aria-pressed="' + x.on + '"><span>' + x.wd + '</span><b>' + x.date + '</b></button>';
     }).join('') + '</div>';
@@ -191,7 +196,7 @@
     var lanesHead = '<div class="slanes-head"><span></span>' + s.people.map(function (p) {
       return '<span><span class="dot dot--' + p.slot + '"></span>' + esc(p.name) + (p.me ? ' (나)' : '') + '</span>';
     }).join('') + '</div>';
-    return strip + status +
+    return '<div class="sdaynav">' + nav + strip + '</div>' + status +
       '<section class="card scard" aria-label="' + esc(d.title) + ' 시간표">' +
       '<div class="scard__title">' + esc(d.title) + '</div>' + lanesHead +
       (d.empty ? '<p class="tempty">이날은 일정이 없어요</p>' :
@@ -209,7 +214,10 @@
   }
   function scheduleTab(s) {
     if (s.error) return notice('시간표를 불러오지 못했어요', s.error);
+    // 「이번 주」(주 보기) · 「오늘」(일 보기): 자리를 늘 차지하고 지금 주 · 오늘이면 숨김만 — 날짜 줄이 밀리지 않게
+    var home = s.mode === 'week' ? !s.week.isThisWeek : !s.day.isToday;
     return '<div class="plan"><div class="plan__bar">' + seg(s.mode) +
+      '<button type="button" class="mini-btn plan__home' + (home ? '' : ' is-hidden') + '" data-act="sched-thisweek"' + (home ? '' : ' tabindex="-1" aria-hidden="true"') + '>' + (s.mode === 'week' ? '이번 주' : '오늘') + '</button>' +
       '<button type="button" class="chip chip--manage" data-act="event-add">＋ 일정</button></div>' +
       (s.mode === 'week' ? weekView(s) : dayView(s)) + '</div>';
   }

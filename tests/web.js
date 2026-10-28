@@ -404,7 +404,41 @@ async function tick(page, dateKey, key) {
   await jm.click('.sblock[aria-label^="일반생물"]');
   console.log('내 일정 누르면 고치기:', await jm.textContent('#event-sheet-title'), await jm.inputValue('#ev-title'));
   await jm.keyboard.press('Escape');
+  // (v25) 일 보기: 함께 일정은 한 블록으로 두 칸에 · 블록 글자 가운데 · 지난주로 옮겨도 날짜 줄 자리 그대로
+  await jm.click('.sstrip__btn:nth-child(6)');
+  const both = await jm.$$eval('.sblock--both', (e) => e.map((x) => { const r = x.getBoundingClientRect(), c = x.parentElement.getBoundingClientRect(); return x.getAttribute('aria-label').split(',')[0] + ':' + Math.round(r.width / c.width * 100) + '%'; }));
+  const center = await jm.$eval('.sblock--both', (x) => { const r = x.getBoundingClientRect(), t = x.querySelector('.sblock__title').getBoundingClientRect(), m = x.querySelector('.sblock__time').getBoundingClientRect(); return Math.round((t.left + t.right) / 2 - (r.left + r.right) / 2) + 'px/' + Math.round((t.top + m.bottom) / 2 - (r.top + r.bottom) / 2) + 'px'; });
+  console.log('일 보기 함께:', both.join(' '), '| 가운데 어긋남(가로/세로)', center);
+  await jm.screenshot({ path: path.join(OUT, 'web-day-both.png'), fullPage: true });
+  const rx = () => jm.$eval('.grid-range', (e) => Math.round(e.getBoundingClientRect().left + e.getBoundingClientRect().width / 2) + ',' + Math.round(e.getBoundingClientRect().top));
+  const before = await rx(), homeShown = () => jm.$eval('.plan__home', (e) => getComputedStyle(e).visibility + ':' + e.textContent);
+  console.log('일 보기 오늘 버튼:', await homeShown());
+  await jm.click('.sweeknav [data-act="sched-week"][data-dir="-1"]');
+  console.log('일 보기 지난주:', await jm.textContent('.sweeknav .grid-range'), '|', await jm.textContent('.scard__title'), '| 범위 자리', before, '→', await rx(), '| 버튼', await homeShown());
+  await jm.screenshot({ path: path.join(OUT, 'web-day-prev.png'), fullPage: true });
+  await jm.click('.sweeknav [data-act="sched-week"][data-dir="1"]');
+  await jm.click('.sweeknav [data-act="sched-week"][data-dir="1"]');
+  console.log('일 보기 다음 주:', await jm.textContent('.scard__title'));
   await jm.click('[data-act="sched-mode"][data-mode="week"]');
+  console.log('주 보기로 바꾸면:', await jm.textContent('.grid-range'), '| 고른 요일', await jm.textContent('.slist__title-day'));
+  const wx = await rx();
+  await jm.click('[data-act="sched-thisweek"]');
+  console.log('주 보기 이번 주로:', await jm.textContent('.grid-range'), '| 범위 자리', wx, '→', await rx(), '| 버튼', await homeShown());
+  // (v25) 뒤로가기: 시트가 열려 있으면 시트만 닫고, 아니면 「나갈까요?」
+  await jm.click('.sblock[aria-label^="데이트"]');
+  await jm.goBack();
+  await jm.waitForTimeout(200);
+  console.log('뒤로(시트 열림): 시트', !!(await jm.$('.sheet')), '| 물음', !!(await jm.$('.exit-box')), '| 주소', jm.url());
+  await jm.mouse.click(5, 5);
+  await jm.goBack();
+  await jm.waitForTimeout(200);
+  console.log('뒤로(시트 없음): 물음', await jm.textContent('.exit-box__title').catch(() => '(없음)'));
+  await jm.screenshot({ path: path.join(OUT, 'web-back-exit.png') });
+  await jm.click('.exit-box [data-exit="stay"]');
+  await jm.goBack();
+  await jm.waitForTimeout(200);
+  console.log('머무른 뒤 다시 뒤로: 물음', !!(await jm.$('.exit-box')), '| 주소', jm.url());
+  await jm.click('.exit-box [data-exit="stay"]');
   // (점검 7) 함께 일정은 누구를 바꿀 수 없다 · (점검 1) 각자 일정과 겹쳐도 나란히
   await jm.click('.sblock[aria-label^="데이트"]');
   console.log('함께 일정 고치기:', await jm.textContent('.sheet .field .muted'), '| 누구 버튼', await jm.$$eval('[data-act="ev-owner"]', (e) => e.length));
