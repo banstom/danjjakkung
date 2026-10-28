@@ -539,6 +539,15 @@ async function tick(page, dateKey, key) {
       await jm.waitForTimeout(120);
       await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });
     }
+    // 요일 목록 카드: 화(매주 · 한 번) · 토(함께 · 한 번)
+    for (const [i, name] of [[1, 'tue'], [5, 'sat']]) {
+      await (await jm.$$('.sday'))[i].click();
+      await jm.waitForTimeout(120);
+      await jm.evaluate(() => { const l = document.querySelector('.slist'); window.scrollTo(0, l.getBoundingClientRect().top + window.scrollY - 80); });
+      await jm.waitForTimeout(60);
+      await (await jm.$('.slist')).screenshot({ path: path.join(OUT, `theme-${id}-list-${name}.png`) });
+    }
+    await jm.click('.sday.is-today');
     await jm.click('[data-act="tab"][data-tab="routine"]');
     await jm.click('.cell.is-today');
     await jm.waitForTimeout(150);
