@@ -89,7 +89,7 @@
       '<p class="sheet__sub">고르면 바로 바뀌어요 · 이 기기에 저장돼요</p>' +
       '<div class="tgrid" role="group" aria-label="테마 고르기">' + t.themes.map(function (th) {
         var on = th.id === t.current;
-        return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-theme="' + esc(th.id) + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '">' +
+        return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-theme="' + esc(th.id) + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.name + ' (' + th.ko + ') — ' + th.desc + (on ? ', 사용 중' : '')) + '">' +
           (on ? '<span class="tpick__badge" aria-hidden="true">' + CHECK_SVG + '</span>' : '') +
           '<span class="tmini" aria-hidden="true">' + cells + '</span>' +
           '<span class="tpick__btn" aria-hidden="true">체크</span>' +

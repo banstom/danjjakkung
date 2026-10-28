@@ -34,6 +34,8 @@
   --tab-bg: var(--surface);
   --tab-inactive: var(--sub);
   --switch-knob: #FFFFFF;
+  --strong: var(--primary);        /* 켜진 스위치 · 지금 선 — 카드 위에서 3:1 이상 */
+  --primary-edge: var(--primary);  /* 채운 버튼의 가장자리 (채움이 아주 연한 테마는 진하게) */
   --success: #2E7D4F;
   --warning: #9A5B00;
   --scrim: rgba(30, 28, 40, 0.4);
@@ -47,7 +49,8 @@
   color-scheme: light;
   --bg: #FFF8E7; --surface: #FFFFFF; --raised: #FCF4EE; --line: #EEE8E7;
   --text: #34313A; --sub: #6D6973; --faint: #C9C2CB;
-  --primary: #F6DDE8; --on-primary: #34313A; --secondary: #DCD9FA; --accent: #C27C9C; --tab-active: #94486B;
+  --primary: #F6DDE8; --on-primary: #34313A; --secondary: #DCD9FA; --accent: #BC7897; --tab-active: #94486B;
+  --strong: #B4587F; --primary-edge: var(--accent);
   --tint: #FBEDF3; --tint-text: #8E4467;
   --her: #E59BBA; --her-ink: #34313A; --me: #A9A2EE; --me-ink: #34313A;
   --empty: #F1EAE8; --empty-text: #5F5A66; --lv-half: #DCD9FA; --lv-half-text: #34313A; --lv-full: #D5729A; --lv-full-text: #2A2730;
@@ -73,7 +76,7 @@
   color-scheme: light;
   --bg: #EAF8F7; --surface: #FFFFFF; --raised: #F1F9F8; --line: #D4EAE7;
   --text: #20343A; --sub: #596C71; --faint: #B9D0CF;
-  --primary: #164E63; --on-primary: #FFFFFF; --secondary: #A8DCD8; --accent: #399DA8; --tab-active: #164E63;
+  --primary: #164E63; --on-primary: #FFFFFF; --secondary: #A8DCD8; --accent: #3798A3; --tab-active: #164E63;
   --tint: #DDF2F0; --tint-text: #164E63;
   --her: #399DA8; --her-ink: #0B2530; --me: #7FC5C0; --me-ink: #20343A;
   --empty: #DCECEA; --empty-text: #4A6065; --lv-half: #A8DCD8; --lv-half-text: #20343A; --lv-full: #237F8B; --lv-full-text: #FFFFFF;
@@ -85,7 +88,7 @@
   color-scheme: light;
   --bg: #F3F3E9; --surface: #FFFFFF; --raised: #F6F6EF; --line: #E1E5D8;
   --text: #30372E; --sub: #646A60; --faint: #C4C9BA;
-  --primary: #394B38; --on-primary: #FFFFFF; --secondary: #D0D9BF; --accent: #82966A; --tab-active: #394B38;
+  --primary: #394B38; --on-primary: #FFFFFF; --secondary: #D0D9BF; --accent: #7D9066; --tab-active: #394B38;
   --tint: #E9EEDF; --tint-text: #394B38;
   --her: #82966A; --her-ink: #1A2119; --me: #AEBD92; --me-ink: #30372E;
   --empty: #E6E9DE; --empty-text: #525A4F; --lv-half: #D0D9BF; --lv-half-text: #30372E; --lv-full: #5E7150; --lv-full-text: #FFFFFF;
@@ -109,7 +112,7 @@
   color-scheme: light;
   --bg: #F0F2FC; --surface: #FFFFFF; --raised: #F4F5FC; --line: #DDE1F1;
   --text: #2D3450; --sub: #60667F; --faint: #C3C7DD;
-  --primary: #303A60; --on-primary: #FFFFFF; --secondary: #C3C9ED; --accent: #7F8CBF; --tab-active: #303A60;
+  --primary: #303A60; --on-primary: #FFFFFF; --secondary: #C3C9ED; --accent: #7C89BB; --tab-active: #303A60;
   --tint: #E7EAF9; --tint-text: #303A60;
   --her: #7F8CBF; --her-ink: #161C35; --me: #A6AEE3; --me-ink: #2D3450;
   --empty: #E2E5F3; --empty-text: #4F5678; --lv-half: #C3C9ED; --lv-half-text: #2D3450; --lv-full: #5D6AA3; --lv-full-text: #FFFFFF;

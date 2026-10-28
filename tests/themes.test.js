@@ -36,6 +36,10 @@ test('기본값: 밝은 화면 → Soft Pastel, 다크 모드 → Cosmic Dream',
   assert.strictEqual(T.defaultId(false), 'soft-pastel');
   assert.strictEqual(T.defaultId(true), 'cosmic-dream');
   assert.strictEqual(T.choose('no-such-theme'), false);
+  // 저장이 막혀도(노드에는 localStorage 없음) 고른 값은 기억한다
+  assert.strictEqual(T.save('forest-diary'), true);
+  assert.strictEqual(T.current(), 'forest-diary');
+  assert.strictEqual(T.chosen(), true);
 });
 
 test('app.css 가 쓰는 색 변수는 모든 테마에 다 있다', () => {
@@ -55,13 +59,17 @@ test('글자 대비: 본문 · 보조 글자 · 버튼 · 강조 카드 4.5:1 �
   const pairs = [['text', 'bg', 4.5], ['text', 'surface', 4.5], ['text', 'raised', 4.5], ['sub', 'bg', 4.5], ['sub', 'surface', 4.5], ['sub', 'raised', 4.5],
     ['on-primary', 'primary', 4.5], ['tab-active', 'surface', 4.5], ['tint-text', 'tint', 4.5], ['tint-text', 'surface', 4.5],
     ['her-ink', 'her', 4.5], ['me-ink', 'me', 4.5], ['lv-half-text', 'lv-half', 4.5], ['lv-full-text', 'lv-full', 4.5], ['empty-text', 'empty', 4.5],
-    ['warn', 'surface', 4.5], ['warn', 'raised', 4.5], ['toast-fg', 'toast-bg', 4.5], ['accent', 'surface', 3], ['lv-full', 'surface', 3]];
+    ['warn', 'surface', 4.5], ['warn', 'raised', 4.5], ['toast-fg', 'toast-bg', 4.5], ['accent', 'surface', 3], ['accent', 'bg', 3], ['accent', 'raised', 3], ['lv-full', 'surface', 3]];
   for (const id of IDS) {
     const v = block(id);
     for (const [f, b, min] of pairs) {
       const r = contrast(v[f], v[b]);
       assert.ok(r >= min, `${id}: --${f} / --${b} = ${r.toFixed(2)} (< ${min})`);
     }
+    // 켜진 스위치 · 지금 선: 카드 위 3:1, 그 위 흰 손잡이 3:1
+    const strong = v.strong || v.primary;
+    assert.ok(contrast(strong, v.surface) >= 3, id + ' --strong / --surface');
+    assert.ok(contrast('#FFFFFF', strong) >= 3, id + ' 손잡이 / --strong');
   }
 });
 

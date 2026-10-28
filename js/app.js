@@ -581,8 +581,9 @@
     if (back) back.focus({ preventScroll: true });
   }
   function pickTheme(id) {
-    if (!RT.themes || !RT.themes.choose(id)) return;
-    render(true);
+    if (!RT.themes || !RT.themes.save(id)) return;
+    render(true);                              // 선택 표시를 먼저 그리고
+    RT.themes.apply(id, { smooth: true });    // 그려진 화면 위에서 색을 바꿔야 스르륵 바뀐다
   }
   function openNotify() {
     state.sheetDay = null; state.manage = null; state.themeOpen = false;

@@ -419,6 +419,24 @@ async function tick(page, dateKey, key) {
     await jm.screenshot({ path: path.join(OUT, `theme-${id}-daysheet.png`) });
     await jm.keyboard.press('Escape');
   }
+  // 파스텔에서 켜진 스위치 · 지금 선 · 채운 버튼이 보이는지 (눈으로 확인용 사진)
+  await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'soft-pastel'); RT.themes.apply('soft-pastel'); });
+  await jm.click('[data-act="open-notify"]');
+  await jm.waitForTimeout(150);
+  await jm.screenshot({ path: path.join(OUT, 'theme-soft-pastel-notify.png') });
+  await jm.keyboard.press('Escape');
+  await jm.click('[data-act="tab"][data-tab="schedule"]');
+  await jm.click('[data-act="sched-mode"][data-mode="day"]').catch(() => {});
+  await jm.waitForTimeout(150);
+  await jm.screenshot({ path: path.join(OUT, 'theme-soft-pastel-day.png'), fullPage: true });
+  await jm.click('[data-act="tab"][data-tab="routine"]');
+  // 바꿀 때 실제로 스르륵 전환되는지 (선택 표시를 먼저 그린 뒤 색을 바꾼다)
+  await jm.click('[data-act="open-theme"]');
+  await jm.click('.tpick[data-v="cosmic-dream"]');
+  const mid = await jm.evaluate(() => ({ cls: document.documentElement.classList.contains('is-theming'), tr: getComputedStyle(document.querySelector('.sheet')).transitionDuration }));
+  await jm.waitForTimeout(400);
+  console.log('전환 중:', mid.cls, mid.tr, '| 끝난 뒤:', await jm.evaluate(() => document.documentElement.classList.contains('is-theming')));
+  await jm.keyboard.press('Escape');
   await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'forest-diary'); });
   await jm.reload();
   const early = await jm.evaluate(() => document.documentElement.getAttribute('data-theme'));
@@ -427,6 +445,17 @@ async function tick(page, dateKey, key) {
   await jm.evaluate(() => localStorage.setItem('danjjakkung.theme', 'no-such-theme'));
   await jm.reload(); await jm.waitForSelector('.title');
   console.log('모르는 테마 값이면 기본:', await themeOf(jm));
+  // 저장이 막힌 브라우저: 고른 테마가 표시 · 머리말 · 다크 모드 변화에 흔들리지 않는다
+  const bl = await open(browser, '저장 막힘', { user: { uid: accounts.get('dajin@example.com').uid, email: 'dajin@example.com', emailVerified: true } });
+  await bl.waitForSelector('[data-act="open-theme"]');
+  await bl.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('blocked'); }; });
+  await bl.click('[data-act="open-theme"]');
+  await bl.click('.tpick[data-v="vintage-film"]');
+  await bl.waitForTimeout(350);
+  await bl.emulateMedia({ colorScheme: 'dark' });
+  await bl.waitForTimeout(350);
+  console.log('저장 막힘:', await themeOf(bl), '| 표시', await bl.getAttribute('.tpick.is-on', 'data-v'), '| 🎨', await bl.getAttribute('[data-act="open-theme"]', 'aria-label'));
+  await bl.close();
   // 휴대폰이 다크 모드이고 아직 안 골랐으면 Cosmic Dream
   const dk = await open(browser, '다크 모드', { ctx: await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', serviceWorkers: 'block', timezoneId: 'Asia/Seoul' }) });
   console.log('다크 모드 기본:', await themeOf(dk), '| 로그인 화면 바탕:', await dk.evaluate(() => getComputedStyle(document.body).backgroundColor));

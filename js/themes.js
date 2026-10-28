@@ -20,7 +20,9 @@
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
     return null;
   }
+  var picked = null; // 이번에 고른 값 (저장이 막힌 브라우저에서도 화면 · 표시가 어긋나지 않게)
   function stored() {
+    if (picked) return picked;
     try { var v = root.localStorage && root.localStorage.getItem(KEY); return byId(v) ? v : null; } catch (e) { return null; }
   }
   function prefersDark() {
@@ -52,15 +54,21 @@
     if (smooth) setTimeout(function () { html.classList.remove('is-theming'); }, 320);
   }
 
-  // 고르면 저장하고 바로 바꾼다. 저장이 막힌 브라우저여도 지금 화면은 바뀐다.
-  function choose(id) {
+  // 고른 값을 저장만 한다 (화면은 apply). 저장이 막힌 브라우저여도 이번에 연 동안은 기억한다.
+  function save(id) {
     if (!byId(id)) return false;
+    picked = id;
     try { root.localStorage.setItem(KEY, id); } catch (e) {}
+    return true;
+  }
+  // 고르면 저장하고 바로 바꾼다.
+  function choose(id) {
+    if (!save(id)) return false;
     apply(id, { smooth: true });
     return true;
   }
 
-  var api = { THEMES: THEMES, KEY: KEY, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, choose: choose, syncMeta: syncMeta };
+  var api = { THEMES: THEMES, KEY: KEY, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta };
   root.RT = root.RT || {};
   root.RT.themes = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
