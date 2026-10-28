@@ -30,20 +30,20 @@
   // 테마마다 고를 수 있는 사람 색 8개. 앞의 둘은 그 테마 기본색(--her, --me 와 같다).
   // ink: 색 위 글자 후보(어두운 쪽) — 흰색과 견줘 더 잘 보이는 쪽을 쓴다 (4.5:1 이상은 tests/themes.test.js 가 확인).
   var PALETTES = {
-    'soft-pastel': { ink: '#2A2730', colors: ['#E59BBA', '#A9A2EE', '#F4A7A3', '#F5C58A', '#E8D27A', '#9FD3B5', '#8EC5E8', '#C7A4E0'] },
-    'cosmic-dream': { ink: '#101426', colors: ['#6CD8E8', '#A891F0', '#F08BC4', '#FFB86B', '#F5E27A', '#7EE0A8', '#7FA8FF', '#FF8A8A'] },
-    'ocean-breeze': { ink: '#0B2530', colors: ['#399DA8', '#7FC5C0', '#F2A48C', '#F4C977', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
-    'forest-diary': { ink: '#1A2119', colors: ['#82966A', '#AEBD92', '#C99A6B', '#D9B85C', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
-    'vintage-film': { ink: '#211E19', colors: ['#874F4D', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
-    'blue-hour': { ink: '#161C35', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] },
-    'golden-hour': { ink: '#2B1A10', colors: ['#C96F62', '#F2B880', '#E89A5B', '#F2D27A', '#9DBF8E', '#8FB5D0', '#C49AC0', '#E8A0A0'] },
-    'sakura-dream': { ink: '#2E2328', colors: ['#E6A0B4', '#A7BDA5', '#C9A8E0', '#F4B8A0', '#EDD58A', '#9FC8DC', '#D98AA0', '#B8D4A8'] },
-    'midnight-noir': { ink: '#15161D', colors: ['#D88A98', '#A9ABBA', '#E0B07A', '#6FAFD6', '#6CC584', '#C08AE0', '#E8D48A', '#F0A07A'] },
-    'arctic-frost': { ink: '#14222C', colors: ['#778FA8', '#B9DDE8', '#C8B8E0', '#A8D4C4', '#E8B8C4', '#E8D49A', '#9BB0C8', '#8FC0D8'] },
-    'chocolate-noir': { ink: '#2A1D18', colors: ['#765447', '#D8B99B', '#C49A78', '#C98F7A', '#8A9A70', '#E0C080', '#9AA8C0', '#9A4A2A'] },
-    'roast-nuts': { ink: '#2E2116', colors: ['#C98A5B', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
-    'winter-knit': { ink: '#26282C', colors: ['#E8B6C5', '#B2DCD6', '#DCC9BC', '#A8C0D8', '#C8B8D8', '#E8C89A', '#B8C8A8', '#D0A0A0'] },
-    'harvest': { ink: '#24230F', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#C98A7A', '#9DB4C8'] }
+    'soft-pastel': { ink: '#2A2730', both: '#F5C58A', colors: ['#E59BBA', '#A9A2EE', '#F4A7A3', '#F5C58A', '#E8D27A', '#9FD3B5', '#8EC5E8', '#C7A4E0'] },
+    'cosmic-dream': { ink: '#101426', both: '#F08BC4', colors: ['#6CD8E8', '#A891F0', '#F08BC4', '#FFB86B', '#F5E27A', '#7EE0A8', '#7FA8FF', '#FF8A8A'] },
+    'ocean-breeze': { ink: '#0B2530', both: '#F4C977', colors: ['#399DA8', '#7FC5C0', '#F2A48C', '#F4C977', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
+    'forest-diary': { ink: '#1A2119', both: '#D9B85C', colors: ['#82966A', '#AEBD92', '#C99A6B', '#D9B85C', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
+    'vintage-film': { ink: '#211E19', both: '#8FA38A', colors: ['#874F4D', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
+    'blue-hour': { ink: '#161C35', both: '#E8A3B4', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] },
+    'golden-hour': { ink: '#2B1A10', both: '#8FB5D0', colors: ['#C96F62', '#F2B880', '#E89A5B', '#F2D27A', '#9DBF8E', '#8FB5D0', '#C49AC0', '#E8A0A0'] },
+    'sakura-dream': { ink: '#2E2328', both: '#C9A8E0', colors: ['#E6A0B4', '#A7BDA5', '#C9A8E0', '#F4B8A0', '#EDD58A', '#9FC8DC', '#D98AA0', '#B8D4A8'] },
+    'midnight-noir': { ink: '#15161D', both: '#E0B07A', colors: ['#D88A98', '#A9ABBA', '#E0B07A', '#6FAFD6', '#6CC584', '#C08AE0', '#E8D48A', '#F0A07A'] },
+    'arctic-frost': { ink: '#14222C', both: '#C8B8E0', colors: ['#778FA8', '#B9DDE8', '#C8B8E0', '#A8D4C4', '#E8B8C4', '#E8D49A', '#9BB0C8', '#8FC0D8'] },
+    'chocolate-noir': { ink: '#2A1D18', both: '#8A9A70', colors: ['#765447', '#D8B99B', '#C49A78', '#C98F7A', '#8A9A70', '#E0C080', '#9AA8C0', '#9A4A2A'] },
+    'roast-nuts': { ink: '#2E2116', both: '#A8C27A', colors: ['#C98A5B', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
+    'winter-knit': { ink: '#26282C', both: '#DCC9BC', colors: ['#E8B6C5', '#B2DCD6', '#DCC9BC', '#A8C0D8', '#C8B8D8', '#E8C89A', '#B8C8A8', '#D0A0A0'] },
+    'harvest': { ink: '#24230F', both: '#C98A7A', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#C98A7A', '#9DB4C8'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -126,6 +126,8 @@
   function palette(id) { var p = PALETTES[id]; return p ? p.colors.slice() : []; }
   /** 테마 기본 자리 색: her = 첫째 사람, me = 둘째 사람 */
   function slotDefaults(id) { var c = palette(id); return { her: c[0], me: c[1] }; }
+  /** 시간표 「함께」 일정 색 — 후보 중 하나지만 사람 색으로는 못 고른다 (styles/tokens.css 의 --both 와 같아야 함) */
+  function bothColor(id) { var p = PALETTES[id]; return p ? p.both : null; }
   /** 색 위 글자색: 어두운 글자와 흰 글자 중 더 잘 보이는 쪽 */
   function inkFor(id, hex) {
     var dark = (PALETTES[id] || PALETTES[LIGHT_DEFAULT]).ink;
@@ -143,7 +145,7 @@
       var list = PALETTES[id].colors, pair = {};
       ['self', 'partner'].forEach(function (k) {
         var v = typeof p[k] === 'string' ? p[k].toUpperCase() : null;
-        if (v && list.indexOf(v) >= 0) pair[k] = v;
+        if (v && list.indexOf(v) >= 0 && v !== PALETTES[id].both) pair[k] = v; // 함께 색은 사람 색이 될 수 없음
       });
       if (pair.self && pair.self === pair.partner) return;
       if (pair.self || pair.partner) out[id] = pair;
@@ -165,7 +167,7 @@
   function withPick(colors, id, selfSlot, who, hex) {
     var all = cleanColors(colors), list = palette(id);
     hex = String(hex || '').toUpperCase();
-    if (!byId(id) || list.indexOf(hex) < 0 || (who !== 'self' && who !== 'partner')) return all;
+    if (!byId(id) || list.indexOf(hex) < 0 || hex === bothColor(id) || (who !== 'self' && who !== 'partner')) return all;
     var now = pairFor(id, all, selfSlot), next = { self: now.self, partner: now.partner };
     var other = who === 'self' ? 'partner' : 'self';
     if (next[other] === hex) next[other] = now[who]; // 서로 바꾸기
@@ -209,7 +211,7 @@
   function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
 
   var api = { THEMES: THEMES, KEY: KEY, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
-    palette: palette, slotDefaults: slotDefaults, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
+    palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

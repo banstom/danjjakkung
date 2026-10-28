@@ -577,15 +577,16 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="open-theme"]');
   await jm.waitForSelector('.tcolors');
   console.log('사람 색 줄:', await jm.$$eval('.tcolors__who', (a) => a.map((x) => x.textContent)), '| 후보:', (await jm.$$('.cpick')).length, '| 기본 값:', await vars(jm));
+  console.log('함께 색 후보는 못 고름:', await jm.$$eval('.cpick.is-both', (a) => a.map((x) => x.dataset.who + x.dataset.v + (x.disabled ? ' 잠김' : ' 열림')).join(' ')));
   await jm.click('.cpick[data-who="self"][data-v="#9FD3B5"]');
   await jm.waitForTimeout(100);
-  await jm.click('.cpick[data-who="partner"][data-v="#F5C58A"]');
+  await jm.click('.cpick[data-who="partner"][data-v="#F4A7A3"]');
   await jm.waitForTimeout(150);
   await jm.screenshot({ path: path.join(OUT, 'theme-colors-soft-pastel.png') });
   console.log('고른 뒤 준민:', await vars(jm), '| 저장:', JSON.stringify(docs.get('users/' + jmUid).colors), '| 알림 설정 그대로:', JSON.stringify(docs.get('users/' + jmUid).notify) === notifyBefore);
   console.log('다진 화면은 그대로:', await vars(dj));
   // 상대 색을 내 색으로 → 서로 바뀜
-  await jm.click('.cpick[data-who="self"][data-v="#F5C58A"]');
+  await jm.click('.cpick[data-who="self"][data-v="#F4A7A3"]');
   await jm.waitForTimeout(150);
   console.log('서로 바꾸기:', JSON.stringify(docs.get('users/' + jmUid).colors['soft-pastel']), '| 표시(나=a, 상대=b):', await jm.$$eval('.cpick[aria-pressed="true"]', (a) => a.map((x) => x.dataset.who + x.dataset.v).join(' ')));
   // 다른 테마로 가면 그 테마 기본색, 거기서 고른 색은 따로

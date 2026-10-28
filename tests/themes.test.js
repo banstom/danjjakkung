@@ -45,6 +45,7 @@ test('기본값: 밝은 화면 → Soft Pastel, 다크 모드 → Cosmic Dream',
 test('app.css 가 쓰는 색 변수는 모든 테마에 다 있다', () => {
   const used = new Set([...appCss.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]));
   used.delete('font');
+  for (const m of appCss.matchAll(/(--[a-z-]+):/g)) used.delete(m[1].slice(2)); // app.css 안에서 정하는 변수(빗금 --hatch 등)
   for (const id of IDS) {
     const v = Object.assign({}, common, block(id));
     for (const k of used) assert.ok(k in v, id + ' 에 --' + k + ' 없음');
@@ -182,4 +183,18 @@ test('시간표 「오늘」은 글자색 계열 — 사람 색 후보 · 함께
   }
   assert.doesNotMatch(appCss, /\.scol\.is-today \{[^}]*--tint/);
   assert.doesNotMatch(appCss, /\.sday\.is-today \.sday__date \{[^}]*--primary/);
+});
+
+test('시간표 함께 색: --both = js/themes.js 의 both, 후보 중 하나지만 기본 사람 색은 아니고, 사람 색으로 못 고른다', () => {
+  for (const id of IDS) {
+    const v = block(id), both = T.bothColor(id);
+    assert.strictEqual(v.both, both, id + ' --both');
+    assert.strictEqual(v['both-ink'], T.inkFor(id, both), id + ' --both-ink');
+    assert.ok(T.contrast(both, v['both-ink']) >= 4.5, id + ' 함께 블록 글자 대비');
+    assert.ok(T.contrast(both, v.surface) >= 1.5, id + ' 함께 블록이 카드 바탕에서 보여야 해요');
+    assert.ok(T.palette(id).indexOf(both) >= 2, id + ' 함께 색은 후보 셋째 이후');
+    assert.deepStrictEqual(T.cleanColors({ [id]: { self: both } }), {}, id + ' 저장된 함께 색은 버림');
+    assert.deepStrictEqual(T.withPick({}, id, 'me', 'self', both), {}, id + ' 함께 색은 못 고름');
+  }
+  assert.match(appCss, /\.sblock--both \{ background: var\(--both\); color: var\(--both-ink\); border-color: var\(--both\); \}/);
 });

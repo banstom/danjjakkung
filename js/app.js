@@ -705,7 +705,7 @@
     var me = ps.filter(function (p) { return p.mine; })[0];
     function row(who, label) {
       return { who: who, label: label, value: pair[who], options: T.palette(id).map(function (hex) {
-        return { hex: hex, name: T.colorName(hex), ink: T.inkFor(id, hex), on: hex === pair[who], taken: hex === pair[who === 'self' ? 'partner' : 'self'] };
+        return { hex: hex, name: T.colorName(hex), ink: T.inkFor(id, hex), on: hex === pair[who], taken: hex === pair[who === 'self' ? 'partner' : 'self'], both: hex === T.bothColor(id) };
       }) };
     }
     out.colors = {

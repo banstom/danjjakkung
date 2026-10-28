@@ -90,10 +90,10 @@
         return '<div class="tcolors__row">' +
           '<span class="tcolors__who" style="background:' + esc(r.value) + ';color:' + esc(cur ? cur.ink : '') + '">' + esc(r.label) + '</span>' +
           '<div class="cpicks" role="group" aria-label="' + esc(r.label + ' 색') + '">' + r.options.map(function (o) {
-            var label = o.name + (o.on ? ', 고른 색' : o.taken ? ' — ' + other[r.who] + ' 색, 누르면 서로 바뀌어요' : '');
-            return '<button type="button" class="cpick' + (o.taken ? ' is-taken' : '') + '" data-act="pick-color" data-who="' + r.who + '" data-v="' + esc(o.hex) + '" data-key="' + r.who + o.hex + '"' +
-              ' style="background:' + esc(o.hex) + ';color:' + esc(o.ink) + '" aria-pressed="' + o.on + '" aria-label="' + esc(label) + '"' + (c.loading ? ' disabled' : '') + '>' +
-              (o.on ? CHECK_SVG : o.taken ? '<span class="cpick__tag" aria-hidden="true">' + esc(other[r.who].charAt(0)) + '</span>' : '') + '</button>';
+            var label = o.name + (o.both ? ' — 함께 일정 색이라 고를 수 없어요' : o.on ? ', 고른 색' : o.taken ? ' — ' + other[r.who] + ' 색, 누르면 서로 바뀌어요' : '');
+            return '<button type="button" class="cpick' + (o.taken ? ' is-taken' : '') + (o.both ? ' is-both' : '') + '" data-act="pick-color" data-who="' + r.who + '" data-v="' + esc(o.hex) + '" data-key="' + r.who + o.hex + '"' +
+              ' style="background:' + esc(o.hex) + ';color:' + esc(o.ink) + '" aria-pressed="' + o.on + '" aria-label="' + esc(label) + '"' + (c.loading || o.both ? ' disabled' : '') + '>' +
+              (o.both ? '<span class="cpick__tag" aria-hidden="true">함께</span>' : o.on ? CHECK_SVG : o.taken ? '<span class="cpick__tag" aria-hidden="true">' + esc(other[r.who].charAt(0)) + '</span>' : '') + '</button>';
           }).join('') + '</div></div>';
       }).join('') +
       '</section>';

@@ -358,12 +358,15 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 }
 .sblock--her { background: var(--her); color: var(--her-ink); border-color: var(--her); }
 .sblock--me { background: var(--me); color: var(--me-ink); border-color: var(--me); }
-.sblock--both { background: var(--tint); color: var(--tint-text); border-color: var(--accent); }
-.sblock--once { background: var(--surface); border-style: dashed; color: var(--text); }
-.sblock--once.sblock--her { border-color: var(--her); }
-.sblock--once.sblock--me { border-color: var(--me); }
+.sblock--both { background: var(--both); color: var(--both-ink); border-color: var(--both); } /* 함께 = 셋째 색, 테두리 없이 채움만 */
+/* 한 번 = 같은 사람 색 위에 빗금 (빗금은 그 블록 글자색을 옅게) */
+.sblock--once { background-image: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 7px); }
+.sblock--once .sblock__title, .sblock--once .sblock__time { text-shadow: 0 0 2px var(--hatch-bg), 0 0 2px var(--hatch-bg); }
+.sblock--her { --hatch: color-mix(in srgb, var(--her-ink) 22%, transparent); --hatch-bg: var(--her); }
+.sblock--me { --hatch: color-mix(in srgb, var(--me-ink) 22%, transparent); --hatch-bg: var(--me); }
+.sblock--both { --hatch: color-mix(in srgb, var(--both-ink) 22%, transparent); --hatch-bg: var(--both); }
 .sblock__title { font-size: 11px; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
-.sblock--compact .sblock__title { font-size: 10px; word-break: break-all; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.sblock--compact .sblock__title { margin-block: auto; font-size: 10px; word-break: break-all; display: flex; flex-direction: column; align-items: center; gap: 1px; }
 .sblock--full.sblock--compact { padding: 3px 1px; }
 .sblock--full.sblock--compact .sblock__title { word-break: keep-all; overflow-wrap: anywhere; font-size: 10px; letter-spacing: -0.06em; } /* 넓은 칸(약 42px)에 한글 4자가 한 줄에 */
 .sblock__ico { font-size: 12px; line-height: 1; }
@@ -392,8 +395,8 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sblock__time { font-size: 11px; font-weight: 600; opacity: .85; }
 .slegend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--sub); align-items: center; padding: 0 2px; }
 .slegend__item { display: inline-flex; align-items: center; gap: 5px; }
-.swatch-both { width: 14px; height: 8px; border-radius: 3px; background: var(--tint); border: 1.5px solid var(--accent); }
-.swatch-once { width: 14px; height: 8px; border-radius: 3px; border: 1.5px dashed var(--sub); }
+.swatch-both { width: 14px; height: 8px; border-radius: 3px; background: var(--both); }
+.swatch-once { width: 14px; height: 8px; border-radius: 3px; background: repeating-linear-gradient(-45deg, var(--sub) 0 1.5px, transparent 1.5px 4px); box-shadow: inset 0 0 0 1px var(--line); }
 .shint { font-size: 12px; padding: 0 2px; }
 .sstrip { display: flex; gap: 6px; }
 .sstrip__btn { flex: 1 1 0; min-height: 54px; border-radius: 14px; border: 0; background: var(--surface); color: var(--text); font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
@@ -410,7 +413,6 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sday-body { display: grid; grid-template-columns: 44px minmax(0, 1fr); position: relative; }
 .snow { position: absolute; left: 0; right: 0; height: 2px; background: var(--strong); pointer-events: none; }
 .snow::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--strong); }
-.sblock--once.sblock--both { background: var(--tint); border-color: var(--accent); color: var(--tint-text); }
 
 /* ── 테마 시트 — 카드마다 data-theme이 달려 있어 그 테마의 색으로 칠해진다 ── */
 .tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -446,6 +448,8 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .cpick[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
 .cpick:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .cpick:disabled { opacity: .5; }
+.cpick.is-both { opacity: .55; cursor: not-allowed; }
+.cpick.is-both .cpick__tag { font-size: 9px; letter-spacing: -0.04em; }
 .cpick .ico { width: 16px; height: 16px; }
 .cpick__tag { font-size: 11px; font-weight: 800; }
 
