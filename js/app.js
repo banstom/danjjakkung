@@ -70,7 +70,12 @@
   var composing = false, deferred = false;
   var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-date', 'ev-start', 'ev-end'];
   var LS_TAB = 'danjjakkung.tab';
-  (function () { var t = lsGet(LS_TAB); if (t === 'schedule' || t === 'todo') state.tab = t; })();
+  (function () {
+    var q = /[?&]tab=(routine|schedule|todo)/.exec(root.location.search || '');
+    var t = q ? q[1] : lsGet(LS_TAB);
+    if (t === 'schedule' || t === 'todo' || t === 'routine') state.tab = t;
+    if (q) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
+  })();
   function typing() {
     var el = document.activeElement;
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
@@ -97,6 +102,8 @@
     var focus = focusOf(document.activeElement);
     if (state.manage && !m.manage) state.manage = null;
     if (state.status !== 'ready') { state.notifyOpen = false; state.todoForm = null; state.eventForm = null; }
+    if (state.todoForm && state.todoForm.id && !findTodo(state.todoForm.id) && !state.todoForm.saving) { state.todoForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 할 일이에요'); }, 0); }
+    if (state.eventForm && state.eventForm.id && !findEvent(state.eventForm.id) && !state.eventForm.saving) { state.eventForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 일정이에요'); }, 0); }
     var other = state.tab !== 'routine';
     var plan = state.status === 'ready' ? planHtml(other) : {};
     var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || plan.sheet) && state.status === 'ready');
@@ -108,6 +115,8 @@
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     state.push.errorFresh = false;
+    if (state.todoForm) state.todoForm.errorFresh = false;
+    if (state.eventForm) state.eventForm.errorFresh = false;
     state.sheetEntering = false;
     state.auth.errorFresh = false; state.setup.errorFresh = false; state.verify.errorFresh = false;
     setThemeColor();
@@ -116,7 +125,20 @@
     if (newSheet && scrollTop && !entering) newSheet.scrollTop = scrollTop;
     document.body.classList.toggle('has-sheet', sheetOpen);
     restoreFocus(focus, sheetOpen);
+    if (focusAfter && !sheetOpen) {
+      // 시트가 닫히거나 줄이 접혀 사라졌을 때 포커스를 근처 버튼으로 옮긴다
+      for (var fi = 0; fi < focusAfter.length; fi++) { var fe = appEl.querySelector(focusAfter[fi]); if (fe) { fe.focus({ preventScroll: true }); break; } }
+      focusAfter = null;
+    }
+    // 체크한 할 일이 「완료」로 접혀 사라지면 그 묶음의 버튼으로 포커스를 옮긴다
+    if (focus && focus.act === 'todo-toggle' && !find(focus) && toggleScope[focus.value]) {
+      var k = CSS.escape(toggleScope[focus.value]);
+      var fb = appEl.querySelector('[data-act="todo-donelist"][data-key="' + k + '"]') || appEl.querySelector('[data-act="todo-add"][data-key="' + k + '"]');
+      if (fb) fb.focus({ preventScroll: true });
+    }
   }
+  var toggleScope = Object.create(null); // 할 일 id → 묶음
+  var focusAfter = null; // 다음 그리기 뒤 포커스할 곳 (앞에서부터 있는 것)
 
   // 다시 그려도 누르던 버튼에 포커스가 남도록
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
@@ -405,9 +427,24 @@
     state.sheetEntering = true; render(true);
   }
   var planReturn = null; // 시트를 닫으면 포커스를 돌려줄 버튼
-  function closePlanSheet() {
-    state.todoForm = null; state.eventForm = null; render(true);
-    if (planReturn) { var b = appEl.querySelector(planReturn); if (b) b.focus({ preventScroll: true }); planReturn = null; }
+  function closePlanSheet(fallback) {
+    state.todoForm = null; state.eventForm = null;
+    focusAfter = [planReturn, fallback].filter(Boolean); planReturn = null;
+    render(true);
+  }
+  /** 저장이 오래 걸리면(오프라인 등) 시트는 먼저 닫는다 — 저장은 연결되면 이어서 된다 */
+  function settle(job, f, isOpen, okMsg, fallback) {
+    var timer = setTimeout(function () {
+      if (isOpen()) { closePlanSheet(fallback); showToast('연결되면 저장돼요'); }
+    }, 2500);
+    job.then(function () {
+      clearTimeout(timer);
+      if (isOpen()) { closePlanSheet(fallback); showToast(okMsg); }
+    }, function () {
+      clearTimeout(timer);
+      if (isOpen()) planFail(f, '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+      else showToast('저장하지 못했어요. 잠시 뒤 다시 해 주세요.');
+    });
   }
   function planFail(f, msg) { f.saving = false; f.error = msg; f.errorFresh = true; render(true); }
 
@@ -435,9 +472,8 @@
     var t = old ? Object.assign({}, old, { title: String(f.title).trim(), due: due })
       : { id: RT.store.newKey(), scope: f.scope, title: String(f.title).trim(), due: due, done: false, doneBy: null, doneAt: null, createdBy: state.me, createdAt: new Date().toISOString() };
     f.saving = true; f.error = ''; render(true);
-    store.saveTodo(t).then(function () {
-      if (state.todoForm === f) { state.todoForm = null; showToast(old ? '할 일을 고쳤어요' : '📝 할 일을 추가했어요'); }
-    }, function () { if (state.todoForm === f) planFail(f, '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+    settle(store.saveTodo(t), f, function () { return state.todoForm === f; }, old ? '할 일을 고쳤어요' : '📝 할 일을 추가했어요',
+      '[data-act="todo-add"][data-key="' + CSS.escape(t.scope) + '"]');
   }
   var lastPlanDelete = 0;
   function deleteTodo() {
@@ -447,8 +483,8 @@
     if (!f.confirmDelete) { f.confirmDelete = true; lastPlanDelete = now; render(true); return; }
     if (now - lastPlanDelete < 400) return;
     f.saving = true; render(true);
-    store.deleteTodo(f.id).then(function () { if (state.todoForm === f) { state.todoForm = null; planReturn = null; showToast('할 일을 지웠어요'); } },
-      function () { if (state.todoForm === f) planFail(f, '지우지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+    planReturn = null;
+    settle(store.deleteTodo(f.id), f, function () { return state.todoForm === f; }, '할 일을 지웠어요', '[data-act="todo-add"][data-key="' + CSS.escape(f.scope) + '"]');
   }
   var togglingTodo = Object.create(null);
   function toggleTodo(id) {
@@ -456,10 +492,11 @@
     if (!store || !t || !state.me || togglingTodo[id] || !(t.scope === 'together' || t.scope === state.me)) return;
     var next = !t.done;
     togglingTodo[id] = true;
-    store.saveTodo(Object.assign({}, t, { done: next, doneBy: next ? state.me : null, doneAt: next ? new Date().toISOString() : null })).then(function () {
-      delete togglingTodo[id];
-      if (next && t.scope === 'together') showToast('✨ 함께 할 일 하나 끝!');
-    }, function () { delete togglingTodo[id]; showToast('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+    setTimeout(function () { delete togglingTodo[id]; }, 800); // 두 번 눌림만 막는다 (오프라인이어도 되돌릴 수 있게)
+    toggleScope[id] = t.scope;
+    if (next && t.scope === 'together') showToast('✨ 함께 할 일 하나 끝!');
+    store.saveTodo(Object.assign({}, t, { done: next, doneBy: next ? state.me : null, doneAt: next ? new Date().toISOString() : null }))
+      .catch(function () { showToast('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
   }
 
   // 일정
@@ -477,7 +514,7 @@
     if (!forceEdit) planReturn = '[data-act="event-open"][data-id="' + CSS.escape(id) + '"]';
     var S = RT.schedule;
     if (canEditEvent(e)) {
-      openPlanSheet('event', { mode: 'edit', id: id, title: e.title, owner: e.owner === 'both' ? 'both' : 'me', weekly: e.weekly,
+      openPlanSheet('event', { mode: 'edit', id: id, title: e.title, owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
         weekday: e.weekly ? e.weekday : S.weekdayOf(D.parse(e.date)), date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
       return;
     }
@@ -490,7 +527,7 @@
   function setEventField(act, v) {
     var f = state.eventForm;
     if (!f || f.mode === 'view') return;
-    if (act === 'ev-owner') f.owner = v === 'both' ? 'both' : 'me';
+    if (act === 'ev-owner') { if (f.lockOwner) return; f.owner = v === 'both' ? 'both' : 'me'; }
     else if (act === 'ev-repeat') f.weekly = v === 'weekly';
     else if (act === 'ev-wd') f.weekday = Number(v);
     f.error = ''; render(true);
@@ -505,9 +542,7 @@
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), weekly: !!f.weekly,
       weekday: f.weekly ? Number(f.weekday) : null, date: f.weekly ? null : f.date, start: f.start, end: f.end, createdBy: old ? old.createdBy || state.me : state.me };
     f.saving = true; f.error = ''; render(true);
-    store.saveEvent(e).then(function () {
-      if (state.eventForm === f) { state.eventForm = null; showToast(old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요'); }
-    }, function () { if (state.eventForm === f) planFail(f, '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+    settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
   }
   function deleteEvent() {
     var f = state.eventForm;
@@ -516,8 +551,8 @@
     if (!f.confirmDelete) { f.confirmDelete = true; lastPlanDelete = now; render(true); return; }
     if (now - lastPlanDelete < 400) return;
     f.saving = true; render(true);
-    store.deleteEvent(f.id).then(function () { if (state.eventForm === f) { state.eventForm = null; planReturn = null; showToast('일정을 지웠어요'); } },
-      function () { if (state.eventForm === f) planFail(f, '지우지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+    planReturn = null;
+    settle(store.deleteEvent(f.id), f, function () { return state.eventForm === f; }, '일정을 지웠어요', '[data-act="event-add"]');
   }
 
   // ── 「알림」 시트 ───────────────────────────────────────
@@ -734,7 +769,14 @@
   var lastMinute = -1;
   function checkToday() {
     var d = new Date(), now = D.fromLocal(d), minute = d.getHours() * 60 + d.getMinutes();
-    if (now !== state.today) { state.today = now; render(); }
+    if (now !== state.today) {
+      var old = state.today;
+      if (state.sched) {
+        if (state.sched.day === old) state.sched.day = now;
+        if (state.sched.weekStart === RT.schedule.monStart(old)) state.sched.weekStart = RT.schedule.monStart(now);
+      }
+      state.today = now; render();
+    }
     else if (state.tab === 'schedule' && state.sched && state.sched.mode === 'day' && minute !== lastMinute && !state.eventForm) render();
     lastMinute = minute;
   }
@@ -744,6 +786,12 @@
     else if (checksDefinitive && state.me) lsSet(LS_SEEN, new Date().toISOString()); // 화면을 떠날 때 '여기까지 봤음'
   });
   root.addEventListener('focus', checkToday);
+  if (root.navigator.serviceWorker && root.navigator.serviceWorker.addEventListener) {
+    root.navigator.serviceWorker.addEventListener('message', function (ev) {
+      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo)/.exec(String(d.link || ''));
+      if (d.type === 'open' && q && state.status === 'ready') setTab(q[1]);
+    });
+  }
   root.addEventListener('pageshow', checkToday);
 
   render();

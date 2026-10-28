@@ -15,6 +15,7 @@ const db = admin.firestore();
 setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10, memory: '256MiB' });
 
 const APP_URL = 'https://banstom.github.io/danjjakkung/';
+const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으로 연다
 const ICON = APP_URL + 'icons/icon-192.png';
 
 /* 짝꿍 찾기 — 지금은 members 전체(두 사람)가 한 짝이다.
@@ -44,7 +45,7 @@ async function sendTo(uid, msg, kind, tag) {
     seen.add(t); return true;
   });
   if (!list.length) return 0;
-  const data = { kind, title: msg.title, body: msg.body, tag: tag || kind, link: APP_URL, icon: ICON };
+  const data = { kind, title: msg.title, body: msg.body, tag: tag || kind, link: OPEN_URL, icon: ICON };
   const res = await admin.messaging().sendEachForMulticast({
     tokens: list.map((d) => d.data().token),
     data,

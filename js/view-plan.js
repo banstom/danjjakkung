@@ -114,10 +114,10 @@
   function blockHtml(b, H, opts) {
     var span = H.to - H.from;
     var top = pct((b.s - H.from) / span * 100), h = pct((b.e - b.s) / span * 100);
-    var laneLeft = b.lane === 'both' ? 0 : b.lane * 50, laneW = b.lane === 'both' ? 100 : 50;
-    var w = laneW / b.cols, left = laneLeft + w * b.col;
+    var w = 50 / b.cols, left = b.lane * 50 + w * b.col;
     var label = esc(b.title);
-    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '"' +
+    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '"' +
+      (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
       ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번')) + '">' +
       '<span class="sblock__title">' + label + '</span>' + (opts.compact ? '' : '<span class="sblock__time">' + esc(b.time) + '</span>') + '</button>';
@@ -193,7 +193,7 @@
     }
     var inner = '<form class="pform" data-form="event" novalidate>' +
       '<label class="field"><span class="field__label">일정 이름</span><input id="ev-title" class="field__input" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="예: 일반생물 수업" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="ev-error"' : '') + '></label>' +
-      '<div class="field"><span class="field__label">누구</span>' + chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정') + '</div>' +
+      '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
       '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +
       (f.weekly ? '<div class="field"><span class="field__label">요일</span>' + chipRow('ev-wd', WD, f.weekday, '요일') + '</div>'
         : '<label class="field"><span class="field__label">날짜</span><input id="ev-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>') +

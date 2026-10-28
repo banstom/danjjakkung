@@ -274,6 +274,18 @@ async function tick(page, dateKey, key) {
   await jm.waitForTimeout(150);
   console.log('엔터로 고치기:', (await togTitles())[1]);
   await jm.screenshot({ path: path.join(OUT, 'web-todo.png'), fullPage: true });
+  // (점검 6) 체크한 줄이 「완료」로 접혀도 포커스가 근처에 남는다
+  await jm.click('.tcard--together [data-act="todo-donelist"]'); // 완료 숨기기
+  await jm.focus('.tcard--together .trow:not(.is-done) .tcheck');
+  await jm.keyboard.press('Enter');
+  await jm.waitForTimeout(250);
+  console.log('체크 뒤 포커스:', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
+  // (점검 3) 고치던 함께 할 일을 짝꿍이 지우면 시트가 닫힌다
+  await jm.click('.tcard--together [data-act="todo-edit"]');
+  await dj.click('.tcard--together [data-act="todo-edit"]');
+  await dj.click('[data-act="todo-delete"]'); await dj.waitForTimeout(450); await dj.click('[data-act="todo-delete"]');
+  await jm.waitForTimeout(250);
+  console.log('짝꿍이 지우면:', !(await jm.$('#todo-sheet-title')), '|', await jm.textContent('.toast').catch(() => '(없음)'));
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
   async function addEvent(page, title, opts) {
@@ -307,14 +319,27 @@ async function tick(page, dateKey, key) {
   await jm.click('.sday.is-today');
   console.log('일 보기:', await jm.textContent('.scard__title'), '|', (await jm.$$eval('.sstatus__row', (e) => e.map((x) => x.textContent))).join(' / '));
   await jm.screenshot({ path: path.join(OUT, 'web-day.png'), fullPage: true });
+  // (점검 2) 자정이 지나면 일 보기도 오늘로
+  await jm.clock.fastForward('04:00:00');
+  await jm.waitForTimeout(300);
+  console.log('자정 뒤 일 보기:', await jm.textContent('.scard__title'), '| 지금 카드', !!(await jm.$('.sstatus')));
+  await jm.click('.sstrip__btn:nth-child(2)');
   await jm.click('.sblock[aria-label^="일반생물"]');
   console.log('내 일정 누르면 고치기:', await jm.textContent('#event-sheet-title'), await jm.inputValue('#ev-title'));
   await jm.keyboard.press('Escape');
   await jm.click('[data-act="sched-mode"][data-mode="week"]');
+  // (점검 7) 함께 일정은 누구를 바꿀 수 없다 · (점검 1) 각자 일정과 겹쳐도 나란히
+  await jm.click('.sblock[aria-label^="데이트"]');
+  console.log('함께 일정 고치기:', await jm.textContent('.sheet .field .muted'), '| 누구 버튼', await jm.$$eval('[data-act="ev-owner"]', (e) => e.length));
+  await jm.keyboard.press('Escape');
+  console.log('데이트 조각:', await jm.$$eval('.sblock--both', (e) => e.map((x) => (x.getAttribute('aria-hidden') || 'read') + ':' + x.style.left).join(' ')));
   await jm.click('[data-act="sched-week"][data-dir="1"]');
   console.log('다음 주:', await jm.textContent('.grid-range'), '| 블록', await jm.$$eval('.sblock', (e) => e.length), '| 이번 주 버튼', !!(await jm.$('[data-act="sched-thisweek"]')));
   await jm.click('[data-act="sched-thisweek"]');
-  await jm.click('[data-act="tab"][data-tab="routine"]');
+  // (점검 8) 알림으로 열면(?tab=routine) 그 탭으로, 주소는 깔끔하게
+  await jm.goto(URL + '?tab=routine');
+  await jm.waitForSelector('[data-act="tab"][aria-current="page"]');
+  console.log('?tab=routine 으로 열기:', await jm.getAttribute('[data-act="tab"][aria-current="page"]', 'data-tab'), '| 주소', await jm.evaluate(() => location.search || '(없음)'));
   await dj.click('[data-act="tab"][data-tab="routine"]');
 
   // 4-2) 알림: 켜기 → 기기 저장 · 기본 설정(밤 9시) → 설정 바꾸기 → 테스트 → 끄기

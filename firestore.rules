@@ -93,7 +93,8 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy && request.resource.data.createdAt == resource.data.createdAt
         && (request.resource.data.done == false || request.resource.data.doneBy == request.auth.uid
             || (resource.data.done == true && request.resource.data.doneBy == resource.data.doneBy && request.resource.data.doneAt == resource.data.doneAt));
-      allow delete: if isMember() && mineOrTogether(resource.data.scope);
+      // (이미 없는 문서를 지우는 것도 허용 — 두 기기에서 동시에 지운 경우)
+      allow delete: if isMember() && (resource == null || mineOrTogether(resource.data.scope));
     }
 
     // ── 시간표 ──  내 일정은 나만, 함께(both) 일정은 둘 다 쓰고 지운다. 읽기는 둘 다.
@@ -111,9 +112,11 @@ service cloud.firestore {
       allow read: if isMember();
       allow create: if isMember() && validEvent(request.resource.data) && mineOrBoth(request.resource.data.owner)
         && request.resource.data.createdBy == request.auth.uid;
+      // 함께 일정은 함께 일정으로 남는다 (한 사람이 자기 것으로 가져갈 수 없음). 내 일정은 함께로 바꿀 수 있다.
       allow update: if isMember() && validEvent(request.resource.data) && mineOrBoth(resource.data.owner) && mineOrBoth(request.resource.data.owner)
+        && (request.resource.data.owner == resource.data.owner || resource.data.owner == request.auth.uid)
         && request.resource.data.createdBy == resource.data.createdBy;
-      allow delete: if isMember() && mineOrBoth(resource.data.owner);
+      allow delete: if isMember() && (resource == null || mineOrBoth(resource.data.owner));
     }
 
     // ── 알림 ──

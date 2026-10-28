@@ -68,17 +68,18 @@
     return { from: Math.floor(from / 60) * 60, to: Math.min(24 * 60, Math.ceil(to / 60) * 60) };
   }
 
+  /** 함께 일정은 두 사람 자리에 한 조각씩 넣어, 각자 일정과 겹치면 나란히 놓인다 (가려서 못 누르는 일이 없게).
+      두 번째 조각은 dup=true (같은 일정이라 화면 읽기에서는 한 번만 읽는다). */
   function blocksFor(list, persons, me, dayIdx) {
-    var lanes = [[], [], []]; // 0, 1, 함께
+    var lanes = [[], []];
     list.forEach(function (e) {
-      var ls = lanesOf(e, persons);
-      if (!ls.length) return;
-      var b = { id: e.id, title: e.title, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx,
-        lane: e.owner === 'both' ? 'both' : ls[0], slot: e.owner === 'both' ? 'both' : (ls[0] === 0 ? 'her' : 'me'),
-        editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end };
-      lanes[e.owner === 'both' ? 2 : ls[0]].push(b);
+      lanesOf(e, persons).forEach(function (lane, k) {
+        lanes[lane].push({ id: e.id, title: e.title, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx,
+          lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
+          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
+      });
     });
-    return packLane(lanes[0]).concat(packLane(lanes[1]), packLane(lanes[2]));
+    return packLane(lanes[0]).concat(packLane(lanes[1]));
   }
 
   /** 주 보기: weekStart(월요일)부터 7일 */

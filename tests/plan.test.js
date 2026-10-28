@@ -87,10 +87,12 @@ test('주 보기: 자리 · 함께 · 겹침 · 고칠 수 있는지', () => {
   assert.strictEqual(w.range, '10월 26일 – 11월 1일');
   assert.ok(w.isThisWeek);
   assert.ok(w.days[2].isToday);
-  const by = Object.fromEntries(w.blocks.map((b) => [b.id, b]));
+  const by = Object.fromEntries(w.blocks.filter((b) => !b.dup).map((b) => [b.id, b]));
   assert.deepStrictEqual([by.a.lane, by.a.col, by.a.cols, by.b.col, by.b.cols], [0, 0, 2, 1, 2]); // 겹치면 나란히
   assert.deepStrictEqual([by.c.lane, by.c.cols, by.c.slot], [1, 1, 'me']);
-  assert.deepStrictEqual([by.d.lane, by.d.dayIdx, by.d.editable], ['both', 5, true]);
+  // 함께 일정은 두 자리에 한 조각씩 (두 번째는 dup)
+  const d = w.blocks.filter((b) => b.id === 'd');
+  assert.deepStrictEqual(d.map((b) => [b.lane, b.slot, b.dup, b.dayIdx, b.editable]), [[0, 'both', false, 5, true], [1, 'both', true, 5, true]]);
   assert.strictEqual(by.a.editable, false); // 다진 일정은 준민이 못 고침
   assert.deepStrictEqual(w.hours, { from: 540, to: 1440 }); // 23:30까지 → 24시
 });
@@ -111,4 +113,13 @@ test('일정 확인', () => {
   assert.strictEqual(S.validate({ title: '수업', weekly: true, weekday: 1, start: '11:00', end: '10:00' }), '끝 시간이 시작보다 늦어야 해요');
   assert.strictEqual(S.validate({ title: '수업', weekly: false, date: '', start: '10:00', end: '11:00' }), '날짜를 골라 주세요');
   assert.strictEqual(S.validate({ title: '수업', weekly: true, weekday: 6, start: '10:00', end: '11:00' }), '');
+});
+
+test('함께 일정이 각자 일정을 가리지 않는다 (겹치면 나란히)', () => {
+  const list = S.fromDocs([ev('mine', 'jm', { start: '10:00', end: '12:00' }), ev('our', 'both', { start: '11:00', end: '13:00' })]);
+  const w = S.week(list, P, 'jm', S.monStart(today), today);
+  const lane1 = w.blocks.filter((b) => b.lane === 1).map((b) => [b.id, b.col, b.cols]);
+  assert.deepStrictEqual(lane1, [['mine', 0, 2], ['our', 1, 2]]);
+  const lane0 = w.blocks.filter((b) => b.lane === 0).map((b) => [b.id, b.col, b.cols]);
+  assert.deepStrictEqual(lane0, [['our', 0, 1]]);
 });
