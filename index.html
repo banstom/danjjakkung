@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>단짝꿍</title>
-<meta name="description" content="둘이 함께 매일 루틴을 체크하고 계절 색 달력으로 물들여 가는 짝꿍 루틴 트래커">
+<meta name="description" content="둘이 함께 매일 루틴을 체크하고 고른 테마 색 달력으로 물들여 가는 짝꿍 루틴 트래커">
 <meta name="theme-color" content="#F2F4F6">
 <meta name="color-scheme" content="light dark">
 <!-- 홈 화면에 추가했을 때 앱처럼 열리게 -->
@@ -18,6 +18,8 @@
 <link rel="preload" href="fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/app.css">
+<!-- 고른 테마를 첫 화면 전에 단다 (깜빡임 없이) -->
+<script src="js/themes.js"></script>
 <style>
   /* 노치 · 홈 막대 자리 비우기 (artifact 판에서는 호스트가 해 주던 부분) */
   :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }

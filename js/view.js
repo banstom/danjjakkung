@@ -23,7 +23,8 @@
       (h.canSignOut ? ' · <button type="button" class="link-btn" data-act="sign-out">로그아웃</button>' : '') + '</p><h1 class="title">' + esc(TITLE) + '</h1></div>' +
       '<div class="top__side">' +
       (h.bell ? '<button type="button" class="bell-btn" data-act="open-notify" aria-label="알림 설정' + (h.bell === 'on' ? ' (켜짐)' : ' (꺼짐)') + '">' + (h.bell === 'on' ? '🔔' : '🔕') + '</button>' : '') +
-      '<span class="season-chip">' + esc(h.season.icon + ' ' + h.season.name) + '</span></div>' +
+      (h.palette ? '<button type="button" class="bell-btn" data-act="open-theme" aria-label="테마 바꾸기 (지금: ' + esc(h.palette) + ')">🎨</button>' : '') +
+      '</div>' +
       '</header>';
   }
 
@@ -72,6 +73,31 @@
       '</div>' +
       '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +
       '<button type="button" class="close-btn" data-act="close-notify">닫기</button>' +
+      '</section></div>';
+  }
+
+  // 「테마」 시트 — 카드마다 그 테마 색으로 칠한 작은 화면. 누르면 바로 바뀐다.
+  var MINI_CELLS = ['full', 'half', 'none', 'full', 'full', 'half', 'full', 'none', 'half', 'full'];
+  function themeSheet(t, entering) {
+    if (!t) return '';
+    var cells = MINI_CELLS.map(function (c) { return '<i class="tmini__cell lv-' + c + '"></i>'; }).join('');
+    return '<div class="sheet-layer">' +
+      '<button type="button" class="scrim" data-act="close-theme" aria-label="닫기"></button>' +
+      '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="theme-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<div class="sheet__head"><h2 id="theme-title" class="sheet__title">테마</h2></div>' +
+      '<p class="sheet__sub">고르면 바로 바뀌어요 · 이 기기에 저장돼요</p>' +
+      '<div class="tgrid" role="group" aria-label="테마 고르기">' + t.themes.map(function (th) {
+        var on = th.id === t.current;
+        return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-theme="' + esc(th.id) + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '">' +
+          (on ? '<span class="tpick__badge" aria-hidden="true">' + CHECK_SVG + '</span>' : '') +
+          '<span class="tmini" aria-hidden="true">' + cells + '</span>' +
+          '<span class="tpick__btn" aria-hidden="true">체크</span>' +
+          '<span class="tpick__name">' + esc(th.name) + '</span>' +
+          '<span class="tpick__desc">' + esc(th.desc) + (on ? ' · 사용 중' : '') + '</span>' +
+          '</button>';
+      }).join('') + '</div>' +
+      '<button type="button" class="close-btn" data-act="close-theme">닫기</button>' +
       '</section></div>';
   }
 
@@ -295,6 +321,7 @@
     }
     if (status === 'ready') {
       out += opts.notify ? notifySheet(opts.notify, opts.sheetEntering)
+        : opts.theme ? themeSheet(opts.theme, opts.sheetEntering)
         : opts.sheetHtml ? opts.sheetHtml
         : opts.tab && opts.tab !== 'routine' ? ''
         : m.manage ? manageSheet(m.manage, m.header.meName, opts && opts.sheetEntering) : (!m.empty ? sheet(m.sheet, opts && opts.sheetEntering) : '');

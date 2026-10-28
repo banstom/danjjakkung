@@ -1,7 +1,7 @@
 /* 서비스 워커 — 앱 화면(파일들)을 기기에 저장해 두고, 오프라인에서도 열리게 한다.
    기록(Firestore)은 Firebase가 따로 기기에 보관하므로 여기서는 손대지 않는다.
    파일을 바꿔서 올릴 때마다 VERSION을 올리면 새 파일로 바뀐다. */
-var VERSION = 'danjjakkung-v12';
+var VERSION = 'danjjakkung-v13';
 
 /* 푸시 알림: 서버(functions/)가 보낸 알림을 휴대폰 알림으로 띄운다.
    아이폰은 받은 알림을 화면에 띄우지 않으면 몇 번 뒤 알림 구독을 끊어 버리므로,
@@ -33,7 +33,7 @@ self.addEventListener('notificationclick', function (e) {
 var FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'styles/tokens.css', 'styles/app.css',
-  'js/firebase-config.js', 'js/firebase.js', 'js/dates.js', 'js/seasons.js', 'js/streak.js', 'js/icons.js',
+  'js/firebase-config.js', 'js/firebase.js', 'js/dates.js', 'js/seasons.js', 'js/themes.js', 'js/streak.js', 'js/icons.js',
   'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/todos.js', 'js/schedule.js', 'js/view-plan.js', 'js/store.js', 'js/app.js',
   'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/push.js',
   'fonts/PretendardVariable.woff2', 'fonts/tossface-00.woff2', 'fonts/tossface-04.woff2', 'fonts/tossface-05.woff2',

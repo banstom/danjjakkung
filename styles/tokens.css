@@ -1,5 +1,17 @@
 /* 색표 · 글꼴 — 이 파일 밖에서는 색 값을 쓰지 않는다.
-   계절마다 한 계열(연한 · 중간 · 진한)만 쓰고, 빨강은 경고 전용. */
+   테마는 사용자가 고른다 (js/themes.js 의 목록 · 저장, 여기는 색 값만).
+   테마 블록은 [data-theme="<id>"] — <html>에 달면 앱 전체, 미리보기 카드에 달면 그 카드만 그 테마로 칠해진다.
+   새 테마 = 여기 블록 하나 + js/themes.js 목록 한 줄. 부품(app.css)은 손대지 않는다.
+
+   역할 (요청서 이름 → 여기 이름)
+     background → --bg          surface → --surface        surfaceElevated · inputBackground → --raised
+     textPrimary → --text       textSecondary → --sub      border · divider → --line (--divider)
+     primary → --primary        primaryForeground → --on-primary   secondary → --secondary
+     강조 테두리 · 포커스 · 선택 테두리 → --accent (UI 대비 3:1 이상)
+     tabBarBackground → --tab-bg   tabBarActive → --tab-active   tabBarInactive → --tab-inactive   icon → --icon
+     success → --success   warning → --warning   error → --warn (빨강은 경고 전용)
+   앱 전용: --tint/--tint-text(함께 · 강조 카드), --her/--me(두 사람 색, 위 글자 --*-ink), --lv-*(달력 진하기), --empty(쉰 날)
+   글자 대비 4.5:1 — 요청서의 Text Secondary 중 바탕 위에서 4.5:1이 안 되는 값은 같은 색조로 조금 진하게 맞췄다. */
 
 @font-face { font-family: 'Pretendard'; src: url('../fonts/PretendardVariable.woff2') format('woff2'); font-weight: 45 920; font-display: swap; }
 /* 토스페이스(© Viva Republica) — 모양을 바꾸지 않고 쓴다. 쓰는 이모지만 잘라 둔 파일. 루틴 아이콘은 js/icons.js 목록과 같다. */
@@ -12,64 +24,94 @@
 
 :root {
   --font: 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
-
-  /* 바탕 · 글자 (라이트) */
-  --bg: #F2F4F6;
-  --surface: #FFFFFF;
-  --raised: #F2F4F6;
-  --text: #191F28;
-  --sub: #6B7684;
-  --faint: #C5CBD3;
-  --line: #E5E8EB;
-  --empty: #E3E6EA;        /* 쉰 날: 카드 위에서 시작 전(투명)과 구분되게 한 단계 진하게 */
-  --empty-text: #4E5968;
-  --toast-bg: #191F28;
-  --toast-shadow: 0 8px 24px rgba(25, 31, 40, 0.18);
-  --toast-fg: #FFFFFF;
-  --scrim: rgba(25, 31, 40, 0.4);
-  --shadow: 0 -8px 24px rgba(25, 31, 40, 0.08);
-  --warn: #D1343A;        /* 흰 바탕 대비 4.9:1 */
-
-  /* 계절 기본값 = 가을 (data-season이 덮어쓴다) */
-  --pale: #F8D3B4; --mid: #DDA137; --deep: #A34A2A; --soft: #FCEBDD; --dsoft: #3A2219;
-
-  /* 역할 (라이트): 진한 색이 주인공 */
-  --accent: var(--deep);
-  --on-accent: #FFFFFF;
-  --tint: var(--soft);
-  --tint-text: var(--deep);
-  --her: var(--deep);
-  --me: var(--mid);
-  --her-ink: #FFFFFF;     /* 사람 색 위 글자 */
-  --me-ink: #191F28;
-  --lv-half: var(--mid);
-  --lv-half-text: #191F28;
-  --lv-full: var(--deep);
-  --lv-full-text: #FFFFFF;
 }
 
-/* 계절 색표 — Habit Tracker 팔레트 */
-:root[data-season="spring"] { --pale: #BFE6CF; --mid: #8CC063; --deep: #2F6B3A; --soft: #E8F5EC; --dsoft: #1C3323; }
-:root[data-season="summer"] { --pale: #CFE6F2; --mid: #6DB8E6; --deep: #1B5A85; --soft: #EAF4FA; --dsoft: #14304A; }
-:root[data-season="autumn"] { --pale: #F8D3B4; --mid: #DDA137; --deep: #A34A2A; --soft: #FCEBDD; --dsoft: #3A2219; }
-:root[data-season="winter"] { --pale: #C9CFF0; --mid: #7F8CDB; --deep: #232C6E; --soft: #ECEEFA; --dsoft: #1E2350; }
-
-/* 다크 모드: 더 많이 할수록 더 밝게 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
-    --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
-    --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
-    --her: var(--pale); --me: var(--mid); --her-ink: #0F1115; --me-ink: #0F1115;
-    --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
-  }
+/* 모든 테마 공통 역할 (테마 블록이 필요하면 덮어쓴다) */
+:root, [data-theme] {
+  --divider: var(--line);
+  --input-bg: var(--surface);
+  --icon: var(--sub);
+  --tab-bg: var(--surface);
+  --tab-inactive: var(--sub);
+  --switch-knob: #FFFFFF;
+  --success: #2E7D4F;
+  --warning: #9A5B00;
+  --scrim: rgba(30, 28, 40, 0.4);
+  --shadow: 0 -8px 24px rgba(30, 28, 40, 0.08);
+  --toast-shadow: 0 8px 24px rgba(30, 28, 40, 0.18);
+  --lift: 0 1px 3px rgba(30, 28, 40, 0.12);
 }
-:root[data-theme="dark"] {
+
+/* Soft Pastel — 포근한 파스텔 — 채움은 연분홍, 테두리 · 글자 강조만 진한 장밋빛 */
+:root, [data-theme="soft-pastel"] {
+  color-scheme: light;
+  --bg: #FFF8E7; --surface: #FFFFFF; --raised: #FCF4EE; --line: #EEE8E7;
+  --text: #34313A; --sub: #6D6973; --faint: #C9C2CB;
+  --primary: #F6DDE8; --on-primary: #34313A; --secondary: #DCD9FA; --accent: #C27C9C; --tab-active: #94486B;
+  --tint: #FBEDF3; --tint-text: #8E4467;
+  --her: #E59BBA; --her-ink: #34313A; --me: #A9A2EE; --me-ink: #34313A;
+  --empty: #F1EAE8; --empty-text: #5F5A66; --lv-half: #DCD9FA; --lv-half-text: #34313A; --lv-full: #D5729A; --lv-full-text: #2A2730;
+  --warn: #C62F3A; --toast-bg: #34313A; --toast-fg: #FFFFFF;
+}
+
+/* Cosmic Dream — 깊은 남색 우주 — 유일한 어두운 테마, 많이 할수록 밝은 시안 */
+[data-theme="cosmic-dream"] {
   color-scheme: dark;
-  --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
-  --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
-  --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
-  --her: var(--pale); --me: var(--mid); --her-ink: #0F1115; --me-ink: #0F1115;
-  --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
+  --bg: #101426; --surface: #191D33; --raised: #232842; --line: #30334B;
+  --text: #F4F2FF; --sub: #B5B5D0; --faint: #4C506E;
+  --primary: #7557C8; --on-primary: #FFFFFF; --secondary: #292650; --accent: #8F74E0; --tab-active: #6CD8E8;
+  --tint: #292650; --tint-text: #CFC3FF;
+  --her: #6CD8E8; --her-ink: #101426; --me: #A891F0; --me-ink: #101426;
+  --empty: #2B3050; --empty-text: #C9C9E0; --lv-half: #4B3F95; --lv-half-text: #F4F2FF; --lv-full: #6CD8E8; --lv-full-text: #101426;
+  --warn: #FF7B86; --toast-bg: #F4F2FF; --toast-fg: #191D33;
+  --success: #5BD08A; --warning: #F2B84B;
+  --scrim: rgba(5, 7, 18, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --lift: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Ocean Breeze — 맑은 바다 — 중요한 버튼은 진한 청록 */
+[data-theme="ocean-breeze"] {
+  color-scheme: light;
+  --bg: #EAF8F7; --surface: #FFFFFF; --raised: #F1F9F8; --line: #D4EAE7;
+  --text: #20343A; --sub: #596C71; --faint: #B9D0CF;
+  --primary: #164E63; --on-primary: #FFFFFF; --secondary: #A8DCD8; --accent: #399DA8; --tab-active: #164E63;
+  --tint: #DDF2F0; --tint-text: #164E63;
+  --her: #399DA8; --her-ink: #0B2530; --me: #7FC5C0; --me-ink: #20343A;
+  --empty: #DCECEA; --empty-text: #4A6065; --lv-half: #A8DCD8; --lv-half-text: #20343A; --lv-full: #237F8B; --lv-full-text: #FFFFFF;
+  --warn: #C62F3A; --toast-bg: #164E63; --toast-fg: #FFFFFF;
+}
+
+/* Forest Diary — 숲과 이끼 — 세이지 · 모스, 형광 녹색 없음 */
+[data-theme="forest-diary"] {
+  color-scheme: light;
+  --bg: #F3F3E9; --surface: #FFFFFF; --raised: #F6F6EF; --line: #E1E5D8;
+  --text: #30372E; --sub: #646A60; --faint: #C4C9BA;
+  --primary: #394B38; --on-primary: #FFFFFF; --secondary: #D0D9BF; --accent: #82966A; --tab-active: #394B38;
+  --tint: #E9EEDF; --tint-text: #394B38;
+  --her: #82966A; --her-ink: #1A2119; --me: #AEBD92; --me-ink: #30372E;
+  --empty: #E6E9DE; --empty-text: #525A4F; --lv-half: #D0D9BF; --lv-half-text: #30372E; --lv-full: #5E7150; --lv-full-text: #FFFFFF;
+  --warn: #B8343A; --toast-bg: #30372E; --toast-fg: #FFFFFF;
+}
+
+/* Vintage Film — 크림 종이 · 올리브 · 바랜 버건디 */
+[data-theme="vintage-film"] {
+  color-scheme: light;
+  --bg: #F2E8D5; --surface: #FAF5EC; --raised: #F4ECDE; --line: #E3D7C4;
+  --text: #39352E; --sub: #696358; --faint: #CFC3AF;
+  --primary: #874F4D; --on-primary: #FFFFFF; --secondary: #D6BE87; --accent: #7B8060; --tab-active: #874F4D;
+  --tint: #EFE4CC; --tint-text: #6E3E3C;
+  --her: #874F4D; --her-ink: #FFFFFF; --me: #C9AA66; --me-ink: #39352E;
+  --empty: #E9DFCC; --empty-text: #5A5348; --lv-half: #D6BE87; --lv-half-text: #39352E; --lv-full: #666B4D; --lv-full-text: #FFFFFF;
+  --warn: #B3261E; --toast-bg: #39352E; --toast-fg: #FAF5EC;
+}
+
+/* Blue Hour — 해 진 직후의 하늘 — 밝은 바탕, 은은한 페리윙클 */
+[data-theme="blue-hour"] {
+  color-scheme: light;
+  --bg: #F0F2FC; --surface: #FFFFFF; --raised: #F4F5FC; --line: #DDE1F1;
+  --text: #2D3450; --sub: #60667F; --faint: #C3C7DD;
+  --primary: #303A60; --on-primary: #FFFFFF; --secondary: #C3C9ED; --accent: #7F8CBF; --tab-active: #303A60;
+  --tint: #E7EAF9; --tint-text: #303A60;
+  --her: #7F8CBF; --her-ink: #161C35; --me: #A6AEE3; --me-ink: #2D3450;
+  --empty: #E2E5F3; --empty-text: #4F5678; --lv-half: #C3C9ED; --lv-half-text: #2D3450; --lv-full: #5D6AA3; --lv-full-text: #FFFFFF;
+  --warn: #C62F3A; --toast-bg: #303A60; --toast-fg: #FFFFFF;
 }

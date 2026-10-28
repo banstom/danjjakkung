@@ -1,6 +1,6 @@
 # 단짝꿍
 
-둘이 함께 매일 루틴을 체크하고, 시작 며칠차·연속 며칠차를 계절 색 달력으로 물들여 가는 웹앱.
+둘이 함께 매일 루틴을 체크하고, 시작 며칠차·연속 며칠차를 고른 테마 색 달력으로 물들여 가는 웹앱.
 GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 휴대폰 홈 화면에 추가하면 앱처럼 열린다.
 
 ## 처음 한 번 설정
@@ -18,19 +18,20 @@ GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 
 | 위치 | 하는 일 |
 |---|---|
 | `js/dates.js` `js/streak.js` `js/seasons.js` | 날짜 · 며칠차 · 연속 · 계절 계산 (화면 없음) |
+| `js/themes.js` | 테마 6종 목록 · 고른 테마 저장(이 기기 localStorage) · 적용 — `<head>`에서 먼저 불러 깜빡임 없음 |
 | `js/model.js` | 기록 → 화면에 보일 값 |
 | `js/view.js` | 화면 그리기 (부품마다 함수 하나) |
 | `js/store.js` | Firestore 읽기 · 쓰기 |
 | `js/firebase.js` `js/firebase-config.js` | Firebase 연결 · 로그인 |
 | `js/app.js` | 상태 · 버튼 · 알림 |
-| `styles/tokens.css` | 색표(계절별 한 계열) · 글꼴 — 색은 이 파일에만 |
+| `styles/tokens.css` | 테마별 색표(`[data-theme="<id>"]` 블록) · 글꼴 — 색은 이 파일에만. 새 테마 = 블록 하나 + themes.js 한 줄 |
 | `sw.js` `manifest.webmanifest` `icons/` | 홈 화면 앱 · 오프라인 |
 | `firestore.rules` | 누가 무엇을 읽고 쓸 수 있는지 |
 
 ## 확인
 
 ```
-npm test          # 며칠차 · 연속 · 계절 · 그리드 계산 (node)
+npm test          # 며칠차 · 연속 · 계절 · 그리드 계산 + 테마 색표 · 대비 (node)
 npm run web       # 가짜 Firebase로 두 사람 흐름 + 오프라인 (playwright)
 ```
 

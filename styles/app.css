@@ -30,10 +30,9 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .top__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .caption { margin: 0; font-size: 13px; font-weight: 500; color: var(--sub); }
 .title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
-.season-chip, .tag {
+.tag {
   flex-shrink: 0; font-weight: 700; color: var(--tint-text); background: var(--tint); border-radius: 999px;
 }
-.season-chip { font-size: 13px; padding: 6px 12px; }
 .tag { font-size: 12px; font-weight: 600; padding: 3px 8px; }
 
 /* 칩 */
@@ -42,7 +41,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   height: 40px; box-sizing: border-box; padding: 0 16px; border-radius: 999px;
   border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 600;
 }
-.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--primary); color: var(--on-primary); }
 
 /* 카드 공통 */
 .card { background: var(--surface); border-radius: 20px; padding: 14px 16px; }
@@ -56,7 +55,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   background: var(--surface); color: var(--tint-text); font-size: 12px; font-weight: 700;
 }
 .icon-btn {
-  width: 40px; height: 40px; border: 0; border-radius: 12px; background: transparent; color: var(--sub);
+  width: 40px; height: 40px; border: 0; border-radius: 12px; background: transparent; color: var(--icon);
   display: flex; align-items: center; justify-content: center;
 }
 .icon-btn:disabled { color: var(--faint); }
@@ -141,7 +140,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   border: 1.5px solid var(--accent); background: transparent; color: var(--tint-text);
   font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
 }
-.pill-btn.is-done { background: var(--accent); color: var(--on-accent); }
+.pill-btn.is-done { background: var(--primary); color: var(--on-primary); }
 .pill-btn.is-past { border-color: var(--line); color: var(--sub); }
 .pill-btn:disabled { border-color: var(--line); color: var(--faint); }
 .pill-btn.is-locked { cursor: default; border-style: dashed; border-color: var(--line); color: var(--sub); } /* 상대 루틴: 보이지만 못 누름 */
@@ -199,7 +198,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .field__label { font-size: 12px; font-weight: 600; color: var(--sub); }
 .field__input {
   height: 44px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px;
-  font: inherit; font-size: 16px; color: var(--text); background: var(--surface); width: 100%; min-width: 0;
+  font: inherit; font-size: 16px; color: var(--text); background: var(--input-bg); width: 100%; min-width: 0;
 }
 .field__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .icon-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
@@ -209,7 +208,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rform__actions { display: flex; gap: 8px; }
 .ghost-btn, .solid-btn { height: 48px; border-radius: 14px; font-size: 15px; font-weight: 700; }
 .ghost-btn { flex: 1; border: 1.5px solid var(--line); background: var(--surface); color: var(--sub); }
-.solid-btn { flex: 2; border: 0; background: var(--accent); color: var(--on-accent); }
+.solid-btn { flex: 2; border: 0; background: var(--primary); color: var(--on-primary); }
 .solid-btn:disabled { opacity: 0.6; }
 .rform__more { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .text-btn { min-height: 40px; border: 0; background: none; padding: 0 4px; font-size: 13px; font-weight: 600; color: var(--sub); text-decoration: underline; text-underline-offset: 3px; }
@@ -242,8 +241,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .nrow__title { font-size: 15px; font-weight: 600; color: var(--text); }
 .nrow__desc { font-size: 12px; color: var(--sub); }
 .switch { position: relative; flex-shrink: 0; width: 50px; height: 30px; border-radius: 999px; border: 0; padding: 0; background: var(--faint); transition: background .15s; }
-.switch__knob { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
-.switch[aria-checked="true"] { background: var(--accent); }
+.switch__knob { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--switch-knob); box-shadow: var(--lift); transition: transform .15s; }
+.switch[aria-checked="true"] { background: var(--primary); }
 .switch[aria-checked="true"] .switch__knob { transform: translateX(20px); }
 .switch:disabled, .nselect:disabled { opacity: .5; }
 .nselect { flex-shrink: 0; height: 38px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; }
@@ -256,14 +255,14 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
   position: fixed; z-index: 15; left: 0; right: 0; bottom: 0;
   display: flex; justify-content: center; gap: 4px;
   padding: 4px max(12px, calc((100% - 480px) / 2 + 12px)) calc(8px + env(safe-area-inset-bottom, 0px));
-  background: var(--surface); border-top: 1px solid var(--line);
+  background: var(--tab-bg); border-top: 1px solid var(--divider);
 }
 .tabbar__btn {
   flex: 1 1 0; min-height: 56px; border: 0; background: none; padding: 6px 0 4px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  color: var(--sub); font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--tab-inactive); font: inherit; font-size: 12px; font-weight: 600;
 }
-.tabbar__btn[aria-current="page"] { color: var(--accent); font-weight: 700; }
+.tabbar__btn[aria-current="page"] { color: var(--tab-active); font-weight: 700; }
 .tabbar__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; border-radius: 12px; }
 
 /* ── 할 일 ── */
@@ -283,11 +282,11 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .tcard--col .trow, .trow--mini { background: none; border-radius: 0; padding: 8px 0; min-height: 44px; border-bottom: 1px solid var(--line); gap: 8px; align-items: flex-start; }
 .tcheck {
   flex-shrink: 0; width: 26px; height: 26px; border-radius: 8px; padding: 0;
-  border: 2px solid var(--faint); background: var(--surface); color: var(--on-accent);
+  border: 2px solid var(--faint); background: var(--surface); color: var(--on-primary);
   display: inline-flex; align-items: center; justify-content: center;
 }
 .trow--mini .tcheck { width: 24px; height: 24px; margin-top: 2px; }
-.tcheck[aria-checked="true"].tcheck--both { background: var(--accent); border-color: var(--accent); }
+.tcheck[aria-checked="true"].tcheck--both { background: var(--primary); border-color: var(--accent); }
 .tcheck[aria-checked="true"].tcheck--her { background: var(--her); border-color: var(--her); color: var(--her-ink); }
 .tcheck[aria-checked="true"].tcheck--me { background: var(--me); border-color: var(--me); color: var(--me-ink); }
 .tcheck[aria-disabled="true"] { border-style: dashed; opacity: .75; }
@@ -314,7 +313,7 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .pform { display: flex; flex-direction: column; gap: 12px; }
 .pick-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .pick { min-height: 40px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; }
-.pick[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.pick[aria-pressed="true"] { border-color: var(--accent); background: var(--primary); color: var(--on-primary); }
 .ftime { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .einfo { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 14px; background: var(--raised); }
 .einfo__title { margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
@@ -323,7 +322,7 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 /* ── 시간표 ── */
 .seg { display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: var(--line); width: 132px; box-sizing: border-box; }
 .seg__btn { flex: 1 1 0; height: 36px; border: 0; border-radius: 10px; background: none; color: var(--sub); font: inherit; font-size: 14px; font-weight: 700; }
-.seg__btn[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.seg__btn[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: var(--lift); }
 .scard { display: flex; flex-direction: column; gap: 4px; padding: 12px 10px 14px 6px; }
 .scard__title { font-size: 15px; font-weight: 700; padding: 0 6px 4px 10px; }
 .sweek { display: grid; grid-template-columns: 26px repeat(7, minmax(0, 1fr)); }
@@ -331,8 +330,8 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sday { border: 0; background: none; padding: 2px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: inherit; color: var(--text); min-height: 44px; }
 .sday__wd { font-size: 12px; font-weight: 600; color: var(--sub); }
 .sday__date { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
-.sday.is-today .sday__wd { color: var(--accent); }
-.sday.is-today .sday__date { background: var(--accent); color: var(--on-accent); }
+.sday.is-today .sday__wd { color: var(--tint-text); }
+.sday.is-today .sday__date { background: var(--primary); color: var(--on-primary); }
 .shours { position: relative; }
 .shours--day { width: 44px; }
 .shour { position: absolute; right: 4px; transform: translateY(-50%); font-size: 10px; color: var(--sub); font-variant-numeric: tabular-nums; }
@@ -366,15 +365,38 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sstrip__btn { flex: 1 1 0; min-height: 54px; border-radius: 14px; border: 0; background: var(--surface); color: var(--text); font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
 .sstrip__btn span { font-size: 12px; font-weight: 600; color: var(--sub); }
 .sstrip__btn b { font-size: 15px; }
-.sstrip__btn.is-today b { color: var(--accent); }
-.sstrip__btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-.sstrip__btn[aria-pressed="true"] span, .sstrip__btn[aria-pressed="true"] b { color: var(--on-accent); }
+.sstrip__btn.is-today b { color: var(--tint-text); }
+.sstrip__btn[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.sstrip__btn[aria-pressed="true"] span, .sstrip__btn[aria-pressed="true"] b { color: var(--on-primary); }
 .sstatus { display: flex; flex-direction: column; gap: 6px; }
 .sstatus__now { font-size: 12px; font-weight: 700; color: var(--sub); }
 .sstatus__row { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .slanes-head { display: grid; grid-template-columns: 44px repeat(2, minmax(0, 1fr)); padding: 0 0 6px; }
 .slanes-head > span { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 700; }
 .sday-body { display: grid; grid-template-columns: 44px minmax(0, 1fr); position: relative; }
-.snow { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); pointer-events: none; }
-.snow::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.snow { position: absolute; left: 0; right: 0; height: 2px; background: var(--primary); pointer-events: none; }
+.snow::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
 .sblock--once.sblock--both { background: var(--tint); border-color: var(--accent); color: var(--tint-text); }
+
+/* ── 테마 시트 — 카드마다 data-theme이 달려 있어 그 테마의 색으로 칠해진다 ── */
+.tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.tpick {
+  position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 0; text-align: left;
+  padding: 10px; border-radius: 16px; border: 2px solid var(--line); background: var(--bg); color: var(--text); font: inherit;
+}
+.tpick.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.tpick:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.tmini { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; padding: 7px; border-radius: 10px; background: var(--surface); }
+.tmini__cell { display: block; height: 14px; border-radius: 4px; }
+.tpick__btn { margin-top: 7px; height: 20px; border-radius: 7px; background: var(--primary); color: var(--on-primary); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.tpick__name { margin-top: 8px; font-size: 14px; font-weight: 700; }
+.tpick__desc { margin-top: 2px; font-size: 12px; color: var(--sub); line-height: 1.35; }
+.tpick__badge {
+  position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; border-radius: 50%; box-sizing: border-box;
+  background: var(--primary); color: var(--on-primary); border: 2px solid var(--surface); display: flex; align-items: center; justify-content: center;
+}
+.tpick__badge .ico { width: 14px; height: 14px; }
+
+/* ── 테마 바꿀 때만 잠깐 색이 스르륵 바뀌게 (평소에는 전환 없음) ── */
+html.is-theming, html.is-theming * { transition: background-color .25s ease, color .25s ease, border-color .25s ease, fill .25s ease !important; }
+@media (prefers-reduced-motion: reduce) { html.is-theming, html.is-theming * { transition: none !important; } }

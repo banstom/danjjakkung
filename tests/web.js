@@ -381,6 +381,58 @@ async function tick(page, dateKey, key) {
   console.log('아이폰 사파리 탭:', await ip.textContent('.nbox__title'));
   await ip.close();
 
+  // 4-4) 테마: 처음엔 기본(밝은 화면 → Soft Pastel), 🎨에서 고르면 바로 바뀌고 새로 열어도 그대로. 짝꿍 기기는 그대로.
+  const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour'];
+  const themeOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  await jm.click('[data-act="tab"][data-tab="routine"]');
+  console.log('테마 처음:', await themeOf(jm), '| 계절 칩 없음:', (await jm.$$('.season-chip')).length === 0, '| 🎨:', await jm.getAttribute('[data-act="open-theme"]', 'aria-label'));
+  await jm.click('[data-act="open-theme"]');
+  console.log('테마 시트:', await jm.textContent('#theme-title'), '| 카드:', (await jm.$$('.tpick')).length, '| 포커스:', await jm.evaluate(() => document.activeElement.getAttribute('data-v')),
+    '| 선택 표시:', await jm.getAttribute('.tpick.is-on', 'data-v'), await jm.getAttribute('.tpick.is-on', 'aria-pressed'));
+  await jm.screenshot({ path: path.join(OUT, 'theme-sheet-soft-pastel.png') });
+  // 카드마다 제 테마 색으로 칠해졌는지 (카드 바탕 = 그 테마의 바탕색)
+  console.log('카드 바탕:', (await jm.$$eval('.tpick', (els) => els.map((e) => e.getAttribute('data-v') + '=' + getComputedStyle(e).backgroundColor))).join(' '));
+  for (const id of THEME_IDS) {
+    await jm.click(`.tpick[data-v="${id}"]`);
+    await jm.waitForTimeout(380);
+    const st = await jm.evaluate(() => ({ t: document.documentElement.getAttribute('data-theme'), saved: localStorage.getItem('danjjakkung.theme'),
+      on: document.querySelector('.tpick.is-on') && document.querySelector('.tpick.is-on').getAttribute('data-v'),
+      focus: document.activeElement && document.activeElement.getAttribute('data-v'),
+      bg: getComputedStyle(document.body).backgroundColor, meta: document.querySelector('meta[name="theme-color"]').content, vbg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
+      sheet: getComputedStyle(document.querySelector('.sheet')).backgroundColor, theming: document.documentElement.classList.contains('is-theming') }));
+    console.log('고름', id, '→', st.t, '| 저장', st.saved, '| 표시', st.on, '| 포커스', st.focus, '| 바탕', st.bg, '| 위 띠', st.meta === st.vbg, '| 시트', st.sheet, '| 전환 끝', !st.theming);
+    if (id === 'cosmic-dream' || id === 'ocean-breeze') await jm.screenshot({ path: path.join(OUT, `theme-sheet-${id}.png`) });
+  }
+  await jm.keyboard.press('Escape');
+  console.log('Esc로 닫힘:', (await jm.$$('.sheet')).length === 0, '| 포커스 🎨:', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
+  // 화면마다 6개 테마로 찍어 둔다 (하드코딩 색 · 대비 눈으로 점검)
+  for (const id of THEME_IDS) {
+    await jm.evaluate((v) => { localStorage.setItem('danjjakkung.theme', v); RT.themes.apply(v); }, id);
+    for (const tab of ['routine', 'todo', 'schedule']) {
+      await jm.click(`[data-act="tab"][data-tab="${tab}"]`);
+      await jm.waitForTimeout(120);
+      await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });
+    }
+    await jm.click('[data-act="tab"][data-tab="routine"]');
+    await jm.click('.cell.is-today');
+    await jm.waitForTimeout(150);
+    await jm.screenshot({ path: path.join(OUT, `theme-${id}-daysheet.png`) });
+    await jm.keyboard.press('Escape');
+  }
+  await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'forest-diary'); });
+  await jm.reload();
+  const early = await jm.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  await jm.waitForSelector('[data-act="open-theme"]');
+  console.log('새로 열어도:', early, '| 로그인 그대로:', !!(await jm.$('[data-act="sign-out"]')), '| 다진 기기:', await themeOf(dj));
+  await jm.evaluate(() => localStorage.setItem('danjjakkung.theme', 'no-such-theme'));
+  await jm.reload(); await jm.waitForSelector('.title');
+  console.log('모르는 테마 값이면 기본:', await themeOf(jm));
+  // 휴대폰이 다크 모드이고 아직 안 골랐으면 Cosmic Dream
+  const dk = await open(browser, '다크 모드', { ctx: await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', serviceWorkers: 'block', timezoneId: 'Asia/Seoul' }) });
+  console.log('다크 모드 기본:', await themeOf(dk), '| 로그인 화면 바탕:', await dk.evaluate(() => getComputedStyle(document.body).backgroundColor));
+  await dk.screenshot({ path: path.join(OUT, 'theme-dark-login.png') });
+  await dk.close();
+
   // 5) 초대 안 된 계정
   const x = await open(browser, '모르는 사람');
   await x.click('[data-act="auth-mode"][data-id="signup"]');
