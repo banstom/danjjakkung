@@ -377,3 +377,4 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sday-body { display: grid; grid-template-columns: 44px minmax(0, 1fr); position: relative; }
 .snow { position: absolute; left: 0; right: 0; height: 2px; background: var(--accent); pointer-events: none; }
 .snow::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.sblock--once.sblock--both { background: var(--tint); border-color: var(--accent); color: var(--tint-text); }

@@ -128,6 +128,9 @@ async function open(browser, name, opts = {}) {
     const d = v === null ? null : JSON.parse(v);
     if (p.startsWith('routines/')) { const old = docs.get(p); if ((old && old.owner !== uid) || (d && d.owner !== uid)) throw new Error('permission-denied'); }
     if (p.startsWith('users/') && p.split('/')[1] !== uid) throw new Error('permission-denied');
+    // 할 일: 함께 것은 둘 다, 각자 것은 본인만 / 일정: 내 것 · 함께 것만
+    if (p.startsWith('todos/')) { const old = docs.get(p); const sc = (old || d).scope; if (sc !== 'together' && sc !== uid) throw new Error('permission-denied'); if (d && old && d.scope !== old.scope) throw new Error('permission-denied'); }
+    if (p.startsWith('events/')) { const old = docs.get(p); for (const x of [old, d]) if (x && x.owner !== 'both' && x.owner !== uid) throw new Error('permission-denied'); }
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
     if (d === null) docs.delete(p); else docs.set(p, d);
     await pushAll([p]);
@@ -228,6 +231,91 @@ async function tick(page, dateKey, key) {
   console.log('준민 시트 스쿼트 잠김:', await jm.getAttribute('.sheet [data-key]:not([data-key^="r"])', 'aria-disabled').catch(() => null),
     '| 잠긴 버튼들:', await jm.$$eval('.sheet [aria-disabled="true"]', (e) => e.length));
   await jm.click('.close-btn');
+
+  // 4-1) 할 일 탭: 함께 5개 → 3개까지 + 더 보기, 기한 순서, 짝꿍이 체크, 남의 할 일은 잠김
+  async function addTodo(page, key, title, due, date) {
+    await page.click(`[data-act="todo-add"][data-key="${key}"]`);
+    await page.fill('#td-title', title);
+    if (due) await page.click(`[data-act="todo-due"][data-v="${due}"]`);
+    if (date) await page.fill('#td-date', date);
+    await page.click('form[data-form="todo"] button[type="submit"]');
+    await page.waitForTimeout(150);
+  }
+  await jm.click('[data-act="tab"][data-tab="todo"]');
+  console.log('할 일 탭:', await jm.getAttribute('[data-act="tab"][aria-current="page"]', 'data-tab'), '|', await jm.textContent('.tcard--together .tempty'));
+  await addTodo(jm, 'together', '부모님 선물 의논', null);
+  await addTodo(jm, 'together', '주말 장보기', 'week');
+  await addTodo(jm, 'together', '여행 숙소 알아보기', 'date', '2026-11-20');
+  await addTodo(jm, 'together', '영화 예매', 'today');
+  await addTodo(jm, 'together', '사진 인화', 'date', '2026-10-25');
+  await jm.click('[data-act="todo-add"][data-key="together"]');
+  await jm.click('form[data-form="todo"] button[type="submit"]');
+  console.log('빈 이름 저장:', await jm.textContent('#td-error'));
+  await jm.keyboard.press('Escape');
+  const togTitles = () => jm.$$eval('.tcard--together .trow__title', (e) => e.map((x) => x.textContent));
+  console.log('함께(3개만, 기한 순):', (await togTitles()).join(' > '), '|', await jm.textContent('.tcard--together [data-act="todo-more"]'));
+  console.log('지난 기한 표시:', await jm.textContent('.tcard--together .trow__meta--over'));
+  await jm.click('.tcard--together [data-act="todo-more"]');
+  console.log('더 보기:', (await togTitles()).length, '개 |', await jm.textContent('.tcard--together [data-act="todo-more"]'));
+  const jmUid0 = accounts.get('junmin@example.com').uid, djUid0 = accounts.get('dajin@example.com').uid;
+  await addTodo(jm, jmUid0, '라켓 줄 교체', 'tomorrow');
+  await dj.click('[data-act="tab"][data-tab="todo"]');
+  await dj.waitForTimeout(150);
+  console.log('다진 화면 칸 순서:', (await dj.$$eval('.tcard--col .tcard__name', (e) => e.map((x) => x.textContent))).join(' | '));
+  console.log('다진 화면 준민 할 일 잠김:', await dj.getAttribute(`.tcard--col:has([data-key="${djUid0}"]) ~ .tcard--col .tcheck, .tcols .tcard--col:nth-child(2) .tcheck`, 'aria-disabled'));
+  await dj.click('.tcard--together .tcheck');
+  await jm.waitForTimeout(200);
+  console.log('다진이 함께 할 일 체크 → 준민 화면:', await jm.textContent('.tcard--together .tcard__count'), '|', await jm.textContent('.tcard--together [data-act="todo-donelist"]'));
+  await jm.click('.tcard--together [data-act="todo-donelist"]');
+  console.log('완료 펼침:', await jm.textContent('.tcard--together .trow.is-done .trow__meta'));
+  await jm.click('.tcard--together [data-act="todo-edit"]');
+  await jm.fill('#td-title', '영화 예매 (조조)');
+  await jm.press('#td-title', 'Enter');
+  await jm.waitForTimeout(150);
+  console.log('엔터로 고치기:', (await togTitles())[1]);
+  await jm.screenshot({ path: path.join(OUT, 'web-todo.png'), fullPage: true });
+
+  // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
+  async function addEvent(page, title, opts) {
+    await page.click('[data-act="event-add"]');
+    await page.fill('#ev-title', title);
+    if (opts.both) await page.click('[data-act="ev-owner"][data-v="both"]');
+    if (opts.once) { await page.click('[data-act="ev-repeat"][data-v="once"]'); await page.fill('#ev-date', opts.once); }
+    else await page.click(`[data-act="ev-wd"][data-v="${opts.wd}"]`);
+    await page.fill('#ev-start', opts.start); await page.fill('#ev-end', opts.end);
+    await page.click('form[data-form="event"] button[type="submit"]');
+    await page.waitForTimeout(150);
+  }
+  await jm.click('[data-act="tab"][data-tab="schedule"]');
+  await addEvent(jm, '일반생물', { wd: 1, start: '10:00', end: '12:00' });
+  await addEvent(jm, '과외', { wd: 1, start: '19:00', end: '21:30' });
+  await jm.click('[data-act="event-add"]');
+  await jm.fill('#ev-title', '거꾸로'); await jm.fill('#ev-start', '12:00'); await jm.fill('#ev-end', '11:00');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  console.log('끝이 시작보다 빠르면:', await jm.textContent('#ev-error'));
+  await jm.keyboard.press('Escape');
+  await dj.click('[data-act="tab"][data-tab="schedule"]');
+  await addEvent(dj, '수업', { wd: 1, start: '09:00', end: '12:00' });
+  await addEvent(dj, '스터디', { once: '2026-10-27', start: '20:30', end: '22:00' });
+  await addEvent(dj, '데이트', { both: true, once: '2026-10-31', start: '15:00', end: '19:00' });
+  await jm.waitForTimeout(200);
+  console.log('주 보기 범위:', await jm.textContent('.grid-range'), '| 블록:', (await jm.$$eval('.sblock', (e) => e.map((x) => x.getAttribute('aria-label')))).join(' / '));
+  await jm.screenshot({ path: path.join(OUT, 'web-week.png'), fullPage: true });
+  await jm.click('.sblock[aria-label^="수업"]');
+  console.log('다진 일정 누르면:', await jm.textContent('.einfo__line'), '|', await jm.textContent('.sheet .muted'));
+  await jm.keyboard.press('Escape');
+  await jm.click('.sday.is-today');
+  console.log('일 보기:', await jm.textContent('.scard__title'), '|', (await jm.$$eval('.sstatus__row', (e) => e.map((x) => x.textContent))).join(' / '));
+  await jm.screenshot({ path: path.join(OUT, 'web-day.png'), fullPage: true });
+  await jm.click('.sblock[aria-label^="일반생물"]');
+  console.log('내 일정 누르면 고치기:', await jm.textContent('#event-sheet-title'), await jm.inputValue('#ev-title'));
+  await jm.keyboard.press('Escape');
+  await jm.click('[data-act="sched-mode"][data-mode="week"]');
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  console.log('다음 주:', await jm.textContent('.grid-range'), '| 블록', await jm.$$eval('.sblock', (e) => e.length), '| 이번 주 버튼', !!(await jm.$('[data-act="sched-thisweek"]')));
+  await jm.click('[data-act="sched-thisweek"]');
+  await jm.click('[data-act="tab"][data-tab="routine"]');
+  await dj.click('[data-act="tab"][data-tab="routine"]');
 
   // 4-2) 알림: 켜기 → 기기 저장 · 기본 설정(밤 9시) → 설정 바꾸기 → 테스트 → 끄기
   const jmUid = accounts.get('junmin@example.com').uid;
