@@ -10,6 +10,7 @@
      강조 테두리 · 포커스 · 선택 테두리 → --accent (UI 대비 3:1 이상)
      tabBarBackground → --tab-bg   tabBarActive → --tab-active   tabBarInactive → --tab-inactive   icon → --icon
      success → --success   warning → --warning   error → --warn (빨강은 경고 전용)
+   시간표 사람 색 --her · --me · --both 는 10/28 에 테마마다 따로 정한 값 (요청서 색과 다를 수 있음, 후보 8색은 js/themes.js)
    앱 전용: --today/--on-today/--today-col(시간표 오늘 — 글자색 계열), --tint/--tint-text(함께 · 강조 카드), --her/--me(두 사람 색, 위 글자 --*-ink), --lv-*(달력 진하기), --empty(쉰 날)
    글자 대비 4.5:1 — 요청서의 Text Secondary 중 바탕 위에서 4.5:1이 안 되는 값은 같은 색조로 조금 진하게 맞췄다. */
 
@@ -59,8 +60,8 @@
   --primary: #F6DDE8; --on-primary: #34313A; --secondary: #DCD9FA; --accent: #BC7897; --tab-active: #94486B;
   --strong: #B4587F; --primary-edge: var(--accent);
   --tint: #FBEDF3; --tint-text: #8E4467;
-  --both: #F5C58A; --both-ink: #2A2730; /* 시간표 함께 일정 — 사람 후보 중 하나, 사람 색으로는 못 고름 */
-  --her: #E59BBA; --her-ink: #34313A; --me: #A9A2EE; --me-ink: #34313A;
+  --both: #D98E94; --both-ink: #2A2730; /* 시간표 함께 일정 — 사람 후보 중 하나, 사람 색으로는 못 고름 */
+  --her: #D78EAD; --her-ink: #2A2730; --me: #B0A5E8; --me-ink: #2A2730;
   --empty: #F1EAE8; --empty-text: #5F5A66; --lv-half: #DCD9FA; --lv-half-text: #34313A; --lv-full: #D5729A; --lv-full-text: #2A2730;
   --warn: #C62F3A; --toast-bg: #34313A; --toast-fg: #FFFFFF;
 }
@@ -72,8 +73,8 @@
   --text: #F4F2FF; --sub: #B5B5D0; --faint: #4C506E;
   --primary: #7557C8; --on-primary: #FFFFFF; --secondary: #292650; --accent: #8F74E0; --tab-active: #6CD8E8;
   --tint: #292650; --tint-text: #CFC3FF;
-  --both: #F08BC4; --both-ink: #101426;
-  --her: #6CD8E8; --her-ink: #101426; --me: #A891F0; --me-ink: #101426;
+  --both: #A84F88; --both-ink: #FFFFFF;
+  --her: #267C91; --her-ink: #FFFFFF; --me: #7052B8; --me-ink: #FFFFFF;
   --empty: #2B3050; --empty-text: #C9C9E0; --lv-half: #4B3F95; --lv-half-text: #F4F2FF; --lv-full: #6CD8E8; --lv-full-text: #101426;
   --warn: #FF7B86; --toast-bg: #F4F2FF; --toast-fg: #191D33;
   --success: #5BD08A; --warning: #F2B84B;
@@ -87,8 +88,8 @@
   --text: #20343A; --sub: #596C71; --faint: #B9D0CF;
   --primary: #164E63; --on-primary: #FFFFFF; --secondary: #A8DCD8; --accent: #3798A3; --tab-active: #164E63;
   --tint: #DDF2F0; --tint-text: #164E63;
-  --both: #F4C977; --both-ink: #0B2530;
-  --her: #399DA8; --her-ink: #0B2530; --me: #7FC5C0; --me-ink: #20343A;
+  --both: #D5A85D; --both-ink: #0B2530;
+  --her: #55AEB5; --her-ink: #0B2530; --me: #7FC5C0; --me-ink: #0B2530;
   --empty: #DCECEA; --empty-text: #4A6065; --lv-half: #A8DCD8; --lv-half-text: #20343A; --lv-full: #237F8B; --lv-full-text: #FFFFFF;
   --warn: #C62F3A; --toast-bg: #164E63; --toast-fg: #FFFFFF;
 }
@@ -100,8 +101,8 @@
   --text: #30372E; --sub: #646A60; --faint: #C4C9BA;
   --primary: #394B38; --on-primary: #FFFFFF; --secondary: #D0D9BF; --accent: #7D9066; --tab-active: #394B38;
   --tint: #E9EEDF; --tint-text: #394B38;
-  --both: #D9B85C; --both-ink: #1A2119;
-  --her: #82966A; --her-ink: #1A2119; --me: #AEBD92; --me-ink: #30372E;
+  --both: #C4A05D; --both-ink: #1A2119;
+  --her: #91A779; --her-ink: #1A2119; --me: #AEBD92; --me-ink: #1A2119;
   --empty: #E6E9DE; --empty-text: #525A4F; --lv-half: #D0D9BF; --lv-half-text: #30372E; --lv-full: #5E7150; --lv-full-text: #FFFFFF;
   --warn: #B8343A; --toast-bg: #30372E; --toast-fg: #FFFFFF;
 }
@@ -114,7 +115,7 @@
   --primary: #874F4D; --on-primary: #FFFFFF; --secondary: #D6BE87; --accent: #7B8060; --tab-active: #874F4D;
   --tint: #EFE4CC; --tint-text: #6E3E3C;
   --both: #8FA38A; --both-ink: #211E19;
-  --her: #874F4D; --her-ink: #FFFFFF; --me: #C9AA66; --me-ink: #39352E;
+  --her: #C58B88; --her-ink: #211E19; --me: #C9AA66; --me-ink: #211E19;
   --empty: #E9DFCC; --empty-text: #5A5348; --lv-half: #D6BE87; --lv-half-text: #39352E; --lv-full: #666B4D; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #39352E; --toast-fg: #FAF5EC;
   --today: #211E19; /* 본문 글자(#39352E)는 버건디 사람 색과 밝기가 비슷해서 더 진하게 */
@@ -127,8 +128,8 @@
   --text: #2D3450; --sub: #60667F; --faint: #C3C7DD;
   --primary: #303A60; --on-primary: #FFFFFF; --secondary: #C3C9ED; --accent: #7C89BB; --tab-active: #303A60;
   --tint: #E7EAF9; --tint-text: #303A60;
-  --both: #E8A3B4; --both-ink: #161C35;
-  --her: #7F8CBF; --her-ink: #161C35; --me: #A6AEE3; --me-ink: #2D3450;
+  --both: #C88CA5; --both-ink: #161C35;
+  --her: #8F9BD0; --her-ink: #161C35; --me: #A6AEE3; --me-ink: #161C35;
   --empty: #E2E5F3; --empty-text: #4F5678; --lv-half: #C3C9ED; --lv-half-text: #2D3450; --lv-full: #5D6AA3; --lv-full-text: #FFFFFF;
   --warn: #C62F3A; --toast-bg: #303A60; --toast-fg: #FFFFFF;
 }
@@ -140,7 +141,7 @@
 
 /* Golden Hour — 해 질 무렵 황금빛 노을 — 살구 채움, 테두리는 노을 장밋빛
    요청서: Primary #D99055 → --primary(버튼, 진한 글자) · Secondary #F2B880 → --secondary · --me · --lv-half
-           Background #F6E5C9 → --bg · Accent #C96F62 → --her (테두리는 진하게 #B55A4D) · Surface #E8C5A4 → --tint(함께 · 강조 카드) */
+           Background #F6E5C9 → --bg · Accent #C96F62 → 사람 색 후보 (테두리는 진하게 #B55A4D) · Surface #E8C5A4 → --tint(함께 · 강조 카드) */
 [data-theme="golden-hour"] {
   color-scheme: light;
   --bg: #F6E5C9; --surface: #FFFAF2; --raised: #FBF0E0; --line: #EED9BE;
@@ -148,15 +149,15 @@
   --primary: #D99055; --on-primary: #2B1A10; --secondary: #F2B880; --accent: #B55A4D; --tab-active: #94402F;
   --strong: #B55A4D; --primary-edge: var(--accent);
   --tint: #E8C5A4; --tint-text: #6E3420;
-  --both: #8FB5D0; --both-ink: #2B1A10;
-  --her: #C96F62; --her-ink: #2B1A10; --me: #F2B880; --me-ink: #3B2A20;
+  --both: #C49AC0; --both-ink: #2B1A10;
+  --her: #D88A7E; --her-ink: #2B1A10; --me: #F2B880; --me-ink: #2B1A10;
   --empty: #F1DEC4; --empty-text: #5E4838; --lv-half: #F2B880; --lv-half-text: #3B2A20; --lv-full: #A4532C; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #3B2A20; --toast-fg: #FFFAF2;
 }
 
 /* Sakura Dream — 벚꽃과 봄바람 — 벚꽃 채움, 라일락 안쪽 면, 세이지 그린
    요청서: Primary #E6A0B4 → --primary(버튼, 진한 글자) · --her · Secondary #F4CCD6 → --secondary · --tint · --lv-half
-           Background #F6F0E8 → --bg · Accent #A7BDA5 → --me (테두리는 진한 로즈 #B0587A) · Surface #E6DDF0 → --raised(입력창 · 안쪽 면) */
+           Background #F6F0E8 → --bg · Accent #A7BDA5 → 사람 색 후보 (테두리는 진한 로즈 #B0587A) · Surface #E6DDF0 → --raised(입력창 · 안쪽 면) */
 [data-theme="sakura-dream"] {
   color-scheme: light;
   --bg: #F6F0E8; --surface: #FFFDFB; --raised: #E6DDF0; --line: #EBE0DE;
@@ -165,7 +166,7 @@
   --strong: #B0587A; --primary-edge: var(--accent);
   --tint: #F4CCD6; --tint-text: #7E3350;
   --both: #C9A8E0; --both-ink: #2E2328;
-  --her: #E6A0B4; --her-ink: #2E2328; --me: #A7BDA5; --me-ink: #2E2328;
+  --her: #E6A0B4; --her-ink: #2E2328; --me: #F2BFD0; --me-ink: #2E2328;
   --empty: #EEE6E4; --empty-text: #5E5258; --lv-half: #F4CCD6; --lv-half-text: #3A2F35; --lv-full: #A84E70; --lv-full-text: #FFFFFF;
   --warn: #AE2230; --toast-bg: #3A2F35; --toast-fg: #FFFFFF;
 }
@@ -181,8 +182,8 @@
   --primary: #7C414C; --on-primary: #FFFFFF; --secondary: #454650; --accent: #C77684; --tab-active: #E8A3B0;
   --strong: #C77684;
   --tint: #3C2B32; --tint-text: #F2C4CD;
-  --both: #E0B07A; --both-ink: #15161D;
-  --her: #D88A98; --her-ink: #15161D; --me: #A9ABBA; --me-ink: #15161D;
+  --both: #8E5E2C; --both-ink: #FFFFFF;
+  --her: #A54D61; --her-ink: #FFFFFF; --me: #6A6F85; --me-ink: #FFFFFF;
   --empty: #363743; --empty-text: #C9C8D0; --lv-half: #5E3640; --lv-half-text: #F2F0F1; --lv-full: #D88A98; --lv-full-text: #15161D;
   --warn: #FF7B86; --toast-bg: #F2F0F1; --toast-fg: #292A32;
   --success: #5BD08A; --warning: #F2B84B;
@@ -191,7 +192,7 @@
 
 /* Arctic Frost — 얼어붙은 호수와 서리 — 아이스 블루 채움, 프로스트 화이트 카드, 차가운 회청 테두리
    요청서: Primary #B9DDE8 → --primary(버튼, 진한 글자) · --me · --lv-half · Secondary #D8E9EF → --secondary · --tint
-           Background #F1F5F5 → --bg · Accent #778FA8 → --accent(테두리 · 선택) · --her · Surface #FFFFFF → --surface(카드) */
+           Background #F1F5F5 → --bg · Accent #778FA8 → --accent(테두리 · 선택) · Surface #FFFFFF → --surface(카드) */
 [data-theme="arctic-frost"] {
   color-scheme: light;
   --bg: #F1F5F5; --surface: #FFFFFF; --raised: #F4F8F9; --line: #DCE5E8;
@@ -200,13 +201,13 @@
   --strong: #6A829C; --primary-edge: var(--accent);
   --tint: #D8E9EF; --tint-text: #2F4A63;
   --both: #C8B8E0; --both-ink: #14222C;
-  --her: #778FA8; --her-ink: #14222C; --me: #B9DDE8; --me-ink: #26323A;
+  --her: #879FB8; --her-ink: #14222C; --me: #B9DDE8; --me-ink: #14222C;
   --empty: #E3EBEE; --empty-text: #4C5A63; --lv-half: #B9DDE8; --lv-half-text: #26323A; --lv-full: #4F6E8C; --lv-full-text: #FFFFFF;
   --warn: #C62F3A; --toast-bg: #26323A; --toast-fg: #FFFFFF;
 }
 
 /* Chocolate Noir — 다크 초콜릿과 모카 — 진한 초콜릿 버튼, 크림 바탕 · 카드
-   요청서: Primary #49352F → --primary(버튼, 크림 글자) · --tab-active · Secondary #765447 → --secondary · --strong · --her
+   요청서: Primary #49352F → --primary(버튼, 크림 글자) · --tab-active · Secondary #765447 → --secondary · --strong
            Background #F3E8D7 → --bg · Accent #A77D61 → --accent(테두리 · 선택) · Surface #D8B99B → --tint(함께 · 강조 카드) · --me */
 [data-theme="chocolate-noir"] {
   color-scheme: light;
@@ -215,8 +216,8 @@
   --primary: #49352F; --on-primary: #FBF6EE; --secondary: #765447; --accent: #A77D61; --tab-active: #49352F;
   --strong: #765447;
   --tint: #D8B99B; --tint-text: #3E2A23;
-  --both: #8A9A70; --both-ink: #2A1D18;
-  --her: #765447; --her-ink: #FFFFFF; --me: #D8B99B; --me-ink: #33241F;
+  --both: #92A77A; --both-ink: #2A1D18;
+  --her: #B99583; --her-ink: #2A1D18; --me: #D8B99B; --me-ink: #2A1D18;
   --empty: #EADCC8; --empty-text: #5A483D; --lv-half: #D8B99B; --lv-half-text: #33241F; --lv-full: #5C4036; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #33241F; --toast-fg: #FBF6EE;
 }
@@ -233,7 +234,7 @@
   --strong: #9D745B; --primary-edge: var(--accent);
   --tint: #E8D77D; --tint-text: #4E3A1A;
   --both: #A8C27A; --both-ink: #2E2116;
-  --her: #C98A5B; --her-ink: #2E2116; --me: #F4C95D; --me-ink: #3A2C1E;
+  --her: #D39A70; --her-ink: #2E2116; --me: #F4C95D; --me-ink: #2E2116;
   --empty: #F5E6B8; --empty-text: #5E4D33; --lv-half: #F4C95D; --lv-half-text: #3A2C1E; --lv-full: #8A5E3C; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #3A2C1E; --toast-fg: #FFFAEB;
 }
@@ -264,7 +265,7 @@
   --primary: #A6A477; --on-primary: #24230F; --secondary: #B5B581; --accent: #7C7A45; --tab-active: #5C5A2E;
   --strong: #7C7A45; --primary-edge: var(--accent);
   --tint: #F1E2A1; --tint-text: #5C4A12;
-  --both: #C98A7A; --both-ink: #24230F;
+  --both: #CA8D7D; --both-ink: #24230F;
   --her: #EAB45B; --her-ink: #24230F; --me: #B5B581; --me-ink: #24230F;
   --empty: #EEE8CF; --empty-text: #5E5C45; --lv-half: #F1E2A1; --lv-half-text: #35341F; --lv-full: #7A6B22; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #35341F; --toast-fg: #FFFDF5;

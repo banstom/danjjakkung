@@ -30,20 +30,20 @@
   // 테마마다 고를 수 있는 사람 색 8개. 앞의 둘은 그 테마 기본색(--her, --me 와 같다).
   // ink: 색 위 글자 후보(어두운 쪽) — 흰색과 견줘 더 잘 보이는 쪽을 쓴다 (4.5:1 이상은 tests/themes.test.js 가 확인).
   var PALETTES = {
-    'soft-pastel': { ink: '#2A2730', both: '#F5C58A', colors: ['#E59BBA', '#A9A2EE', '#F4A7A3', '#F5C58A', '#E8D27A', '#9FD3B5', '#8EC5E8', '#C7A4E0'] },
-    'cosmic-dream': { ink: '#101426', both: '#F08BC4', colors: ['#6CD8E8', '#A891F0', '#F08BC4', '#FFB86B', '#F5E27A', '#7EE0A8', '#7FA8FF', '#FF8A8A'] },
-    'ocean-breeze': { ink: '#0B2530', both: '#F4C977', colors: ['#399DA8', '#7FC5C0', '#F2A48C', '#F4C977', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
-    'forest-diary': { ink: '#1A2119', both: '#D9B85C', colors: ['#82966A', '#AEBD92', '#C99A6B', '#D9B85C', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
-    'vintage-film': { ink: '#211E19', both: '#8FA38A', colors: ['#874F4D', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
-    'blue-hour': { ink: '#161C35', both: '#E8A3B4', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] },
-    'golden-hour': { ink: '#2B1A10', both: '#8FB5D0', colors: ['#C96F62', '#F2B880', '#E89A5B', '#F2D27A', '#9DBF8E', '#8FB5D0', '#C49AC0', '#E8A0A0'] },
-    'sakura-dream': { ink: '#2E2328', both: '#C9A8E0', colors: ['#E6A0B4', '#A7BDA5', '#C9A8E0', '#F4B8A0', '#EDD58A', '#9FC8DC', '#D98AA0', '#B8D4A8'] },
-    'midnight-noir': { ink: '#15161D', both: '#E0B07A', colors: ['#D88A98', '#A9ABBA', '#E0B07A', '#6FAFD6', '#6CC584', '#C08AE0', '#E8D48A', '#F0A07A'] },
-    'arctic-frost': { ink: '#14222C', both: '#C8B8E0', colors: ['#778FA8', '#B9DDE8', '#C8B8E0', '#A8D4C4', '#E8B8C4', '#E8D49A', '#9BB0C8', '#8FC0D8'] },
-    'chocolate-noir': { ink: '#2A1D18', both: '#8A9A70', colors: ['#765447', '#D8B99B', '#C49A78', '#C98F7A', '#8A9A70', '#E0C080', '#9AA8C0', '#9A4A2A'] },
-    'roast-nuts': { ink: '#2E2116', both: '#A8C27A', colors: ['#C98A5B', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
+    'soft-pastel': { ink: '#2A2730', both: '#D98E94', colors: ['#D78EAD', '#B0A5E8', '#F4A7A3', '#D98E94', '#E8D27A', '#9FD3B5', '#8EC5E8', '#C7A4E0'] },
+    'cosmic-dream': { ink: '#101426', both: '#A84F88', colors: ['#267C91', '#7052B8', '#A84F88', '#FFB86B', '#F5E27A', '#7EE0A8', '#7FA8FF', '#FF8A8A'] },
+    'ocean-breeze': { ink: '#0B2530', both: '#D5A85D', colors: ['#55AEB5', '#7FC5C0', '#F2A48C', '#D5A85D', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
+    'forest-diary': { ink: '#1A2119', both: '#C4A05D', colors: ['#91A779', '#AEBD92', '#C99A6B', '#C4A05D', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
+    'vintage-film': { ink: '#211E19', both: '#8FA38A', colors: ['#C58B88', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
+    'blue-hour': { ink: '#161C35', both: '#C88CA5', colors: ['#8F9BD0', '#A6AEE3', '#C88CA5', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] },
+    'golden-hour': { ink: '#2B1A10', both: '#C49AC0', colors: ['#D88A7E', '#F2B880', '#E89A5B', '#F2D27A', '#9DBF8E', '#C96F62', '#C49AC0', '#E8A0A0'] },
+    'sakura-dream': { ink: '#2E2328', both: '#C9A8E0', colors: ['#E6A0B4', '#F2BFD0', '#C9A8E0', '#F4B8A0', '#EDD58A', '#9FC8DC', '#D98AA0', '#A7BDA5'] },
+    'midnight-noir': { ink: '#15161D', both: '#8E5E2C', colors: ['#A54D61', '#6A6F85', '#8E5E2C', '#6FAFD6', '#6CC584', '#C08AE0', '#E8D48A', '#F0A07A'] },
+    'arctic-frost': { ink: '#14222C', both: '#C8B8E0', colors: ['#879FB8', '#B9DDE8', '#C8B8E0', '#A8D4C4', '#E8B8C4', '#E8D49A', '#9BB0C8', '#8FC0D8'] },
+    'chocolate-noir': { ink: '#2A1D18', both: '#92A77A', colors: ['#B99583', '#D8B99B', '#C49A78', '#C98F7A', '#92A77A', '#E0C080', '#9AA8C0', '#9A4A2A'] },
+    'roast-nuts': { ink: '#2E2116', both: '#A8C27A', colors: ['#D39A70', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
     'winter-knit': { ink: '#26282C', both: '#DCC9BC', colors: ['#E8B6C5', '#B2DCD6', '#DCC9BC', '#A8C0D8', '#C8B8D8', '#E8C89A', '#B8C8A8', '#D0A0A0'] },
-    'harvest': { ink: '#24230F', both: '#C98A7A', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#C98A7A', '#9DB4C8'] }
+    'harvest': { ink: '#24230F', both: '#CA8D7D', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#CA8D7D', '#9DB4C8'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -59,7 +59,8 @@
    ['#765447','모카'],['#D8B99B','라테'],['#C49A78','카페오레'],['#C98F7A','로즈 브라운'],['#8A9A70','피스타치오'],['#E0C080','캐러멜 크림'],['#9AA8C0','블루베리'],['#9A4A2A','시나몬'],
    ['#C98A5B','아몬드'],['#F4C95D','꿀'],['#E8D77D','보리'],['#D6AC83','캐러멜'],['#A8C27A','피스타치오'],['#E8A07A','살구'],['#9FC0D0','하늘'],['#D99A9A','대추'],
    ['#E8B6C5','더스티 핑크'],['#B2DCD6','민트'],['#DCC9BC','오트밀'],['#A8C0D8','겨울 하늘'],['#C8B8D8','라벤더'],['#E8C89A','캐멀'],['#B8C8A8','세이지'],['#D0A0A0','로즈 브라운'],
-   ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘']
+   ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘'],
+   ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'] // 10/28 시간표 색 바꿈
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   var LIGHT_DEFAULT = 'soft-pastel';
   var DARK_DEFAULT = 'cosmic-dream';
