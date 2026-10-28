@@ -10,7 +10,7 @@
      강조 테두리 · 포커스 · 선택 테두리 → --accent (UI 대비 3:1 이상)
      tabBarBackground → --tab-bg   tabBarActive → --tab-active   tabBarInactive → --tab-inactive   icon → --icon
      success → --success   warning → --warning   error → --warn (빨강은 경고 전용)
-   앱 전용: --tint/--tint-text(함께 · 강조 카드), --her/--me(두 사람 색, 위 글자 --*-ink), --lv-*(달력 진하기), --empty(쉰 날)
+   앱 전용: --today/--on-today/--today-col(시간표 오늘 — 글자색 계열), --tint/--tint-text(함께 · 강조 카드), --her/--me(두 사람 색, 위 글자 --*-ink), --lv-*(달력 진하기), --empty(쉰 날)
    글자 대비 4.5:1 — 요청서의 Text Secondary 중 바탕 위에서 4.5:1이 안 되는 값은 같은 색조로 조금 진하게 맞췄다. */
 
 @font-face { font-family: 'Pretendard'; src: url('../fonts/PretendardVariable.woff2') format('woff2'); font-weight: 45 920; font-display: swap; }
@@ -42,6 +42,10 @@
   --shadow: 0 -8px 24px rgba(30, 28, 40, 0.08);
   --toast-shadow: 0 8px 24px rgba(30, 28, 40, 0.18);
   --lift: 0 1px 3px rgba(30, 28, 40, 0.12);
+  /* 시간표 「오늘」: 글자색 계열 — 사람 색 후보(js/themes.js) · 함께 색(--tint, --accent)과 겹치지 않게 */
+  --today: var(--text);
+  --on-today: var(--surface);
+  --today-col: color-mix(in srgb, var(--text) 5%, transparent);
 }
 
 /* Soft Pastel — 포근한 파스텔 — 채움은 연분홍, 테두리 · 글자 강조만 진한 장밋빛 */
@@ -105,6 +109,7 @@
   --her: #874F4D; --her-ink: #FFFFFF; --me: #C9AA66; --me-ink: #39352E;
   --empty: #E9DFCC; --empty-text: #5A5348; --lv-half: #D6BE87; --lv-half-text: #39352E; --lv-full: #666B4D; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #39352E; --toast-fg: #FAF5EC;
+  --today: #211E19; /* 본문 글자(#39352E)는 버건디 사람 색과 밝기가 비슷해서 더 진하게 */
 }
 
 /* Blue Hour — 해 진 직후의 하늘 — 밝은 바탕, 은은한 페리윙클 */

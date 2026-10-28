@@ -221,3 +221,52 @@ test('표시할 이름: 비거나 같으면 일정 이름 그대로 · 주 보�
   assert.match(S.validate(f), /표시할 이름은 10자/);
   assert.strictEqual(S.validate(Object.assign({}, f, { short: '가나다라마바사아자차' })), '');
 });
+
+// ── 쉬는 날 (매주 일정에서 그날만 빼기) ──
+test('쉬는 날: 그날만 시간표에서 빠지고, 고른 요일 목록에는 「쉬어요」로 남는다', () => {
+  // 화(1) · 목(3) 일반생물, 11/3(화) 휴강
+  const list = S.fromDocs([{ id: 'bio', owner: 'jm', title: '일반생물', weekly: true, weekday: null, weekdays: [1, 3], start: '10:00', end: '12:00', skip: ['2026-11-03', '2026-11-04', 'nope', '2026-11-03'] }]);
+  assert.deepStrictEqual(list[0].skip, ['2026-11-03']); // 수요일 · 이상한 값 · 중복은 빠짐
+  const tue = D.parse('2026-11-03'), thu = D.parse('2026-11-05');
+  assert.strictEqual(S.on(list, tue).length, 0);
+  assert.strictEqual(S.on(list, thu).length, 1);
+  assert.strictEqual(S.on(list, tue, { skipped: true }).length, 1);
+  assert.strictEqual(S.on(list, D.parse('2026-11-10')).length, 1); // 다음 주는 그대로
+  const w = S.week(list, ['dj', 'jm'], 'jm', S.monStart(tue), today, { pick: tue });
+  assert.strictEqual(w.blocks.filter((b) => b.dayIdx === 1).length, 0);
+  assert.strictEqual(w.blocks.filter((b) => b.dayIdx === 3).length, 1);
+  assert.strictEqual(w.blocks[0].day, thu); // 칸마다 그 날짜 (눌러서 「이날만 쉬기」)
+  assert.deepStrictEqual(w.pick.items.map((x) => [x.id, x.skipped]), [['bio', true]]);
+  const d = S.day(list, ['dj', 'jm'], {}, 'jm', tue, today, 600);
+  assert.ok(d.empty);
+  assert.deepStrictEqual(d.skipped.map((x) => x.id), ['bio']);
+  // 한 번 일정에는 쉬는 날이 없다
+  assert.deepStrictEqual(S.fromDocs([{ id: 'o', owner: 'jm', title: 'x', weekly: false, date: '2026-11-03', start: '10:00', end: '11:00', skip: ['2026-11-03'] }])[0].skip, []);
+});
+
+test('쉬는 날 더하기 · 빼기 · 정리', () => {
+  const e = { weekdays: [1, 3], skip: ['2026-09-01', '2026-11-03'] };
+  // 4주보다 오래된 날(9/1)은 정리, 새 날은 정렬해서
+  assert.deepStrictEqual(S.withSkip(e, ['2026-11-05'], true, today), ['2026-11-03', '2026-11-05']);
+  assert.deepStrictEqual(S.withSkip(e, ['2026-11-03'], false, today), []);
+  // 그 일정 요일이 아닌 날은 안 들어간다
+  assert.deepStrictEqual(S.withSkip({ weekdays: [1], skip: [] }, ['2026-11-04'], true, today), []);
+  // 요일을 바꾸면 없어진 요일의 쉬는 날은 빠진다
+  assert.deepStrictEqual(S.withSkip({ weekdays: [3], skip: ['2026-11-03', '2026-11-05'] }, [], true, today), ['2026-11-05']);
+  // 최대 개수
+  const many = []; for (let i = 0; i < 70; i++) many.push(D.toKey(D.parse('2026-11-02') + i * 7));
+  const out = S.withSkip({ weekdays: [0], skip: [] }, many, true, today);
+  assert.strictEqual(out.length, S.SKIP_MAX);
+  assert.strictEqual(out[out.length - 1], many[69]);
+});
+
+test('모르는 필드는 extra 로 남아 다시 저장할 때 그대로', () => {
+  const [e] = S.fromDocs([{ id: 'a', owner: 'jm', title: 'x', weekly: true, weekday: 1, start: '10:00', end: '11:00', future: { a: 1 }, updatedAt: 't' }]);
+  assert.deepStrictEqual(e.extra, { future: { a: 1 } });
+});
+
+test('주 보기 지금 선: 이번 주의 오늘 칸에만', () => {
+  const ws = S.monStart(today);
+  assert.deepStrictEqual(S.week([], ['dj', 'jm'], 'jm', ws, today, { now: 630 }).now, { idx: 2, min: 630 });
+  assert.strictEqual(S.week([], ['dj', 'jm'], 'jm', ws + 7, today, { now: 630 }).now, null);
+});

@@ -151,7 +151,7 @@
     'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
-    'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null,
+    'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
     'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v' };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -357,8 +357,10 @@
     else if (act === 'sched-week') { schedState().weekStart += 7 * Number(btn.getAttribute('data-dir')); render(true); }
     else if (act === 'sched-thisweek') { schedState().weekStart = RT.schedule.monStart(state.today); render(true); }
     else if (act === 'event-add') addEvent();
-    else if (act === 'event-open') openEvent(btn.getAttribute('data-id'), false, btn.getAttribute('data-at'));
-    else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true); }
+    else if (act === 'event-open') openEvent(btn.getAttribute('data-id'), false, btn.getAttribute('data-at'), btn.getAttribute('data-day'));
+    else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true, null, state.eventForm.occDay); }
+    else if (act === 'ev-skip') skipEvent(btn.getAttribute('data-v'), true);
+    else if (act === 'ev-unskip') skipEvent(btn.getAttribute('data-v'), false);
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
     else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode' || act === 'ev-cat') setEventField(act, btn.getAttribute('data-v'));
@@ -431,7 +433,7 @@
     var nm = {}; people.forEach(function (p) { nm[p.key] = p.name; });
     var evs = eventList(), st = schedState();
     var now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
-    return { mode: st.mode, week: S.week(evs, persons, state.me, st.weekStart, state.today, { pick: st.pick, names: nm }), day: S.day(evs, persons, nm, state.me, st.day, state.today, nowMin),
+    return { mode: st.mode, week: S.week(evs, persons, state.me, st.weekStart, state.today, { pick: st.pick, names: nm, now: nowMin }), day: S.day(evs, persons, nm, state.me, st.day, state.today, nowMin),
       people: people.map(function (p) { return { slot: p.slot, name: p.name, me: p.mine }; }), hasBoth: evs.some(function (e) { return e.owner === 'both'; }), nowText: S.fmt(nowMin) };
   }
   function planHtml(other) {
@@ -439,7 +441,7 @@
     if (state.tab === 'todo' && other) out.tab = V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.todoForm) out.sheet = V.todoSheet(state.todoForm, state.sheetEntering);
-    else if (state.eventForm) out.sheet = V.eventSheet(state.eventForm, state.sheetEntering);
+    else if (state.eventForm) out.sheet = V.eventSheet(Object.assign({}, state.eventForm, { skipInfo: skipInfo(state.eventForm) }), state.sheetEntering);
     return out;
   }
   function openPlanSheet(kind, form) {
@@ -531,22 +533,26 @@
     planReturn = '[data-act="event-add"]';
     openPlanSheet('event', { mode: 'add', id: null, title: '', short: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, cat: null, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
   }
-  function openEvent(id, forceEdit, at) {
+  function openEvent(id, forceEdit, at, dayAttr) {
     var e = findEvent(id);
     if (!e) return;
+    // 누른 칸의 날짜 (매주 일정이면 「이날만 쉬기」에 쓴다)
+    var occ = dayAttr === null || dayAttr === undefined || dayAttr === '' ? NaN : Number(dayAttr);
+    var occDay = e.weekly && !isNaN(occ) && e.weekdays.indexOf(RT.schedule.weekdayOf(occ)) >= 0 ? occ : null;
     // 화 · 목처럼 같은 일정이 여러 칸에 있으면, 누른 그 칸으로 포커스를 돌려준다
     if (!forceEdit) planReturn = '[data-act="event-open"]' + (at ? '[data-at="' + CSS.escape(at) + '"]' : '[data-id="' + CSS.escape(id) + '"]');
     var S = RT.schedule;
     if (canEditEvent(e)) {
       openPlanSheet('event', { mode: 'edit', id: id, title: e.title, short: e.short || '', owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
-        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.cat || null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
+        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.cat || null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '', occDay: occDay });
       return;
     }
     var people = planPeople(), slot = 'me';
     people.forEach(function (p) { if (p.key === e.owner) slot = p.slot; });
     openPlanSheet('event', { mode: 'view', id: id, title: e.title, slot: slot,
       whenText: S.whenText(e),
-      whoText: nameOf(e.owner) + ' 님 일정', canEdit: false, lockText: nameOf(e.owner) + ' 님만 고칠 수 있어요' });
+      whoText: nameOf(e.owner) + ' 님 일정', canEdit: false, lockText: nameOf(e.owner) + ' 님만 고칠 수 있어요',
+      occDay: occDay, skipText: occDay !== null && S.isSkipped(e, occDay) ? D.full(occDay) + '은 쉬는 날이에요' : '' });
   }
   function copyTimes(t) { var o = {}; if (t) Object.keys(t).forEach(function (k) { o[k] = { start: t[k].start, end: t[k].end }; }); return o; }
   function setEventField(act, v) {
@@ -612,9 +618,57 @@
     var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), short: RT.schedule.shortOf(f.title, f.short), weekly: !!f.weekly,
       weekdays: days, date: f.weekly ? null : f.date, start: first.start, end: first.end,
-      times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me };
+      times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me,
+      // 쉬는 날은 폼이 아니라 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
+      skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [], extra: old ? old.extra : null };
     f.saving = true; f.error = ''; render(true);
     settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
+  }
+  /** 고치기 시트의 쉬는 날 칸 — 저장된 매주 일정 기준 (누른 칸의 날 + 지금 쉬는 날 목록) */
+  function skipInfo(f) {
+    var S = RT.schedule, e = f.mode === 'edit' && f.id ? findEvent(f.id) : null;
+    if (!e || !e.weekly || !f.weekly) return null;
+    var occ = null;
+    if (f.occDay !== null && f.occDay !== undefined && e.weekdays.indexOf(S.weekdayOf(f.occDay)) >= 0) {
+      var ws = S.monStart(f.occDay), key = D.toKey(f.occDay);
+      var weekKeys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
+      occ = { key: key, label: D.full(f.occDay), skipped: S.isSkipped(e, f.occDay),
+        weekKey: e.weekdays.length > 1 ? 'week:' + key : null, weekLabel: D.label(ws) + ' 주',
+        weekSkipped: weekKeys.every(function (k) { return e.skip.indexOf(k) >= 0; }) };
+    }
+    var list = e.skip.map(function (k) { var n = D.parse(k); return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')', past: n < state.today }; });
+    return { occ: occ, list: list, busy: !!f.saving };
+  }
+  /** 쉬는 날: key = 'YYYY-MM-DD' 하나 또는 'week:YYYY-MM-DD'(그 주 이 일정의 모든 요일). 누르면 바로 저장된다. */
+  function skipEvent(v, on) {
+    var f = state.eventForm, S = RT.schedule;
+    if (!store || !f || !f.id || f.saving || f.mode !== 'edit') return;
+    var e = findEvent(f.id);
+    if (!e || !e.weekly) return;
+    var keys, label;
+    if (String(v).indexOf('week:') === 0) {
+      var ws = S.monStart(D.parse(String(v).slice(5)));
+      if (isNaN(ws)) return;
+      keys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
+      label = D.label(ws) + '이 있는 주';
+    } else {
+      var n = D.parse(v);
+      if (isNaN(n)) return;
+      keys = [v]; label = D.label(n);
+    }
+    var next = S.withSkip(e, keys, on, state.today);
+    var doc = Object.assign({}, e, { skip: next, times: e.perDay ? e.times : null });
+    var fromOcc = f.occDay !== null && f.occDay !== undefined && keys.indexOf(D.toKey(f.occDay)) >= 0;
+    var msg = on ? '🌿 ' + label + ' ' + e.title + ' 쉬어요' : label + ' ' + e.title + ' 다시 해요';
+    if (on && next.length === (e.skip || []).length && keys.some(function (k) { return next.indexOf(k) < 0; })) { planFail(f, '쉬는 날은 ' + S.SKIP_MAX + '개까지예요'); return; }
+    if (fromOcc) {
+      // 누른 칸에서 쉬기 · 되돌리기 → 시트를 닫고 시간표로
+      f.saving = true; render(true);
+      settle(store.saveEvent(doc), f, function () { return state.eventForm === f; }, msg, '[data-act="event-add"]');
+    } else {
+      // 「쉬는 날」 목록에서 되돌리기 → 시트는 그대로 (폼에 적던 것도 그대로)
+      store.saveEvent(doc).then(function () { showToast(msg); }, function () { showToast('저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+    }
   }
   function deleteEvent() {
     var f = state.eventForm;

@@ -5,6 +5,7 @@
                      요일마다 시간이 다르면 times: { '1': '10:00-11:00', '3': '16:00-17:00' } (start · end 는 첫 요일 시간)
                    short: 주 보기 블록에 보일 짧은 이름 (선택, 없으면 title 그대로 — 예: 4차산업혁명과디지털리터러시 → 4디리)
                    cat: 'class' | 'exercise' | 'study' | 'work' | 'meet' | 'etc' (카테고리, 없으면 아이콘 없음)
+                   skip: ['YYYY-MM-DD', …] 매주 일정에서 쉬는 날 (휴강 등) — 그날은 시간표에 안 보이고, 고른 요일 목록에만 「쉬어요」로 남는다
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
    주는 월요일에 시작한다. 사람 순서(persons)는 루틴 탭과 같아서 두 사람 화면에서 색 · 자리가 같다. */
@@ -65,6 +66,37 @@
     return '매주 ' + e.weekdays.map(function (w) { return WD[w] + ' ' + e.times[w].start + '–' + e.times[w].end; }).join(' · ');
   }
 
+  var SKIP_MAX = 60;
+  // 화면이 아는 필드 — 이 밖의 필드(더 새 버전 앱이 넣은 것)는 고쳐 저장할 때 그대로 둔다
+  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
+  function extraOf(e) {
+    var out = null;
+    Object.keys(e).forEach(function (k) { if (KNOWN.indexOf(k) < 0) { out = out || {}; out[k] = e[k]; } });
+    return out;
+  }
+  /** 쉬는 날: 맞는 날짜이고 그 일정의 요일인 것만, 정렬 · 중복 없이 */
+  function skipsOf(raw, days) {
+    var out = [];
+    (Array.isArray(raw) ? raw : []).forEach(function (k) {
+      var n = D.parse(k);
+      if (!isNaN(n) && days.indexOf(weekdayOf(n)) >= 0 && out.indexOf(k) < 0) out.push(k);
+    });
+    return out.sort();
+  }
+  /** 쉬는 날 더하기 · 빼기 — 4주보다 오래된 날은 정리하고 최대 SKIP_MAX 개 (최근 것을 남긴다) */
+  function withSkip(e, keys, on, today) {
+    var list = (e.skip || []).slice();
+    keys.forEach(function (k) {
+      var at = list.indexOf(k);
+      if (on && at < 0) list.push(k);
+      if (!on && at >= 0) list.splice(at, 1);
+    });
+    var old = typeof today === 'number' ? today - 28 : -Infinity;
+    list = skipsOf(list, e.weekdays || []).filter(function (k) { return D.parse(k) >= old; });
+    return list.slice(Math.max(0, list.length - SKIP_MAX));
+  }
+  function isSkipped(e, day) { return !!(e.weekly && e.skip && e.skip.indexOf(D.toKey(day)) >= 0); }
+
   function fromDocs(docs) {
     return (docs || []).filter(function (e) {
       if (!e || typeof e.id !== 'string' || typeof e.title !== 'string' || !e.title.trim() || typeof e.owner !== 'string') return false;
@@ -74,14 +106,14 @@
     }).map(function (e) {
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        cat: catOf(e.cat) ? e.cat : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null };
+        cat: catOf(e.cat) ? e.cat : null, skip: weekly ? skipsOf(e.skip, days) : [], date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
 
-  /** 그날 일정 (매주 + 그날 한 번) */
-  function on(events, day) {
-    var wd = weekdayOf(day), key = D.toKey(day);
-    return events.filter(function (e) { return e.weekly ? e.weekdays.indexOf(wd) >= 0 : e.date === key; }).map(function (e) {
+  /** 그날 일정 (매주 + 그날 한 번). 쉬는 날로 뺀 매주 일정은 없다 (opts.skipped 면 그것만) */
+  function on(events, day, opts) {
+    var wd = weekdayOf(day), key = D.toKey(day), want = !!(opts && opts.skipped);
+    return events.filter(function (e) { return (e.weekly ? e.weekdays.indexOf(wd) >= 0 : e.date === key) && isSkipped(e, day) === want; }).map(function (e) {
       // 요일마다 시간이 다르면 그날 시간으로 (같은 id — 누르면 같은 일정이 열린다)
       return e.weekly && e.perDay ? Object.assign({}, e, { start: e.times[wd].start, end: e.times[wd].end }) : e;
     });
@@ -123,12 +155,12 @@
 
   /** 함께 일정은 두 사람 자리에 한 조각씩 넣어, 각자 일정과 겹치면 나란히 놓인다 (가려서 못 누르는 일이 없게).
       두 번째 조각은 dup=true (같은 일정이라 화면 읽기에서는 한 번만 읽는다). */
-  function blocksFor(list, persons, me, dayIdx) {
+  function blocksFor(list, persons, me, dayIdx, dayN) {
     var lanes = [[], []];
     list.forEach(function (e) {
       lanesOf(e, persons).forEach(function (lane, k) {
         var c = catOf(e.cat);
-        lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, icon: c ? c.icon : '',
+        lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: c ? c.icon : '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
           editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
       });
@@ -153,16 +185,19 @@
     for (var i = 0; i < 7; i++) {
       var day = weekStart + i, list = on(events, day);
       days.push({ day: day, wd: WD[i], date: D.parts(day).d, isToday: day === today, picked: day === pick });
-      all = all.concat(widen(blocksFor(list, persons, me, i)));
+      all = all.concat(widen(blocksFor(list, persons, me, i, day)));
     }
     var p0 = D.parts(weekStart), p6 = D.parts(weekStart + 6), pp = D.parts(pick), names = opts.names || {};
     // 고른 요일 목록: 두 사람 일정을 시간 순서로 (색 막대 = 사람, 함께는 강조)
-    var items = on(events, pick).sort(function (a, b) { return toMin(a.start) - toMin(b.start) || toMin(a.end) - toMin(b.end); }).map(function (e) {
-      var c = catOf(e.cat), k = persons.indexOf(e.owner);
-      return { id: e.id, title: e.title, icon: c ? c.icon : '', catName: c ? c.name : '', time: e.start + '–' + e.end, weekly: e.weekly,
-        slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
-    });
+    // 쉬는 날로 뺀 일정도 「쉬어요」로 같이 보인다 (눌러서 되돌릴 수 있게)
+    var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
+      .sort(function (a, b) { return toMin(a[0].start) - toMin(b[0].start) || toMin(a[0].end) - toMin(b[0].end); }).map(function (x) {
+        var e = x[0], c = catOf(e.cat), k = persons.indexOf(e.owner);
+        return { id: e.id, title: e.title, icon: c ? c.icon : '', catName: c ? c.name : '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], day: pick,
+          slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
+      });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
+      now: today >= weekStart && today <= weekStart + 6 && typeof opts.now === 'number' ? { idx: today - weekStart, min: opts.now } : null,
       range: p0.m + '월 ' + p0.d + '일 – ' + (p6.m !== p0.m ? p6.m + '월 ' : '') + p6.d + '일', isThisWeek: weekStart === monStart(today),
       pick: { day: pick, title: WD[pick - weekStart] + '요일 · ' + pp.m + '월 ' + pp.d + '일', isToday: pick === today, items: items } };
   }
@@ -183,7 +218,8 @@
   /** 일 보기: 그날 두 줄 + (오늘이면) 지금 상태 */
   function day(events, persons, names, me, dayN, today, nowMin) {
     var list = on(events, dayN);
-    var blocks = blocksFor(list, persons, me, 0);
+    var blocks = blocksFor(list, persons, me, 0, dayN);
+    var skipped = on(events, dayN, { skipped: true }).map(function (e) { return { id: e.id, title: e.title, time: e.start + '–' + e.end, day: dayN }; });
     var status = null;
     if (dayN === today) {
       status = persons.map(function (p) {
@@ -194,7 +230,7 @@
     }
     var ws = monStart(dayN), strip = [];
     for (var i = 0; i < 7; i++) strip.push({ day: ws + i, wd: WD[i], date: D.parts(ws + i).d, on: ws + i === dayN, isToday: ws + i === today });
-    return { day: dayN, title: D.full(dayN), blocks: blocks, hours: hoursFor(list), status: status, now: dayN === today ? nowMin : null, strip: strip, empty: !list.length };
+    return { day: dayN, title: D.full(dayN), blocks: blocks, hours: hoursFor(list), status: status, now: dayN === today ? nowMin : null, strip: strip, empty: !list.length, skipped: skipped };
   }
 
   function validate(f) {
@@ -218,7 +254,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

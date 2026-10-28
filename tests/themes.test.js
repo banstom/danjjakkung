@@ -144,3 +144,22 @@ test('저장 규칙의 테마 목록 = js/themes.js 목록', () => {
   assert.deepStrictEqual(m[1].split(',').map((x) => x.trim().replace(/'/g, '')), IDS);
   for (const id of IDS) assert.ok(rules.includes(`validPair(c['${id}'])`), id + ' 검사 없음');
 });
+
+test('시간표 「오늘」은 글자색 계열 — 사람 색 후보 · 함께 색과 다르다', () => {
+  assert.match(common.today, /var\(--text\)/);
+  assert.match(common['on-today'], /var\(--surface\)/);
+  for (const id of IDS) {
+    const v = block(id);
+    // 오늘 원(글자색)은 무채색에 가깝고, 사람 색 후보 · 함께 색과는 밝기(2:1 이상)나 색 진하기로 갈린다
+    const sat = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16) / 255); return Math.max(...c) - Math.min(...c); }; // 색 진하기(chroma)
+    const today = /^#/.test(v.today || '') ? v.today : v.text;
+    assert.ok(sat(today) < 0.15, id + ' 오늘 색이 무채색에 가까워야 해요');
+    assert.ok(T.contrast(today, v.surface) >= 4.5, id + ' 오늘 원 글자 대비');
+    for (const hex of T.palette(id).concat([v.tint, v.accent])) {
+      const r = T.contrast(today, hex), sd = Math.abs(sat(hex) - sat(today));
+      assert.ok(r >= 2 || sd >= 0.3, `${id}: 오늘(${today}) vs ${hex} — 대비 ${r.toFixed(2)}, 진하기 차 ${sd.toFixed(2)}`);
+    }
+  }
+  assert.doesNotMatch(appCss, /\.scol\.is-today \{[^}]*--tint/);
+  assert.doesNotMatch(appCss, /\.sday\.is-today \.sday__date \{[^}]*--primary/);
+});

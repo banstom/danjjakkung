@@ -77,8 +77,11 @@
       saveEvent: function (e) {
         // 요일이 하나면 예전 모양(weekday) 그대로, 여럿이면 weekdays 목록
         var days = e.weekly ? e.weekdays : [];
-        var doc = { owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: days.length === 1 ? days[0] : null, date: e.weekly ? null : e.date,
-          start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString() };
+        // 더 새 버전 앱이 넣은 필드(extra)는 그대로 남긴다 — 옛 버전이 고쳐도 새 필드가 지워지지 않게
+        var doc = Object.assign({}, e.extra || {});
+        Object.assign(doc, { owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: days.length === 1 ? days[0] : null, date: e.weekly ? null : e.date,
+          start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString() });
+        if (e.weekly && e.skip && e.skip.length) doc.skip = e.skip.slice(); // 쉬는 날 (없으면 필드 없음)
         if (days.length > 1) doc.weekdays = days.slice();
         if (e.short) doc.short = e.short; // 표시할 이름 (일정 이름과 같거나 비면 필드 없음)
         if (e.cat) doc.cat = e.cat; // 카테고리 (없으면 필드 없음)

@@ -413,6 +413,55 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="sched-week"][data-dir="1"]');
   console.log('다음 주:', await jm.textContent('.grid-range'), '| 블록', await jm.$$eval('.sblock', (e) => e.length), '| 이번 주 버튼', !!(await jm.$('[data-act="sched-thisweek"]')));
   await jm.click('[data-act="sched-thisweek"]');
+  // (쉬는 날) 매주 일정의 그날만 빼기 — 오늘(목) 일반생물 휴강 → 시간표에서 빠지고 목록에 「쉬어요」, 다진 화면도 같게 → 되돌리기
+  const bioKey = [...docs.entries()].find(([k, v]) => v && v.title === '일반생물')[0];
+  const bioCount = (p) => p.$$eval('.sblock[aria-label^="일반생물"]', (e) => e.length);
+  console.log('쉬기 전 블록:', await bioCount(jm));
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="목요일"]');
+  await jm.waitForSelector('.skipbox');
+  console.log('쉬는 날 칸:', await jm.textContent('.skipbox__title'), '|', await jm.$$eval('.skipbox [data-act]', (e) => e.map((x) => x.textContent + '=' + x.dataset.v).join(' / ')));
+  await jm.screenshot({ path: path.join(OUT, 'web-skip-sheet.png') });
+  await jm.click('[data-act="ev-skip"]:not([data-v^="week:"])');
+  await jm.waitForTimeout(250);
+  console.log('쉰 뒤: 저장', JSON.stringify(docs.get(bioKey).skip), '| 블록', await bioCount(jm), '| 토스트', await jm.textContent('.toast').catch(() => ''), '| 다진 블록', await bioCount(dj));
+  await (await jm.$$('.sday'))[3].click(); // 목요일 목록
+  console.log('목록:', await jm.$$eval('.slist__item--skipped', (e) => e.map((x) => x.getAttribute('aria-label')).join(' / ')), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
+  await jm.screenshot({ path: path.join(OUT, 'web-skip-week.png'), fullPage: true });
+  // 고치기에서 이름을 바꿔 저장해도 쉬는 날은 그대로
+  await jm.click('.slist__item--skipped');
+  console.log('쉬는 날 열기:', await jm.textContent('.skipbox__title'), '| 목록', await jm.$$eval('.chip--rest', (e) => e.map((x) => x.textContent).join(', ')));
+  await jm.fill('#ev-short', '일생');
+  await jm.click('.sheet [type="submit"]');
+  await jm.waitForTimeout(250);
+  console.log('저장 뒤 쉬는 날 유지:', JSON.stringify(docs.get(bioKey).skip), docs.get(bioKey).short);
+  // 다진(일정 주인 아님): 보기만 + 쉬는 날 안내
+  if (await dj.$('[data-act="sched-mode"][data-mode="week"]')) await dj.click('[data-act="sched-mode"][data-mode="week"]').catch(() => {});
+  await (await dj.$$('.sday'))[3].click().catch(() => {});
+  await dj.waitForTimeout(150);
+  const djRest = await dj.$('.slist__item--skipped');
+  if (djRest) { await djRest.click(); console.log('다진 보기:', await dj.textContent('.einfo__rest').catch(() => '(안내 없음)'), '| 쉬기 버튼', !!(await dj.$('[data-act="ev-skip"]'))); await dj.keyboard.press('Escape'); }
+  else console.log('다진 목록에 쉬는 일정 없음');
+  // 되돌리기 → 다시 보인다
+  await jm.click('.slist__item--skipped');
+  await jm.click('[data-act="ev-unskip"][data-v="' + docs.get(bioKey).skip[0] + '"]');
+  await jm.waitForTimeout(250);
+  console.log('되돌린 뒤:', JSON.stringify(docs.get(bioKey).skip || null), '| 블록', await bioCount(jm));
+  // 이번 주 모두 쉬기 (화 · 목) → 그 주 블록 0, 다음 주는 그대로
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="화요일"]');
+  await jm.click('[data-act="ev-skip"][data-v^="week:"]');
+  await jm.waitForTimeout(250);
+  console.log('이번 주 모두:', JSON.stringify(docs.get(bioKey).skip), '| 블록', await bioCount(jm));
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  console.log('다음 주 블록:', await bioCount(jm));
+  await jm.click('[data-act="sched-thisweek"]');
+  // 오늘 표시 (중립색) · 지금 선
+  const todayLook = await jm.evaluate(() => { const d = document.querySelector('.sday.is-today .sday__date'), c = document.querySelector('.scol.is-today'); return getComputedStyle(d).backgroundColor + ' | 칸 ' + getComputedStyle(c).backgroundColor + ' | 지금 선 ' + !!c.querySelector('.snow--week'); });
+  console.log('오늘 표시:', todayLook);
+  // 쉬는 날 정리: 「쉬는 날」 칩으로 되돌린다 (시트는 열린 채로)
+  await jm.click('.slist__item--skipped');
+  while (await jm.$('.chip--rest')) { await jm.click('.chip--rest'); await jm.waitForTimeout(200); }
+  console.log('칩으로 되돌린 뒤:', JSON.stringify(docs.get(bioKey).skip || null), '| 시트 열림', !!(await jm.$('#event-sheet-title')), '| 블록', await bioCount(jm));
+  await jm.keyboard.press('Escape');
   // (점검 8) 알림으로 열면(?tab=routine) 그 탭으로, 주소는 깔끔하게
   await jm.goto(URL + '?tab=routine');
   await jm.waitForSelector('[data-act="tab"][aria-current="page"]');

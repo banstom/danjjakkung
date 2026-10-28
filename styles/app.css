@@ -335,8 +335,9 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .sday { border: 0; background: none; padding: 2px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: inherit; color: var(--text); min-height: 44px; }
 .sday__wd { font-size: 12px; font-weight: 600; color: var(--sub); }
 .sday__date { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
-.sday.is-today .sday__wd { color: var(--tint-text); }
-.sday.is-today .sday__date { background: var(--primary); color: var(--on-primary); box-shadow: inset 0 0 0 1.5px var(--primary-edge); }
+/* 오늘 · 고른 요일은 글자색 계열(--today) — 사람 색 · 함께 색(--tint, --accent)과 섞이지 않게 */
+.sday.is-today .sday__wd { color: var(--text); font-weight: 800; }
+.sday.is-today .sday__date { background: var(--today); color: var(--on-today); }
 .shours { position: relative; }
 .shours--day { width: 44px; }
 .shour { position: absolute; right: 4px; transform: translateY(-50%); font-size: 10px; color: var(--sub); font-variant-numeric: tabular-nums; }
@@ -345,10 +346,12 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .scols--day { display: block; }
 .sline { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); pointer-events: none; }
 .scol { position: relative; border-left: 1px solid var(--line); }
-.scol.is-today { background: color-mix(in srgb, var(--tint) 55%, transparent); }
-.scol.is-picked { box-shadow: inset 0 0 0 1.5px var(--accent); border-radius: 6px; }
-.sday.is-picked .sday__wd { color: var(--tint-text); font-weight: 800; }
-.sday.is-picked::after { content: ''; width: 18px; height: 3px; border-radius: 2px; background: var(--accent); margin-top: 1px; }
+.scol.is-today { background: var(--today-col); }
+.scol.is-picked { box-shadow: inset 0 0 0 1px var(--sub); border-radius: 6px; }
+.sday.is-picked .sday__wd { color: var(--text); font-weight: 800; }
+.sday.is-picked::after { content: ''; width: 18px; height: 3px; border-radius: 2px; background: var(--today); margin-top: 1px; }
+.snow--week { background: var(--today); z-index: 2; }
+.snow--week::before { background: var(--today); left: -3px; }
 .sblock {
   position: absolute; box-sizing: border-box; border-radius: 6px; border: 1.5px solid transparent; padding: 3px 2px; margin: 0;
   display: flex; flex-direction: column; align-items: center; gap: 1px; overflow: hidden; font: inherit; text-align: center;
@@ -449,3 +452,17 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 /* ── 테마 바꿀 때만 잠깐 색이 스르륵 바뀌게 (평소에는 전환 없음) ── */
 html.is-theming, html.is-theming * { transition: background-color .25s ease, color .25s ease, border-color .25s ease, fill .25s ease !important; }
 @media (prefers-reduced-motion: reduce) { html.is-theming, html.is-theming * { transition: none !important; } }
+
+/* ── 쉬는 날 (매주 일정에서 그날만 빼기) ── */
+.tag--rest { background: var(--empty); color: var(--empty-text); }
+.slist__item--skipped { background: var(--surface); border: 1.5px dashed var(--line); color: var(--sub); }
+.slist__item--skipped .slist__bar { opacity: .35; }
+.skipbox { display: flex; flex-direction: column; gap: 8px; margin: 0 0 14px; padding: 12px; border-radius: 14px; background: var(--raised); border: 1px solid var(--line); }
+.skipbox__title { margin: 0; font-size: 15px; font-weight: 700; }
+.skipbox__row { display: flex; gap: 8px; flex-wrap: wrap; }
+.skipbox__row .ghost-btn { flex: 1 1 140px; color: var(--text); }
+.skipbox__hint { margin: 0; font-size: 12px; color: var(--sub); }
+.skipbox__list { display: flex; flex-direction: column; gap: 6px; }
+.chip--rest { height: 36px; padding: 0 12px; font-size: 13px; }
+.chip--rest.is-past { color: var(--sub); }
+.einfo__rest { color: var(--text); font-weight: 600; }
