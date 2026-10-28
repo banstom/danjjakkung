@@ -508,7 +508,7 @@ async function tick(page, dateKey, key) {
   await ip.close();
 
   // 4-4) 테마: 처음엔 기본(밝은 화면 → Soft Pastel), 🎨에서 고르면 바로 바뀌고 새로 열어도 그대로. 짝꿍 기기는 그대로.
-  const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour'];
+  const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'];
   const themeOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-theme'));
   await jm.click('[data-act="tab"][data-tab="routine"]');
   console.log('테마 처음:', await themeOf(jm), '| 계절 칩 없음:', (await jm.$$('.season-chip')).length === 0, '| 🎨:', await jm.getAttribute('[data-act="open-theme"]', 'aria-label'));
@@ -527,11 +527,11 @@ async function tick(page, dateKey, key) {
       bg: getComputedStyle(document.body).backgroundColor, meta: document.querySelector('meta[name="theme-color"]').content, vbg: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim(),
       sheet: getComputedStyle(document.querySelector('.sheet')).backgroundColor, theming: document.documentElement.classList.contains('is-theming') }));
     console.log('고름', id, '→', st.t, '| 저장', st.saved, '| 표시', st.on, '| 포커스', st.focus, '| 바탕', st.bg, '| 위 띠', st.meta === st.vbg, '| 시트', st.sheet, '| 전환 끝', !st.theming);
-    if (id === 'cosmic-dream' || id === 'ocean-breeze') await jm.screenshot({ path: path.join(OUT, `theme-sheet-${id}.png`) });
+    if (['cosmic-dream', 'ocean-breeze', 'golden-hour', 'midnight-noir', 'harvest'].includes(id)) await jm.screenshot({ path: path.join(OUT, `theme-sheet-${id}.png`) });
   }
   await jm.keyboard.press('Escape');
   console.log('Esc로 닫힘:', (await jm.$$('.sheet')).length === 0, '| 포커스 🎨:', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
-  // 화면마다 6개 테마로 찍어 둔다 (하드코딩 색 · 대비 눈으로 점검)
+  // 화면마다 14개 테마로 찍어 둔다 (하드코딩 색 · 대비 눈으로 점검)
   for (const id of THEME_IDS) {
     await jm.evaluate((v) => { localStorage.setItem('danjjakkung.theme', v); RT.themes.apply(v); }, id);
     for (const tab of ['routine', 'todo', 'schedule']) {
@@ -563,7 +563,7 @@ async function tick(page, dateKey, key) {
   await jm.waitForTimeout(400);
   console.log('전환 중:', mid.cls, mid.tr, '| 끝난 뒤:', await jm.evaluate(() => document.documentElement.classList.contains('is-theming')));
   await jm.keyboard.press('Escape');
-  await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'forest-diary'); });
+  await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'midnight-noir'); });
   await jm.reload();
   const early = await jm.evaluate(() => document.documentElement.getAttribute('data-theme'));
   await jm.waitForSelector('[data-act="open-theme"]');

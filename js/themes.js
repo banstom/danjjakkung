@@ -15,7 +15,15 @@
     { id: 'ocean-breeze', name: 'Ocean Breeze', ko: '오션 브리즈', desc: '맑은 바다, 청량한 휴식', dark: false },
     { id: 'forest-diary', name: 'Forest Diary', ko: '포레스트 다이어리', desc: '숲과 이끼, 차분한 초록', dark: false },
     { id: 'vintage-film', name: 'Vintage Film', ko: '빈티지 필름', desc: '오래된 사진첩, 따뜻한 추억', dark: false },
-    { id: 'blue-hour', name: 'Blue Hour', ko: '블루 아워', desc: '해 진 직후의 고요한 하늘', dark: false }
+    { id: 'blue-hour', name: 'Blue Hour', ko: '블루 아워', desc: '해 진 직후의 고요한 하늘', dark: false },
+    { id: 'golden-hour', name: 'Golden Hour', ko: '골든 아워', desc: '따뜻한 노을과 황금빛 햇살', dark: false },
+    { id: 'sakura-dream', name: 'Sakura Dream', ko: '사쿠라 드림', desc: '부드러운 벚꽃과 봄의 설렘', dark: false },
+    { id: 'midnight-noir', name: 'Midnight Noir', ko: '미드나잇 누아르', desc: '깊은 밤과 도시의 세련미', dark: true },
+    { id: 'arctic-frost', name: 'Arctic Frost', ko: '아크틱 프로스트', desc: '얼음과 서리의 맑은 색감', dark: false },
+    { id: 'chocolate-noir', name: 'Chocolate Noir', ko: '초콜릿 누아르', desc: '다크 초콜릿과 크리미한 브라운', dark: false },
+    { id: 'roast-nuts', name: 'Roast Nuts', ko: '로스트 너츠', desc: '구운 견과류와 달콤한 황금빛', dark: false },
+    { id: 'winter-knit', name: 'Winter Knit', ko: '윈터 니트', desc: '포근한 니트와 부드러운 겨울', dark: false },
+    { id: 'harvest', name: 'Harvest', ko: '하베스트', desc: '황금빛 들판과 차분한 가을', dark: false }
   ];
   var KEY = 'danjjakkung.theme';
   var COLOR_KEY = 'danjjakkung.colors';
@@ -27,7 +35,15 @@
     'ocean-breeze': { ink: '#0B2530', colors: ['#399DA8', '#7FC5C0', '#F2A48C', '#F4C977', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
     'forest-diary': { ink: '#1A2119', colors: ['#82966A', '#AEBD92', '#C99A6B', '#D9B85C', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
     'vintage-film': { ink: '#211E19', colors: ['#874F4D', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
-    'blue-hour': { ink: '#161C35', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] }
+    'blue-hour': { ink: '#161C35', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] },
+    'golden-hour': { ink: '#2B1A10', colors: ['#C96F62', '#F2B880', '#E89A5B', '#F2D27A', '#9DBF8E', '#8FB5D0', '#C49AC0', '#E8A0A0'] },
+    'sakura-dream': { ink: '#2E2328', colors: ['#E6A0B4', '#A7BDA5', '#C9A8E0', '#F4B8A0', '#EDD58A', '#9FC8DC', '#D98AA0', '#B8D4A8'] },
+    'midnight-noir': { ink: '#15161D', colors: ['#D88A98', '#A9ABBA', '#E0B07A', '#8FB8C9', '#9CC4A0', '#C8A0D8', '#E8D48A', '#F0A07A'] },
+    'arctic-frost': { ink: '#14222C', colors: ['#778FA8', '#B9DDE8', '#C8B8E0', '#A8D4C4', '#E8B8C4', '#E8D49A', '#9BB0C8', '#8FC0D8'] },
+    'chocolate-noir': { ink: '#2A1D18', colors: ['#765447', '#D8B99B', '#C49A78', '#C98F7A', '#8A9A70', '#E0C080', '#9AA8C0', '#5A3A30'] },
+    'roast-nuts': { ink: '#2E2116', colors: ['#C98A5B', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
+    'winter-knit': { ink: '#26282C', colors: ['#E8B6C5', '#B2DCD6', '#DCC9BC', '#A8C0D8', '#C8B8D8', '#E8C89A', '#B8C8A8', '#D0A0A0'] },
+    'harvest': { ink: '#24230F', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#C98A7A', '#9DB4C8'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -35,7 +51,15 @@
    ['#399DA8','청록'],['#7FC5C0','물빛'],['#F2A48C','코랄'],['#F4C977','모래'],['#9EC97F','해초'],['#6FA8DC','하늘'],['#B49AD8','라일락'],['#E88FA6','분홍'],
    ['#82966A','이끼'],['#AEBD92','세이지'],['#C99A6B','나무'],['#D9B85C','겨자'],['#8FAFB8','시냇물'],['#C48A8A','산딸기'],['#A89BC2','제비꽃'],['#7FA08A','솔잎'],
    ['#874F4D','버건디'],['#C9AA66','황토'],['#6B7052','올리브'],['#57707F','바랜 청색'],['#B97A5A','벽돌'],['#A88BA0','모브'],['#8FA38A','세이지'],['#D49A7A','살구'],
-   ['#7F8CBF','페리윙클'],['#A6AEE3','연보라'],['#E8A3B4','노을 분홍'],['#F2BE8C','노을 주황'],['#8FC1D4','하늘'],['#B79CD9','보라'],['#9DC4A8','민트'],['#5D6AA3','남색']
+   ['#7F8CBF','페리윙클'],['#A6AEE3','연보라'],['#E8A3B4','노을 분홍'],['#F2BE8C','노을 주황'],['#8FC1D4','하늘'],['#B79CD9','보라'],['#9DC4A8','민트'],['#5D6AA3','남색'],
+   ['#C96F62','노을 장밋빛'],['#F2B880','살구'],['#E89A5B','노을 주황'],['#F2D27A','햇살'],['#9DBF8E','풀빛'],['#8FB5D0','저녁 하늘'],['#C49AC0','모브'],['#E8A0A0','복숭아'],
+   ['#E6A0B4','벚꽃'],['#A7BDA5','세이지'],['#C9A8E0','라일락'],['#F4B8A0','살구'],['#EDD58A','개나리'],['#9FC8DC','봄 하늘'],['#D98AA0','로즈'],['#B8D4A8','새잎'],
+   ['#D88A98','로즈'],['#A9ABBA','은빛'],['#E0B07A','샴페인'],['#8FB8C9','강철 파랑'],['#9CC4A0','세이지'],['#C8A0D8','라일락'],['#E8D48A','가로등'],['#F0A07A','네온 주황'],
+   ['#778FA8','서리 청색'],['#B9DDE8','얼음'],['#C8B8E0','라벤더'],['#A8D4C4','빙하 민트'],['#E8B8C4','새벽 분홍'],['#E8D49A','겨울 햇살'],['#9BB0C8','회청'],['#8FC0D8','호수'],
+   ['#765447','모카'],['#D8B99B','라테'],['#C49A78','카페오레'],['#C98F7A','로즈 브라운'],['#8A9A70','피스타치오'],['#E0C080','캐러멜 크림'],['#9AA8C0','블루베리'],['#5A3A30','다크 초콜릿'],
+   ['#C98A5B','아몬드'],['#F4C95D','꿀'],['#E8D77D','보리'],['#D6AC83','캐러멜'],['#A8C27A','피스타치오'],['#E8A07A','살구'],['#9FC0D0','하늘'],['#D99A9A','대추'],
+   ['#E8B6C5','더스티 핑크'],['#B2DCD6','민트'],['#DCC9BC','오트밀'],['#A8C0D8','겨울 하늘'],['#C8B8D8','라벤더'],['#E8C89A','캐멀'],['#B8C8A8','세이지'],['#D0A0A0','로즈 브라운'],
+   ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘']
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   var LIGHT_DEFAULT = 'soft-pastel';
   var DARK_DEFAULT = 'cosmic-dream';

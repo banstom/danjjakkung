@@ -1,7 +1,7 @@
 /* 색표 · 글꼴 — 이 파일 밖에서는 색 값을 쓰지 않는다.
    테마는 사용자가 고른다 (js/themes.js 의 목록 · 저장, 여기는 색 값만).
    테마 블록은 [data-theme="<id>"] — <html>에 달면 앱 전체, 미리보기 카드에 달면 그 카드만 그 테마로 칠해진다.
-   새 테마 = 여기 블록 하나 + js/themes.js 목록 한 줄. 부품(app.css)은 손대지 않는다.
+   새 테마 = 여기 블록 하나 + js/themes.js 목록 한 줄 · 사람 색 후보 8색 + firestore.rules validColors. 부품(app.css)은 손대지 않는다.
 
    역할 (요청서 이름 → 여기 이름)
      background → --bg          surface → --surface        surfaceElevated · inputBackground → --raised
@@ -122,4 +122,133 @@
   --her: #7F8CBF; --her-ink: #161C35; --me: #A6AEE3; --me-ink: #2D3450;
   --empty: #E2E5F3; --empty-text: #4F5678; --lv-half: #C3C9ED; --lv-half-text: #2D3450; --lv-full: #5D6AA3; --lv-full-text: #FFFFFF;
   --warn: #C62F3A; --toast-bg: #303A60; --toast-fg: #FFFFFF;
+}
+
+/* ── 신규 테마 8종 (10/28) ──
+   요청서 색 5개(Primary · Secondary · Background · Accent · Surface)는 각 블록 위 주석에 그대로 적고, 블록 안에서 모두 쓴다.
+   Background 는 언제나 --bg. 나머지는 테마마다 역할(→)을 정했다 — 글자 대비 4.5:1 · 테두리 3:1 을 못 넘는 색은
+   글자 · 테두리 대신 채움(버튼 · 강조 카드 · 달력 · 사람 색)에 쓰고, 테두리 · 글자 강조는 같은 색조로 진하게 만든 값을 쓴다. */
+
+/* Golden Hour — 해 질 무렵 황금빛 노을 — 살구 채움, 테두리는 노을 장밋빛
+   요청서: Primary #D99055 → --primary(버튼, 진한 글자) · Secondary #F2B880 → --secondary · --me · --lv-half
+           Background #F6E5C9 → --bg · Accent #C96F62 → --her (테두리는 진하게 #B55A4D) · Surface #E8C5A4 → --tint(함께 · 강조 카드) */
+[data-theme="golden-hour"] {
+  color-scheme: light;
+  --bg: #F6E5C9; --surface: #FFFAF2; --raised: #FBF0E0; --line: #EED9BE;
+  --text: #3B2A20; --sub: #6B5243; --faint: #D6BDA2;
+  --primary: #D99055; --on-primary: #2B1A10; --secondary: #F2B880; --accent: #B55A4D; --tab-active: #94402F;
+  --strong: #B55A4D; --primary-edge: var(--accent);
+  --tint: #E8C5A4; --tint-text: #6E3420;
+  --her: #C96F62; --her-ink: #2B1A10; --me: #F2B880; --me-ink: #3B2A20;
+  --empty: #F1DEC4; --empty-text: #5E4838; --lv-half: #F2B880; --lv-half-text: #3B2A20; --lv-full: #A4532C; --lv-full-text: #FFFFFF;
+  --warn: #B3261E; --toast-bg: #3B2A20; --toast-fg: #FFFAF2;
+}
+
+/* Sakura Dream — 벚꽃과 봄바람 — 벚꽃 채움, 라일락 안쪽 면, 세이지 그린
+   요청서: Primary #E6A0B4 → --primary(버튼, 진한 글자) · --her · Secondary #F4CCD6 → --secondary · --tint · --lv-half
+           Background #F6F0E8 → --bg · Accent #A7BDA5 → --me (테두리는 진한 로즈 #B0587A) · Surface #E6DDF0 → --raised(입력창 · 안쪽 면) */
+[data-theme="sakura-dream"] {
+  color-scheme: light;
+  --bg: #F6F0E8; --surface: #FFFDFB; --raised: #E6DDF0; --line: #EBE0DE;
+  --text: #3A2F35; --sub: #64565E; --faint: #D3C5CB;
+  --primary: #E6A0B4; --on-primary: #3A2F35; --secondary: #F4CCD6; --accent: #B0587A; --tab-active: #8F3E5C;
+  --strong: #B0587A; --primary-edge: var(--accent);
+  --tint: #F4CCD6; --tint-text: #7E3350;
+  --her: #E6A0B4; --her-ink: #2E2328; --me: #A7BDA5; --me-ink: #2E2328;
+  --empty: #EEE6E4; --empty-text: #5E5258; --lv-half: #F4CCD6; --lv-half-text: #3A2F35; --lv-full: #A84E70; --lv-full-text: #FFFFFF;
+  --warn: #AE2230; --toast-bg: #3A2F35; --toast-fg: #FFFFFF;
+}
+
+/* Midnight Noir — 깊은 밤의 도시 — 무채색 차콜, 포인트는 버건디 (어두운 테마)
+   요청서: Primary #292A32 → --surface(카드) · Secondary #454650 → --line · --secondary
+           Background #1D1E27 → --bg · Accent #7C414C → --primary(버튼, 흰 글자) · Surface #30313B → --raised(입력창 · 안쪽 면)
+   어두운 바탕 위 테두리 · 글자 강조는 밝힌 버건디(#C77684, #E8A3B0) */
+[data-theme="midnight-noir"] {
+  color-scheme: dark;
+  --bg: #1D1E27; --surface: #292A32; --raised: #30313B; --line: #454650;
+  --text: #F2F0F1; --sub: #B4B3BC; --faint: #5A5B68;
+  --primary: #7C414C; --on-primary: #FFFFFF; --secondary: #454650; --accent: #C77684; --tab-active: #E8A3B0;
+  --strong: #C77684;
+  --tint: #3C2B32; --tint-text: #F2C4CD;
+  --her: #D88A98; --her-ink: #15161D; --me: #A9ABBA; --me-ink: #15161D;
+  --empty: #363743; --empty-text: #C9C8D0; --lv-half: #5E3640; --lv-half-text: #F2F0F1; --lv-full: #D88A98; --lv-full-text: #15161D;
+  --warn: #FF7B86; --toast-bg: #F2F0F1; --toast-fg: #292A32;
+  --success: #5BD08A; --warning: #F2B84B;
+  --scrim: rgba(5, 5, 10, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --lift: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Arctic Frost — 얼어붙은 호수와 서리 — 아이스 블루 채움, 프로스트 화이트 카드, 차가운 회청 테두리
+   요청서: Primary #B9DDE8 → --primary(버튼, 진한 글자) · --me · --lv-half · Secondary #D8E9EF → --secondary · --tint
+           Background #F1F5F5 → --bg · Accent #778FA8 → --accent(테두리 · 선택) · --her · Surface #FFFFFF → --surface(카드) */
+[data-theme="arctic-frost"] {
+  color-scheme: light;
+  --bg: #F1F5F5; --surface: #FFFFFF; --raised: #F4F8F9; --line: #DCE5E8;
+  --text: #26323A; --sub: #56646D; --faint: #BFCCD2;
+  --primary: #B9DDE8; --on-primary: #1F3A48; --secondary: #D8E9EF; --accent: #778FA8; --tab-active: #3E5873;
+  --strong: #6A829C; --primary-edge: var(--accent);
+  --tint: #D8E9EF; --tint-text: #2F4A63;
+  --her: #778FA8; --her-ink: #14222C; --me: #B9DDE8; --me-ink: #26323A;
+  --empty: #E3EBEE; --empty-text: #4C5A63; --lv-half: #B9DDE8; --lv-half-text: #26323A; --lv-full: #4F6E8C; --lv-full-text: #FFFFFF;
+  --warn: #C62F3A; --toast-bg: #26323A; --toast-fg: #FFFFFF;
+}
+
+/* Chocolate Noir — 다크 초콜릿과 모카 — 진한 초콜릿 버튼, 크림 바탕 · 카드
+   요청서: Primary #49352F → --primary(버튼, 크림 글자) · --tab-active · Secondary #765447 → --secondary · --strong · --her
+           Background #F3E8D7 → --bg · Accent #A77D61 → --accent(테두리 · 선택) · Surface #D8B99B → --tint(함께 · 강조 카드) · --me */
+[data-theme="chocolate-noir"] {
+  color-scheme: light;
+  --bg: #F3E8D7; --surface: #FBF6EE; --raised: #F5ECDF; --line: #E6D6C2;
+  --text: #33241F; --sub: #67534A; --faint: #CDB9A6;
+  --primary: #49352F; --on-primary: #FBF6EE; --secondary: #765447; --accent: #A77D61; --tab-active: #49352F;
+  --strong: #765447;
+  --tint: #D8B99B; --tint-text: #3E2A23;
+  --her: #765447; --her-ink: #FFFFFF; --me: #D8B99B; --me-ink: #33241F;
+  --empty: #EADCC8; --empty-text: #5A483D; --lv-half: #D8B99B; --lv-half-text: #33241F; --lv-full: #5C4036; --lv-full-text: #FFFFFF;
+  --warn: #B3261E; --toast-bg: #33241F; --toast-fg: #FBF6EE;
+}
+
+/* Roast Nuts — 구운 견과류 · 꿀 · 캐러멜 — 꿀빛 노랑이 주인공, 캐러멜 테두리
+   요청서: Primary #9D745B → --accent(테두리 · 선택) · --strong (흰 글자 · 진한 글자 모두 4.5:1 미만이라 채움 대신 테두리)
+           Secondary #D6AC83 → --secondary · Background #FFF0C2 → --bg
+           Accent #F4C95D → --primary(버튼, 진한 글자) · --me · --lv-half · Surface #E8D77D → --tint(함께 · 강조 카드) */
+[data-theme="roast-nuts"] {
+  color-scheme: light;
+  --bg: #FFF0C2; --surface: #FFFAEB; --raised: #FFF4D6; --line: #F0DFAE;
+  --text: #3A2C1E; --sub: #67543F; --faint: #D9C79A;
+  --primary: #F4C95D; --on-primary: #3A2C1E; --secondary: #D6AC83; --accent: #9D745B; --tab-active: #7A5236;
+  --strong: #9D745B; --primary-edge: var(--accent);
+  --tint: #E8D77D; --tint-text: #4E3A1A;
+  --her: #C98A5B; --her-ink: #2E2116; --me: #F4C95D; --me-ink: #3A2C1E;
+  --empty: #F5E6B8; --empty-text: #5E4D33; --lv-half: #F4C95D; --lv-half-text: #3A2C1E; --lv-full: #8A5E3C; --lv-full-text: #FFFFFF;
+  --warn: #B3261E; --toast-bg: #3A2C1E; --toast-fg: #FFFAEB;
+}
+
+/* Winter Knit — 겨울 니트와 담요 — 민트 채움, 웜 그레이 바탕, 더스티 핑크 · 오트밀
+   요청서: Primary #B2DCD6 → --primary(버튼, 진한 글자) · --me · Secondary #E7EDF0 → --secondary · --raised(입력창 · 안쪽 면)
+           Background #F7F5F2 → --bg · Accent #E8B6C5 → --her (테두리는 진한 민트 #4E8C84) · Surface #DCC9BC → --tint(함께 · 강조 카드) · --lv-half */
+[data-theme="winter-knit"] {
+  color-scheme: light;
+  --bg: #F7F5F2; --surface: #FFFFFF; --raised: #E7EDF0; --line: #E6E1DB;
+  --text: #36363A; --sub: #625F66; --faint: #CEC9C4;
+  --primary: #B2DCD6; --on-primary: #22403C; --secondary: #E7EDF0; --accent: #4E8C84; --tab-active: #2F6B63;
+  --strong: #4E8C84; --primary-edge: var(--accent);
+  --tint: #DCC9BC; --tint-text: #4A3A30;
+  --her: #E8B6C5; --her-ink: #26282C; --me: #B2DCD6; --me-ink: #26282C;
+  --empty: #ECE8E3; --empty-text: #5D5A5F; --lv-half: #DCC9BC; --lv-half-text: #36363A; --lv-full: #3F7A72; --lv-full-text: #FFFFFF;
+  --warn: #C62F3A; --toast-bg: #36363A; --toast-fg: #FFFFFF;
+}
+
+/* Harvest — 황금빛 밀밭과 가을 수확 — 올리브 버튼, 밀짚 강조, 머스터드
+   요청서: Primary #A6A477 → --primary(버튼, 진한 글자) · Secondary #B5B581 → --secondary · --me
+           Background #F8F3DF → --bg · Accent #EAB45B → --her (테두리는 진한 올리브 #7C7A45) · Surface #F1E2A1 → --tint(함께 · 강조 카드) · --lv-half */
+[data-theme="harvest"] {
+  color-scheme: light;
+  --bg: #F8F3DF; --surface: #FFFDF5; --raised: #FAF5E4; --line: #E9E2C6;
+  --text: #35341F; --sub: #626047; --faint: #D3CDA9;
+  --primary: #A6A477; --on-primary: #24230F; --secondary: #B5B581; --accent: #7C7A45; --tab-active: #5C5A2E;
+  --strong: #7C7A45; --primary-edge: var(--accent);
+  --tint: #F1E2A1; --tint-text: #5C4A12;
+  --her: #EAB45B; --her-ink: #24230F; --me: #B5B581; --me-ink: #24230F;
+  --empty: #EEE8CF; --empty-text: #5E5C45; --lv-half: #F1E2A1; --lv-half-text: #35341F; --lv-full: #7A6B22; --lv-full-text: #FFFFFF;
+  --warn: #B3261E; --toast-bg: #35341F; --toast-fg: #FFFDF5;
 }

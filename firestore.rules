@@ -153,13 +153,21 @@ service cloud.firestore {
         && (!('partner' in p) || (p.partner is string && p.partner.matches('^#[0-9A-F]{6}$')));
     }
     function validColors(c) {
-      return c is map && c.keys().hasOnly(['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour'])
+      return c is map && c.keys().hasOnly(['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'])
         && (!('soft-pastel' in c) || validPair(c['soft-pastel']))
         && (!('cosmic-dream' in c) || validPair(c['cosmic-dream']))
         && (!('ocean-breeze' in c) || validPair(c['ocean-breeze']))
         && (!('forest-diary' in c) || validPair(c['forest-diary']))
         && (!('vintage-film' in c) || validPair(c['vintage-film']))
-        && (!('blue-hour' in c) || validPair(c['blue-hour']));
+        && (!('blue-hour' in c) || validPair(c['blue-hour']))
+        && (!('golden-hour' in c) || validPair(c['golden-hour']))
+        && (!('sakura-dream' in c) || validPair(c['sakura-dream']))
+        && (!('midnight-noir' in c) || validPair(c['midnight-noir']))
+        && (!('arctic-frost' in c) || validPair(c['arctic-frost']))
+        && (!('chocolate-noir' in c) || validPair(c['chocolate-noir']))
+        && (!('roast-nuts' in c) || validPair(c['roast-nuts']))
+        && (!('winter-knit' in c) || validPair(c['winter-knit']))
+        && (!('harvest' in c) || validPair(c['harvest']));
     }
     match /users/{uid} {
       allow read: if isMember() && request.auth.uid == uid;

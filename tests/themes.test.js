@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const T = require('../js/themes.js');
 
-const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour'];
+const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'];
 const css = fs.readFileSync(path.join(__dirname, '../styles/tokens.css'), 'utf8');
 const appCss = fs.readFileSync(path.join(__dirname, '../styles/app.css'), 'utf8');
 
@@ -26,7 +26,7 @@ function lum(h) {
 }
 function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 
-test('테마 ID 6개, 순서와 이름', () => {
+test('테마 ID 14개 (기존 6 + 신규 8), 순서와 이름', () => {
   assert.deepStrictEqual(T.THEMES.map((t) => t.id), IDS);
   for (const t of T.THEMES) assert.ok(t.name && t.desc);
   assert.strictEqual(T.byId('nope'), null);
@@ -79,9 +79,29 @@ test('요청서 색: 바탕 · 카드 · 본문 글자 · 테두리는 그대로
     'ocean-breeze': ['#EAF8F7', '#FFFFFF', '#20343A', '#D4EAE7'], 'forest-diary': ['#F3F3E9', '#FFFFFF', '#30372E', '#E1E5D8'],
     'vintage-film': ['#F2E8D5', '#FAF5EC', '#39352E', '#E3D7C4'], 'blue-hour': ['#F0F2FC', '#FFFFFF', '#2D3450', '#DDE1F1']
   };
-  for (const id of IDS) {
+  for (const id of Object.keys(spec)) {
     const v = block(id);
     assert.deepStrictEqual([v.bg, v.surface, v.text, v.line], spec[id], id);
+  }
+});
+
+test('신규 테마 8종: 요청서 5색이 블록 안에 모두 쓰이고, 바탕은 Background 그대로', () => {
+  // [Primary, Secondary, Background, Accent, Surface]
+  const spec = {
+    'golden-hour': ['#D99055', '#F2B880', '#F6E5C9', '#C96F62', '#E8C5A4'],
+    'sakura-dream': ['#E6A0B4', '#F4CCD6', '#F6F0E8', '#A7BDA5', '#E6DDF0'],
+    'midnight-noir': ['#292A32', '#454650', '#1D1E27', '#7C414C', '#30313B'],
+    'arctic-frost': ['#B9DDE8', '#D8E9EF', '#F1F5F5', '#778FA8', '#FFFFFF'],
+    'chocolate-noir': ['#49352F', '#765447', '#F3E8D7', '#A77D61', '#D8B99B'],
+    'roast-nuts': ['#9D745B', '#D6AC83', '#FFF0C2', '#F4C95D', '#E8D77D'],
+    'winter-knit': ['#B2DCD6', '#E7EDF0', '#F7F5F2', '#E8B6C5', '#DCC9BC'],
+    'harvest': ['#A6A477', '#B5B581', '#F8F3DF', '#EAB45B', '#F1E2A1']
+  };
+  for (const id of Object.keys(spec)) {
+    const v = block(id), used = new Set(Object.values(v));
+    assert.strictEqual(v.bg, spec[id][2], id + ' 바탕');
+    for (const hex of spec[id]) assert.ok(used.has(hex), id + ' 에 ' + hex + ' 없음');
+    assert.strictEqual(T.byId(id).dark, id === 'midnight-noir', id + ' 어두운 테마 표시');
   }
 });
 

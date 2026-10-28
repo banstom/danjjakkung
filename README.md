@@ -18,7 +18,7 @@ GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 
 | 위치 | 하는 일 |
 |---|---|
 | `js/dates.js` `js/streak.js` `js/seasons.js` | 날짜 · 며칠차 · 연속 · 계절 계산 (화면 없음) |
-| `js/themes.js` | 테마 6종 목록 · 고른 테마 저장(이 기기 localStorage) · 적용 — `<head>`에서 먼저 불러 깜빡임 없음 |
+| `js/themes.js` | 테마 14종 목록 · 고른 테마 저장(이 기기 localStorage) · 적용 — `<head>`에서 먼저 불러 깜빡임 없음 |
 | `js/model.js` | 기록 → 화면에 보일 값 |
 | `js/view.js` | 화면 그리기 (부품마다 함수 하나) |
 | `js/store.js` | Firestore 읽기 · 쓰기 |
