@@ -1,6 +1,9 @@
 /* 시간표 계산 — 한 주 · 하루 배치, 지금 상태. 화면 없음.
-   events/<id> : { owner: <uid> | 'both', title, weekly: bool, weekday: 0(월)~6(일) (매주일 때),
+   events/<id> : { owner: <uid> | 'both', title, weekly: bool,
+                   매주 · 요일 하나: weekday: 0(월)~6(일)          (예전부터 쓰던 모양)
+                   매주 · 요일 여럿: weekday: null, weekdays: [1, 3] (화 · 목 — 한 일정으로 같이 고치고 지운다)
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
+   화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
    주는 월요일에 시작한다. 사람 순서(persons)는 루틴 탭과 같아서 두 사람 화면에서 색 · 자리가 같다. */
 (function (root) {
   'use strict';
@@ -16,14 +19,24 @@
   function weekdayOf(day) { return (D.parts(day).w + 6) % 7; }
   function monStart(day) { return day - weekdayOf(day); }
 
+  /** 문서의 요일들 → 정렬 · 중복 없는 배열 (예전 weekday 하나짜리도) */
+  function weekdaysOf(e) {
+    var list = Array.isArray(e && e.weekdays) && e.weekdays.length ? e.weekdays : [e && e.weekday];
+    var out = [];
+    list.forEach(function (w) { if (typeof w === 'number' && w >= 0 && w <= 6 && w % 1 === 0 && out.indexOf(w) < 0) out.push(w); });
+    return out.sort();
+  }
+  /** [1, 3] → '화 · 목' */
+  function wdText(list) { return list.map(function (w) { return WD[w]; }).join(' · '); }
+
   function fromDocs(docs) {
     return (docs || []).filter(function (e) {
       if (!e || typeof e.id !== 'string' || typeof e.title !== 'string' || !e.title.trim() || typeof e.owner !== 'string') return false;
       var s = toMin(e.start), t = toMin(e.end);
       if (isNaN(s) || isNaN(t) || t <= s) return false;
-      return e.weekly === true ? (e.weekday >= 0 && e.weekday <= 6) : !isNaN(D.parse(e.date));
+      return e.weekly === true ? weekdaysOf(e).length > 0 : !isNaN(D.parse(e.date));
     }).map(function (e) {
-      return { id: e.id, owner: e.owner, title: e.title, weekly: e.weekly === true, weekday: e.weekly === true ? e.weekday : null,
+      return { id: e.id, owner: e.owner, title: e.title, weekly: e.weekly === true, weekdays: e.weekly === true ? weekdaysOf(e) : null,
         date: e.weekly === true ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null };
     });
   }
@@ -31,7 +44,7 @@
   /** 그날 일정 (매주 + 그날 한 번) */
   function on(events, day) {
     var wd = weekdayOf(day), key = D.toKey(day);
-    return events.filter(function (e) { return e.weekly ? e.weekday === wd : e.date === key; });
+    return events.filter(function (e) { return e.weekly ? e.weekdays.indexOf(wd) >= 0 : e.date === key; });
   }
 
   /** 자리: persons[0] → 0, persons[1] → 1, 함께 → 둘 다 */
@@ -129,14 +142,14 @@
     var title = String((f && f.title) || '').trim();
     if (!title) return '일정 이름을 적어 주세요';
     if (title.length > TITLE_MAX) return '일정 이름은 ' + TITLE_MAX + '자까지 쓸 수 있어요';
-    if (f.weekly ? !(f.weekday >= 0 && f.weekday <= 6) : isNaN(D.parse(f.date))) return f.weekly ? '요일을 골라 주세요' : '날짜를 골라 주세요';
+    if (f.weekly ? !weekdaysOf(f).length : isNaN(D.parse(f.date))) return f.weekly ? '요일을 골라 주세요' : '날짜를 골라 주세요';
     var s = toMin(f.start), e = toMin(f.end);
     if (isNaN(s) || isNaN(e)) return '시작 · 끝 시간을 골라 주세요';
     if (e <= s) return '끝 시간이 시작보다 늦어야 해요';
     return '';
   }
 
-  var api = { WD: WD, TITLE_MAX: TITLE_MAX, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, TITLE_MAX: TITLE_MAX, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

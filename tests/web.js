@@ -293,13 +293,14 @@ async function tick(page, dateKey, key) {
     await page.fill('#ev-title', title);
     if (opts.both) await page.click('[data-act="ev-owner"][data-v="both"]');
     if (opts.once) { await page.click('[data-act="ev-repeat"][data-v="once"]'); await page.fill('#ev-date', opts.once); }
-    else await page.click(`[data-act="ev-wd"][data-v="${opts.wd}"]`);
+    else for (const w of [].concat(opts.wd)) await page.click(`[data-act="ev-wd"][data-v="${w}"]`);
     await page.fill('#ev-start', opts.start); await page.fill('#ev-end', opts.end);
     await page.click('form[data-form="event"] button[type="submit"]');
     await page.waitForTimeout(150);
   }
   await jm.click('[data-act="tab"][data-tab="schedule"]');
-  await addEvent(jm, '일반생물', { wd: 1, start: '10:00', end: '12:00' });
+  await addEvent(jm, '일반생물', { wd: [1, 3], start: '10:00', end: '12:00' }); // 화 · 목 한 번에
+  console.log('화 · 목 일정:', await jm.$$eval('.sblock[aria-label^="일반생물"]', (e) => e.map((x) => x.getAttribute('aria-label')).join(' / ')));
   await addEvent(jm, '과외', { wd: 1, start: '19:00', end: '21:30' });
   await jm.click('[data-act="event-add"]');
   await jm.fill('#ev-title', '거꾸로'); await jm.fill('#ev-start', '12:00'); await jm.fill('#ev-end', '11:00');
@@ -316,6 +317,31 @@ async function tick(page, dateKey, key) {
   await jm.click('.sblock[aria-label^="수업"]');
   console.log('다진 일정 누르면:', await jm.textContent('.einfo__line'), '|', await jm.textContent('.sheet .muted'));
   await jm.keyboard.press('Escape');
+  await dj.waitForTimeout(150);
+  await dj.click('.sblock[aria-label^="일반생물"][aria-label*="목요일"]');
+  console.log('다진이 본 화 · 목 일정:', await dj.textContent('.einfo__line'));
+  await dj.keyboard.press('Escape');
+  console.log('닫으면 누른 칸(목)으로:', await dj.evaluate(() => document.activeElement.getAttribute('aria-label')));
+  // 한 번 일정 → 매주: 날짜 요일이 골라져 있고, 처음 누른 요일이 그걸 바꾼다
+  await jm.click('[data-act="event-add"]');
+  await jm.click('[data-act="ev-repeat"][data-v="once"]'); await jm.fill('#ev-date', '2026-10-30');
+  await jm.click('[data-act="ev-repeat"][data-v="weekly"]');
+  const pr = () => jm.$$eval('[data-act="ev-wd"][aria-pressed="true"]', (e) => e.map((x) => x.textContent).join(''));
+  const a1 = await pr(); await jm.click('[data-act="ev-wd"][data-v="0"]'); const a2 = await pr(); await jm.click('[data-act="ev-wd"][data-v="2"]');
+  console.log('한 번→매주:', a1, '→ 월 누르면', a2, '→ 수 더하면', await pr());
+  await jm.keyboard.press('Escape');
+  // 고치기: 화 · 목 이 눌려 있고, 금을 더하면 세 요일 · 목을 빼면 다시 하나
+  await jm.click('.sblock[aria-label^="일반생물"]');
+  const pressed = () => jm.$$eval('[data-act="ev-wd"][aria-pressed="true"]', (e) => e.map((x) => x.textContent).join(''));
+  console.log('고치기 요일:', await pressed());
+  await jm.click('[data-act="ev-wd"][data-v="4"]'); console.log('금 더하면:', await pressed());
+  await jm.screenshot({ path: path.join(OUT, 'event-multi-weekday.png') });
+  await jm.click('[data-act="ev-wd"][data-v="4"]'); await jm.click('[data-act="ev-wd"][data-v="1"]'); await jm.click('[data-act="ev-wd"][data-v="3"]');
+  console.log('다 빼면:', await pressed() || '(없음)');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  console.log('요일 없이 저장:', await jm.textContent('#ev-error'));
+  await jm.keyboard.press('Escape');
+  console.log('저장 모양:', JSON.stringify([...docs.entries()].filter(([k, v]) => v && (v.title === '일반생물' || v.title === '과외')).map(([k, v]) => ({ t: v.title, weekday: v.weekday, weekdays: v.weekdays }))));
   await jm.click('.sday.is-today');
   console.log('일 보기:', await jm.textContent('.scard__title'), '|', (await jm.$$eval('.sstatus__row', (e) => e.map((x) => x.textContent))).join(' / '));
   await jm.screenshot({ path: path.join(OUT, 'web-day.png'), fullPage: true });

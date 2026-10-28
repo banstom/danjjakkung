@@ -81,6 +81,12 @@
       return '<button type="button" class="pick" data-act="' + act + '" data-v="' + esc(it[0]) + '" aria-pressed="' + (String(it[0]) === String(current)) + '">' + esc(it[1]) + '</button>';
     }).join('') + '</div>';
   }
+  // 여러 개 고르는 칩 (요일)
+  function multiRow(act, items, on, label) {
+    return '<div class="pick-row" role="group" aria-label="' + esc(label) + '">' + items.map(function (it) {
+      return '<button type="button" class="pick" data-act="' + act + '" data-v="' + esc(it[0]) + '" aria-pressed="' + (on.indexOf(it[0]) >= 0) + '">' + esc(it[1]) + '</button>';
+    }).join('') + '</div>';
+  }
   function errorLine(id, f) {
     return f.error ? '<p id="' + id + '" class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '';
   }
@@ -116,7 +122,7 @@
     var top = pct((b.s - H.from) / span * 100), h = pct((b.e - b.s) / span * 100);
     var w = 50 / b.cols, left = b.lane * 50 + w * b.col;
     var label = esc(b.title);
-    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '"' +
+    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' +
       (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
       ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번')) + '">' +
@@ -195,7 +201,8 @@
       '<label class="field"><span class="field__label">일정 이름</span><input id="ev-title" class="field__input" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="예: 일반생물 수업" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="ev-error"' : '') + '></label>' +
       '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
       '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +
-      (f.weekly ? '<div class="field"><span class="field__label">요일</span>' + chipRow('ev-wd', WD, f.weekday, '요일') + '</div>'
+      (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
+        multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'
         : '<label class="field"><span class="field__label">날짜</span><input id="ev-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>') +
       '<div class="ftime"><label class="field"><span class="field__label">시작</span><input id="ev-start" class="field__input" type="time" step="300" value="' + esc(f.start) + '"></label>' +
       '<label class="field"><span class="field__label">끝</span><input id="ev-end" class="field__input" type="time" step="300" value="' + esc(f.end) + '"></label></div>' +

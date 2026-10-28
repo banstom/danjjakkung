@@ -123,3 +123,28 @@ test('함께 일정이 각자 일정을 가리지 않는다 (겹치면 나란히
   const lane0 = w.blocks.filter((b) => b.lane === 0).map((b) => [b.id, b.col, b.cols]);
   assert.deepStrictEqual(lane0, [['our', 0, 1]]);
 });
+
+test('한 일정에 여러 요일 (화 · 목 수업)', () => {
+  // 새 모양(weekdays)과 예전 모양(weekday 하나)이 섞여 있어도 읽는다
+  const list = S.fromDocs([
+    ev('bio', 'jm', { weekday: null, weekdays: [3, 1, 3] }),   // 화 · 목 (중복 · 순서 섞임)
+    ev('old', 'dj', { weekday: 1 }),
+    ev('empty', 'jm', { weekday: null, weekdays: [] }),        // 요일 없음 → 버림
+    ev('junk', 'jm', { weekday: null, weekdays: [9, 'x'] })    // 이상한 값 → 버림
+  ]);
+  assert.deepStrictEqual(list.map((e) => e.id), ['bio', 'old']);
+  assert.deepStrictEqual(list[0].weekdays, [1, 3]);
+  assert.deepStrictEqual(list[1].weekdays, [1]);
+  assert.strictEqual(S.wdText(list[0].weekdays), '화 · 목');
+  const tue = today - 1, thu = today + 1; // today = 수
+  assert.deepStrictEqual(S.on(list, tue).map((e) => e.id), ['bio', 'old']);
+  assert.deepStrictEqual(S.on(list, thu).map((e) => e.id), ['bio']);
+  assert.deepStrictEqual(S.on(list, today).map((e) => e.id), []);
+  // 주 보기: 화 · 목 두 칸에 같은 일정이 나온다
+  const w = S.week(list, ['dj', 'jm'], 'jm', S.monStart(today), today);
+  const bio = w.blocks.filter((b) => b.id === 'bio');
+  assert.strictEqual(bio.length, 2, '주 보기에 화 · 목 두 번');
+  // 확인
+  assert.strictEqual(S.validate({ title: '수업', weekly: true, weekdays: [], start: '10:00', end: '11:00' }), '요일을 골라 주세요');
+  assert.strictEqual(S.validate({ title: '수업', weekly: true, weekdays: [1, 3], start: '10:00', end: '11:00' }), '');
+});
