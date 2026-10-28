@@ -200,3 +200,24 @@ test('주 보기: 안 겹치면 넓게 · 고른 요일 목록 · 카테고리',
   assert.strictEqual(next.pick.day, S.monStart(today) + 7);
   assert.strictEqual(S.whenText(list.find((e) => e.id === 'bio')), '📚 수업 · 매주 화요일 · 10:00–12:00');
 });
+
+test('표시할 이름: 비거나 같으면 일정 이름 그대로 · 주 보기 블록에 실린다 · 10자까지', () => {
+  assert.strictEqual(S.shortOf('4차산업혁명과디지털리터러시', ' 4디리 '), '4디리');
+  assert.strictEqual(S.shortOf('일반생물', ''), null);
+  assert.strictEqual(S.shortOf('일반생물', '일반생물'), null);
+  const list = S.fromDocs([
+    ev('dl', 'jm', { title: '4차산업혁명과디지털리터러시', short: '4디리' }),
+    ev('bio', 'jm', { weekday: 3, short: 'bio' }), // 같은 이름이면 없음으로
+    ev('x', 'jm', { weekday: 4, short: 3 }) // 이상한 값은 무시
+  ]);
+  assert.strictEqual(list.find((e) => e.id === 'dl').short, '4디리');
+  assert.strictEqual(list.find((e) => e.id === 'bio').short, null);
+  assert.strictEqual(list.find((e) => e.id === 'x').short, null);
+  const w = S.week(list, P, 'jm', S.monStart(today), today);
+  const b = w.blocks.find((x) => x.id === 'dl');
+  assert.strictEqual(b.short, '4디리');
+  assert.strictEqual(b.title, '4차산업혁명과디지털리터러시');
+  const f = { title: '수업', short: '가나다라마바사아자차카', weekly: true, weekdays: [1], start: '10:00', end: '11:00' };
+  assert.match(S.validate(f), /표시할 이름은 10자/);
+  assert.strictEqual(S.validate(Object.assign({}, f, { short: '가나다라마바사아자차' })), '');
+});

@@ -56,7 +56,7 @@
       },
       // ── 할 일 · 시간표 ──
       // todos/<id>  : { scope: 'together' | uid, title, due, done, doneBy, doneAt, createdBy, createdAt, updatedAt }
-      // events/<id> : { owner: uid | 'both', title, weekly, weekday, (weekdays), date, start, end, createdBy, updatedAt } — js/schedule.js 참고
+      // events/<id> : { owner: uid | 'both', title, (short), weekly, weekday, (weekdays), date, start, end, createdBy, updatedAt } — js/schedule.js 참고
       watchTodos: function (next, fail) {
         return db.collection('todos').onSnapshot(function (q) {
           next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
@@ -80,6 +80,7 @@
         var doc = { owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: days.length === 1 ? days[0] : null, date: e.weekly ? null : e.date,
           start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString() };
         if (days.length > 1) doc.weekdays = days.slice();
+        if (e.short) doc.short = e.short; // 표시할 이름 (일정 이름과 같거나 비면 필드 없음)
         if (e.cat) doc.cat = e.cat; // 카테고리 (없으면 필드 없음)
         // 요일마다 시간이 다를 때만: { '1': '10:00-11:00', '3': '16:00-17:00' }
         if (days.length > 1 && e.times) {

@@ -122,7 +122,7 @@
     var top = pct((b.s - H.from) / span * 100), h = pct((b.e - b.s) / span * 100);
     var w = b.full && opts.compact ? 100 : 50 / b.cols, left = b.full && opts.compact ? 0 : b.lane * 50 + w * b.col;
     var showIco = b.icon && !(opts.compact && b.e - b.s < 50); // 주 보기에서 짧은 일정은 이름이 먼저
-    var label = (showIco ? '<span class="sblock__ico" aria-hidden="true">' + esc(b.icon) + '</span>' : '') + '<span class="sblock__name">' + esc(b.title) + '</span>';
+    var label = (showIco ? '<span class="sblock__ico" aria-hidden="true">' + esc(b.icon) + '</span>' : '') + '<span class="sblock__name">' + esc(opts.compact && b.short ? b.short : b.title) + '</span>'; // 주 보기는 표시할 이름
     return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' +
       (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
@@ -234,6 +234,7 @@
     }
     var inner = '<form class="pform" data-form="event" novalidate>' +
       '<label class="field"><span class="field__label">일정 이름</span><input id="ev-title" class="field__input" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="예: 일반생물 수업" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="ev-error"' : '') + '></label>' +
+      '<label class="field"><span class="field__label">표시할 이름 <span class="field__hint">· 주 보기 칸에 보여요 · 비워 두면 일정 이름 그대로</span></span><input id="ev-short" class="field__input" type="text" maxlength="' + RT.schedule.SHORT_MAX + '" autocomplete="off" enterkeyhint="done" placeholder="예: 4디리" value="' + esc(f.short || '') + '"></label>' +
       '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
       '<div class="field"><span class="field__label">카테고리</span>' + chipRow('ev-cat', RT.schedule.CATS.map(function (c) { return [c.id, c.icon + ' ' + c.name]; }), f.cat || '', '카테고리') + '</div>' +
       '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +

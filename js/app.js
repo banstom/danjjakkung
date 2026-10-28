@@ -69,7 +69,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-date', 'ev-start', 'ev-end'];
+  var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   var LS_TAB = 'danjjakkung.tab';
   (function () {
@@ -513,7 +513,7 @@
     // 새 일정의 요일: 일 보기면 그날, 주 보기면 아래 목록에 고른 요일(없으면 오늘 · 월요일)
     var day = st.mode === 'day' ? st.day : (st.pick >= wk && st.pick <= wk + 6 ? st.pick : (state.today >= wk && state.today <= wk + 6 ? state.today : wk));
     planReturn = '[data-act="event-add"]';
-    openPlanSheet('event', { mode: 'add', id: null, title: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, cat: null, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
+    openPlanSheet('event', { mode: 'add', id: null, title: '', short: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, cat: null, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
   }
   function openEvent(id, forceEdit, at) {
     var e = findEvent(id);
@@ -522,7 +522,7 @@
     if (!forceEdit) planReturn = '[data-act="event-open"]' + (at ? '[data-at="' + CSS.escape(at) + '"]' : '[data-id="' + CSS.escape(id) + '"]');
     var S = RT.schedule;
     if (canEditEvent(e)) {
-      openPlanSheet('event', { mode: 'edit', id: id, title: e.title, owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
+      openPlanSheet('event', { mode: 'edit', id: id, title: e.title, short: e.short || '', owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
         weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.cat || null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
       return;
     }
@@ -594,7 +594,7 @@
     var usedRows = !!(f.weekly && f.perDay && days.length > 1);
     var first = usedRows ? f.times[days[0]] : { start: f.start, end: f.end };
     var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
-    var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), weekly: !!f.weekly,
+    var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), short: RT.schedule.shortOf(f.title, f.short), weekly: !!f.weekly,
       weekdays: days, date: f.weekly ? null : f.date, start: first.start, end: first.end,
       times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me };
     f.saving = true; f.error = ''; render(true);
@@ -807,7 +807,7 @@
     if (id === 'au-pass') { state.auth.password = ev.target.value; return; }
     if (id === 'me-name') { state.setup.name = ev.target.value; return; }
     if (state.todoForm && (id === 'td-title' || id === 'td-date')) { state.todoForm[id === 'td-title' ? 'title' : 'date'] = ev.target.value; clearPlanError(state.todoForm, 'td-error'); return; }
-    if (state.eventForm && /^ev-(title|date|start|end)$/.test(id)) { state.eventForm[id.slice(3)] = ev.target.value; clearPlanError(state.eventForm, 'ev-error'); return; }
+    if (state.eventForm && /^ev-(title|short|date|start|end)$/.test(id)) { state.eventForm[id.slice(3)] = ev.target.value; clearPlanError(state.eventForm, 'ev-error'); return; }
     var f = state.manage && state.manage.form;
     if (!f) return;
     if (ev.target.id === 'rt-name') f.name = ev.target.value;
@@ -890,7 +890,7 @@
       state.todoForm.title = get('td-title'); if (document.getElementById('td-date')) state.todoForm.date = get('td-date'); saveTodo();
     }
     else if (form.getAttribute('data-form') === 'event' && state.eventForm) {
-      var ef = state.eventForm; ef.title = get('ev-title');
+      var ef = state.eventForm; ef.title = get('ev-title'); if (document.getElementById('ev-short')) ef.short = get('ev-short');
       if (document.getElementById('ev-start')) { ef.start = get('ev-start'); ef.end = get('ev-end'); }
       for (var w7 = 0; w7 < 7; w7++) if (document.getElementById('ev-ts-' + w7)) ef.times[w7] = { start: get('ev-ts-' + w7), end: get('ev-te-' + w7) };
       if (document.getElementById('ev-date')) ef.date = get('ev-date'); saveEvent();

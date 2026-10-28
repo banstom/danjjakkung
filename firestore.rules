@@ -110,7 +110,8 @@ service cloud.firestore {
     }
     function validEvent(d) {
       // 매주 · 요일 하나: weekday 숫자 / 매주 · 요일 여럿: weekday null + weekdays 목록(2~7개, 0~6) / 한 번: date
-      return d.keys().hasOnly(['owner', 'title', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'date', 'start', 'end', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'date', 'start', 'end', 'createdBy', 'updatedAt'])
+        && (!('short' in d) || (d.short is string && d.short.size() > 0 && d.short.size() <= 10))
         && (!('cat' in d) || d.cat in ['class', 'exercise', 'study', 'work', 'meet', 'etc'])
         && (!('times' in d) || (('weekdays' in d) && validTimes(d.times) && d.times.size() == d.weekdays.size()))
         && d.owner is string && d.title is string && d.title.size() > 0 && d.title.size() <= 20

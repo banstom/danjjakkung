@@ -3,6 +3,7 @@
                    매주 · 요일 하나: weekday: 0(월)~6(일)          (예전부터 쓰던 모양)
                    매주 · 요일 여럿: weekday: null, weekdays: [1, 3] (화 · 목 — 한 일정으로 같이 고치고 지운다)
                      요일마다 시간이 다르면 times: { '1': '10:00-11:00', '3': '16:00-17:00' } (start · end 는 첫 요일 시간)
+                   short: 주 보기 블록에 보일 짧은 이름 (선택, 없으면 title 그대로 — 예: 4차산업혁명과디지털리터러시 → 4디리)
                    cat: 'class' | 'exercise' | 'study' | 'work' | 'meet' | 'etc' (카테고리, 없으면 아이콘 없음)
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
@@ -17,7 +18,12 @@
     { id: 'work', name: '과외·일', icon: '💼' }, { id: 'meet', name: '약속', icon: '💞' }, { id: 'etc', name: '기타', icon: '📌' }
   ];
   function catOf(id) { for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i]; return null; }
-  var TITLE_MAX = 20;
+  var TITLE_MAX = 20, SHORT_MAX = 10;
+  /** 표시할 이름: 비었거나 일정 이름과 같으면 없음(null) */
+  function shortOf(title, short) {
+    var t = String(short == null ? '' : short).trim();
+    return t && t !== String(title || '').trim() ? t : null;
+  }
   var HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
   function toMin(s) { var m = HHMM.exec(String(s)); return m ? +m[1] * 60 + +m[2] : NaN; }
@@ -67,7 +73,7 @@
       return e.weekly === true ? weekdaysOf(e).length > 0 : !isNaN(D.parse(e.date));
     }).map(function (e) {
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
-      return { id: e.id, owner: e.owner, title: e.title, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
+      return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
         cat: catOf(e.cat) ? e.cat : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null };
     });
   }
@@ -122,7 +128,7 @@
     list.forEach(function (e) {
       lanesOf(e, persons).forEach(function (lane, k) {
         var c = catOf(e.cat);
-        lanes[lane].push({ id: e.id, title: e.title, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, icon: c ? c.icon : '',
+        lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, icon: c ? c.icon : '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
           editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
       });
@@ -195,6 +201,7 @@
     var title = String((f && f.title) || '').trim();
     if (!title) return '일정 이름을 적어 주세요';
     if (title.length > TITLE_MAX) return '일정 이름은 ' + TITLE_MAX + '자까지 쓸 수 있어요';
+    if (String(f.short == null ? '' : f.short).trim().length > SHORT_MAX) return '표시할 이름은 ' + SHORT_MAX + '자까지 쓸 수 있어요';
     if (f.weekly ? !weekdaysOf(f).length : isNaN(D.parse(f.date))) return f.weekly ? '요일을 골라 주세요' : '날짜를 골라 주세요';
     var days = f.weekly ? weekdaysOf(f) : [];
     if (f.weekly && f.perDay && days.length > 1) {
@@ -211,7 +218,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
