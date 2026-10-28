@@ -454,6 +454,55 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="sched-week"][data-dir="1"]');
   console.log('다음 주 블록:', await bioCount(jm));
   await jm.click('[data-act="sched-thisweek"]');
+
+  // 카테고리: 일정 폼의 「편집」 → 둘이 같이 쓰는 목록에서 이름 · 아이콘 바꾸기, 새로 만들기, 지우기
+  const bioIcons = (p) => p.$$eval('.sblock[aria-label^="일반생물"] .sblock__ico', (e) => e.map((x) => x.textContent).join(''));
+  await jm.click('[data-act="sched-week"][data-dir="1"]'); // 쉬지 않는 다음 주
+  await dj.click('[data-act="sched-week"][data-dir="1"]').catch(() => {});
+  await jm.click('.sblock[aria-label^="일반생물"]');
+  await jm.fill('#ev-title', '일반생물학');                    // 고치던 내용은 카테고리 시트를 다녀와도 남는다
+  await jm.click('[data-act="cat-open"]');
+  console.log('카테고리 시트:', await jm.textContent('#cat-sheet-title'), '|', await jm.$$eval('.sheet .mitem', (e) => e.map((x) => x.querySelector('.mitem__name').textContent + '(' + x.querySelector('.mitem__status').textContent + ')').join(', ')));
+  await jm.click('[data-act="cat-edit"][data-id="class"]');
+  await jm.fill('#cat-name', '강의'); await jm.click('[data-act="cat-icon"][data-icon="🎓"]');
+  await jm.screenshot({ path: path.join(OUT, 'cat-edit.png') });
+  await jm.click('[data-act="cat-save"]'); await jm.waitForTimeout(250);
+  console.log('기본 고치기 저장:', JSON.stringify(docs.get('cats/class')), '| 토스트', await jm.textContent('.toast').catch(() => ''));
+  await dj.waitForTimeout(150);
+  console.log('다진 화면 일반생물 아이콘:', await bioIcons(dj));
+  // 같은 이름 · 아이콘 안 고름
+  await jm.click('[data-act="cat-new"]');
+  await jm.fill('#cat-name', '운동'); await jm.click('[data-act="cat-icon"][data-icon="⚽"]'); await jm.click('[data-act="cat-save"]');
+  console.log('같은 이름:', await jm.textContent('#cat-error'));
+  await jm.fill('#cat-name', '동아리'); await jm.click('[data-act="cat-icon"][data-icon="⚽"]'); await jm.click('[data-act="cat-icon"][data-icon="⚽"]');
+  await jm.press('#cat-name', 'Enter'); await jm.waitForTimeout(250);   // 엔터로 저장 (같은 아이콘 두 번 = 그대로)
+  const clubKey = [...docs.keys()].find((k) => k.startsWith('cats/c') && docs.get(k) && docs.get(k).name === '동아리');
+  console.log('새 카테고리:', clubKey, JSON.stringify(docs.get(clubKey)), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-act') + ':' + document.activeElement.getAttribute('data-id')));
+  await jm.screenshot({ path: path.join(OUT, 'cat-sheet.png') });
+  await jm.click('.close-btn[data-act="cat-close"]');
+  console.log('일정으로 돌아가기:', await jm.inputValue('#ev-title'), '| 골라진 카테고리', await jm.$$eval('[data-act="ev-cat"][aria-pressed="true"]', (e) => e.map((x) => x.textContent).join()), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
+  await jm.screenshot({ path: path.join(OUT, 'cat-event-form.png') });
+  await jm.click('.sheet [type="submit"]'); await jm.waitForTimeout(250);
+  console.log('일정 저장 cat:', docs.get(bioKey).cat === clubKey.slice(5), '| 내 아이콘', await bioIcons(jm), '| 다진', await bioIcons(dj));
+  // 기본 카테고리 지우기(표시 남김) · 새로 만든 것 지우기(문서 삭제)
+  await jm.click('.sblock[aria-label^="일반생물"]');
+  await jm.click('[data-act="cat-open"]');
+  await jm.click('[data-act="cat-edit"][data-id="meet"]');
+  await jm.click('[data-act="cat-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="cat-delete"]'); await jm.waitForTimeout(250);
+  console.log('기본(약속) 지우기:', JSON.stringify(docs.get('cats/meet')));
+  await jm.click(`[data-act="cat-edit"][data-id="${clubKey.slice(5)}"]`);
+  await jm.click('[data-act="cat-delete"]');
+  console.log('지우기 안내:', await jm.textContent('.cnote').catch(() => '(없음)'));
+  await jm.waitForTimeout(450); await jm.click('[data-act="cat-delete"]'); await jm.waitForTimeout(250);
+  console.log('동아리 지우기: 문서', docs.get(clubKey) == null, '| 목록', await jm.$$eval('.sheet .mitem__name', (e) => e.map((x) => x.textContent).join(',')));
+  await jm.keyboard.press('Escape'); // 시트 → 일정 폼
+  console.log('Esc 뒤 일정 폼 칩:', await jm.$$eval('[data-act="ev-cat"]', (e) => e.map((x) => x.textContent + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')).join(' ')));
+  await jm.keyboard.press('Escape');
+  await dj.waitForTimeout(150);
+  console.log('지운 뒤 아이콘: 나', JSON.stringify(await bioIcons(jm)), '| 다진', JSON.stringify(await bioIcons(dj)), '| 저장된 cat 그대로', docs.get(bioKey).cat === clubKey.slice(5));
+  await jm.click('[data-act="sched-thisweek"]');
+  await dj.click('[data-act="sched-thisweek"]').catch(() => {});
+
   // 오늘 표시 (중립색) · 지금 선
   const todayLook = await jm.evaluate(() => { const d = document.querySelector('.sday.is-today .sday__date'), c = document.querySelector('.scol.is-today'); return getComputedStyle(d).backgroundColor + ' | 칸 ' + getComputedStyle(c).backgroundColor + ' | 지금 선 ' + !!c.querySelector('.snow--week'); });
   console.log('오늘 표시:', todayLook);

@@ -21,11 +21,13 @@ GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 
 | `js/themes.js` | 테마 14종 목록 · 고른 테마 저장(이 기기 localStorage) · 적용 — `<head>`에서 먼저 불러 깜빡임 없음 |
 | `js/model.js` | 기록 → 화면에 보일 값 |
 | `js/view.js` | 화면 그리기 (부품마다 함수 하나) |
+| `js/todos.js` `js/schedule.js` `js/cats.js` | 할 일 · 시간표 · 시간표 카테고리(둘이 같이 쓰는 목록) 계산 |
 | `js/store.js` | Firestore 읽기 · 쓰기 |
 | `js/firebase.js` `js/firebase-config.js` | Firebase 연결 · 로그인 |
 | `js/app.js` | 상태 · 버튼 · 알림 |
 | `styles/tokens.css` | 테마별 색표(`[data-theme="<id>"]` 블록) · 글꼴 — 색은 이 파일에만. 새 테마 = 블록 하나 + themes.js 한 줄 |
 | `sw.js` `manifest.webmanifest` `icons/` | 홈 화면 앱 · 오프라인 |
+| `fonts/tossface-*.woff2` `scripts/tossface-subset.py` | 쓰는 이모지만 잘라 둔 토스페이스 — 새 이모지를 쓰면 스크립트로 다시 만든다 |
 | `firestore.rules` | 누가 무엇을 읽고 쓸 수 있는지 |
 
 ## 확인

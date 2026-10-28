@@ -4,21 +4,21 @@
                    매주 · 요일 여럿: weekday: null, weekdays: [1, 3] (화 · 목 — 한 일정으로 같이 고치고 지운다)
                      요일마다 시간이 다르면 times: { '1': '10:00-11:00', '3': '16:00-17:00' } (start · end 는 첫 요일 시간)
                    short: 주 보기 블록에 보일 짧은 이름 (선택, 없으면 title 그대로 — 예: 4차산업혁명과디지털리터러시 → 4디리)
-                   cat: 'class' | 'exercise' | 'study' | 'work' | 'meet' | 'etc' (카테고리, 없으면 아이콘 없음)
+                   cat: 카테고리 id — 'class' 같은 기본 6개 또는 새로 만든 것 (js/cats.js, 없거나 지운 카테고리면 아이콘 없음)
                    skip: ['YYYY-MM-DD', …] 매주 일정에서 쉬는 날 (휴강 등) — 그날은 시간표에 안 보이고, 고른 요일 목록에만 「쉬어요」로 남는다
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
    주는 월요일에 시작한다. 사람 순서(persons)는 루틴 탭과 같아서 두 사람 화면에서 색 · 자리가 같다. */
 (function (root) {
   'use strict';
-  var D = (typeof module !== 'undefined' && module.exports) ? require('./dates') : root.RT.dates;
+  var NODE = typeof module !== 'undefined' && module.exports;
+  var D = NODE ? require('./dates') : root.RT.dates;
+  var C = NODE ? require('./cats') : root.RT.cats;
 
   var WD = ['월', '화', '수', '목', '금', '토', '일'];
-  var CATS = [
-    { id: 'class', name: '수업', icon: '📚' }, { id: 'exercise', name: '운동', icon: '🏃' }, { id: 'study', name: '공부', icon: '📝' },
-    { id: 'work', name: '과외·일', icon: '💼' }, { id: 'meet', name: '약속', icon: '💞' }, { id: 'etc', name: '기타', icon: '📌' }
-  ];
-  function catOf(id) { for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i]; return null; }
+  // 기본 카테고리 (지금 목록은 fromDocs 에 넘긴다 — 일정마다 catIcon · catName 으로 붙는다)
+  var CATS = C.DEFAULTS;
+  function catOf(id, list) { return C.find(list || CATS, id); }
   var TITLE_MAX = 20, SHORT_MAX = 10;
   /** 표시할 이름: 비었거나 일정 이름과 같으면 없음(null) */
   function shortOf(title, short) {
@@ -58,7 +58,7 @@
   }
   /** '매주 화 · 목요일 · 10:00–11:00' / '매주 화 10:00–11:00 · 목 16:00–17:00' / '10월 28일 수요일 · 10:00–11:00' */
   function whenText(e) {
-    return (catOf(e.cat) ? catOf(e.cat).icon + ' ' + catOf(e.cat).name + ' · ' : '') + whenOnly(e);
+    return (e.catIcon ? e.catIcon + ' ' + e.catName + ' · ' : '') + whenOnly(e);
   }
   function whenOnly(e) {
     if (!e.weekly) return D.full(D.parse(e.date)) + ' · ' + e.start + '–' + e.end;
@@ -97,7 +97,9 @@
   }
   function isSkipped(e, day) { return !!(e.weekly && e.skip && e.skip.indexOf(D.toKey(day)) >= 0); }
 
-  function fromDocs(docs) {
+  /** cats: 지금 카테고리 목록 (js/cats.js fromDocs, 안 주면 기본 6개) */
+  function fromDocs(docs, cats) {
+    var catList = cats || CATS;
     return (docs || []).filter(function (e) {
       if (!e || typeof e.id !== 'string' || typeof e.title !== 'string' || !e.title.trim() || typeof e.owner !== 'string') return false;
       var s = toMin(e.start), t = toMin(e.end);
@@ -105,8 +107,9 @@
       return e.weekly === true ? weekdaysOf(e).length > 0 : !isNaN(D.parse(e.date));
     }).map(function (e) {
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
+      var cat = C.isId(e.cat) ? e.cat : null, c = catOf(cat, catList); // 지운 카테고리여도 id 는 남겨 둔다 (아이콘만 없음)
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        cat: catOf(e.cat) ? e.cat : null, skip: weekly ? skipsOf(e.skip, days) : [], date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
+        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
 
@@ -159,8 +162,7 @@
     var lanes = [[], []];
     list.forEach(function (e) {
       lanesOf(e, persons).forEach(function (lane, k) {
-        var c = catOf(e.cat);
-        lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: c ? c.icon : '',
+        lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: e.catIcon || '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
           editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
       });
@@ -192,8 +194,8 @@
     // 쉬는 날로 뺀 일정도 「쉬어요」로 같이 보인다 (눌러서 되돌릴 수 있게)
     var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
       .sort(function (a, b) { return toMin(a[0].start) - toMin(b[0].start) || toMin(a[0].end) - toMin(b[0].end); }).map(function (x) {
-        var e = x[0], c = catOf(e.cat), k = persons.indexOf(e.owner);
-        return { id: e.id, title: e.title, icon: c ? c.icon : '', catName: c ? c.name : '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], day: pick,
+        var e = x[0], k = persons.indexOf(e.owner);
+        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], day: pick,
           slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
       });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),

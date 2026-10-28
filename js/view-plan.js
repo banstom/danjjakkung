@@ -252,6 +252,45 @@
     }
     return out + '</section>';
   }
+  // 일정 폼의 카테고리 칩 + 맨 끝 「편집」(카테고리 시트로)
+  function catRow(cats, current) {
+    return '<div class="pick-row" role="group" aria-label="카테고리">' + cats.map(function (c) {
+      return '<button type="button" class="pick" data-act="ev-cat" data-v="' + esc(c.id) + '" aria-pressed="' + (c.id === current) + '">' + esc(c.icon + ' ' + c.name) + '</button>';
+    }).join('') + '<button type="button" class="pick pick--edit" data-act="cat-open" aria-label="카테고리 추가 · 고치기">✎ 편집</button></div>';
+  }
+  // 「카테고리」 시트 — 둘이 같이 쓰는 목록, 추가 · 이름 · 아이콘 바꾸기 · 지우기
+  function catForm(f, icons) {
+    var grid = icons.map(function (ic) {
+      return '<button type="button" class="icon-pick" data-act="cat-icon" data-icon="' + esc(ic) + '" aria-pressed="' + (ic === f.icon) + '" aria-label="아이콘 ' + esc(ic) + '">' + esc(ic) + '</button>';
+    }).join('');
+    var dis = f.saving ? ' disabled' : '';
+    return '<div class="rform" role="group" aria-labelledby="cat-form-title">' +
+      '<span id="cat-form-title" class="rform__title">' + (f.id ? '카테고리 고치기' : '새 카테고리') + '</span>' +
+      '<div class="cpreview" aria-hidden="true"><span class="emoji-tile emoji-tile--lg">' + esc(f.icon || '·') + '</span><span class="cpreview__name">' + esc(String(f.name || '').trim() || '이름') + '</span></div>' +
+      '<label class="field"><span class="field__label">이름 <span class="field__hint">· ' + f.max + '자까지</span></span>' +
+      '<input id="cat-name" class="field__input" type="text" maxlength="' + f.max + '" autocomplete="off" enterkeyhint="done" placeholder="예: 동아리" value="' + esc(f.name) + '"' +
+      (f.error ? ' aria-invalid="true" aria-describedby="cat-error"' : '') + '></label>' +
+      '<div class="field"><span class="field__label" id="cat-icon-label">아이콘</span><div class="icon-grid" role="group" aria-labelledby="cat-icon-label">' + grid + '</div></div>' +
+      errorLine('cat-error', f) +
+      '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="cat-cancel">취소</button>' +
+      '<button type="button" class="solid-btn" data-act="cat-save"' + dis + '>' + (f.saving ? '저장 중…' : f.id ? '저장' : '추가하기') + '</button></div>' +
+      (f.id ? '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="cat-delete"' + dis + '>' + (f.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>' +
+        (f.confirmDelete && f.uses ? '<p class="muted cnote">이 카테고리를 쓰는 일정 ' + f.uses + '개는 카테고리 없이 보여요</p>' : '') : '') +
+      '</div>';
+  }
+  function catSheet(m, entering) {
+    if (!m) return '';
+    var list = m.list.length ? m.list.map(function (c) {
+      return '<div class="mitem' + (m.edit && m.edit.id === c.id ? ' is-editing' : '') + '"><span class="emoji-tile" aria-hidden="true">' + esc(c.icon) + '</span>' +
+        '<div class="mitem__text"><span class="mitem__name">' + esc(c.name) + '</span><span class="mitem__status">' + (c.uses ? '일정 ' + c.uses + '개' : '아직 쓰는 일정 없음') + '</span></div>' +
+        (m.edit && m.edit.id === c.id ? '' : '<button type="button" class="small-btn" data-act="cat-edit" data-id="' + esc(c.id) + '" aria-label="' + esc(c.name) + ' 수정">수정</button>') + '</div>';
+    }).join('') : '<p class="muted">카테고리가 없어요. 새로 만들어 보세요</p>';
+    var inner = (m.error ? '<p class="rform__error" role="alert">' + esc(m.error) + '</p>' : '') +
+      '<div class="mlist">' + list + '</div>' +
+      (m.edit ? catForm(m.edit, m.icons) : (m.full ? '<p class="muted">카테고리는 ' + m.max + '개까지 만들 수 있어요</p>' : '<button type="button" class="add-btn" data-act="cat-new">＋ 새 카테고리</button>')) +
+      '<button type="button" class="close-btn" data-act="cat-close">' + (m.hasBack ? '일정으로 돌아가기' : '닫기') + '</button>';
+    return sheetShell('cat-sheet-title', '카테고리', '둘이 같이 쓰는 목록이에요 · 바꾸면 짝꿍 화면에도 바뀌어요', inner, 'cat-close', entering);
+  }
   function eventSheet(f, entering) {
     if (!f) return '';
     if (f.mode === 'view') {
@@ -266,7 +305,7 @@
       '<label class="field"><span class="field__label">일정 이름</span><input id="ev-title" class="field__input" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="예: 일반생물 수업" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="ev-error"' : '') + '></label>' +
       '<label class="field"><span class="field__label">표시할 이름 <span class="field__hint">· 주 보기 칸에 보여요 · 비워 두면 일정 이름 그대로</span></span><input id="ev-short" class="field__input" type="text" maxlength="' + RT.schedule.SHORT_MAX + '" autocomplete="off" enterkeyhint="done" placeholder="예: 4디리" value="' + esc(f.short || '') + '"></label>' +
       '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
-      '<div class="field"><span class="field__label">카테고리</span>' + chipRow('ev-cat', RT.schedule.CATS.map(function (c) { return [c.id, c.icon + ' ' + c.name]; }), f.cat || '', '카테고리') + '</div>' +
+      '<div class="field"><span class="field__label">카테고리</span>' + catRow(f.cats || RT.schedule.CATS, f.cat) + '</div>' +
       '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +
       (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
         multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'
@@ -280,7 +319,7 @@
     return sheetShell('event-sheet-title', f.mode === 'edit' ? '일정 고치기' : '일정 추가', '짝꿍도 볼 수 있어요. 고치는 건 나(함께 일정은 둘 다)만', inner, 'event-cancel', entering);
   }
 
-  var api = { tabbar: tabbar, todoTab: todoTab, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet };
+  var api = { tabbar: tabbar, todoTab: todoTab, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet, catSheet: catSheet };
   root.RT = root.RT || {};
   root.RT.viewPlan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

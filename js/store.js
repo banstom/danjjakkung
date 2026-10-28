@@ -93,6 +93,19 @@
         return db.doc('events/' + e.id).set(doc);
       },
       deleteEvent: function (id) { return db.doc('events/' + id).delete(); },
+      // cats/<id> : { name, icon, order, updatedBy, updatedAt } 또는 { deleted: true, ... } — js/cats.js 참고 (둘이 같이 쓰는 목록)
+      watchCats: function (next, fail) {
+        return db.collection('cats').onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
+        }, fail);
+      },
+      saveCat: function (c, uid) {
+        return db.doc('cats/' + c.id).set({ name: c.name, icon: c.icon, order: Math.max(0, Math.min(999, Math.round(c.order) || 0)), updatedBy: uid, updatedAt: new Date().toISOString() });
+      },
+      /** 기본 카테고리는 지운 표시를 남기고(문서가 없으면 기본값이 되살아나니까), 새로 만든 것은 문서를 지운다 */
+      deleteCat: function (id, isDefault, uid) {
+        return isDefault ? db.doc('cats/' + id).set({ deleted: true, updatedBy: uid, updatedAt: new Date().toISOString() }) : db.doc('cats/' + id).delete();
+      },
       // ── 알림 ──
       // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용
       //   colors: { '<테마 id>': { self, partner } } — 테마마다 내 화면의 나 · 상대 색 (없으면 그 테마 기본색)
