@@ -265,7 +265,7 @@ async function tick(page, dateKey, key) {
   await dj.click('[data-act="tab"][data-tab="todo"]');
   await dj.waitForTimeout(150);
   console.log('다진 화면 칸 순서:', (await dj.$$eval('.tcard--col .tcard__name', (e) => e.map((x) => x.textContent))).join(' | '));
-  console.log('다진 화면 준민 할 일 잠김:', await dj.getAttribute(`.tcard--col:has([data-key="${djUid0}"]) ~ .tcard--col .tcheck, .tcols .tcard--col:nth-child(2) .tcheck`, 'aria-disabled'));
+  console.log('다진 화면 준민 할 일 잠김:', await dj.getAttribute(`.tcard--col:has(#t-${jmUid0}) .tcheck`, 'aria-disabled'));
   await dj.click('.tcard--together .tcheck');
   await jm.waitForTimeout(200);
   console.log('다진이 함께 할 일 체크 → 준민 화면:', await jm.textContent('.tcard--together .tcard__count'), '|', await jm.textContent('.tcard--together [data-act="todo-donelist"]'));
