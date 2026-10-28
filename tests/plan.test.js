@@ -148,3 +148,27 @@ test('한 일정에 여러 요일 (화 · 목 수업)', () => {
   assert.strictEqual(S.validate({ title: '수업', weekly: true, weekdays: [], start: '10:00', end: '11:00' }), '요일을 골라 주세요');
   assert.strictEqual(S.validate({ title: '수업', weekly: true, weekdays: [1, 3], start: '10:00', end: '11:00' }), '');
 });
+
+test('요일마다 다른 시간 (화 10–11시 · 목 16–17시)', () => {
+  const list = S.fromDocs([
+    ev('bio', 'jm', { weekday: null, weekdays: [1, 3], start: '10:00', end: '11:00', times: { 1: '10:00-11:00', 3: '16:00-17:00' } }),
+    ev('same', 'dj', { weekday: null, weekdays: [1, 3], start: '09:00', end: '10:00' }),
+    ev('bad', 'dj', { weekday: null, weekdays: [1, 3], start: '09:00', end: '10:00', times: { 1: '12:00-11:00', 3: 'x' } })
+  ]);
+  const bio = list[0];
+  assert.strictEqual(bio.perDay, true);
+  assert.deepStrictEqual(bio.times[3], { start: '16:00', end: '17:00' });
+  assert.strictEqual(S.whenText(bio), '매주 화 10:00–11:00 · 목 16:00–17:00');
+  assert.strictEqual(S.whenText(list[1]), '매주 화 · 목요일 · 09:00–10:00');
+  assert.strictEqual(list[2].perDay, false); // 이상한 시간은 기본 시간으로
+  const tue = today - 1, thu = today + 1;
+  assert.deepStrictEqual(S.on(list, tue).filter((e) => e.id === 'bio').map((e) => e.start + '-' + e.end), ['10:00-11:00']);
+  assert.deepStrictEqual(S.on(list, thu).filter((e) => e.id === 'bio').map((e) => e.start + '-' + e.end), ['16:00-17:00']);
+  const w = S.week(list, ['dj', 'jm'], 'jm', S.monStart(today), today);
+  assert.deepStrictEqual(w.blocks.filter((b) => b.id === 'bio').map((b) => b.dayIdx + ':' + S.fmt(b.s)), ['1:10:00', '3:16:00']);
+  // 확인: 요일마다면 그 요일 시간을 본다
+  const f = { title: '수업', weekly: true, weekdays: [1, 3], perDay: true, start: '10:00', end: '11:00', times: { 1: { start: '10:00', end: '11:00' }, 3: { start: '17:00', end: '16:00' } } };
+  assert.strictEqual(S.validate(f), '목요일 끝 시간이 시작보다 늦어야 해요');
+  f.times[3] = { start: '16:00', end: '17:00' };
+  assert.strictEqual(S.validate(f), '');
+});

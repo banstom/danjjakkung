@@ -70,6 +70,7 @@
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
   var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-date', 'ev-start', 'ev-end'];
+  for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   var LS_TAB = 'danjjakkung.tab';
   (function () {
     var q = /[?&]tab=(routine|schedule|todo)/.exec(root.location.search || '');
@@ -149,7 +150,7 @@
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null,
-    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v' };
+    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v' };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -341,7 +342,7 @@
     else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true); }
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
-    else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd') setEventField(act, btn.getAttribute('data-v'));
+    else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode') setEventField(act, btn.getAttribute('data-v'));
     else if (act === 'open-notify') openNotify();
     else if (act === 'close-notify') closeNotify();
     else if (act === 'open-theme') openTheme();
@@ -505,7 +506,7 @@
     if (!state.me) return;
     var st = schedState(), day = st.mode === 'day' ? st.day : (st.weekStart === RT.schedule.monStart(state.today) ? state.today : st.weekStart);
     planReturn = '[data-act="event-add"]';
-    openPlanSheet('event', { mode: 'add', id: null, title: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
+    openPlanSheet('event', { mode: 'add', id: null, title: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
   }
   function openEvent(id, forceEdit, at) {
     var e = findEvent(id);
@@ -515,21 +516,40 @@
     var S = RT.schedule;
     if (canEditEvent(e)) {
       openPlanSheet('event', { mode: 'edit', id: id, title: e.title, owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
-        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
+        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
       return;
     }
     var people = planPeople(), slot = 'me';
     people.forEach(function (p) { if (p.key === e.owner) slot = p.slot; });
     openPlanSheet('event', { mode: 'view', id: id, title: e.title, slot: slot,
-      whenText: (e.weekly ? '매주 ' + S.wdText(e.weekdays) + '요일' : D.full(D.parse(e.date))) + ' · ' + e.start + '–' + e.end,
+      whenText: S.whenText(e),
       whoText: nameOf(e.owner) + ' 님 일정', canEdit: false, lockText: nameOf(e.owner) + ' 님만 고칠 수 있어요' });
   }
+  function copyTimes(t) { var o = {}; if (t) Object.keys(t).forEach(function (k) { o[k] = { start: t[k].start, end: t[k].end }; }); return o; }
   function setEventField(act, v) {
     var f = state.eventForm;
     if (!f || f.mode === 'view') return;
     if (act === 'ev-owner') { if (f.lockOwner) return; f.owner = v === 'both' ? 'both' : 'me'; }
+    else if (act === 'ev-timemode') {
+      var days = RT.schedule.weekdaysOf(f);
+      if (v === 'per' && !f.perDay) {
+        // 지금 「모두 같은 시간」에 적힌 시간으로 요일 줄을 채운다 (예전에 적어 둔 요일 시간이 되살아나지 않게)
+        f.times = {};
+        days.forEach(function (d) { f.times[d] = { start: f.start, end: f.end }; });
+        f.perDay = true;
+      } else if (v === 'same' && f.perDay) {
+        if (days.length && f.times[days[0]]) { f.start = f.times[days[0]].start; f.end = f.times[days[0]].end; }
+        f.perDay = false;
+      }
+    }
     else if (act === 'ev-repeat') {
       // 한 번 → 매주로 바꾸면 날짜의 요일이 미리 골라지고, 처음 누른 요일이 그걸 바꾼다 (새 일정과 같게)
+      if (v === 'once' && f.perDay) {
+        // 한 번 일정은 시간이 하나 — 첫 요일 시간을 쓰고 요일마다 모드는 끈다
+        var fd = RT.schedule.weekdaysOf(f)[0];
+        if (fd !== undefined && f.times[fd]) { f.start = f.times[fd].start; f.end = f.times[fd].end; }
+        f.perDay = false;
+      }
       if (v === 'weekly' && !f.weekly && f.wdPicked !== true) {
         f.wdPicked = false;
         if (!isNaN(D.parse(f.date))) f.weekdays = [RT.schedule.weekdayOf(D.parse(f.date))];
@@ -541,8 +561,16 @@
       // 새 일정은 오늘 요일이 미리 골라져 있는데, 처음 누른 요일은 그걸 바꾼다 (화를 누르면 「오늘 + 화」가 아니라 「화」)
       var w = Number(v), list = RT.schedule.weekdaysOf(f), at = list.indexOf(w);
       if (f.wdPicked === false) list = [w];
-      else if (at >= 0) list.splice(at, 1); else list.push(w);
+      else if (at >= 0) { list.splice(at, 1); if (f.times) delete f.times[w]; } // 뺐다가 다시 고르면 첫 요일 시간으로
+      else list.push(w);
       f.weekdays = list.sort(); f.wdPicked = true;
+      if (f.perDay) {
+        // 새로 고른 요일은 첫 요일 시간으로 채워 둔다. 하나만 남으면 그 시간이 일정 시간이 된다.
+        var had = list.filter(function (d) { return f.times[d]; })[0];
+        var base = had !== undefined ? f.times[had] : { start: f.start, end: f.end };
+        list.forEach(function (d) { if (!f.times[d]) f.times[d] = { start: base.start, end: base.end }; });
+        if (list.length === 1) { f.start = f.times[list[0]].start; f.end = f.times[list[0]].end; f.perDay = false; }
+      }
     }
     f.error = ''; render(true);
   }
@@ -553,8 +581,14 @@
     if (err) return planFail(f, err);
     var old = f.id ? findEvent(f.id) : null;
     if (f.id && !old) { closePlanSheet(); showToast('다른 기기에서 지워진 일정이에요'); return; }
+    var days = f.weekly ? RT.schedule.weekdaysOf(f) : null;
+    // 요일마다 시간 칸을 썼으면 첫 요일 시간이 일정 시간, 요일마다 정말 다를 때만 times 를 저장
+    var usedRows = !!(f.weekly && f.perDay && days.length > 1);
+    var first = usedRows ? f.times[days[0]] : { start: f.start, end: f.end };
+    var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), weekly: !!f.weekly,
-      weekdays: f.weekly ? RT.schedule.weekdaysOf(f) : null, date: f.weekly ? null : f.date, start: f.start, end: f.end, createdBy: old ? old.createdBy || state.me : state.me };
+      weekdays: days, date: f.weekly ? null : f.date, start: first.start, end: first.end,
+      times: perDay ? copyTimes(f.times) : null, createdBy: old ? old.createdBy || state.me : state.me };
     f.saving = true; f.error = ''; render(true);
     settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
   }
@@ -655,6 +689,8 @@
     if (ev.target.id === 'ev-date' && state.eventForm) { state.eventForm.date = ev.target.value; return; }
     if (ev.target.id === 'ev-start' && state.eventForm) { state.eventForm.start = ev.target.value; return; }
     if (ev.target.id === 'ev-end' && state.eventForm) { state.eventForm.end = ev.target.value; return; }
+    var tm = /^ev-t([se])-(\d)$/.exec(ev.target.id);
+    if (tm && state.eventForm) { var tf = state.eventForm, tw = Number(tm[2]); tf.times[tw] = tf.times[tw] || { start: tf.start, end: tf.end }; tf.times[tw][tm[1] === 's' ? 'start' : 'end'] = ev.target.value; return; }
     if (ev.target.id !== 'nt-remind') return;
     setPref({ remindAt: ev.target.value || null });
   });
@@ -846,7 +882,9 @@
       state.todoForm.title = get('td-title'); if (document.getElementById('td-date')) state.todoForm.date = get('td-date'); saveTodo();
     }
     else if (form.getAttribute('data-form') === 'event' && state.eventForm) {
-      var ef = state.eventForm; ef.title = get('ev-title'); ef.start = get('ev-start'); ef.end = get('ev-end');
+      var ef = state.eventForm; ef.title = get('ev-title');
+      if (document.getElementById('ev-start')) { ef.start = get('ev-start'); ef.end = get('ev-end'); }
+      for (var w7 = 0; w7 < 7; w7++) if (document.getElementById('ev-ts-' + w7)) ef.times[w7] = { start: get('ev-ts-' + w7), end: get('ev-te-' + w7) };
       if (document.getElementById('ev-date')) ef.date = get('ev-date'); saveEvent();
     }
   });

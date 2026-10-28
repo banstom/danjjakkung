@@ -341,7 +341,39 @@ async function tick(page, dateKey, key) {
   await jm.click('form[data-form="event"] button[type="submit"]');
   console.log('요일 없이 저장:', await jm.textContent('#ev-error'));
   await jm.keyboard.press('Escape');
-  console.log('저장 모양:', JSON.stringify([...docs.entries()].filter(([k, v]) => v && (v.title === '일반생물' || v.title === '과외')).map(([k, v]) => ({ t: v.title, weekday: v.weekday, weekdays: v.weekdays }))));
+  // 요일마다 다른 시간: 화 10–12시 그대로, 목만 16–17시
+  await jm.click('.sblock[aria-label^="일반생물"]');
+  console.log('시간 칸(같은 시간):', await jm.$$eval('[data-act="ev-timemode"]', (e) => e.map((x) => x.textContent + '=' + x.getAttribute('aria-pressed')).join(' ')), '| 요일별 줄', (await jm.$$('.drow:not(.drow--head)')).length);
+  await jm.click('[data-act="ev-timemode"][data-v="per"]');
+  console.log('요일마다 누르면:', await jm.$$eval('.drow:not(.drow--head)', (e) => e.map((r) => r.querySelector('b').textContent + ' ' + [...r.querySelectorAll('input')].map((i) => i.value).join('-')).join(' / ')));
+  await jm.fill('#ev-ts-3', '16:00'); await jm.fill('#ev-te-3', '15:00');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  console.log('목 끝이 빠르면:', await jm.textContent('#ev-error'));
+  await jm.fill('#ev-te-3', '17:00');
+  await jm.screenshot({ path: path.join(OUT, 'event-perday.png') });
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  console.log('요일마다 저장 뒤 블록:', await jm.$$eval('.sblock[aria-label^="일반생물"]', (e) => e.map((x) => x.getAttribute('aria-label')).join(' / ')));
+  await dj.waitForTimeout(150);
+  await dj.click('.sblock[aria-label^="일반생물"]');
+  console.log('다진이 본 요일마다 시간:', await dj.textContent('.einfo__line'));
+  await dj.keyboard.press('Escape');
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="목요일"]');
+  console.log('다시 열면:', await jm.getAttribute('[data-act="ev-timemode"][aria-pressed="true"]', 'data-v'), await jm.inputValue('#ev-ts-3'), await jm.inputValue('#ev-te-3'));
+  // 금을 더하면 첫 요일(화) 시간으로 채워진다
+  await jm.click('[data-act="ev-wd"][data-v="4"]');
+  console.log('금 더하면 금 시간:', await jm.inputValue('#ev-ts-4'), await jm.inputValue('#ev-te-4'));
+  // 목을 뺐다 다시 고르면 첫 요일(화) 시간 · 같은 시간에서 바꾼 뒤 요일마다로 가면 바꾼 시간
+  await jm.click('[data-act="ev-wd"][data-v="3"]'); await jm.click('[data-act="ev-wd"][data-v="3"]');
+  console.log('목 다시 고르면:', await jm.inputValue('#ev-ts-3'), await jm.inputValue('#ev-te-3'));
+  await jm.click('[data-act="ev-timemode"][data-v="same"]');
+  await jm.fill('#ev-start', '13:00'); await jm.fill('#ev-end', '14:00');
+  await jm.click('[data-act="ev-timemode"][data-v="per"]');
+  console.log('같은 시간 13시로 바꾸고 요일마다:', await jm.$$eval('.drow:not(.drow--head) input', (e) => e.map((i) => i.value).join(' ')));
+  await jm.click('[data-act="ev-repeat"][data-v="once"]'); await jm.click('[data-act="ev-repeat"][data-v="weekly"]');
+  console.log('한 번→매주 뒤 시간 모드:', await jm.getAttribute('[data-act="ev-timemode"][aria-pressed="true"]', 'data-v'), await jm.inputValue('#ev-start'));
+  await jm.keyboard.press('Escape');
+  console.log('저장 모양:', JSON.stringify([...docs.entries()].filter(([k, v]) => v && (v.title === '일반생물' || v.title === '과외')).map(([k, v]) => ({ t: v.title, weekday: v.weekday, weekdays: v.weekdays, start: v.start, end: v.end, times: v.times }))));
   await jm.click('.sday.is-today');
   console.log('일 보기:', await jm.textContent('.scard__title'), '|', (await jm.$$eval('.sstatus__row', (e) => e.map((x) => x.textContent))).join(' / '));
   await jm.screenshot({ path: path.join(OUT, 'web-day.png'), fullPage: true });

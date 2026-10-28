@@ -188,6 +188,24 @@
   }
 
   var WD = [['0', '월'], ['1', '화'], ['2', '수'], ['3', '목'], ['4', '금'], ['5', '토'], ['6', '일']];
+  // 시간: 요일이 여럿이면 「모두 같은 시간 | 요일마다 다르게」, 요일마다면 요일별 시작 · 끝 줄
+  function timeFields(f) {
+    var days = f.weekly ? (f.weekdays || []) : [];
+    var multi = days.length > 1, per = multi && f.perDay;
+    var mode = multi ? '<div class="field"><span class="field__label">시간</span>' + chipRow('ev-timemode', [['same', '모두 같은 시간'], ['per', '요일마다 다르게']], per ? 'per' : 'same', '시간') + '</div>' : '';
+    if (!per) {
+      return mode + '<div class="ftime"><label class="field"><span class="field__label">시작</span><input id="ev-start" class="field__input" type="time" step="300" value="' + esc(f.start) + '"></label>' +
+        '<label class="field"><span class="field__label">끝</span><input id="ev-end" class="field__input" type="time" step="300" value="' + esc(f.end) + '"></label></div>';
+    }
+    var NAMES = ['월', '화', '수', '목', '금', '토', '일'];
+    return mode + '<div class="drows" role="group" aria-label="요일마다 시간"><div class="drow drow--head" aria-hidden="true"><span></span><span>시작</span><span>끝</span></div>' +
+      days.map(function (w) {
+        var t = (f.times || {})[w] || { start: f.start, end: f.end };
+        return '<div class="drow"><b class="drow__day">' + NAMES[w] + '</b>' +
+          '<input id="ev-ts-' + w + '" class="field__input" type="time" step="300" aria-label="' + NAMES[w] + '요일 시작" value="' + esc(t.start) + '">' +
+          '<input id="ev-te-' + w + '" class="field__input" type="time" step="300" aria-label="' + NAMES[w] + '요일 끝" value="' + esc(t.end) + '"></div>';
+      }).join('') + '</div>';
+  }
   function eventSheet(f, entering) {
     if (!f) return '';
     if (f.mode === 'view') {
@@ -204,8 +222,7 @@
       (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
         multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'
         : '<label class="field"><span class="field__label">날짜</span><input id="ev-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>') +
-      '<div class="ftime"><label class="field"><span class="field__label">시작</span><input id="ev-start" class="field__input" type="time" step="300" value="' + esc(f.start) + '"></label>' +
-      '<label class="field"><span class="field__label">끝</span><input id="ev-end" class="field__input" type="time" step="300" value="' + esc(f.end) + '"></label></div>' +
+      timeFields(f) +
       errorLine('ev-error', f) +
       '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="event-cancel">취소</button>' +
       '<button type="submit" class="solid-btn"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : f.mode === 'edit' ? '저장' : '추가하기') + '</button></div>' +

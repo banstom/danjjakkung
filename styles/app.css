@@ -316,6 +316,10 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .pick { min-height: 40px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; font-weight: 600; }
 .pick[aria-pressed="true"] { border-color: var(--accent); background: var(--primary); color: var(--on-primary); }
 .ftime { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.drows { display: flex; flex-direction: column; gap: 8px; }
+.drow { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; }
+.drow--head { font-size: 12px; font-weight: 600; color: var(--sub); }
+.drow__day { font-size: 15px; text-align: center; }
 .einfo { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 14px; background: var(--raised); }
 .einfo__title { margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .einfo__line { margin: 0; font-size: 14px; color: var(--sub); }
