@@ -13,5 +13,5 @@ self.DANJJAKKUNG_FIREBASE_CONFIG = {
 };
 /* 웹 푸시 공개 키 (콘솔 › 클라우드 메시징 › 웹 푸시 인증서). 공개 키라서 올려도 된다. */
 self.DANJJAKKUNG_VAPID_KEY = 'BCCu6np5T_LFYQoFcG8ojIQres0I1iFcnF9RKX_dCRSyuDOxzrNY_XwuecyBcKfKMomTd8eOdYaTvIjO-1ivlz0';
-/* 알림 서버(functions/)를 올리기 전에는 🔔 버튼을 숨겨 둔다. 서버를 올린 뒤 true로 바꾼다. */
-self.DANJJAKKUNG_PUSH_READY = false;
+/* 알림 서버(functions/)가 올라가 있으면 true (🔔 버튼을 보인다). */
+self.DANJJAKKUNG_PUSH_READY = true;
