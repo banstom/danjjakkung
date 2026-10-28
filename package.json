@@ -3,7 +3,7 @@
   "private": true,
   "description": "단짝꿍 — 둘이 함께 매일 루틴을 체크하는 웹앱 (GitHub Pages + Firebase)",
   "scripts": {
-    "test": "TZ=Asia/Seoul node --test tests/logic.test.js tests/sw.test.js",
+    "test": "TZ=Asia/Seoul node --test tests/logic.test.js tests/sw.test.js tests/plan.test.js",
     "web": "node tests/web.js"
   }
 }

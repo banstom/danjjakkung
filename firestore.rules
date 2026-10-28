@@ -74,6 +74,48 @@ service cloud.firestore {
       allow delete: if isMember() && (resource == null || resource.data.by == request.auth.uid);
     }
 
+    // ── 할 일 ──  함께(together)는 둘 다, 각자 것은 본인만 쓰고 지운다. 읽기는 둘 다.
+    function validTodo(d) {
+      return d.keys().hasOnly(['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt'])
+        && d.scope is string && d.title is string && d.title.size() > 0 && d.title.size() <= 40
+        && (d.due == null || isDate(d.due))
+        && ((d.done == true && d.doneBy is string && d.doneAt is string) || (d.done == false && d.doneBy == null && d.doneAt == null))
+        && d.createdBy is string && d.createdAt is string && d.updatedAt is string;
+    }
+    function mineOrTogether(scope) { return scope == 'together' || scope == request.auth.uid; }
+    match /todos/{id} {
+      allow read: if isMember();
+      allow create: if isMember() && validTodo(request.resource.data) && mineOrTogether(request.resource.data.scope)
+        && request.resource.data.createdBy == request.auth.uid
+        && (request.resource.data.done == false || request.resource.data.doneBy == request.auth.uid);
+      allow update: if isMember() && validTodo(request.resource.data) && mineOrTogether(resource.data.scope)
+        && request.resource.data.scope == resource.data.scope
+        && request.resource.data.createdBy == resource.data.createdBy && request.resource.data.createdAt == resource.data.createdAt
+        && (request.resource.data.done == false || request.resource.data.doneBy == request.auth.uid
+            || (resource.data.done == true && request.resource.data.doneBy == resource.data.doneBy && request.resource.data.doneAt == resource.data.doneAt));
+      allow delete: if isMember() && mineOrTogether(resource.data.scope);
+    }
+
+    // ── 시간표 ──  내 일정은 나만, 함께(both) 일정은 둘 다 쓰고 지운다. 읽기는 둘 다.
+    function validEvent(d) {
+      return d.keys().hasOnly(['owner', 'title', 'weekly', 'weekday', 'date', 'start', 'end', 'createdBy', 'updatedAt'])
+        && d.owner is string && d.title is string && d.title.size() > 0 && d.title.size() <= 20
+        && ((d.weekly == true && d.weekday is int && d.weekday >= 0 && d.weekday <= 6 && d.date == null)
+            || (d.weekly == false && d.weekday == null && isDate(d.date)))
+        && d.start is string && d.start.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')
+        && d.end is string && d.end.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && d.end > d.start
+        && d.createdBy is string && d.updatedAt is string;
+    }
+    function mineOrBoth(owner) { return owner == 'both' || owner == request.auth.uid; }
+    match /events/{id} {
+      allow read: if isMember();
+      allow create: if isMember() && validEvent(request.resource.data) && mineOrBoth(request.resource.data.owner)
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isMember() && validEvent(request.resource.data) && mineOrBoth(resource.data.owner) && mineOrBoth(request.resource.data.owner)
+        && request.resource.data.createdBy == resource.data.createdBy;
+      allow delete: if isMember() && mineOrBoth(resource.data.owner);
+    }
+
     // ── 알림 ──
     // users/<uid>: 내 알림 설정. 나만 읽고 쓴다.
     function validNotify(n) {

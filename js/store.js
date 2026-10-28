@@ -54,6 +54,33 @@
       saveMember: function (uid, name) {
         return db.doc('members/' + uid).set({ name: name, joinedAt: new Date().toISOString() });
       },
+      // ── 할 일 · 시간표 ──
+      // todos/<id>  : { scope: 'together' | uid, title, due, done, doneBy, doneAt, createdBy, createdAt, updatedAt }
+      // events/<id> : { owner: uid | 'both', title, weekly, weekday, date, start, end, createdBy, updatedAt }
+      watchTodos: function (next, fail) {
+        return db.collection('todos').onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
+        }, fail);
+      },
+      saveTodo: function (t) {
+        return db.doc('todos/' + t.id).set({
+          scope: t.scope, title: t.title, due: t.due || null, done: !!t.done, doneBy: t.done ? t.doneBy : null, doneAt: t.done ? t.doneAt : null,
+          createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString()
+        });
+      },
+      deleteTodo: function (id) { return db.doc('todos/' + id).delete(); },
+      watchEvents: function (next, fail) {
+        return db.collection('events').onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
+        }, fail);
+      },
+      saveEvent: function (e) {
+        return db.doc('events/' + e.id).set({
+          owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: e.weekly ? e.weekday : null, date: e.weekly ? null : e.date,
+          start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString()
+        });
+      },
+      deleteEvent: function (id) { return db.doc('events/' + id).delete(); },
       // ── 알림 ──
       // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, updatedAt }  — 내 모든 기기에 같이 적용
       // users/<uid>/devices/<기기>   : { token, platform, ua, updatedAt }                     — 기기마다 하나 (웹 · 나중에 iOS/안드로이드 앱)

@@ -283,6 +283,9 @@
           '<div class="auth__links auth__links--center"><button type="button" class="text-btn" data-act="sign-out">로그아웃</button></div>'
         : notice('기록 저장소에 연결할 수 없어요', 'claude.ai나 Claude 앱에서 이 페이지를 열면 기록을 불러와요.');
     }
+    else if (opts.tab && opts.tab !== 'routine') {
+      out += opts.tabHtml || ''; // 시간표 · 할 일 탭 (view-plan.js)
+    }
     else if (m.empty) {
       out += (m.needsPick ? picker(m.people) : '') + notice('아직 등록된 루틴이 없어요', '「＋ 내 루틴」에서 첫 루틴을 추가해 보세요.') +
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');
@@ -292,7 +295,10 @@
     }
     if (status === 'ready') {
       out += opts.notify ? notifySheet(opts.notify, opts.sheetEntering)
+        : opts.sheetHtml ? opts.sheetHtml
+        : opts.tab && opts.tab !== 'routine' ? ''
         : m.manage ? manageSheet(m.manage, m.header.meName, opts && opts.sheetEntering) : (!m.empty ? sheet(m.sheet, opts && opts.sheetEntering) : '');
+      if (opts.tabbarHtml) out += opts.tabbarHtml;
     }
     out += toast(toastText);
     return out;

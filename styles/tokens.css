@@ -40,6 +40,8 @@
   --tint-text: var(--deep);
   --her: var(--deep);
   --me: var(--mid);
+  --her-ink: #FFFFFF;     /* 사람 색 위 글자 */
+  --me-ink: #191F28;
   --lv-half: var(--mid);
   --lv-half-text: #191F28;
   --lv-full: var(--deep);
@@ -59,7 +61,7 @@
     --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
     --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
     --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
-    --her: var(--pale); --me: var(--mid);
+    --her: var(--pale); --me: var(--mid); --her-ink: #0F1115; --me-ink: #0F1115;
     --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
   }
 }
@@ -68,6 +70,6 @@
   --bg: #0F1115; --surface: #1B1E24; --raised: #262A31; --text: #F2F4F6; --sub: #9AA4B2; --faint: #4E5561;
   --line: #2E333B; --empty: #333943; --empty-text: #C5CBD3; --toast-bg: #F2F4F6; --toast-fg: #191F28; --toast-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); --scrim: rgba(0, 0, 0, 0.6); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.5); --warn: #FF6B6B;
   --accent: var(--mid); --on-accent: #0F1115; --tint: var(--dsoft); --tint-text: var(--pale);
-  --her: var(--pale); --me: var(--mid);
+  --her: var(--pale); --me: var(--mid); --her-ink: #0F1115; --me-ink: #0F1115;
   --lv-half: var(--mid); --lv-half-text: #0F1115; --lv-full: var(--pale); --lv-full-text: #0F1115;
 }
