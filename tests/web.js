@@ -292,6 +292,7 @@ async function tick(page, dateKey, key) {
     await page.click('[data-act="event-add"]');
     await page.fill('#ev-title', title);
     if (opts.both) await page.click('[data-act="ev-owner"][data-v="both"]');
+    if (opts.cat) await page.click(`[data-act="ev-cat"][data-v="${opts.cat}"]`);
     if (opts.once) { await page.click('[data-act="ev-repeat"][data-v="once"]'); await page.fill('#ev-date', opts.once); }
     else for (const w of [].concat(opts.wd)) await page.click(`[data-act="ev-wd"][data-v="${w}"]`);
     await page.fill('#ev-start', opts.start); await page.fill('#ev-end', opts.end);
@@ -299,7 +300,7 @@ async function tick(page, dateKey, key) {
     await page.waitForTimeout(150);
   }
   await jm.click('[data-act="tab"][data-tab="schedule"]');
-  await addEvent(jm, '일반생물', { wd: [1, 3], start: '10:00', end: '12:00' }); // 화 · 목 한 번에
+  await addEvent(jm, '일반생물', { wd: [1, 3], start: '10:00', end: '12:00', cat: 'class' }); // 화 · 목 한 번에
   console.log('화 · 목 일정:', await jm.$$eval('.sblock[aria-label^="일반생물"]', (e) => e.map((x) => x.getAttribute('aria-label')).join(' / ')));
   await addEvent(jm, '과외', { wd: 1, start: '19:00', end: '21:30' });
   await jm.click('[data-act="event-add"]');
@@ -308,7 +309,8 @@ async function tick(page, dateKey, key) {
   console.log('끝이 시작보다 빠르면:', await jm.textContent('#ev-error'));
   await jm.keyboard.press('Escape');
   await dj.click('[data-act="tab"][data-tab="schedule"]');
-  await addEvent(dj, '수업', { wd: 1, start: '09:00', end: '12:00' });
+  await addEvent(dj, '수업', { wd: 1, start: '09:00', end: '12:00', cat: 'class' });
+  await addEvent(dj, '필라테스', { wd: 3, start: '18:00', end: '19:00', cat: 'exercise' });
   await addEvent(dj, '스터디', { once: '2026-10-27', start: '20:30', end: '22:00' });
   await addEvent(dj, '데이트', { both: true, once: '2026-10-31', start: '15:00', end: '19:00' });
   await jm.waitForTimeout(200);
@@ -374,7 +376,21 @@ async function tick(page, dateKey, key) {
   console.log('한 번→매주 뒤 시간 모드:', await jm.getAttribute('[data-act="ev-timemode"][aria-pressed="true"]', 'data-v'), await jm.inputValue('#ev-start'));
   await jm.keyboard.press('Escape');
   console.log('저장 모양:', JSON.stringify([...docs.entries()].filter(([k, v]) => v && (v.title === '일반생물' || v.title === '과외')).map(([k, v]) => ({ t: v.title, weekday: v.weekday, weekdays: v.weekdays, start: v.start, end: v.end, times: v.times }))));
+  // 주 보기: 오늘(화) 목록이 기본, 넓은 블록 · 아이콘, 목요일을 누르면 목록이 바뀜
+  console.log('기본 목록:', await jm.textContent('.slist__title-day'), '|', await jm.$$eval('.slist__item', (e) => e.map((x) => x.getAttribute('aria-label')).join(' / ')));
+  console.log('넓은 블록:', await jm.$$eval('.sblock--full', (e) => [...new Set(e.map((x) => x.getAttribute('aria-label').split(',')[0]))].join(' · ')), '| 아이콘', await jm.$$eval('.sblock__ico', (e) => [...new Set(e.map((x) => x.textContent))].join('')));
+  console.log('한 칸 폭(px): 넓은', await jm.$eval('.sblock--full', (e) => Math.round(e.getBoundingClientRect().width)), '| 반쪽', await jm.$eval('.sblock:not(.sblock--full)', (e) => Math.round(e.getBoundingClientRect().width)));
+  await jm.screenshot({ path: path.join(OUT, 'web-week-wide.png'), fullPage: true });
+  const thu = await jm.getAttribute('.sday:nth-of-type(4)', 'data-day');
+  await jm.click(`.sday[data-day="${thu}"]`);
+  console.log('목요일 누르면:', await jm.textContent('.slist__title-day'), '| 모드', await jm.getAttribute('[data-act="sched-mode"][aria-pressed="true"]', 'data-mode'), '| 눌림', await jm.getAttribute(`.sday[data-day="${thu}"]`, 'aria-pressed'), '|', await jm.$$eval('.slist__item', (e) => e.map((x) => x.textContent).join(' / ')));
+  await jm.click('.slist__item[aria-label^="필라테스"]');
+  console.log('목록에서 누르면:', await jm.textContent('.einfo__line'));
+  await jm.keyboard.press('Escape');
+  console.log('닫으면 포커스:', await jm.evaluate(() => document.activeElement.getAttribute('data-at')));
   await jm.click('.sday.is-today');
+  await jm.click('[data-act="sched-open-day"]');
+  console.log('크게 보기 뒤 포커스:', await jm.evaluate(() => document.activeElement.className + ' ' + document.activeElement.getAttribute('aria-pressed')));
   console.log('일 보기:', await jm.textContent('.scard__title'), '|', (await jm.$$eval('.sstatus__row', (e) => e.map((x) => x.textContent))).join(' / '));
   await jm.screenshot({ path: path.join(OUT, 'web-day.png'), fullPage: true });
   // (점검 2) 자정이 지나면 일 보기도 오늘로

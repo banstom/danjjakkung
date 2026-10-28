@@ -120,9 +120,10 @@
   function blockHtml(b, H, opts) {
     var span = H.to - H.from;
     var top = pct((b.s - H.from) / span * 100), h = pct((b.e - b.s) / span * 100);
-    var w = 50 / b.cols, left = b.lane * 50 + w * b.col;
-    var label = esc(b.title);
-    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' +
+    var w = b.full && opts.compact ? 100 : 50 / b.cols, left = b.full && opts.compact ? 0 : b.lane * 50 + w * b.col;
+    var showIco = b.icon && !(opts.compact && b.e - b.s < 50); // 주 보기에서 짧은 일정은 이름이 먼저
+    var label = (showIco ? '<span class="sblock__ico" aria-hidden="true">' + esc(b.icon) + '</span>' : '') + '<span class="sblock__name">' + esc(b.title) + '</span>';
+    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' +
       (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
       ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번')) + '">' +
@@ -139,13 +140,13 @@
   }
   function weekView(s) {
     var w = s.week, H = w.hours;
-    var hpx = (H.to - H.from) / 60 * 30;
+    var hpx = (H.to - H.from) / 60 * 40; // 1시간 40px (글자가 들어가게)
     var heads = w.days.map(function (d) {
-      return '<button type="button" class="sday' + (d.isToday ? ' is-today' : '') + '" data-act="sched-day" data-day="' + d.day + '" aria-label="' + d.date + '일 ' + d.wd + '요일 크게 보기">' +
+      return '<button type="button" class="sday' + (d.isToday ? ' is-today' : '') + (d.picked ? ' is-picked' : '') + '" data-act="sched-day" data-day="' + d.day + '" aria-pressed="' + !!d.picked + '" aria-label="' + d.date + '일 ' + d.wd + '요일 일정 목록 보기">' +
         '<span class="sday__wd">' + d.wd + '</span><span class="sday__date">' + d.date + '</span></button>';
     }).join('');
     var cols = w.days.map(function (d, i) {
-      return '<div class="scol' + (d.isToday ? ' is-today' : '') + '">' + w.blocks.filter(function (b) { return b.dayIdx === i; }).map(function (b) {
+      return '<div class="scol' + (d.isToday ? ' is-today' : '') + (d.picked ? ' is-picked' : '') + '">' + w.blocks.filter(function (b) { return b.dayIdx === i; }).map(function (b) {
         return blockHtml(b, H, { compact: true, dayLabel: d.wd + '요일' });
       }).join('') + '</div>';
     }).join('');
@@ -157,7 +158,23 @@
       '<div class="sweek"><span></span>' + heads + '</div>' +
       '<div class="sweek sweek--body" style="height:' + hpx + 'px"><div class="shours">' + hourLines(H, true, false) + '</div>' +
       '<div class="scols">' + hourLines(H, false) + cols + '</div></div>' +
-      '</section>' + legend(s.people, s.hasBoth) + '<p class="muted shint">요일을 누르면 그날을 크게 봐요 · 일정을 누르면 자세히</p>';
+      '</section>' + legend(s.people, s.hasBoth) + pickList(w.pick) + '<p class="muted shint">요일을 누르면 아래에 그날 일정이 나와요 · 일정을 누르면 자세히</p>';
+  }
+  // 고른 요일 목록: 두 사람 일정을 시간 순서로 (왼쪽 색 막대 = 사람, 함께는 강조 카드)
+  function pickList(p) {
+    if (!p) return '';
+    var rows = p.items.map(function (it) {
+      return '<button type="button" class="slist__item slist__item--' + it.slot + (it.weekly ? '' : ' slist__item--once') + '" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@list') + '"' +
+        ' aria-label="' + esc(it.title + ', ' + it.time + ', ' + it.who + (it.catName ? ', ' + it.catName : '') + (it.weekly ? ', 매주' : ', 한 번')) + '">' +
+        (it.slot === 'both' ? '' : '<span class="slist__bar" aria-hidden="true"></span>') +
+        (it.icon ? '<span class="slist__ico" aria-hidden="true">' + esc(it.icon) + '</span>' : '') +
+        '<span class="slist__title">' + esc(it.title) + '</span><span class="slist__who">' + esc(it.who) + '</span>' +
+        '<span class="slist__time">' + esc(it.time) + '</span></button>';
+    }).join('');
+    return '<section class="card slist" aria-label="' + esc(p.title) + ' 일정">' +
+      '<div class="slist__head"><span class="slist__title-day">' + esc(p.title) + (p.isToday ? ' <span class="tag">오늘</span>' : '') + '</span>' +
+      '<button type="button" class="mini-btn" data-act="sched-open-day" data-day="' + p.day + '">크게 보기</button></div>' +
+      (rows || '<p class="tempty">이날은 일정이 없어요</p>') + '</section>';
   }
   function dayView(s) {
     var d = s.day, H = d.hours;
@@ -218,6 +235,7 @@
     var inner = '<form class="pform" data-form="event" novalidate>' +
       '<label class="field"><span class="field__label">일정 이름</span><input id="ev-title" class="field__input" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" placeholder="예: 일반생물 수업" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="ev-error"' : '') + '></label>' +
       '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
+      '<div class="field"><span class="field__label">카테고리</span>' + chipRow('ev-cat', RT.schedule.CATS.map(function (c) { return [c.id, c.icon + ' ' + c.name]; }), f.cat || '', '카테고리') + '</div>' +
       '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +
       (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
         multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'

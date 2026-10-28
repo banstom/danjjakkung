@@ -148,9 +148,9 @@
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
     'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
-    'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-week': 'data-dir',
+    'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null,
-    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v' };
+    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v' };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -334,7 +334,12 @@
     else if (act === 'todo-cancel') closePlanSheet();
     else if (act === 'todo-delete') deleteTodo();
     else if (act === 'sched-mode') { schedState().mode = btn.getAttribute('data-mode'); render(true); }
-    else if (act === 'sched-day') { var sd = Number(btn.getAttribute('data-day')); schedState().day = sd; schedState().weekStart = RT.schedule.monStart(sd); schedState().mode = 'day'; render(true); }
+    else if (act === 'sched-day' && schedState().mode === 'week') { schedState().pick = Number(btn.getAttribute('data-day')); render(true); } // 주 보기: 아래 목록만 바꾼다
+    else if (act === 'sched-day' || act === 'sched-open-day') {
+      var sd = Number(btn.getAttribute('data-day')); schedState().day = sd; schedState().weekStart = RT.schedule.monStart(sd); schedState().mode = 'day';
+      if (act === 'sched-open-day') focusAfter = ['.sstrip__btn[data-day="' + sd + '"]']; // 「크게 보기」 버튼이 사라지므로 그날 요일 버튼으로
+      render(true);
+    }
     else if (act === 'sched-week') { schedState().weekStart += 7 * Number(btn.getAttribute('data-dir')); render(true); }
     else if (act === 'sched-thisweek') { schedState().weekStart = RT.schedule.monStart(state.today); render(true); }
     else if (act === 'event-add') addEvent();
@@ -342,7 +347,7 @@
     else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true); }
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
-    else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode') setEventField(act, btn.getAttribute('data-v'));
+    else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode' || act === 'ev-cat') setEventField(act, btn.getAttribute('data-v'));
     else if (act === 'open-notify') openNotify();
     else if (act === 'close-notify') closeNotify();
     else if (act === 'open-theme') openTheme();
@@ -410,7 +415,7 @@
     var nm = {}; people.forEach(function (p) { nm[p.key] = p.name; });
     var evs = eventList(), st = schedState();
     var now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
-    return { mode: st.mode, week: S.week(evs, persons, state.me, st.weekStart, state.today), day: S.day(evs, persons, nm, state.me, st.day, state.today, nowMin),
+    return { mode: st.mode, week: S.week(evs, persons, state.me, st.weekStart, state.today, { pick: st.pick, names: nm }), day: S.day(evs, persons, nm, state.me, st.day, state.today, nowMin),
       people: people.map(function (p) { return { slot: p.slot, name: p.name, me: p.mine }; }), hasBoth: evs.some(function (e) { return e.owner === 'both'; }), nowText: S.fmt(nowMin) };
   }
   function planHtml(other) {
@@ -504,9 +509,11 @@
   function canEditEvent(e) { return !!state.me && (e.owner === state.me || e.owner === 'both'); }
   function addEvent() {
     if (!state.me) return;
-    var st = schedState(), day = st.mode === 'day' ? st.day : (st.weekStart === RT.schedule.monStart(state.today) ? state.today : st.weekStart);
+    var st = schedState(), wk = st.weekStart;
+    // 새 일정의 요일: 일 보기면 그날, 주 보기면 아래 목록에 고른 요일(없으면 오늘 · 월요일)
+    var day = st.mode === 'day' ? st.day : (st.pick >= wk && st.pick <= wk + 6 ? st.pick : (state.today >= wk && state.today <= wk + 6 ? state.today : wk));
     planReturn = '[data-act="event-add"]';
-    openPlanSheet('event', { mode: 'add', id: null, title: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
+    openPlanSheet('event', { mode: 'add', id: null, title: '', owner: 'me', weekly: true, weekdays: [RT.schedule.weekdayOf(day)], wdPicked: false, perDay: false, times: {}, cat: null, date: D.toKey(day), start: '10:00', end: '11:00', error: '' });
   }
   function openEvent(id, forceEdit, at) {
     var e = findEvent(id);
@@ -516,7 +523,7 @@
     var S = RT.schedule;
     if (canEditEvent(e)) {
       openPlanSheet('event', { mode: 'edit', id: id, title: e.title, owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
-        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
+        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.cat || null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '' });
       return;
     }
     var people = planPeople(), slot = 'me';
@@ -530,6 +537,7 @@
     var f = state.eventForm;
     if (!f || f.mode === 'view') return;
     if (act === 'ev-owner') { if (f.lockOwner) return; f.owner = v === 'both' ? 'both' : 'me'; }
+    else if (act === 'ev-cat') f.cat = f.cat === v ? null : v; // 한 번 더 누르면 카테고리 없음
     else if (act === 'ev-timemode') {
       var days = RT.schedule.weekdaysOf(f);
       if (v === 'per' && !f.perDay) {
@@ -588,7 +596,7 @@
     var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), weekly: !!f.weekly,
       weekdays: days, date: f.weekly ? null : f.date, start: first.start, end: first.end,
-      times: perDay ? copyTimes(f.times) : null, createdBy: old ? old.createdBy || state.me : state.me };
+      times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me };
     f.saving = true; f.error = ''; render(true);
     settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
   }

@@ -90,9 +90,11 @@ test('주 보기: 자리 · 함께 · 겹침 · 고칠 수 있는지', () => {
   const by = Object.fromEntries(w.blocks.filter((b) => !b.dup).map((b) => [b.id, b]));
   assert.deepStrictEqual([by.a.lane, by.a.col, by.a.cols, by.b.col, by.b.cols], [0, 0, 2, 1, 2]); // 겹치면 나란히
   assert.deepStrictEqual([by.c.lane, by.c.cols, by.c.slot], [1, 1, 'me']);
-  // 함께 일정은 두 자리에 한 조각씩 (두 번째는 dup)
+  // 함께 일정이 아무와도 안 겹치면 한 조각으로 칸 전체 폭
   const d = w.blocks.filter((b) => b.id === 'd');
-  assert.deepStrictEqual(d.map((b) => [b.lane, b.slot, b.dup, b.dayIdx, b.editable]), [[0, 'both', false, 5, true], [1, 'both', true, 5, true]]);
+  assert.deepStrictEqual(d.map((b) => [b.lane, b.slot, b.dup, b.dayIdx, b.editable, b.full]), [[0, 'both', false, 5, true, true]]);
+  // 다진 a · b 는 서로 겹쳐 반쪽, 같은 시간 준민 c 와도 겹쳐 넓히지 않음
+  assert.deepStrictEqual([by.a.full, by.b.full, by.c.full, by.late.full], [false, false, false, true]);
   assert.strictEqual(by.a.editable, false); // 다진 일정은 준민이 못 고침
   assert.deepStrictEqual(w.hours, { from: 540, to: 1440 }); // 23:30까지 → 24시
 });
@@ -171,4 +173,30 @@ test('요일마다 다른 시간 (화 10–11시 · 목 16–17시)', () => {
   assert.strictEqual(S.validate(f), '목요일 끝 시간이 시작보다 늦어야 해요');
   f.times[3] = { start: '16:00', end: '17:00' };
   assert.strictEqual(S.validate(f), '');
+});
+
+test('주 보기: 안 겹치면 넓게 · 고른 요일 목록 · 카테고리', () => {
+  const list = S.fromDocs([
+    ev('gym', 'jm', { weekday: 0, start: '07:00', end: '08:00', cat: 'exercise' }),
+    ev('bio', 'jm', { weekday: 1, start: '10:00', end: '12:00', cat: 'class' }),
+    ev('ana', 'dj', { weekday: 1, start: '09:00', end: '12:00', cat: 'class' }),
+    ev('lunch', 'both', { weekday: 1, start: '12:30', end: '13:30', cat: 'meet' }),
+    ev('x', 'jm', { weekday: 1, start: '19:00', end: '20:00', cat: 'nope' })
+  ]);
+  assert.strictEqual(list.find((e) => e.id === 'x').cat, null); // 모르는 카테고리는 없음으로
+  const w = S.week(list, P, 'jm', S.monStart(today), today, { pick: today - 1, names: { dj: '다진', jm: '준민' } });
+  const by = (id) => w.blocks.filter((b) => b.id === id);
+  assert.strictEqual(by('gym')[0].full, true);
+  assert.strictEqual(by('gym')[0].icon, '🏃');
+  assert.deepStrictEqual([by('bio')[0].full, by('ana')[0].full], [false, false]); // 화요일 오전은 둘 다 수업 → 반쪽
+  assert.strictEqual(by('lunch').length, 1);
+  assert.ok(w.days[1].picked && !w.days[2].picked);
+  assert.strictEqual(w.pick.title, '화요일 · 10월 27일');
+  assert.deepStrictEqual(w.pick.items.map((i) => [i.id, i.slot, i.who, i.icon, i.time]), [
+    ['ana', 'her', '다진', '📚', '09:00–12:00'], ['bio', 'me', '준민', '📚', '10:00–12:00'],
+    ['lunch', 'both', '함께', '💞', '12:30–13:30'], ['x', 'me', '준민', '', '19:00–20:00']]);
+  // 다른 주로 가면 고른 요일은 그 주 월요일(이번 주면 오늘)
+  const next = S.week(list, P, 'jm', S.monStart(today) + 7, today, { pick: today - 1 });
+  assert.strictEqual(next.pick.day, S.monStart(today) + 7);
+  assert.strictEqual(S.whenText(list.find((e) => e.id === 'bio')), '📚 수업 · 매주 화요일 · 10:00–12:00');
 });

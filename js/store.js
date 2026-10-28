@@ -80,6 +80,7 @@
         var doc = { owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: days.length === 1 ? days[0] : null, date: e.weekly ? null : e.date,
           start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString() };
         if (days.length > 1) doc.weekdays = days.slice();
+        if (e.cat) doc.cat = e.cat; // 카테고리 (없으면 필드 없음)
         // 요일마다 시간이 다를 때만: { '1': '10:00-11:00', '3': '16:00-17:00' }
         if (days.length > 1 && e.times) {
           doc.times = {};

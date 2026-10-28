@@ -3,6 +3,7 @@
                    매주 · 요일 하나: weekday: 0(월)~6(일)          (예전부터 쓰던 모양)
                    매주 · 요일 여럿: weekday: null, weekdays: [1, 3] (화 · 목 — 한 일정으로 같이 고치고 지운다)
                      요일마다 시간이 다르면 times: { '1': '10:00-11:00', '3': '16:00-17:00' } (start · end 는 첫 요일 시간)
+                   cat: 'class' | 'exercise' | 'study' | 'work' | 'meet' | 'etc' (카테고리, 없으면 아이콘 없음)
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
    주는 월요일에 시작한다. 사람 순서(persons)는 루틴 탭과 같아서 두 사람 화면에서 색 · 자리가 같다. */
@@ -11,6 +12,11 @@
   var D = (typeof module !== 'undefined' && module.exports) ? require('./dates') : root.RT.dates;
 
   var WD = ['월', '화', '수', '목', '금', '토', '일'];
+  var CATS = [
+    { id: 'class', name: '수업', icon: '📚' }, { id: 'exercise', name: '운동', icon: '🏃' }, { id: 'study', name: '공부', icon: '📝' },
+    { id: 'work', name: '과외·일', icon: '💼' }, { id: 'meet', name: '약속', icon: '💞' }, { id: 'etc', name: '기타', icon: '📌' }
+  ];
+  function catOf(id) { for (var i = 0; i < CATS.length; i++) if (CATS[i].id === id) return CATS[i]; return null; }
   var TITLE_MAX = 20;
   var HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -45,6 +51,9 @@
   }
   /** '매주 화 · 목요일 · 10:00–11:00' / '매주 화 10:00–11:00 · 목 16:00–17:00' / '10월 28일 수요일 · 10:00–11:00' */
   function whenText(e) {
+    return (catOf(e.cat) ? catOf(e.cat).icon + ' ' + catOf(e.cat).name + ' · ' : '') + whenOnly(e);
+  }
+  function whenOnly(e) {
     if (!e.weekly) return D.full(D.parse(e.date)) + ' · ' + e.start + '–' + e.end;
     if (!e.perDay) return '매주 ' + wdText(e.weekdays) + '요일 · ' + e.start + '–' + e.end;
     return '매주 ' + e.weekdays.map(function (w) { return WD[w] + ' ' + e.times[w].start + '–' + e.times[w].end; }).join(' · ');
@@ -59,7 +68,7 @@
     }).map(function (e) {
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
       return { id: e.id, owner: e.owner, title: e.title, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null };
+        cat: catOf(e.cat) ? e.cat : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null };
     });
   }
 
@@ -112,7 +121,8 @@
     var lanes = [[], []];
     list.forEach(function (e) {
       lanesOf(e, persons).forEach(function (lane, k) {
-        lanes[lane].push({ id: e.id, title: e.title, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx,
+        var c = catOf(e.cat);
+        lanes[lane].push({ id: e.id, title: e.title, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, icon: c ? c.icon : '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
           editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
       });
@@ -120,17 +130,35 @@
     return packLane(lanes[0]).concat(packLane(lanes[1]));
   }
 
-  /** 주 보기: weekStart(월요일)부터 7일 */
-  function week(events, persons, me, weekStart, today) {
+  /** 주 보기 칸은 좁아서: 다른 사람 일정과 겹치지 않으면 칸 전체 폭을 쓴다 (full).
+      함께 일정이 아무와도 안 겹치면 두 조각을 하나로 합친다. */
+  function widen(blocks) {
+    blocks.forEach(function (b) {
+      b.full = b.cols === 1 && !blocks.some(function (x) { return x.lane !== b.lane && x.id !== b.id && x.s < b.e && b.s < x.e; });
+    });
+    return blocks.filter(function (b) { return !(b.full && b.dup); });
+  }
+
+  /** 주 보기: weekStart(월요일)부터 7일. opts.pick = 아래 목록에 보일 요일, opts.names = { 사람 키: 이름 } */
+  function week(events, persons, me, weekStart, today, opts) {
+    opts = opts || {};
     var days = [], all = [];
+    var pick = opts.pick >= weekStart && opts.pick <= weekStart + 6 ? opts.pick : (today >= weekStart && today <= weekStart + 6 ? today : weekStart);
     for (var i = 0; i < 7; i++) {
       var day = weekStart + i, list = on(events, day);
-      days.push({ day: day, wd: WD[i], date: D.parts(day).d, isToday: day === today });
-      all = all.concat(blocksFor(list, persons, me, i));
+      days.push({ day: day, wd: WD[i], date: D.parts(day).d, isToday: day === today, picked: day === pick });
+      all = all.concat(widen(blocksFor(list, persons, me, i)));
     }
-    var p0 = D.parts(weekStart), p6 = D.parts(weekStart + 6);
+    var p0 = D.parts(weekStart), p6 = D.parts(weekStart + 6), pp = D.parts(pick), names = opts.names || {};
+    // 고른 요일 목록: 두 사람 일정을 시간 순서로 (색 막대 = 사람, 함께는 강조)
+    var items = on(events, pick).sort(function (a, b) { return toMin(a.start) - toMin(b.start) || toMin(a.end) - toMin(b.end); }).map(function (e) {
+      var c = catOf(e.cat), k = persons.indexOf(e.owner);
+      return { id: e.id, title: e.title, icon: c ? c.icon : '', catName: c ? c.name : '', time: e.start + '–' + e.end, weekly: e.weekly,
+        slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
+    });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
-      range: p0.m + '월 ' + p0.d + '일 – ' + (p6.m !== p0.m ? p6.m + '월 ' : '') + p6.d + '일', isThisWeek: weekStart === monStart(today) };
+      range: p0.m + '월 ' + p0.d + '일 – ' + (p6.m !== p0.m ? p6.m + '월 ' : '') + p6.d + '일', isThisWeek: weekStart === monStart(today),
+      pick: { day: pick, title: WD[pick - weekStart] + '요일 · ' + pp.m + '월 ' + pp.d + '일', isToday: pick === today, items: items } };
   }
 
   /** 지금 상태 한 줄: '지금 화학 · 15:00까지' / '비어 있어요 · 다음 19:00 과외' / '오늘 남은 일정 없어요' */
@@ -183,7 +211,7 @@
     return '';
   }
 
-  var api = { WD: WD, TITLE_MAX: TITLE_MAX, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, sameTimes: sameTimes, monStart: monStart, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
