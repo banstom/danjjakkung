@@ -91,7 +91,9 @@
       },
       deleteEvent: function (id) { return db.doc('events/' + id).delete(); },
       // ── 알림 ──
-      // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, updatedAt }  — 내 모든 기기에 같이 적용
+      // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용
+      //   colors: { '<테마 id>': { self, partner } } — 테마마다 내 화면의 나 · 상대 색 (없으면 그 테마 기본색)
+      //   알림 설정과 색은 각자 자기 칸만 덮어쓴다 (mergeFields) — 한쪽을 저장해도 다른 쪽이 지워지지 않게
       // users/<uid>/devices/<기기>   : { token, platform, ua, updatedAt }                     — 기기마다 하나 (웹 · 나중에 iOS/안드로이드 앱)
       // users/<uid>/pings/<id>      : { at }                                                — 테스트 알림 요청 (서버가 보내고 지운다)
       watchUser: function (uid, next, fail) {
@@ -103,7 +105,11 @@
         return db.doc('users/' + uid).set({
           notify: { partner: !!notify.partner, remindAt: notify.remindAt || null, hide: !!notify.hide },
           tz: 'Asia/Seoul', updatedAt: new Date().toISOString()
-        });
+        }, { mergeFields: ['notify', 'tz', 'updatedAt'] });
+      },
+      /** 색 전체를 통째로 바꾼다 (테마 하나를 기본으로 되돌리면 그 칸이 빠진다). */
+      saveColors: function (uid, colors) {
+        return db.doc('users/' + uid).set({ colors: colors, updatedAt: new Date().toISOString() }, { mergeFields: ['colors', 'updatedAt'] });
       },
       saveDevice: function (uid, deviceId, d) {
         return db.doc('users/' + uid + '/devices/' + deviceId).set({ token: d.token, platform: d.platform || 'web', ua: String(d.ua || '').slice(0, 80), updatedAt: new Date().toISOString() });

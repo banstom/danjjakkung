@@ -1,7 +1,12 @@
 /* 테마 — 목록 · 고른 테마 저장 · 화면에 적용.
    색 값은 styles/tokens.css 의 [data-theme="<id>"] 블록에만 있다. 여기는 이름과 저장만.
    고른 테마는 이 기기에 저장한다 (localStorage). 로그인 · 기록 · 알림 설정과는 따로라 서로 영향이 없다.
-   <head>에서 CSS 바로 뒤에 불러서, 첫 화면부터 고른 색으로 그린다 (깜빡임 없이). */
+   <head>에서 CSS 바로 뒤에 불러서, 첫 화면부터 고른 색으로 그린다 (깜빡임 없이).
+
+   나 · 상대 색: 테마마다 따로 고른다 (테마를 바꾸면 그 테마에서 고른 색, 안 골랐으면 그 테마 기본색).
+   고른 색은 내 계정(users 문서의 colors)에 저장돼 내 모든 기기에서 같고, 내 화면에만 쓰인다.
+   화면에는 자리(slot) 색 --her(첫째 사람) · --me(둘째 사람)를 <html>에 덮어써서 칠한다. 글자색(--*-ink)은 자동.
+   첫 화면 깜빡임이 없게 마지막으로 쓴 색을 이 기기에도 적어 둔다 (COLOR_KEY). */
 (function (root) {
   'use strict';
   var THEMES = [
@@ -13,6 +18,25 @@
     { id: 'blue-hour', name: 'Blue Hour', ko: '블루 아워', desc: '해 진 직후의 고요한 하늘', dark: false }
   ];
   var KEY = 'danjjakkung.theme';
+  var COLOR_KEY = 'danjjakkung.colors';
+  // 테마마다 고를 수 있는 사람 색 8개. 앞의 둘은 그 테마 기본색(--her, --me 와 같다).
+  // ink: 색 위 글자 후보(어두운 쪽) — 흰색과 견줘 더 잘 보이는 쪽을 쓴다 (4.5:1 이상은 tests/themes.test.js 가 확인).
+  var PALETTES = {
+    'soft-pastel': { ink: '#2A2730', colors: ['#E59BBA', '#A9A2EE', '#F4A7A3', '#F5C58A', '#E8D27A', '#9FD3B5', '#8EC5E8', '#C7A4E0'] },
+    'cosmic-dream': { ink: '#101426', colors: ['#6CD8E8', '#A891F0', '#F08BC4', '#FFB86B', '#F5E27A', '#7EE0A8', '#7FA8FF', '#FF8A8A'] },
+    'ocean-breeze': { ink: '#0B2530', colors: ['#399DA8', '#7FC5C0', '#F2A48C', '#F4C977', '#9EC97F', '#6FA8DC', '#B49AD8', '#E88FA6'] },
+    'forest-diary': { ink: '#1A2119', colors: ['#82966A', '#AEBD92', '#C99A6B', '#D9B85C', '#8FAFB8', '#C48A8A', '#A89BC2', '#7FA08A'] },
+    'vintage-film': { ink: '#211E19', colors: ['#874F4D', '#C9AA66', '#6B7052', '#57707F', '#B97A5A', '#A88BA0', '#8FA38A', '#D49A7A'] },
+    'blue-hour': { ink: '#161C35', colors: ['#7F8CBF', '#A6AEE3', '#E8A3B4', '#F2BE8C', '#8FC1D4', '#B79CD9', '#9DC4A8', '#5D6AA3'] }
+  };
+  var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
+  [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
+   ['#6CD8E8','시안'],['#A891F0','보라'],['#F08BC4','분홍'],['#FFB86B','주황'],['#F5E27A','노랑'],['#7EE0A8','초록'],['#7FA8FF','파랑'],['#FF8A8A','다홍'],
+   ['#399DA8','청록'],['#7FC5C0','물빛'],['#F2A48C','코랄'],['#F4C977','모래'],['#9EC97F','해초'],['#6FA8DC','하늘'],['#B49AD8','라일락'],['#E88FA6','분홍'],
+   ['#82966A','이끼'],['#AEBD92','세이지'],['#C99A6B','나무'],['#D9B85C','겨자'],['#8FAFB8','시냇물'],['#C48A8A','산딸기'],['#A89BC2','제비꽃'],['#7FA08A','솔잎'],
+   ['#874F4D','버건디'],['#C9AA66','황토'],['#6B7052','올리브'],['#57707F','바랜 청색'],['#B97A5A','벽돌'],['#A88BA0','모브'],['#8FA38A','세이지'],['#D49A7A','살구'],
+   ['#7F8CBF','페리윙클'],['#A6AEE3','연보라'],['#E8A3B4','노을 분홍'],['#F2BE8C','노을 주황'],['#8FC1D4','하늘'],['#B79CD9','보라'],['#9DC4A8','민트'],['#5D6AA3','남색']
+  ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   var LIGHT_DEFAULT = 'soft-pastel';
   var DARK_DEFAULT = 'cosmic-dream';
 
@@ -46,10 +70,11 @@
     if (!doc) return;
     var t = byId(id) || byId(current());
     var html = doc.documentElement;
-    if (html.getAttribute('data-theme') === t.id) { syncMeta(doc); return; }
+    if (html.getAttribute('data-theme') === t.id) { paintPeople(doc, t.id); syncMeta(doc); return; }
     var smooth = opts && opts.smooth;
     if (smooth) html.classList.add('is-theming');
     html.setAttribute('data-theme', t.id);
+    paintPeople(doc, t.id);
     syncMeta(doc);
     if (smooth) setTimeout(function () { html.classList.remove('is-theming'); }, 320);
   }
@@ -68,7 +93,99 @@
     return true;
   }
 
-  var api = { THEMES: THEMES, KEY: KEY, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta };
+  // ── 나 · 상대 색 ──
+  function lum(h) {
+    var c = [1, 3, 5].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function contrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+  function palette(id) { var p = PALETTES[id]; return p ? p.colors.slice() : []; }
+  /** 테마 기본 자리 색: her = 첫째 사람, me = 둘째 사람 */
+  function slotDefaults(id) { var c = palette(id); return { her: c[0], me: c[1] }; }
+  /** 색 위 글자색: 어두운 글자와 흰 글자 중 더 잘 보이는 쪽 */
+  function inkFor(id, hex) {
+    var dark = (PALETTES[id] || PALETTES[LIGHT_DEFAULT]).ink;
+    return contrast(hex, dark) >= contrast(hex, '#FFFFFF') ? dark : '#FFFFFF';
+  }
+  function colorName(hex) { return COLOR_NAMES[hex] || hex; }
+
+  /** 저장된 colors를 믿을 수 있는 모양으로: 아는 테마 · 그 테마 후보 색만, 나 · 상대가 같은 색이면 버린다 */
+  function cleanColors(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(PALETTES).forEach(function (id) {
+      var p = raw[id];
+      if (!p || typeof p !== 'object') return;
+      var list = PALETTES[id].colors, pair = {};
+      ['self', 'partner'].forEach(function (k) {
+        var v = typeof p[k] === 'string' ? p[k].toUpperCase() : null;
+        if (v && list.indexOf(v) >= 0) pair[k] = v;
+      });
+      if (pair.self && pair.self === pair.partner) return;
+      if (pair.self || pair.partner) out[id] = pair;
+    });
+    return out;
+  }
+
+  /** 이 테마에서 내 화면의 나 · 상대 색 (안 고른 쪽은 그 사람 자리의 기본색) */
+  function pairFor(id, colors, selfSlot) {
+    var d = slotDefaults(id), mine = (cleanColors(colors)[id]) || {};
+    var partnerSlot = selfSlot === 'her' ? 'me' : 'her';
+    var self = mine.self || d[selfSlot], partner = mine.partner || d[partnerSlot];
+    // 한쪽만 고른 색이 다른 쪽 기본색과 같으면, 다른 쪽은 남은 기본색으로 비킨다
+    if (self === partner) { if (mine.self) partner = d[selfSlot]; else self = d[partnerSlot]; }
+    return { self: self, partner: partner };
+  }
+
+  /** 테마 하나의 색을 바꾼 새 colors (기본색과 같으면 그 칸을 비운다). self와 partner가 같아지면 상대를 내 이전 색으로 바꾼다. */
+  function withPick(colors, id, selfSlot, who, hex) {
+    var all = cleanColors(colors), list = palette(id);
+    hex = String(hex || '').toUpperCase();
+    if (!byId(id) || list.indexOf(hex) < 0 || (who !== 'self' && who !== 'partner')) return all;
+    var now = pairFor(id, all, selfSlot), next = { self: now.self, partner: now.partner };
+    var other = who === 'self' ? 'partner' : 'self';
+    if (next[other] === hex) next[other] = now[who]; // 서로 바꾸기
+    next[who] = hex;
+    var d = slotDefaults(id), partnerSlot = selfSlot === 'her' ? 'me' : 'her', pair = {};
+    if (next.self !== d[selfSlot]) pair.self = next.self;
+    if (next.partner !== d[partnerSlot]) pair.partner = next.partner;
+    if (pair.self || pair.partner) all[id] = pair; else delete all[id];
+    return all;
+  }
+  function withReset(colors, id) { var all = cleanColors(colors); delete all[id]; return all; }
+
+  // 지금 칠하는 기준 — 처음엔 이 기기에 적어 둔 값 (계정 값이 오면 setPeople로 바뀐다)
+  var people = (function () {
+    try {
+      var v = JSON.parse((root.localStorage && root.localStorage.getItem(COLOR_KEY)) || 'null');
+      if (v && (v.slot === 'her' || v.slot === 'me')) return { slot: v.slot, colors: cleanColors(v.colors) };
+    } catch (e) {}
+    return { slot: null, colors: {} };
+  })();
+  var VARS = ['--her', '--her-ink', '--me', '--me-ink'];
+  function paintPeople(doc, id) {
+    var style = doc.documentElement.style;
+    var mine = people.slot && people.colors[id];
+    if (!mine) { VARS.forEach(function (k) { style.removeProperty(k); }); return; }
+    var pair = pairFor(id, people.colors, people.slot), partnerSlot = people.slot === 'her' ? 'me' : 'her';
+    var slots = {}; slots[people.slot] = pair.self; slots[partnerSlot] = pair.partner;
+    ['her', 'me'].forEach(function (s) {
+      style.setProperty('--' + s, slots[s]);
+      style.setProperty('--' + s + '-ink', inkFor(id, slots[s]));
+    });
+  }
+  /** 계정의 색이 오거나 바뀌면: 저장하고 지금 테마로 다시 칠한다. selfSlot = 내 자리('her' | 'me'). */
+  function setPeople(selfSlot, colors) {
+    var next = { slot: selfSlot === 'her' || selfSlot === 'me' ? selfSlot : null, colors: cleanColors(colors) };
+    var same = JSON.stringify(next) === JSON.stringify(people);
+    people = next;
+    if (!same) { try { root.localStorage.setItem(COLOR_KEY, JSON.stringify(people)); } catch (e) {} }
+    if (root.document && root.document.documentElement) paintPeople(root.document, current());
+  }
+  function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
+
+  var api = { THEMES: THEMES, KEY: KEY, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
+    palette: palette, slotDefaults: slotDefaults, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

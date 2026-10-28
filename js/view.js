@@ -76,6 +76,29 @@
       '</section></div>';
   }
 
+  // 테마 시트 위쪽: 지금 테마에서 쓸 나 · 상대 색. 테마마다 따로, 내 계정에 저장(내 화면에만 쓰인다).
+  // 색 값은 js/themes.js 의 후보에서만 온다.
+  function personColors(c) {
+    if (!c) return '';
+    var other = { self: c.rows[1].label, partner: '나' };
+    return '<section class="tcolors" aria-labelledby="tcolors-title">' +
+      '<div class="tcolors__head"><h3 id="tcolors-title" class="tcolors__title">' + esc(c.themeName) + ' · 사람 색</h3>' +
+      (c.custom ? '<button type="button" class="link-btn" data-act="reset-colors">기본 색으로</button>' : '') + '</div>' +
+      '<p class="tcolors__sub">테마마다 따로 골라요 · 내 화면에만 보이고, 내 모든 기기에 같이 저장돼요</p>' +
+      c.rows.map(function (r) {
+        var cur = r.options.filter(function (o) { return o.on; })[0];
+        return '<div class="tcolors__row">' +
+          '<span class="tcolors__who" style="background:' + esc(r.value) + ';color:' + esc(cur ? cur.ink : '') + '">' + esc(r.label) + '</span>' +
+          '<div class="cpicks" role="group" aria-label="' + esc(r.label + ' 색') + '">' + r.options.map(function (o) {
+            var label = o.name + (o.on ? ', 고른 색' : o.taken ? ' — ' + other[r.who] + ' 색, 누르면 서로 바뀌어요' : '');
+            return '<button type="button" class="cpick' + (o.taken ? ' is-taken' : '') + '" data-act="pick-color" data-who="' + r.who + '" data-v="' + esc(o.hex) + '" data-key="' + r.who + o.hex + '"' +
+              ' style="background:' + esc(o.hex) + ';color:' + esc(o.ink) + '" aria-pressed="' + o.on + '" aria-label="' + esc(label) + '"' + (c.loading ? ' disabled' : '') + '>' +
+              (o.on ? CHECK_SVG : o.taken ? '<span class="cpick__tag" aria-hidden="true">' + esc(other[r.who].charAt(0)) + '</span>' : '') + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') +
+      '</section>';
+  }
+
   // 「테마」 시트 — 카드마다 그 테마 색으로 칠한 작은 화면. 누르면 바로 바뀐다.
   var MINI_CELLS = ['full', 'half', 'none', 'full', 'full', 'half', 'full', 'none', 'half', 'full'];
   function themeSheet(t, entering) {
@@ -86,7 +109,8 @@
       '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="theme-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="theme-title" class="sheet__title">테마</h2></div>' +
-      '<p class="sheet__sub">고르면 바로 바뀌어요 · 이 기기에 저장돼요</p>' +
+      '<p class="sheet__sub">고르면 바로 바뀌어요 · 테마는 이 기기에 저장돼요</p>' +
+      personColors(t.colors) +
       '<div class="tgrid" role="group" aria-label="테마 고르기">' + t.themes.map(function (th) {
         var on = th.id === t.current;
         return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-theme="' + esc(th.id) + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.name + ' (' + th.ko + ') — ' + th.desc + (on ? ', 사용 중' : '')) + '">' +

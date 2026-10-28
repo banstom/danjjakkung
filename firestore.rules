@@ -143,11 +143,29 @@ service cloud.firestore {
         && n.partner is bool && n.hide is bool
         && (n.remindAt == null || (n.remindAt is string && n.remindAt.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')));
     }
+    // colors: 테마마다 내 화면에서 쓸 나 · 상대 색 { '<테마 id>': { self: '#RRGGBB', partner: '#RRGGBB' } }
+    // 내 화면에만 쓰인다 (상대 화면과는 무관). 테마 목록은 js/themes.js 와 같아야 한다.
+    function validPair(p) {
+      return p is map && p.keys().hasOnly(['self', 'partner'])
+        && (!('self' in p) || (p.self is string && p.self.matches('^#[0-9A-F]{6}$')))
+        && (!('partner' in p) || (p.partner is string && p.partner.matches('^#[0-9A-F]{6}$')));
+    }
+    function validColors(c) {
+      return c is map && c.keys().hasOnly(['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour'])
+        && (!('soft-pastel' in c) || validPair(c['soft-pastel']))
+        && (!('cosmic-dream' in c) || validPair(c['cosmic-dream']))
+        && (!('ocean-breeze' in c) || validPair(c['ocean-breeze']))
+        && (!('forest-diary' in c) || validPair(c['forest-diary']))
+        && (!('vintage-film' in c) || validPair(c['vintage-film']))
+        && (!('blue-hour' in c) || validPair(c['blue-hour']));
+    }
     match /users/{uid} {
       allow read: if isMember() && request.auth.uid == uid;
+      // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'updatedAt'])
-        && validNotify(request.resource.data.notify);
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'updatedAt'])
+        && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
+        && (!('colors' in request.resource.data) || validColors(request.resource.data.colors));
       allow delete: if false;
 
       // 알림 받을 기기 (기기마다 하나 — 웹 · 나중에 iOS/안드로이드 앱)

@@ -9,13 +9,16 @@
   · Blaze + ₩40,000 선불, 예산 알림 있음, 서버 파일 정리 정책(1일), notifyLog TTL(expireAt)
 - 테마: 계절 자동 색 → 사용자가 고르는 6종(Soft Pastel · Cosmic Dream · Ocean Breeze · Forest Diary · Vintage Film · Blue Hour)
   · 🎨 버튼 → 미니 화면 카드 시트(시안 A), 고르면 바로 적용, 이 기기에 저장, 처음엔 휴대폰 다크 모드면 Cosmic Dream
+  · 나 · 상대 색 (10/28, v18): 테마 시트 위 「<테마> · 사람 색」에서 테마마다 8색 중 고름. 내 화면에만, 내 계정(users.colors)에 저장 → 내 모든 기기 같음.
+    테마를 바꾸면 그 테마에서 고른 색(안 골랐으면 그 테마 기본색). 상대 색을 고르면 서로 바뀜, 「기본 색으로」. 글자색은 자동(4.5:1)
+    저장 모양: colors: { '<테마 id>': { self, partner } } (기본색과 같은 칸은 저장 안 함). 규칙 validColors 의 테마 목록 = js/themes.js
 - 저장 규칙: members · routines · checks · users · todos · events (scripts/deploy.sh 로 Cloud Shell에서 배포)
 
 ## 다음에 해 볼 것 (아직 안 정함)
 - 함께 할 일이 추가 · 완료되면 짝꿍에게 알림
 - 「꿍 보내기」(응원 알림), 연속 기록 위기 알림, 둘 다 해낸 날 축하
 - 시간표: 학기 끝(매주 일정의 종료일), 일정 색 고르기
-- 테마: 내 모든 기기에 같이 저장(users 문서 + 규칙 배포), 테마 추가
+- 테마: 테마 자체도 내 모든 기기에 같이 저장, 테마 추가
 
 ## 배포 방법
 - 화면: main 에 올리면 GitHub Pages 가 1~2분 뒤 반영 (sw.js 의 VERSION 올리기)

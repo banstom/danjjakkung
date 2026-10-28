@@ -33,6 +33,7 @@
     sched: null,         // { mode: 'week' | 'day', weekStart, day }
     notifyOpen: false,   // 「알림」 시트
     themeOpen: false,    // 「테마」 시트
+    colors: null,        // 내 계정의 나 · 상대 색 (users 문서의 colors, 테마마다) — null = 아직 모름
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     prefsReady: false,
     push: { busy: false, error: '', info: '' },
@@ -122,6 +123,7 @@
     state.sheetEntering = false;
     state.auth.errorFresh = false; state.setup.errorFresh = false; state.verify.errorFresh = false;
     setThemeColor();
+    syncPeopleColors();
     if (state.manage && state.manage.form) state.manage.form.errorFresh = false;
     var newSheet = appEl.querySelector('.sheet');
     if (newSheet && scrollTop && !entering) newSheet.scrollTop = scrollTop;
@@ -146,7 +148,7 @@
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null,
@@ -210,6 +212,18 @@
 
   // 휴대폰 위쪽 띠 색을 화면 바탕과 맞춘다
   function setThemeColor() { if (RT.themes) RT.themes.syncMeta(document); }
+  /** 내 자리('her' | 'me') — 두 사람 순서는 루틴 탭과 같다 */
+  function mySlot() {
+    var ps = state.status === 'ready' ? planPeople() : [];
+    for (var i = 0; i < ps.length; i++) if (ps[i].mine) return ps[i].slot;
+    return null;
+  }
+  // 계정 색을 아직 모르면(불러오는 중) 이 기기에 적어 둔 색을 그대로 둔다
+  function syncPeopleColors() {
+    if (!RT.themes || state.colors === null) return;
+    var slot = mySlot();
+    if (slot) RT.themes.setPeople(slot, state.colors);
+  }
 
   // 로그인한 계정이 이름을 정했으면 그 사람으로 본다
   function resolveIdentity() {
@@ -353,6 +367,8 @@
     else if (act === 'open-theme') openTheme();
     else if (act === 'close-theme') closeTheme();
     else if (act === 'pick-theme') pickTheme(btn.getAttribute('data-v'));
+    else if (act === 'pick-color') pickColor(btn.getAttribute('data-who'), btn.getAttribute('data-v'));
+    else if (act === 'reset-colors') resetColors();
     else if (act === 'push-on') pushOn();
     else if (act === 'push-off') pushOff();
     else if (act === 'push-test') pushTest();
@@ -625,8 +641,47 @@
       prefs: currentPrefs(), prefsReady: state.prefsReady, times: REMIND_TIMES
     };
   }
-  // ── 테마 ── (고른 값은 이 기기에만 저장: js/themes.js)
-  function themeModel() { return { themes: RT.themes.THEMES, current: RT.themes.current() }; }
+  // ── 테마 ── (테마는 이 기기에, 나 · 상대 색은 내 계정에 테마마다 저장: js/themes.js)
+  function themeModel() {
+    var T = RT.themes, id = T.current(), slot = mySlot(), ps = planPeople();
+    var out = { themes: T.THEMES, current: id, colors: null };
+    if (!slot || !store) return out;
+    var colors = state.colors || {}, pair = T.pairFor(id, colors, slot);
+    var partner = ps.filter(function (p) { return !p.mine; })[0];
+    var me = ps.filter(function (p) { return p.mine; })[0];
+    function row(who, label) {
+      return { who: who, label: label, value: pair[who], options: T.palette(id).map(function (hex) {
+        return { hex: hex, name: T.colorName(hex), ink: T.inkFor(id, hex), on: hex === pair[who], taken: hex === pair[who === 'self' ? 'partner' : 'self'] };
+      }) };
+    }
+    out.colors = {
+      themeName: T.byId(id).name, loading: state.colors === null,
+      rows: [row('self', '나' + (me && me.name ? ' (' + me.name + ')' : '')), row('partner', partner ? partner.name : '상대')],
+      custom: !!T.cleanColors(colors)[id]
+    };
+    return out;
+  }
+  function saveColors(next) {
+    var before = state.colors;
+    state.colors = next; render(true);
+    store.saveColors(state.uid, next).catch(function () {
+      state.colors = before; render(true);
+      showToast('색을 저장하지 못했어요. 잠시 뒤 다시 해 주세요');
+    });
+  }
+  function pickColor(who, hex) {
+    var slot = mySlot();
+    if (!RT.themes || !store || !state.uid || !slot || state.colors === null) return;
+    var next = RT.themes.withPick(state.colors, RT.themes.current(), slot, who, hex);
+    if (JSON.stringify(next) === JSON.stringify(RT.themes.cleanColors(state.colors))) return;
+    saveColors(next);
+  }
+  function resetColors() {
+    if (!RT.themes || !store || !state.uid || state.colors === null) return;
+    var id = RT.themes.current();
+    if (!RT.themes.cleanColors(state.colors)[id]) return;
+    saveColors(RT.themes.withReset(state.colors, id));
+  }
   function openTheme() {
     if (!RT.themes) return;
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.todoForm = null; state.eventForm = null;
@@ -705,6 +760,7 @@
 
   function signOut() {
     if (!RT.firebase.signOut) return;
+    if (RT.themes) RT.themes.forget(); // 다른 사람이 이 기기로 로그인해도 내 색이 남지 않게
     // 로그아웃하면 이 기기로는 알림이 가지 않게 한다
     // (인터넷이 끊겨 있어도 로그아웃이 멈추지 않게 1.5초까지만 기다린다)
     var off = RT.push && RT.push.isOn() && store && state.uid ? RT.push.disable(store, state.uid).catch(function () {}) : Promise.resolve();
@@ -959,8 +1015,11 @@
       // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
       store.watchUser(state.uid, function (doc, fromCache) {
         state.prefs = doc && doc.notify ? doc.notify : null;
+        var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};
+        var colorsChanged = JSON.stringify(colors) !== JSON.stringify(state.colors);
+        state.colors = colors;
         if (!fromCache) { state.prefsReady = true; state.prefsError = false; }
-        if (state.notifyOpen) render();
+        if (state.notifyOpen || (colorsChanged && state.status === 'ready')) render();
       }, function () { state.prefsReady = false; state.prefsError = true; if (state.notifyOpen) render(); }),
       store.watchTodos(function (list) { state.todoDocs = list; state.todoErr = ''; if (state.status === 'ready') render(); },
         function () { state.todoErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
@@ -1006,7 +1065,7 @@
     checksDefinitive = false; caughtUpOnce = false;
     state.members = {}; state.routineDocs = []; state.server = {}; state.meta = {}; state.pending = {};
     state.me = null; state.sheetDay = null; state.manage = null;
-    state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false;
+    state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
   }
 

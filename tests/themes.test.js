@@ -84,3 +84,63 @@ test('요청서 색: 바탕 · 카드 · 본문 글자 · 테두리는 그대로
     assert.deepStrictEqual([v.bg, v.surface, v.text, v.line], spec[id], id);
   }
 });
+
+// ── 나 · 상대 색 (테마마다, 내 계정에 저장) ──
+test('사람 색 후보: 테마마다 8개, 앞 둘은 그 테마 --her · --me, 글자 4.5:1 이상', () => {
+  for (const id of IDS) {
+    const v = block(id), list = T.palette(id);
+    assert.strictEqual(list.length, 8, id);
+    assert.strictEqual(new Set(list).size, 8, id + ' 겹치는 색');
+    assert.strictEqual(list[0], v.her, id + ' 첫 후보 = --her');
+    assert.strictEqual(list[1], v.me, id + ' 둘째 후보 = --me');
+    for (const hex of list) {
+      assert.match(hex, /^#[0-9A-F]{6}$/);
+      const r = T.contrast(hex, T.inkFor(id, hex));
+      assert.ok(r >= 4.5, `${id} ${hex} 글자 대비 ${r.toFixed(2)}`);
+      assert.ok(T.colorName(hex) !== hex, hex + ' 이름 없음');
+    }
+  }
+});
+
+test('저장된 색 다듬기: 모르는 테마 · 후보 밖 색 · 같은 색 쌍은 버린다', () => {
+  const out = T.cleanColors({
+    'ocean-breeze': { self: '#f2a48c', partner: '#123456' },
+    'nope': { self: '#F2A48C' },
+    'blue-hour': { self: '#E8A3B4', partner: '#E8A3B4' },
+    'forest-diary': 'x'
+  });
+  assert.deepStrictEqual(out, { 'ocean-breeze': { self: '#F2A48C' } });
+  assert.deepStrictEqual(T.cleanColors(null), {});
+});
+
+test('색 고르기: 테마마다 따로, 기본색이면 칸을 비우고, 상대 색을 고르면 서로 바뀐다', () => {
+  // 준민 = 둘째 자리(me). 기본: 나 #7FC5C0, 상대 #399DA8
+  let c = T.withPick({}, 'ocean-breeze', 'me', 'self', '#F2A48C');
+  assert.deepStrictEqual(c, { 'ocean-breeze': { self: '#F2A48C' } });
+  assert.deepStrictEqual(T.pairFor('ocean-breeze', c, 'me'), { self: '#F2A48C', partner: '#399DA8' });
+  // 다른 테마는 그대로 기본색
+  assert.deepStrictEqual(T.pairFor('blue-hour', c, 'me'), { self: '#A6AEE3', partner: '#7F8CBF' });
+  // 상대 색을 내 색으로 → 서로 바뀜
+  c = T.withPick(c, 'ocean-breeze', 'me', 'self', '#399DA8');
+  assert.deepStrictEqual(T.pairFor('ocean-breeze', c, 'me'), { self: '#399DA8', partner: '#F2A48C' });
+  // 기본으로 되돌리기
+  assert.deepStrictEqual(T.withReset(c, 'ocean-breeze'), {});
+  // 첫째 자리(다진)에서 보면 기본이 반대
+  assert.deepStrictEqual(T.pairFor('ocean-breeze', {}, 'her'), { self: '#399DA8', partner: '#7FC5C0' });
+  // 후보 밖 색 · 모르는 테마는 무시
+  assert.deepStrictEqual(T.withPick({}, 'ocean-breeze', 'me', 'self', '#000000'), {});
+  assert.deepStrictEqual(T.withPick({}, 'nope', 'me', 'self', '#F2A48C'), {});
+});
+
+test('한쪽만 고른 색이 다른 쪽 기본색과 같으면 그쪽이 비켜 준다', () => {
+  // 나(me)가 상대 기본색(#399DA8)을 골라 두었다면 상대는 내 기본색으로
+  assert.deepStrictEqual(T.pairFor('ocean-breeze', { 'ocean-breeze': { self: '#399DA8' } }, 'me'), { self: '#399DA8', partner: '#7FC5C0' });
+});
+
+test('저장 규칙의 테마 목록 = js/themes.js 목록', () => {
+  const rules = fs.readFileSync(path.join(__dirname, '../firestore.rules'), 'utf8');
+  const m = /c\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/.exec(rules);
+  assert.ok(m, 'validColors 가 있어야 해요');
+  assert.deepStrictEqual(m[1].split(',').map((x) => x.trim().replace(/'/g, '')), IDS);
+  for (const id of IDS) assert.ok(rules.includes(`validPair(c['${id}'])`), id + ' 검사 없음');
+});

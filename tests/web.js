@@ -66,7 +66,10 @@ const FAKE_FIREBASE = `
     clearPersistence: function () { return Promise.resolve(); },
     doc: function (p) {
       return {
-        set: function (v) { if (!allowed()) return Promise.reject(denied()); return window.__set(p, JSON.stringify(v), user.uid); },
+        set: function (v, o) { if (!allowed()) return Promise.reject(denied());
+          // mergeFields: 적힌 칸만 통째로 바꾸고 나머지 칸은 그대로 (Firestore와 같게)
+          if (o && o.mergeFields) { var base = Object.assign({}, local.get(p) || {}); o.mergeFields.forEach(function (k) { if (k in v) base[k] = v[k]; else delete base[k]; }); v = base; }
+          return window.__set(p, JSON.stringify(v), user.uid); },
         delete: function () { if (!allowed()) return Promise.reject(denied()); return window.__set(p, null, user.uid); },
         onSnapshot: function (x, y, z) { var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z; if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
           var f = function () { next(snapDoc(p)); }; docL.add(f); window.__hello(); return function () { docL.delete(f); }; }
@@ -519,6 +522,60 @@ async function tick(page, dateKey, key) {
   await jm.evaluate(() => localStorage.setItem('danjjakkung.theme', 'no-such-theme'));
   await jm.reload(); await jm.waitForSelector('.title');
   console.log('모르는 테마 값이면 기본:', await themeOf(jm));
+  // 4-5) 나 · 상대 색: 테마마다 따로, 내 계정에 저장(다른 기기도 같게), 상대 화면은 그대로
+  const vars = (p) => p.evaluate(() => { const s = getComputedStyle(document.documentElement); return ['--her', '--her-ink', '--me', '--me-ink'].map((k) => s.getPropertyValue(k).trim()).join(' '); });
+  const notifyBefore = JSON.stringify((docs.get('users/' + jmUid) || {}).notify);
+  await jm.click('[data-act="open-theme"]');
+  await jm.waitForSelector('.tcolors');
+  console.log('사람 색 줄:', await jm.$$eval('.tcolors__who', (a) => a.map((x) => x.textContent)), '| 후보:', (await jm.$$('.cpick')).length, '| 기본 값:', await vars(jm));
+  await jm.click('.cpick[data-who="self"][data-v="#9FD3B5"]');
+  await jm.waitForTimeout(100);
+  await jm.click('.cpick[data-who="partner"][data-v="#F5C58A"]');
+  await jm.waitForTimeout(150);
+  await jm.screenshot({ path: path.join(OUT, 'theme-colors-soft-pastel.png') });
+  console.log('고른 뒤 준민:', await vars(jm), '| 저장:', JSON.stringify(docs.get('users/' + jmUid).colors), '| 알림 설정 그대로:', JSON.stringify(docs.get('users/' + jmUid).notify) === notifyBefore);
+  console.log('다진 화면은 그대로:', await vars(dj));
+  // 상대 색을 내 색으로 → 서로 바뀜
+  await jm.click('.cpick[data-who="self"][data-v="#F5C58A"]');
+  await jm.waitForTimeout(150);
+  console.log('서로 바꾸기:', JSON.stringify(docs.get('users/' + jmUid).colors['soft-pastel']), '| 표시(나=a, 상대=b):', await jm.$$eval('.cpick[aria-pressed="true"]', (a) => a.map((x) => x.dataset.who + x.dataset.v).join(' ')));
+  // 다른 테마로 가면 그 테마 기본색, 거기서 고른 색은 따로
+  await jm.click('.tpick[data-v="ocean-breeze"]');
+  await jm.waitForTimeout(350);
+  console.log('Ocean으로:', await vars(jm), '| 기본으로 버튼 없음:', !(await jm.$('[data-act="reset-colors"]')));
+  await jm.click('.cpick[data-who="self"][data-v="#B49AD8"]');
+  await jm.waitForTimeout(150);
+  await jm.screenshot({ path: path.join(OUT, 'theme-colors-ocean-breeze.png') });
+  await jm.click('.tpick[data-v="soft-pastel"]');
+  await jm.waitForTimeout(350);
+  console.log('Soft로 돌아오면 고른 색 그대로:', await vars(jm));
+  // 내 다른 기기: 같은 계정이면 같은 색 (테마는 기기마다)
+  const jm2 = await open(browser, '준민 노트북', { user: { uid: jmUid, email: 'junmin@example.com', emailVerified: true } });
+  await jm2.waitForSelector('[data-act="open-theme"]');
+  await jm2.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'ocean-breeze'); RT.themes.apply('ocean-breeze'); });
+  console.log('다른 기기(Ocean):', await vars(jm2));
+  // 다른 기기에서 바꾸면 이 기기도 바로 바뀐다
+  await jm2.click('[data-act="open-theme"]');
+  await jm2.click('.tpick[data-v="soft-pastel"]');
+  await jm2.waitForTimeout(350);
+  await jm2.click('[data-act="reset-colors"]');
+  await jm2.waitForTimeout(150);
+  console.log('기본으로(다른 기기) → 이 기기:', await vars(jm), '| 저장:', JSON.stringify(docs.get('users/' + jmUid).colors));
+  // 새로 열 때 깜빡임 없이: 그리기 전부터 지난번 색
+  await jm.click('.tpick[data-v="ocean-breeze"]');
+  await jm.waitForTimeout(350);
+  await jm.keyboard.press('Escape');
+  await jm.reload();
+  console.log('새로 열자마자:', await vars(jm));
+  await jm2.close();
+  // 다진도 자기 화면에서 따로 고른다 (준민 화면에는 영향 없음)
+  await dj.click('[data-act="open-theme"]');
+  await dj.waitForSelector('.tcolors');
+  console.log('다진 사람 색 줄:', await dj.$$eval('.tcolors__who', (a) => a.map((x) => x.textContent)));
+  await dj.click('.cpick[data-who="self"][data-v="#8EC5E8"]');
+  await dj.waitForTimeout(150);
+  console.log('다진 고른 뒤:', await vars(dj), '| 준민 그대로:', await vars(jm));
+  await dj.keyboard.press('Escape');
   // 저장이 막힌 브라우저: 고른 테마가 표시 · 머리말 · 다크 모드 변화에 흔들리지 않는다
   const bl = await open(browser, '저장 막힘', { user: { uid: accounts.get('dajin@example.com').uid, email: 'dajin@example.com', emailVerified: true } });
   await bl.waitForSelector('[data-act="open-theme"]');
