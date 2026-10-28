@@ -30,6 +30,8 @@
     todoUi: { expanded: {}, showDone: {} },  // 묶음마다 「더 보기」 · 「완료 보기」
     todoForm: null,      // 할 일 추가 · 고치기 시트
     eventForm: null,     // 일정 추가 · 고치기 · 보기 시트
+    catDocs: [],         // cats 컬렉션 (둘이 같이 쓰는 시간표 카테고리 — js/cats.js)
+    catSheet: null,      // 「카테고리」 시트 { back: 돌아갈 일정 폼, edit: { id, name, icon, error, saving, confirmDelete } | null, error }
     sched: null,         // { mode: 'week' | 'day', weekStart, day }
     notifyOpen: false,   // 「알림」 시트
     themeOpen: false,    // 「테마」 시트
@@ -70,7 +72,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
+  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   var LS_TAB = 'danjjakkung.tab';
   (function () {
@@ -103,7 +105,7 @@
     }
     var focus = focusOf(document.activeElement);
     if (state.manage && !m.manage) state.manage = null;
-    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; }
+    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; }
     if (state.todoForm && state.todoForm.id && !findTodo(state.todoForm.id) && !state.todoForm.saving) { state.todoForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 할 일이에요'); }, 0); }
     if (state.eventForm && state.eventForm.id && !findEvent(state.eventForm.id) && !state.eventForm.saving) { state.eventForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 일정이에요'); }, 0); }
     var other = state.tab !== 'routine';
@@ -120,6 +122,7 @@
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
     if (state.eventForm) state.eventForm.errorFresh = false;
+    if (state.catSheet && state.catSheet.edit) state.catSheet.edit.errorFresh = false;
     state.sheetEntering = false;
     state.auth.errorFresh = false; state.setup.errorFresh = false; state.verify.errorFresh = false;
     setThemeColor();
@@ -129,10 +132,10 @@
     if (newSheet && scrollTop && !entering) newSheet.scrollTop = scrollTop;
     document.body.classList.toggle('has-sheet', sheetOpen);
     restoreFocus(focus, sheetOpen);
-    if (focusAfter && !sheetOpen) {
+    if (focusAfter && (!sheetOpen || focusInSheet)) {
       // 시트가 닫히거나 줄이 접혀 사라졌을 때 포커스를 근처 버튼으로 옮긴다
       for (var fi = 0; fi < focusAfter.length; fi++) { var fe = appEl.querySelector(focusAfter[fi]); if (fe) { fe.focus({ preventScroll: true }); break; } }
-      focusAfter = null;
+      focusAfter = null; focusInSheet = false;
     }
     // 체크한 할 일이 「완료」로 접혀 사라지면 그 묶음의 버튼으로 포커스를 옮긴다
     if (focus && focus.act === 'todo-toggle' && !find(focus) && toggleScope[focus.value]) {
@@ -143,6 +146,7 @@
   }
   var toggleScope = Object.create(null); // 할 일 id → 묶음
   var focusAfter = null; // 다음 그리기 뒤 포커스할 곳 (앞에서부터 있는 것)
+  var focusInSheet = false; // 시트가 열린 채여도 focusAfter 를 쓴다 (카테고리 시트 ↔ 일정 폼)
 
   // 다시 그려도 누르던 버튼에 포커스가 남도록
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
@@ -152,7 +156,8 @@
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
-    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v' };
+    'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v',
+    'cat-open': null, 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -364,6 +369,14 @@
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
     else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode' || act === 'ev-cat') setEventField(act, btn.getAttribute('data-v'));
+    else if (act === 'cat-open') openCats();
+    else if (act === 'cat-close') closeCats();
+    else if (act === 'cat-new') editCat(null);
+    else if (act === 'cat-edit') editCat(btn.getAttribute('data-id'));
+    else if (act === 'cat-icon') { var ce = state.catSheet && state.catSheet.edit; if (ce && !ce.saving) { ce.icon = btn.getAttribute('data-icon'); ce.error = ''; render(true); } }
+    else if (act === 'cat-cancel') { if (state.catSheet) { var cid = state.catSheet.edit && state.catSheet.edit.id; state.catSheet.edit = null; focusAfter = [cid ? '[data-act="cat-edit"][data-id="' + cid + '"]' : '[data-act="cat-new"]']; focusInSheet = true; render(true); } }
+    else if (act === 'cat-save') saveCat();
+    else if (act === 'cat-delete') deleteCat();
     else if (act === 'open-notify') openNotify();
     else if (act === 'close-notify') closeNotify();
     else if (act === 'open-theme') openTheme();
@@ -382,7 +395,7 @@
   function setTab(t) {
     if (['routine', 'schedule', 'todo'].indexOf(t) < 0 || t === state.tab) return;
     state.tab = t; lsSet(LS_TAB, t);
-    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null;
+    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -400,7 +413,8 @@
   }
   function nameOf(uid) { var nm = names(); return nm[uid] || (state.members[uid] && state.members[uid].name) || '짝꿍'; }
   function todoList() { return RT.todos.fromDocs(state.todoDocs); }
-  function eventList() { return RT.schedule.fromDocs(state.eventDocs); }
+  function catList() { return RT.cats.fromDocs(state.catDocs); }
+  function eventList() { return RT.schedule.fromDocs(state.eventDocs, catList()); }
 
   function todoModel() {
     var TD = RT.todos, today = state.today, people = planPeople(), list = todoList();
@@ -441,17 +455,18 @@
     if (state.tab === 'todo' && other) out.tab = V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.todoForm) out.sheet = V.todoSheet(state.todoForm, state.sheetEntering);
-    else if (state.eventForm) out.sheet = V.eventSheet(Object.assign({}, state.eventForm, { skipInfo: skipInfo(state.eventForm) }), state.sheetEntering);
+    else if (state.eventForm) out.sheet = V.eventSheet(Object.assign({}, state.eventForm, { skipInfo: skipInfo(state.eventForm), cats: catList() }), state.sheetEntering);
+    else if (state.catSheet) out.sheet = V.catSheet(catModel(), state.sheetEntering);
     return out;
   }
   function openPlanSheet(kind, form) {
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false;
-    state.todoForm = kind === 'todo' ? form : null; state.eventForm = kind === 'event' ? form : null;
+    state.todoForm = kind === 'todo' ? form : null; state.eventForm = kind === 'event' ? form : null; state.catSheet = null;
     state.sheetEntering = true; render(true);
   }
   var planReturn = null; // 시트를 닫으면 포커스를 돌려줄 버튼
   function closePlanSheet(fallback) {
-    state.todoForm = null; state.eventForm = null;
+    state.todoForm = null; state.eventForm = null; state.catSheet = null;
     focusAfter = [planReturn, fallback].filter(Boolean); planReturn = null;
     render(true);
   }
@@ -544,7 +559,7 @@
     var S = RT.schedule;
     if (canEditEvent(e)) {
       openPlanSheet('event', { mode: 'edit', id: id, title: e.title, short: e.short || '', owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
-        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.cat || null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '', occDay: occDay });
+        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.catIcon ? e.cat : null, date: e.date || D.toKey(state.today), start: e.start, end: e.end, error: '', occDay: occDay });
       return;
     }
     var people = planPeople(), slot = 'me';
@@ -618,7 +633,7 @@
     var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), short: RT.schedule.shortOf(f.title, f.short), weekly: !!f.weekly,
       weekdays: days, date: f.weekly ? null : f.date, start: first.start, end: first.end,
-      times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me,
+      times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat, catList()) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me,
       // 쉬는 날은 폼이 아니라 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
       skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [], extra: old ? old.extra : null };
     f.saving = true; f.error = ''; render(true);
@@ -681,6 +696,97 @@
     settle(store.deleteEvent(f.id), f, function () { return state.eventForm === f; }, '일정을 지웠어요', '[data-act="event-add"]');
   }
 
+  // ── 「카테고리」 시트 ── 둘이 같이 쓰는 목록 (js/cats.js). 일정 폼에서 열고, 닫으면 그 폼으로 돌아간다.
+  function catModel() {
+    var C = RT.cats, cs = state.catSheet, list = catList(), docs = state.eventDocs;
+    var e = cs.edit;
+    if (e && e.id && !C.find(list, e.id) && !e.saving) { cs.edit = e = null; setTimeout(function () { showToast('다른 기기에서 지워진 카테고리예요'); }, 0); }
+    return {
+      list: list.map(function (c) { return { id: c.id, name: c.name, icon: c.icon, uses: C.usage(docs, c.id) }; }),
+      edit: e ? Object.assign({}, e, { max: C.NAME_MAX, uses: e.id ? C.usage(docs, e.id) : 0 }) : null,
+      icons: C.ICONS, full: list.length >= C.MAX, max: C.MAX, hasBack: !!cs.back,
+      error: state.catErr ? '카테고리를 불러오지 못했어요. 저장 규칙을 배포해야 할 수 있어요' : ''
+    };
+  }
+  function openCats() {
+    var f = state.eventForm;
+    if (!f || f.mode === 'view' || f.saving || !state.me) return;
+    // 아직 상태에 안 담긴 요일별 시간 칸을 읽어 둔다 (돌아왔을 때 그대로)
+    for (var w = 0; w < 7; w++) {
+      var s = document.getElementById('ev-ts-' + w), t = document.getElementById('ev-te-' + w);
+      if (s && t) f.times[w] = { start: s.value, end: t.value };
+    }
+    state.eventForm = null;
+    state.catSheet = { back: f, edit: null };
+    state.sheetEntering = false; render(true);
+  }
+  function closeCats() {
+    var cs = state.catSheet;
+    if (!cs) return;
+    state.catSheet = null;
+    if (cs.back) { state.eventForm = cs.back; focusAfter = ['.sheet [data-act="cat-open"]']; focusInSheet = true; }
+    render(true);
+  }
+  function editCat(id) {
+    var cs = state.catSheet;
+    if (!cs || (cs.edit && cs.edit.saving)) return;
+    var c = id ? RT.cats.find(catList(), id) : null;
+    if (id && !c) return;
+    cs.edit = c ? { id: c.id, name: c.name, icon: c.icon, isDefault: RT.cats.isDefault(c.id), error: '' } : { id: null, name: '', icon: '', error: '' };
+    render(true);
+    var inp = document.getElementById('cat-name');
+    if (inp && !c) inp.focus({ preventScroll: true });
+  }
+  /** 저장 · 지우기는 화면에 먼저 반영되고(오프라인이어도), 서버 확인이 오래 걸리면 폼만 먼저 닫는다 */
+  function catJob(job, f, okMsg, after, focusSel) {
+    var done = false;
+    function finish(msg) {
+      if (done) return; done = true;
+      if (state.catSheet && state.catSheet.edit === f) state.catSheet.edit = null;
+      if (after) after();
+      if (focusSel) { focusAfter = focusSel; focusInSheet = true; }
+      showToast(msg); render(true);
+    }
+    var timer = setTimeout(function () { finish('연결되면 저장돼요'); }, 2500);
+    job.then(function () { clearTimeout(timer); finish(okMsg); }, function () {
+      clearTimeout(timer);
+      if (done) { showToast('카테고리를 저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); return; }
+      done = true;
+      if (state.catSheet && state.catSheet.edit === f) planFail(f, '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.');
+      else showToast('카테고리를 저장하지 못했어요. 잠시 뒤 다시 해 주세요.');
+    });
+  }
+  function saveCat() {
+    var cs = state.catSheet, f = cs && cs.edit, C = RT.cats;
+    if (!store || !f || f.saving || !state.me) return;
+    var input = document.getElementById('cat-name');
+    if (input) f.name = input.value;
+    var list = catList(), err = C.validate(f, list);
+    if (err) return planFail(f, err);
+    var old = f.id ? C.find(list, f.id) : null;
+    if (f.id && !old) { cs.edit = null; render(true); showToast('다른 기기에서 지워진 카테고리예요'); return; }
+    var c = { id: f.id || C.newId(), name: String(f.name).trim(), icon: f.icon, order: old ? old.order : C.nextOrder(list) };
+    f.saving = true; f.error = ''; render(true);
+    catJob(store.saveCat(c, state.me), f, old ? '카테고리를 고쳤어요' : c.icon + ' ' + c.name + ' 카테고리를 만들었어요', function () {
+      // 일정 폼에서 새로 만들었으면 그 일정에 바로 골라 둔다
+      if (!old && state.catSheet && state.catSheet.back) state.catSheet.back.cat = c.id;
+    }, ['[data-act="cat-edit"][data-id="' + c.id + '"]', '[data-act="cat-new"]']);
+  }
+  var lastCatDelete = 0;
+  function deleteCat() {
+    var cs = state.catSheet, f = cs && cs.edit;
+    if (!store || !f || !f.id || f.saving || !state.me) return;
+    var now = Date.now();
+    if (!f.confirmDelete) { f.confirmDelete = true; lastCatDelete = now; render(true); return; }
+    if (now - lastCatDelete < 400) return;
+    var c = RT.cats.find(catList(), f.id);
+    if (!c) { cs.edit = null; render(true); return; }
+    f.saving = true; render(true);
+    catJob(store.deleteCat(c.id, RT.cats.isDefault(c.id), state.me), f, c.name + ' 카테고리를 지웠어요', function () {
+      if (state.catSheet && state.catSheet.back && state.catSheet.back.cat === c.id) state.catSheet.back.cat = null;
+    }, ['[data-act="cat-new"]', '.sheet .close-btn[data-act="cat-close"]']);
+  }
+
   // ── 「알림」 시트 ───────────────────────────────────────
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
@@ -738,7 +844,7 @@
   }
   function openTheme() {
     if (!RT.themes) return;
-    state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.todoForm = null; state.eventForm = null;
+    state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     state.themeOpen = true; state.sheetEntering = true; render(true);
   }
   function closeTheme() {
@@ -752,7 +858,7 @@
     RT.themes.apply(id, { smooth: true });    // 그려진 화면 위에서 색을 바꿔야 스르륵 바뀐다
   }
   function openNotify() {
-    state.sheetDay = null; state.manage = null; state.themeOpen = false;
+    state.sheetDay = null; state.manage = null; state.themeOpen = false; state.catSheet = null;
     state.push = { busy: false, error: '', info: '' };
     state.notifyOpen = true; state.sheetEntering = true; render(true);
   }
@@ -917,6 +1023,7 @@
     if (id === 'au-pass') { state.auth.password = ev.target.value; return; }
     if (id === 'me-name') { state.setup.name = ev.target.value; return; }
     if (state.todoForm && (id === 'td-title' || id === 'td-date')) { state.todoForm[id === 'td-title' ? 'title' : 'date'] = ev.target.value; clearPlanError(state.todoForm, 'td-error'); return; }
+    if (id === 'cat-name' && state.catSheet && state.catSheet.edit) { var cf = state.catSheet.edit; cf.name = ev.target.value; clearPlanError(cf, 'cat-error'); var pv = appEl.querySelector('.cpreview__name'); if (pv) pv.textContent = cf.name.trim() || '이름'; return; }
     if (state.eventForm && /^ev-(title|short|date|start|end)$/.test(id)) { state.eventForm[id.slice(3)] = ev.target.value; clearPlanError(state.eventForm, 'ev-error'); return; }
     var f = state.manage && state.manage.form;
     if (!f) return;
@@ -935,8 +1042,9 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm) || !appEl.querySelector('.sheet')) return;
-    if (ev.key === 'Escape') { ev.preventDefault(); if (state.todoForm || state.eventForm) closePlanSheet(); else if (state.notifyOpen) closeNotify(); else if (state.themeOpen) closeTheme(); else if (state.manage) closeManage(); else closeSheet(); return; }
+    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm && !state.catSheet) || !appEl.querySelector('.sheet')) return;
+    if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
+    if (ev.key === 'Escape') { ev.preventDefault(); if (state.catSheet) { if (state.catSheet.edit) { state.catSheet.edit = null; render(true); } else closeCats(); } else if (state.todoForm || state.eventForm) closePlanSheet(); else if (state.notifyOpen) closeNotify(); else if (state.themeOpen) closeTheme(); else if (state.manage) closeManage(); else closeSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
     if (ev.key === 'Tab') {
       // 시트가 열려 있으면 포커스를 시트 안에서만 돈다
@@ -1079,6 +1187,9 @@
         function () { state.todoErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
       store.watchEvents(function (list) { state.eventDocs = list; state.eventErr = ''; if (state.status === 'ready') render(); },
         function () { state.eventErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
+      // 카테고리 — 아직 규칙이 없거나 막혀도 기본 6개로 보이게 둔다 (lost로 보내지 않음)
+      store.watchCats(function (list) { state.catDocs = list; state.catErr = false; if (state.status === 'ready') render(); },
+        function () { state.catErr = true; if (state.catSheet) render(); }),
       store.watchChecks(function (map, meta, changes, first, fromCache) {
         state.server = map; state.meta = meta; gotChecks = true;
         if (!fromCache) { checksDefinitive = true; retries = 0; }
@@ -1121,6 +1232,7 @@
     state.me = null; state.sheetDay = null; state.manage = null;
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
+    state.catDocs = []; state.catErr = false; state.catSheet = null;
   }
 
   function startSession() {

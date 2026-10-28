@@ -4,6 +4,7 @@ rules_version = '2';
 // - 아래 두 이메일로 로그인하고, 메일 인증까지 마친 사람만 읽고 쓸 수 있다
 // - 이메일은 꼭 소문자로 적는다
 // - 각자 자기 이름(members), 자기 루틴(routines), 자기 루틴의 체크(checks)만 바꿀 수 있다
+// - 시간표 카테고리(cats)는 둘이 같이 쓰고 같이 고친다
 // Firebase 콘솔 › Firestore Database › 규칙 탭에 그대로 붙여 넣고 [게시]
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -114,7 +115,8 @@ service cloud.firestore {
         // 쉬는 날: 매주 일정만, 날짜 1~60개 (날짜 모양은 앱이 거른다)
         && (!('skip' in d) || (d.weekly == true && d.skip is list && d.skip.size() >= 1 && d.skip.size() <= 60 && isDate(d.skip[0]) && isDate(d.skip[d.skip.size() - 1])))
         && (!('short' in d) || (d.short is string && d.short.size() > 0 && d.short.size() <= 10))
-        && (!('cat' in d) || d.cat in ['class', 'exercise', 'study', 'work', 'meet', 'etc'])
+        // 카테고리: id 만 (기본 6개 또는 cats 에 새로 만든 것 — 지운 카테고리 id 가 남아 있어도 된다)
+        && (!('cat' in d) || (d.cat is string && d.cat.matches('^[a-z0-9]{1,24}$')))
         && (!('times' in d) || (('weekdays' in d) && validTimes(d.times) && d.times.size() == d.weekdays.size()))
         && d.owner is string && d.title is string && d.title.size() > 0 && d.title.size() <= 20
         && ((d.weekly == true && d.date == null && !('weekdays' in d) && d.weekday is int && d.weekday >= 0 && d.weekday <= 6)
@@ -136,6 +138,23 @@ service cloud.firestore {
         && (request.resource.data.owner == resource.data.owner || resource.data.owner == request.auth.uid)
         && request.resource.data.createdBy == resource.data.createdBy;
       allow delete: if isMember() && (resource == null || mineOrBoth(resource.data.owner));
+    }
+
+    // ── 시간표 카테고리 ──  둘이 같이 쓰는 목록. 둘 다 만들고 · 고치고 · 지운다. (js/cats.js)
+    // 이름 · 아이콘이 있는 문서, 또는 기본 카테고리를 지운 표시 { deleted: true }
+    function validCat(d) {
+      return d.keys().hasOnly(['name', 'icon', 'order', 'deleted', 'updatedBy', 'updatedAt'])
+        && d.updatedBy == request.auth.uid && d.updatedAt is string && d.updatedAt.size() <= 40
+        && ((('deleted' in d) && d.deleted == true && !('name' in d) && !('icon' in d) && !('order' in d))
+            || (!('deleted' in d)
+                && d.name is string && d.name.size() > 0 && d.name.size() <= 8
+                && d.icon is string && d.icon.size() > 0 && d.icon.size() <= 8
+                && d.order is int && d.order >= 0 && d.order <= 999));
+    }
+    match /cats/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && id.matches('^[a-z0-9]{1,24}$') && validCat(request.resource.data);
+      allow delete: if isMember();
     }
 
     // ── 알림 ──

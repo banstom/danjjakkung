@@ -183,7 +183,8 @@ test('주 보기: 안 겹치면 넓게 · 고른 요일 목록 · 카테고리',
     ev('lunch', 'both', { weekday: 1, start: '12:30', end: '13:30', cat: 'meet' }),
     ev('x', 'jm', { weekday: 1, start: '19:00', end: '20:00', cat: 'nope' })
   ]);
-  assert.strictEqual(list.find((e) => e.id === 'x').cat, null); // 모르는 카테고리는 없음으로
+  // 모르는(지운) 카테고리: id 는 남지만 아이콘 · 이름은 없음
+  assert.deepStrictEqual(['cat', 'catIcon', 'catName'].map((k) => list.find((e) => e.id === 'x')[k]), ['nope', '', '']);
   const w = S.week(list, P, 'jm', S.monStart(today), today, { pick: today - 1, names: { dj: '다진', jm: '준민' } });
   const by = (id) => w.blocks.filter((b) => b.id === id);
   assert.strictEqual(by('gym')[0].full, true);

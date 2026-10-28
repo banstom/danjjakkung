@@ -14,13 +14,16 @@
    글자 대비 4.5:1 — 요청서의 Text Secondary 중 바탕 위에서 4.5:1이 안 되는 값은 같은 색조로 조금 진하게 맞췄다. */
 
 @font-face { font-family: 'Pretendard'; src: url('../fonts/PretendardVariable.woff2') format('woff2'); font-weight: 45 920; font-display: swap; }
-/* 토스페이스(© Viva Republica) — 모양을 바꾸지 않고 쓴다. 쓰는 이모지만 잘라 둔 파일. 루틴 아이콘은 js/icons.js 목록과 같다. */
-@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-00.woff2') format('woff2'); unicode-range: U+1F9B5, U+1F4AA, U+1F634, U+1F64F, U+1F44F; }
+/* 토스페이스(© Viva Republica) — 모양을 바꾸지 않고 쓴다. 쓰는 이모지만 잘라 둔 파일 (루틴 · 카테고리 아이콘 등).
+   새 이모지를 쓰면 scripts/tossface-subset.py 의 USED 에 더하고 다시 만든다 — 이 줄들과 sw.js 목록도 그 출력대로. */
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-00.woff2') format('woff2'); unicode-range: U+1F44F, U+1F4AA, U+1F634, U+1F64F, U+1F9B5, U+1F9E0; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-02.woff2') format('woff2'); unicode-range: U+1F393, U+1F4BB, U+1F4BC; }
 @font-face { font-family: 'Tossface'; src: url('../fonts/tossface-04.woff2') format('woff2'); unicode-range: U+1F525; }
 @font-face { font-family: 'Tossface'; src: url('../fonts/tossface-05.woff2') format('woff2'); unicode-range: U+1F9D8; }
-@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-06.woff2') format('woff2'); unicode-range: U+1F3C3, U+1F6B4, U+1F3CA; }
-@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-07.woff2') format('woff2'); unicode-range: U+1F4A7, U+1F957, U+1F331, U+1F338, U+1F33B, U+1F341, U+26C4; }
-@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-09.woff2') format('woff2'); unicode-range: U+1F3BE, U+26BD, U+1F4DA, U+1F4DD, U+1F9F9, U+1F3B8, U+1F3C6, U+1F3AF, U+1F389, U+1F4C5; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-06.woff2') format('woff2'); unicode-range: U+1F3C3, U+1F3CA, U+1F6B4; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-07.woff2') format('woff2'); unicode-range: U+2615, U+26C4, U+2B50, U+1F331, U+1F338, U+1F33B, U+1F33F, U+1F341, U+1F35A, U+1F35C, U+1F37B, U+1F382, U+1F3E0, U+1F3E5, U+1F436, U+1F4A7, U+1F957; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-08.woff2') format('woff2'); unicode-range: U+1F3B5, U+1F49E, U+1F68C; }
+@font-face { font-family: 'Tossface'; src: url('../fonts/tossface-09.woff2') format('woff2'); unicode-range: U+26BD, U+26F3, U+1F389, U+1F3AC, U+1F3AE, U+1F3AF, U+1F3B8, U+1F3BE, U+1F3C6, U+1F48A, U+1F4B0, U+1F4C5, U+1F4CC, U+1F4D6, U+1F4DA, U+1F4DD, U+1F5D3, U+1F6D2, U+1F9EA, U+1F9F9, U+1FA7A; }
 
 :root {
   --font: 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
