@@ -76,8 +76,22 @@ service cloud.firestore {
     }
 
     // ── 할 일 ──  함께(together)는 둘 다, 각자 것은 본인만 쓰고 지운다. 읽기는 둘 다.
+    // u&I 위치: 사람마다 { u: 급한 정도, i: 중요한 정도 (0~1), at: 놓은 때 }
+    function validPlace(v) {
+      return v is map && v.keys().hasOnly(['u', 'i', 'at'])
+        && v.u is number && v.u >= 0 && v.u <= 1 && v.i is number && v.i >= 0 && v.i <= 1
+        && v.at is string && v.at.size() <= 40;
+    }
+    // ui 는 내 칸만 바꿀 수 있다 (짝꿍이 놓은 위치는 그대로)
+    function uiOk(n, o) {
+      let nu = n.get('ui', {});
+      let ou = o.get('ui', {});
+      return nu is map && nu.size() <= 2 && nu.diff(ou).affectedKeys().hasOnly([request.auth.uid])
+        && (!(request.auth.uid in nu) || validPlace(nu[request.auth.uid]));
+    }
     function validTodo(d) {
-      return d.keys().hasOnly(['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'ui'])
+        && (d.get('cat', null) == null || (d.cat is string && d.cat.matches('^[a-z0-9]{1,24}$')))
         && d.scope is string && d.title is string && d.title.size() > 0 && d.title.size() <= 40
         && (d.due == null || isDate(d.due))
         && ((d.done == true && d.doneBy is string && d.doneAt is string) || (d.done == false && d.doneBy == null && d.doneAt == null))
@@ -88,14 +102,29 @@ service cloud.firestore {
       allow read: if isMember();
       allow create: if isMember() && validTodo(request.resource.data) && mineOrTogether(request.resource.data.scope)
         && request.resource.data.createdBy == request.auth.uid
+        && uiOk(request.resource.data, {})
         && (request.resource.data.done == false || request.resource.data.doneBy == request.auth.uid);
       allow update: if isMember() && validTodo(request.resource.data) && mineOrTogether(resource.data.scope)
-        && request.resource.data.scope == resource.data.scope
+        && request.resource.data.scope == resource.data.scope && uiOk(request.resource.data, resource.data)
         && request.resource.data.createdBy == resource.data.createdBy && request.resource.data.createdAt == resource.data.createdAt
         && (request.resource.data.done == false || request.resource.data.doneBy == request.auth.uid
             || (resource.data.done == true && request.resource.data.doneBy == resource.data.doneBy && request.resource.data.doneAt == resource.data.doneAt));
       // (이미 없는 문서를 지우는 것도 허용 — 두 기기에서 동시에 지운 경우)
       allow delete: if isMember() && (resource == null || mineOrTogether(resource.data.scope));
+    }
+
+    // u&I 기록 (궤적 · 회고용): 남기기만 하고 고치거나 지우지 않는다
+    match /uiLog/{id} {
+      allow read: if isMember();
+      allow create: if isMember() && id.matches('^[a-z0-9]{1,24}$')
+        && request.resource.data.keys().hasOnly(['todo', 'by', 'type', 'u', 'i', 'at'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.todo is string && request.resource.data.todo.size() > 0 && request.resource.data.todo.size() <= 40
+        && request.resource.data.type in ['add', 'move', 'done', 'undo', 'delete']
+        && (request.resource.data.get('u', null) == null || (request.resource.data.u is number && request.resource.data.u >= 0 && request.resource.data.u <= 1))
+        && (request.resource.data.get('i', null) == null || (request.resource.data.i is number && request.resource.data.i >= 0 && request.resource.data.i <= 1))
+        && request.resource.data.at is string && request.resource.data.at.size() <= 40;
+      allow update, delete: if false;
     }
 
     // ── 시간표 ──  내 일정은 나만, 함께(both) 일정은 둘 다 쓰고 지운다. 읽기는 둘 다.

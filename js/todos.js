@@ -1,5 +1,7 @@
 /* 할 일 계산 — 기한으로 줄 세우기, 3개까지만 보이기, 완료 접기. 화면 없음.
-   todos/<id> : { scope: 'together' | <uid>, title, due: 'YYYY-MM-DD' | null, done, doneBy, doneAt, createdBy, createdAt, updatedAt } */
+   todos/<id> : { scope: 'together' | <uid>, title, due: 'YYYY-MM-DD' | null, done, doneBy, doneAt, createdBy, createdAt, updatedAt,
+                  cat: 카테고리 id | null (시간표와 같은 목록), ui: { <uid>: { u, i, at } } (u&I 평면 위치, js/uni.js) }
+   완료한 일은 완료한 날까지만 목록에 남고, 다음 날부터는 「완료한 일」 보관함에서 본다 (지우지 않음). */
 (function (root) {
   'use strict';
   var D = (typeof module !== 'undefined' && module.exports) ? require('./dates') : root.RT.dates;
@@ -48,14 +50,44 @@
     return D.label(d);
   }
 
+  var CAT_RE = /^[a-z0-9]{1,24}$/;
+  function cleanUi(ui) {
+    var out = {};
+    if (!ui || typeof ui !== 'object') return out;
+    Object.keys(ui).forEach(function (k) {
+      var v = ui[k], u = v && Number(v.u), i = v && Number(v.i);
+      if (v && isFinite(u) && isFinite(i) && u >= 0 && u <= 1 && i >= 0 && i <= 1) out[k] = { u: u, i: i, at: typeof v.at === 'string' ? v.at : '' };
+    });
+    return out;
+  }
   /** 저장소 문서 → 쓸 수 있는 것만 */
   function fromDocs(docs) {
     return (docs || []).filter(function (t) {
       return t && typeof t.id === 'string' && typeof t.title === 'string' && t.title.trim() && typeof t.scope === 'string';
     }).map(function (t) {
       return { id: t.id, scope: t.scope, title: t.title, due: typeof t.due === 'string' && !isNaN(D.parse(t.due)) ? t.due : null,
-        done: t.done === true, doneBy: t.doneBy || null, doneAt: t.doneAt || null, createdBy: t.createdBy || null, createdAt: t.createdAt || '' };
+        done: t.done === true, doneBy: t.doneBy || null, doneAt: t.doneAt || null, createdBy: t.createdBy || null, createdAt: t.createdAt || '',
+        cat: typeof t.cat === 'string' && CAT_RE.test(t.cat) ? t.cat : null, ui: cleanUi(t.ui) };
     });
+  }
+
+  /** 완료한 날 (그날 = 목록에 남는 날) */
+  function doneDay(t) { return t.done && t.doneAt ? D.dayOfIso(t.doneAt) : NaN; }
+  /** 목록에 보이는 할 일: 남은 일 + 오늘 완료한 일 */
+  function visible(t, today) { return !t.done || doneDay(t) === today; }
+  /** 오늘 0시 (이보다 앞에 완료한 일은 보관함) — 저장소 doneAt 과 같은 모양(ISO) */
+  function dayStartIso(today) { var p = D.parts(today); return new Date(p.y, p.m - 1, p.d).toISOString(); }
+
+  /** 보관함: 완료한 날마다 묶기 (최근 날부터) → [{ day, label, items }] */
+  function archiveGroups(list) {
+    var groups = [], byDay = {};
+    sortDone(list.filter(function (t) { return t.done; })).forEach(function (t) {
+      var d = doneDay(t);
+      var key = isNaN(d) ? 'x' : String(d);
+      if (!byDay[key]) { byDay[key] = { day: d, label: isNaN(d) ? '날짜 모름' : D.label(d) + ' (' + D.DOW[D.parts(d).w] + ')', items: [] }; groups.push(byDay[key]); }
+      byDay[key].items.push(t);
+    });
+    return groups;
   }
 
   /**
@@ -67,7 +99,7 @@
     opts = opts || {};
     var limit = opts.limit || LIMIT;
     var open = sortOpen(list.filter(function (t) { return !t.done; }), today);
-    var done = sortDone(list.filter(function (t) { return t.done; }));
+    var done = sortDone(list.filter(function (t) { return t.done && doneDay(t) === today; })); // 오늘 완료한 것만 (지난 것은 보관함)
     var shown = opts.expanded ? open : open.slice(0, limit);
     return { open: shown, moreCount: open.length - shown.length, openCount: open.length, done: opts.showDone ? done : [], doneCount: done.length, canCollapse: !!opts.expanded && open.length > limit };
   }
@@ -98,7 +130,7 @@
     return '';
   }
 
-  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate };
+  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate, doneDay: doneDay, visible: visible, dayStartIso: dayStartIso, archiveGroups: archiveGroups, cleanUi: cleanUi };
   root.RT = root.RT || {};
   root.RT.todos = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

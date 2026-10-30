@@ -60,6 +60,41 @@ const FAKE_FIREBASE = `
       };
     }
   };
+  // 컬렉션 · 조건(where == >= <) · 정렬(orderBy) · 개수(limit) — Firestore 처럼 그 칸이 없는 문서는 조건에서 빠진다
+  function query(c, filters, order, lim) {
+    function match(k) {
+      if (k.indexOf(c + '/') !== 0 || k.split('/').length !== 2) return false;
+      var v = local.get(k);
+      return filters.every(function (f) {
+        if (!(f[0] in v) || v[f[0]] === null && f[1] !== '==') return false;
+        var a = v[f[0]], b = f[2];
+        return f[1] === '==' ? a === b : f[1] === '>=' ? a >= b : f[1] === '<' ? a < b : false;
+      });
+    }
+    function keys() {
+      var ks = Array.from(local.keys()).filter(match).sort();
+      if (order) ks.sort(function (x, y) { var a = local.get(x)[order[0]], b = local.get(y)[order[0]]; var r = a < b ? -1 : a > b ? 1 : 0; return order[1] === 'desc' ? -r : r; });
+      return lim ? ks.slice(0, lim) : ks;
+    }
+    function snap(changed) {
+      var ks = keys(), list = ks.map(snapDoc);
+      var ch = (changed || []).filter(function (k) { return ks.indexOf(k) >= 0; }).map(function (k) { return { type: 'added', doc: snapDoc(k) }; });
+      return { docs: list, size: list.length, empty: !list.length, docChanges: function () { return ch; }, metadata: { fromCache: false } };
+    }
+    return {
+      where: function (f, op, v) { return query(c, filters.concat([[f, op, v]]), order, lim); },
+      orderBy: function (f, dir) { return query(c, filters, [f, dir || 'asc'], lim); },
+      limit: function (n) { return query(c, filters, order, n); },
+      get: function () { if (!allowed()) return Promise.reject(denied()); window.__reads = (window.__reads || 0) + keys().length; return Promise.resolve(snap([])); },
+      onSnapshot: function (x, y, z) {
+        // (x, y, z): 옵션을 먼저 받는 형태도 지원
+        var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z;
+        if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
+        var f = function (changed) { next(snap(changed)); };
+        colL.add(f); window.__hello(); return function () { colL.delete(f); };
+      }
+    };
+  }
   var db = {
     enablePersistence: function () { return Promise.resolve(); },
     terminate: function () { return Promise.resolve(); },
@@ -71,25 +106,17 @@ const FAKE_FIREBASE = `
           if (o && o.mergeFields) { var base = Object.assign({}, local.get(p) || {}); o.mergeFields.forEach(function (k) { if (k in v) base[k] = v[k]; else delete base[k]; }); v = base; }
           return window.__set(p, JSON.stringify(v), user.uid); },
         delete: function () { if (!allowed()) return Promise.reject(denied()); return window.__set(p, null, user.uid); },
+        // update: 'ui.<uid>' 처럼 점으로 이은 칸도 그 안만 바꾼다 (Firestore와 같게), 없는 문서는 실패
+        update: function (patch) { if (!allowed()) return Promise.reject(denied());
+          if (!local.has(p)) return Promise.reject({ code: 'not-found' });
+          var base = JSON.parse(JSON.stringify(local.get(p)));
+          Object.keys(patch).forEach(function (k) { var parts = k.split('.'), o = base; for (var i = 0; i < parts.length - 1; i++) { if (typeof o[parts[i]] !== 'object' || !o[parts[i]]) o[parts[i]] = {}; o = o[parts[i]]; } o[parts[parts.length - 1]] = patch[k]; });
+          return window.__set(p, JSON.stringify(base), user.uid); },
         onSnapshot: function (x, y, z) { var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z; if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
           var f = function () { next(snapDoc(p)); }; docL.add(f); window.__hello(); return function () { docL.delete(f); }; }
       };
     },
-    collection: function (c) {
-      return {
-        onSnapshot: function (x, y, z) {
-          // (x, y, z): 옵션을 먼저 받는 형태도 지원 — 바깥의 c(컬렉션 이름)를 가리지 않게 이름을 다르게 둔다
-          var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z;
-          if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
-          var f = function (changed) {
-            var list = Array.from(local.keys()).filter(function (k) { return k.indexOf(c + '/') === 0; }).sort().map(snapDoc);
-            var ch = (changed || []).filter(function (k) { return k.indexOf(c + '/') === 0 && local.has(k); }).map(function (k) { return { type: 'added', doc: snapDoc(k) }; });
-            next({ docs: list, size: list.length, empty: !list.length, docChanges: function () { return ch; }, metadata: { fromCache: false } });
-          };
-          colL.add(f); window.__hello(); return function () { colL.delete(f); };
-        }
-      };
-    }
+    collection: function (c) { return query(c, [], null, 0); }
   };
   var fb = { initializeApp: function () {}, auth: function () { return auth; }, firestore: function () { return db; } };
   fb.auth.Auth = { Persistence: { LOCAL: 'local' } };
@@ -132,7 +159,10 @@ async function open(browser, name, opts = {}) {
     if (p.startsWith('routines/')) { const old = docs.get(p); if ((old && old.owner !== uid) || (d && d.owner !== uid)) throw new Error('permission-denied'); }
     if (p.startsWith('users/') && p.split('/')[1] !== uid) throw new Error('permission-denied');
     // 할 일: 함께 것은 둘 다, 각자 것은 본인만 / 일정: 내 것 · 함께 것만
-    if (p.startsWith('todos/')) { const old = docs.get(p); const sc = (old || d).scope; if (sc !== 'together' && sc !== uid) throw new Error('permission-denied'); if (d && old && d.scope !== old.scope) throw new Error('permission-denied'); }
+    if (p.startsWith('todos/')) { const old = docs.get(p); const sc = (old || d).scope; if (sc !== 'together' && sc !== uid) throw new Error('permission-denied'); if (d && old && d.scope !== old.scope) throw new Error('permission-denied');
+      // ui: 내 칸만 바꿀 수 있다
+      if (d) { const nu = d.ui || {}, ou = (old && old.ui) || {}; for (const k of new Set([...Object.keys(nu), ...Object.keys(ou)])) if (k !== uid && JSON.stringify(nu[k]) !== JSON.stringify(ou[k])) throw new Error('permission-denied'); } }
+    if (p.startsWith('uiLog/')) { if (!d || d.by !== uid || docs.has(p)) throw new Error('permission-denied'); }
     if (p.startsWith('events/')) { const old = docs.get(p); for (const x of [old, d]) if (x && x.owner !== 'both' && x.owner !== uid) throw new Error('permission-denied'); }
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
     if (d === null) docs.delete(p); else docs.set(p, d);
@@ -289,6 +319,111 @@ async function tick(page, dateKey, key) {
   await dj.click('[data-act="todo-delete"]'); await dj.waitForTimeout(450); await dj.click('[data-act="todo-delete"]');
   await jm.waitForTimeout(250);
   console.log('짝꿍이 지우면:', !(await jm.$('#todo-sheet-title')), '|', await jm.textContent('.toast').catch(() => '(없음)'));
+
+  // 4-1a) u&I 평면: 목록 | 평면, 안 놓은 일 놓기(끌어 놓기), 추가하고 바로 놓기(위치 추천), 블록 · 점, 상세, 짝꿍 평면, 완료 → 보관함
+  async function dragLine(page, frac) { // frac: 0(아래) ~ 1(위)
+    const box = await page.locator('.pline__track').boundingBox();
+    const x = box.x + box.width / 2, y = box.y + box.height * (1 - frac);
+    const b = await page.locator('.pblock').boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down();
+    await page.mouse.move(x, (b.y + y) / 2, { steps: 4 }); await page.mouse.move(x, y, { steps: 4 });
+    await page.mouse.up(); await page.waitForTimeout(80);
+  }
+  async function placeBoth(page, u, i) {
+    await dragLine(page, u); await page.click('[data-act="place-next"]');
+    await dragLine(page, i); await page.click('[data-act="place-next"]'); await page.waitForTimeout(200);
+  }
+  await jm.click('[data-act="todo-view"][data-v="plane"]');
+  console.log('평면 처음:', await jm.textContent('.uempty'), '|', (await jm.textContent('.utray')).replace(/\s+/g, ' '));
+  await jm.click('[data-act="uni-unplaced"]');
+  console.log('안 놓은 일:', (await jm.$$eval('.ulist .ulist__t', (e) => e.map((x) => x.textContent))).join(', '));
+  await jm.click('.ulist [data-act="uni-place"]');
+  console.log('첫 할 일 놓기:', await jm.textContent('.place__title'), '|', await jm.textContent('.place__sub'), '| 추천 버튼:', !!(await jm.$('[data-act="place-ask"]')));
+  await jm.screenshot({ path: path.join(OUT, 'uni-place-first.png') });
+  await placeBoth(jm, 0.85, 0.3);
+  console.log('놓은 뒤:', await jm.textContent('.toast'), '| 점', await jm.$$eval('.upt', (e) => e.length), '| 반짝', await jm.$$eval('.upt.is-flash', (e) => e.length));
+  // 나머지 함께 할 일 · 내 일도 놓기 (끌어서)
+  const spots = [[0.2, 0.8], [0.6, 0.6], [0.4, 0.15]];
+  for (const [u, i] of spots) {
+    if (!(await jm.$('[data-act="uni-unplaced"]'))) break;
+    await jm.click('[data-act="uni-unplaced"]'); await jm.click('.ulist [data-act="uni-place"]');
+    await placeBoth(jm, u, i);
+  }
+  // 평면에서 바로 추가 → 카테고리 → 위치 추천
+  await jm.click('[data-act="todo-add"][data-key="plane"]');
+  console.log('평면에서 추가 시트:', await jm.textContent('#todo-sheet-title'), '| 누구:', (await jm.$$eval('[data-act="todo-scope"]', (e) => e.map((x) => x.textContent + ':' + x.getAttribute('aria-pressed')))).join(' '));
+  await jm.fill('#td-title', '생물학 과제 제출하기');
+  await jm.click('[data-act="todo-cat"][data-v="study"]');
+  console.log('미리보기:', await jm.textContent('.upreview .upt__tag'));
+  await jm.screenshot({ path: path.join(OUT, 'uni-add.png') });
+  await jm.click('form[data-form="todo"] button[type="submit"]');
+  await jm.waitForTimeout(150);
+  console.log('추가 → 놓기:', await jm.textContent('.place__title'), '| 줄 위 할 일', await jm.$$eval('.pmark', (e) => e.length));
+  await dragLine(jm, 0.5);
+  console.log('끄는 중 문장:', (await jm.textContent('#pnote')).trim(), '| 이웃 강조', await jm.$$eval('.pmark.is-near', (e) => e.length));
+  await jm.screenshot({ path: path.join(OUT, 'uni-place-drag.png') });
+  await jm.click('[data-act="place-ask"]');
+  const askQ = await jm.textContent('.pask__q');
+  let asked = 0;
+  while (await jm.$('[data-act="place-ans"]')) { if (!asked) await jm.screenshot({ path: path.join(OUT, 'uni-ask.png') }); await jm.click('[data-act="place-ans"][data-v="yes"]'); asked++; }
+  console.log('추천 질문:', askQ, '| 물은 수', asked, '| 말풍선', await jm.textContent('.phint'), '|', (await jm.textContent('#pnote')).trim());
+  await jm.click('[data-act="place-next"]');
+  await jm.focus('.pblock'); for (let k = 0; k < 8; k++) await jm.keyboard.press('ArrowUp');
+  console.log('방향키 중요도:', (await jm.textContent('#pnote')).trim());
+  await jm.click('[data-act="place-next"]'); await jm.waitForTimeout(250);
+  const jmUidU = accounts.get('junmin@example.com').uid;
+  const bio = [...docs.entries()].find(([k, v]) => k.startsWith('todos/') && v.title === '생물학 과제 제출하기');
+  console.log('저장: cat', bio[1].cat, '| ui', JSON.stringify(bio[1].ui[jmUidU] && { u: bio[1].ui[jmUidU].u, i: bio[1].ui[jmUidU].i }));
+  console.log('평면 블록:', (await jm.$$eval('.upt__tag', (e) => e.map((x) => x.textContent))).join(' / '));
+  console.log('범례:', await jm.textContent('.ulegend'));
+  await jm.screenshot({ path: path.join(OUT, 'uni-plane-block.png') });
+  await jm.click('[data-act="uni-mode"][data-v="dot"]');
+  await jm.screenshot({ path: path.join(OUT, 'uni-plane-dot.png') });
+  await jm.click('[data-act="uni-mode"][data-v="block"]');
+  // 상세
+  await jm.click(`[data-act="uni-open"][data-id="${bio[0].split('/')[1]}"]`);
+  console.log('상세:', await jm.textContent('#uni-detail-title'), '|', (await jm.$$eval('.uchip', (e) => e.map((x) => x.textContent))).join(', '), '|', (await jm.$$eval('.ustat__v', (e) => e.map((x) => x.textContent))).join(', '));
+  await jm.screenshot({ path: path.join(OUT, 'uni-detail.png') });
+  // 다시 정하기에서 그냥 넘기면 위치 그대로
+  const placedBefore = JSON.stringify(docs.get(bio[0]).ui[jmUidU]);
+  await jm.click('[data-act="uni-place"]'); await jm.click('[data-act="place-next"]'); await jm.click('[data-act="place-next"]'); await jm.waitForTimeout(200);
+  const after = docs.get(bio[0]).ui[jmUidU]; // (다시 정하기 뒤)
+  console.log('다시 정하기 그대로:', placedBefore.includes('"u":' + after.u) && placedBefore.includes('"i":' + after.i), '| 토스트', await jm.textContent('.toast'));
+  // 다진: 같은 함께 할 일을 자기 평면에 놓아도 준민 위치는 그대로
+  await dj.click('[data-act="todo-view"][data-v="plane"]'); await dj.waitForTimeout(100);
+  console.log('다진 평면:', await dj.textContent('.uempty').catch(() => '-'), '| 누구 버튼', (await dj.$$eval('[data-act="uni-who"]', (e) => e.map((x) => x.textContent + ':' + x.getAttribute('aria-pressed')))).join(' '));
+  await dj.click('[data-act="uni-unplaced"]'); await dj.click('.ulist [data-act="uni-place"]'); await placeBoth(dj, 0.1, 0.9);
+  const tog = [...docs.entries()].find(([k, v]) => k.startsWith('todos/') && v.scope === 'together' && v.ui && Object.keys(v.ui).length === 2);
+  console.log('함께 할 일 위치 둘 다:', !!tog, tog && Object.keys(tog[1].ui).length);
+  await dj.click(`[data-act="uni-who"][data-v="${jmUidU}"]`);
+  console.log('다진이 보는 준민 평면:', await dj.$$eval('.upt', (e) => e.length), '개 | 놓기 버튼', !!(await dj.$('[data-act="uni-unplaced"]')), '| 추가', !!(await dj.$('[data-act="todo-add"][data-key="plane"]')));
+  await dj.click(`[data-act="uni-open"][data-id="${bio[0].split('/')[1]}"]`);
+  console.log('짝꿍 일 상세(보기만):', await dj.textContent('#uni-detail-title'), '| 버튼', await dj.$$eval('.uacts button', (e) => e.length), '|', await dj.textContent('.sheet__sub'));
+  await dj.keyboard.press('Escape');
+  // 완료 → 평면에서 빠지고, 목록엔 오늘 완료로 남음
+  const nBefore = await jm.$$eval('.upt', (e) => e.length);
+  await jm.click(`[data-act="uni-open"][data-id="${bio[0].split('/')[1]}"]`); await jm.click('[data-act="uni-done"]'); await jm.waitForTimeout(500);
+  console.log('완료:', await jm.textContent('.toast'), '| 점', nBefore, '→', await jm.$$eval('.upt', (e) => e.length));
+  await jm.click('[data-act="todo-view"][data-v="list"]');
+  console.log('목록 오늘 완료:', await jm.textContent(`.tcard--col:has(#t-${jmUidU}) [data-act="todo-donelist"]`));
+  const logs = [...docs.entries()].filter(([k]) => k.startsWith('uiLog/')).map(([, v]) => v.type);
+  console.log('기록(uiLog):', logs.join(','));
+  // 다음 날이 되면 보관함으로 — 완료 시각을 어제로 옮기고 다시 연다
+  const y = JSON.parse(JSON.stringify(docs.get(bio[0]))); y.doneAt = '2026-10-26T03:00:00.000Z'; docs.set(bio[0], y); await pushAll([bio[0]]);
+  await jm.waitForTimeout(150);
+  console.log('어제 완료는 목록에서 빠짐:', !(await jm.$(`.tcard--col:has(#t-${jmUidU}) [data-act="todo-donelist"]`)));
+  await jm.click('[data-act="archive-open"]'); await jm.waitForTimeout(200);
+  console.log('보관함:', (await jm.$$eval('.agroup__day', (e) => e.map((x) => x.textContent))).join(' / '), '|', await jm.textContent('.arow__title'));
+  await jm.screenshot({ path: path.join(OUT, 'uni-archive.png') });
+  await jm.click('[data-act="archive-undo"]'); await jm.waitForTimeout(200);
+  console.log('되돌리기:', await jm.textContent('.toast'), '| 보관함 남은', await jm.$$eval('.arow', (e) => e.length), '| 저장 done', docs.get(bio[0]).done);
+  console.log('되돌린 뒤 포커스:', await jm.evaluate(() => document.activeElement && (document.activeElement.getAttribute('data-act') || document.activeElement.tagName)));
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  console.log('Esc 뒤 보관함 닫힘:', !(await jm.$('#archive-title')));
+  await jm.click('[data-act="todo-view"][data-v="plane"]'); await jm.waitForTimeout(100);
+  console.log('되돌리면 평면에 다시:', await jm.$$eval(`[data-uni-pt="${bio[0].split('/')[1]}"]`, (e) => e.length));
+  await jm.click('[data-act="todo-view"][data-v="list"]');
+  await dj.click(`[data-act="uni-who"][data-v="${accounts.get('dajin@example.com').uid}"]`); await dj.click('[data-act="todo-view"][data-v="list"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
   async function addEvent(page, title, opts) {

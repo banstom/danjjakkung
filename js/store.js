@@ -57,16 +57,48 @@
       // ── 할 일 · 시간표 ──
       // todos/<id>  : { scope: 'together' | uid, title, due, done, doneBy, doneAt, createdBy, createdAt, updatedAt }
       // events/<id> : { owner: uid | 'both', title, (short), weekly, weekday, (weekdays), date, start, end, createdBy, updatedAt } — js/schedule.js 참고
-      watchTodos: function (next, fail) {
-        return db.collection('todos').onSnapshot(function (q) {
-          next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
-        }, fail);
+      //   + cat (카테고리 id | null), ui: { <uid>: { u, i, at } } (u&I 평면 위치 — 각자 자기 칸만)
+      // 할 일은 남은 일 + 오늘(sinceIso 이후) 완료한 일만 늘 듣는다 — 완료한 일이 쌓여도 여는 양은 그대로.
+      // 그 전에 완료한 일은 보관함을 열 때만 loadDone 으로 조금씩.
+      watchTodos: function (next, fail, sinceIso) {
+        var open = null, done = null;
+        function rows(q) { return q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }); }
+        function emit() {
+          if (!open || !done) return;
+          var byId = {};
+          open.concat(done).forEach(function (t) { byId[t.id] = t; }); // 막 완료한 일은 두 쪽에 잠깐 같이 있을 수 있다 — 뒤(완료) 쪽이 이김
+          next(Object.keys(byId).sort().map(function (k) { return byId[k]; }));
+        }
+        var col = db.collection('todos');
+        var a = col.where('done', '==', false).onSnapshot(function (q) { open = rows(q); emit(); }, fail);
+        var b = col.where('doneAt', '>=', sinceIso).onSnapshot(function (q) { done = rows(q); emit(); }, fail);
+        return function () { a(); b(); };
       },
+      /** 보관함: beforeIso 보다 앞에 완료한 일, 최근 것부터 n개 */
+      loadDone: function (beforeIso, n) {
+        return db.collection('todos').where('doneAt', '<', beforeIso).orderBy('doneAt', 'desc').limit(n).get().then(function (q) {
+          return q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); });
+        });
+      },
+      /** 아는 칸만 덮어쓴다 (mergeFields) — 평면 위치(ui)와 더 새 버전이 넣은 칸은 그대로 남는다 */
       saveTodo: function (t) {
         return db.doc('todos/' + t.id).set({
           scope: t.scope, title: t.title, due: t.due || null, done: !!t.done, doneBy: t.done ? t.doneBy : null, doneAt: t.done ? t.doneAt : null,
-          createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString()
-        });
+          createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString(), cat: t.cat || null
+        }, { mergeFields: ['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat'] });
+      },
+      /** 내 평면 위치만 바꾼다 (짝꿍이 놓은 위치는 그대로) */
+      placeTodo: function (id, uid, u, i) {
+        var patch = { updatedAt: new Date().toISOString() };
+        patch['ui.' + uid] = { u: u, i: i, at: patch.updatedAt };
+        return db.doc('todos/' + id).update(patch);
+      },
+      /** u&I 기록 — 궤적 · 회고용 (남기기만) */
+      logUi: function (e) {
+        var doc = { todo: e.todo, by: e.by, type: e.type, at: new Date().toISOString() };
+        if (typeof e.u === 'number') doc.u = e.u;
+        if (typeof e.i === 'number') doc.i = e.i;
+        return db.doc('uiLog/' + newKey()).set(doc);
       },
       deleteTodo: function (id) { return db.doc('todos/' + id).delete(); },
       watchEvents: function (next, fail) {

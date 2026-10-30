@@ -33,14 +33,33 @@ test('기한 글자', () => {
   assert.strictEqual(T.dueLabel(td('a', null), today), '');
 });
 
-test('3개까지만 + 더 보기, 완료는 접기', () => {
+test('3개까지만 + 더 보기, 완료는 접기 (오늘 완료한 것만)', () => {
   const list = ['1', '2', '3', '4', '5'].map((i) => td('t' + i, '2026-10-2' + (8 + +i > 9 ? 9 : 8))).concat([td('d1', null, { done: true, doneAt: '2026-10-27T01:00:00Z' }), td('d2', null, { done: true, doneAt: '2026-10-28T01:00:00Z' })]);
   const s = T.section(list, today, {});
   assert.strictEqual(s.open.length, 3); assert.strictEqual(s.moreCount, 2); assert.strictEqual(s.openCount, 5);
-  assert.strictEqual(s.done.length, 0); assert.strictEqual(s.doneCount, 2);
+  assert.strictEqual(s.done.length, 0); assert.strictEqual(s.doneCount, 1); // 어제(10/27) 완료한 d1 은 보관함으로
   const e = T.section(list, today, { expanded: true, showDone: true });
   assert.strictEqual(e.open.length, 5); assert.strictEqual(e.moreCount, 0); assert.ok(e.canCollapse);
-  assert.deepStrictEqual(e.done.map((t) => t.id), ['d2', 'd1']); // 최근 완료 먼저
+  assert.deepStrictEqual(e.done.map((t) => t.id), ['d2']);
+});
+
+test('완료한 일은 완료한 날까지 목록에, 다음 날부터 보관함', () => {
+  // 한국 시간 10/28 0:30 에 완료 = UTC 10/27 15:30
+  const late = td('a', null, { done: true, doneAt: '2026-10-27T15:30:00.000Z' });
+  const early = td('b', '2026-11-05', { done: true, doneAt: '2026-10-27T14:59:00.000Z' }); // 10/27 23:59 (기한이 남아 있어도)
+  assert.strictEqual(T.visible(late, today), true);
+  assert.strictEqual(T.visible(early, today), false);
+  assert.strictEqual(T.visible(td('c', '2026-10-01'), today), true); // 남은 일은 기한이 지나도 그대로
+  assert.strictEqual(T.dayStartIso(today), '2026-10-27T15:00:00.000Z');
+  const g = T.archiveGroups([early, late, td('d', null, { done: true, doneAt: '2026-10-25T03:00:00.000Z' })]);
+  assert.deepStrictEqual(g.map((x) => [x.label, x.items.map((t) => t.id)]), [['10월 28일 (수)', ['a']], ['10월 27일 (화)', ['b']], ['10월 25일 (일)', ['d']]]);
+});
+
+test('할 일 카테고리 · 평면 위치는 믿을 수 있는 값만', () => {
+  const [t] = T.fromDocs([{ id: 'a', scope: 'u1', title: 'x', cat: 'study', ui: { u1: { u: 0.4, i: 1, at: 'z' }, u2: { u: 2, i: 0 }, u3: 'x' } }]);
+  assert.strictEqual(t.cat, 'study');
+  assert.deepStrictEqual(t.ui, { u1: { u: 0.4, i: 1, at: 'z' } });
+  assert.strictEqual(T.fromDocs([{ id: 'a', scope: 'u1', title: 'x', cat: 'Bad Id' }])[0].cat, null);
 });
 
 test('기한 고르기 ↔ 저장값', () => {

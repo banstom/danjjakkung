@@ -29,6 +29,11 @@
     todoDocs: [], todoErr: '', eventDocs: [], eventErr: '',
     todoUi: { expanded: {}, showDone: {} },  // 묶음마다 「더 보기」 · 「완료 보기」
     todoForm: null,      // 할 일 추가 · 고치기 시트
+    todoView: 'list',    // 할 일 탭: list(목록) | plane(u&I 평면)
+    uni: { who: null, mode: 'block', flash: null },  // 평면: 누구 것 · 블록/점 · 방금 놓은 일
+    place: null,         // 축 놓기 화면 { id, title, scope, cat, axis: 'u'|'i', p, raw: { u, i }, cur, touched, ask, hint }
+    uniSheet: null,      // 평면 시트 { kind: 'detail', id, confirmDelete } | { kind: 'unplaced' }
+    archive: null,       // 「완료한 일 보관함」 { items, loading, more, error }
     eventForm: null,     // 일정 추가 · 고치기 · 보기 시트
     catDocs: [],         // cats 컬렉션 (둘이 같이 쓰는 시간표 카테고리 — js/cats.js)
     catSheet: null,      // 「카테고리」 시트 { back: 돌아갈 일정 폼, edit: { id, name, icon, error, saving, confirmDelete } | null, error }
@@ -74,7 +79,9 @@
   var composing = false, deferred = false;
   var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
-  var LS_TAB = 'danjjakkung.tab';
+  var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
+  if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
+  if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
     var q = /[?&]tab=(routine|schedule|todo)/.exec(root.location.search || '');
     var t = q ? q[1] : lsGet(LS_TAB);
@@ -105,11 +112,14 @@
     }
     var focus = focusOf(document.activeElement);
     if (state.manage && !m.manage) state.manage = null;
-    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; }
+    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.place = null; state.uniSheet = null; state.archive = null; }
     if (state.todoForm && state.todoForm.id && !findTodo(state.todoForm.id) && !state.todoForm.saving) { state.todoForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 할 일이에요'); }, 0); }
     if (state.eventForm && state.eventForm.id && !findEvent(state.eventForm.id) && !state.eventForm.saving) { state.eventForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 일정이에요'); }, 0); }
+    if (state.place && !state.place.fresh && !findTodo(state.place.id)) { state.place = null; setTimeout(function () { showToast('다른 기기에서 지워졌거나 완료된 할 일이에요'); }, 0); }
+    if (state.uniSheet && state.uniSheet.kind === 'detail' && !findTodo(state.uniSheet.id)) state.uniSheet = null;
     var other = state.tab !== 'routine';
     var plan = state.status === 'ready' ? planHtml(other) : {};
+    var flipBefore = flipMeasure();
     var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || plan.sheet) && state.status === 'ready');
     var entering = state.sheetEntering;
     m.header.canSignOut = state.status === 'ready';
@@ -119,6 +129,7 @@
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
+    flipPlay(flipBefore);
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
     if (state.eventForm) state.eventForm.errorFresh = false;
@@ -157,7 +168,10 @@
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
     'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v',
-    'cat-open': null, 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null };
+    'cat-open': null, 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null,
+    'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
+    'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
+    'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -189,9 +203,11 @@
       // 시트가 열려 있으면 포커스는 시트 안에 둔다
       // (입력칸에는 저절로 들어가지 않는다 — 폰 키보드가 갑자기 뜨지 않게)
       target = appEl.querySelector('.sheet [data-act="toggle"]:not([disabled]):not([aria-disabled="true"])') ||
+        appEl.querySelector('.sheet [data-act="place-block"]') || appEl.querySelector('.sheet [data-act="uni-done"]') || appEl.querySelector('.sheet [data-act="uni-place"]') ||
         appEl.querySelector('.sheet [data-act="push-on"]:not([disabled])') ||
         appEl.querySelector('.sheet [data-act="event-edit"]') || appEl.querySelector('.sheet [type="submit"]:not([disabled])') ||
-        appEl.querySelector('.sheet [data-act="save-routine"]:not([disabled])') || appEl.querySelector('.sheet [data-act="new-routine"]') || appEl.querySelector('.sheet .tpick.is-on') || appEl.querySelector('.sheet .close-btn');
+        appEl.querySelector('.sheet [data-act="save-routine"]:not([disabled])') || appEl.querySelector('.sheet [data-act="new-routine"]') || appEl.querySelector('.sheet .tpick.is-on') || appEl.querySelector('.sheet .close-btn') ||
+        appEl.querySelector('.sheet [data-act="archive-undo"]') || appEl.querySelector('.sheet [data-act="archive-close"]') || appEl.querySelector('.sheet [data-act="uni-close"]');
     }
     if (target && !target.disabled && document.activeElement !== target) target.focus({ preventScroll: true });
   }
@@ -352,6 +368,30 @@
     else if (act === 'todo-due') { if (state.todoForm) { state.todoForm.choice = btn.getAttribute('data-v'); state.todoForm.error = ''; render(true); } }
     else if (act === 'todo-cancel') closePlanSheet();
     else if (act === 'todo-delete') deleteTodo();
+    else if (act === 'todo-save-list') saveTodo(false);
+    else if (act === 'todo-save-place') saveTodo(true);
+    else if (act === 'todo-cat') { var tf = state.todoForm; if (tf && !tf.saving) { var cv = btn.getAttribute('data-v'); tf.cat = tf.cat === cv ? null : cv; render(true); } }
+    else if (act === 'todo-scope') { var tf2 = state.todoForm; if (tf2 && !tf2.saving) { tf2.scope = btn.getAttribute('data-v') === 'together' ? 'together' : state.me; render(true); } }
+    else if (act === 'todo-view') setTodoView(btn.getAttribute('data-v'));
+    else if (act === 'uni-who') { state.uni.who = btn.getAttribute('data-v'); render(true); }
+    else if (act === 'uni-mode') { state.uni.mode = btn.getAttribute('data-v') === 'dot' ? 'dot' : 'block'; lsSet(LS_UNIMODE, state.uni.mode); render(true); }
+    else if (act === 'uni-open') openUniSheet({ kind: 'detail', id: btn.getAttribute('data-id') }, '[data-act="uni-open"][data-id="' + CSS.escape(btn.getAttribute('data-id')) + '"]');
+    else if (act === 'uni-unplaced') openUniSheet({ kind: 'unplaced' }, '[data-act="uni-unplaced"]');
+    else if (act === 'uni-close') closeUniSheet();
+    else if (act === 'uni-place') startPlace(btn.getAttribute('data-id'));
+    else if (act === 'uni-done') uniDone();
+    else if (act === 'uni-edit') { var ue = state.uniSheet; if (ue && ue.id) { state.uniSheet = null; editTodo(ue.id); } }
+    else if (act === 'uni-delete') uniDelete();
+    else if (act === 'place-cancel') closePlace();
+    else if (act === 'place-ask') placeAsk();
+    else if (act === 'place-ans') placeAnswer(btn.getAttribute('data-v'));
+    else if (act === 'place-stopask') { if (state.place) { state.place.ask = null; focusAfter = ['[data-act="place-block"]']; focusInSheet = true; render(true); } }
+    else if (act === 'place-next') placeNext();
+    else if (act === 'place-back') placeBack();
+    else if (act === 'archive-open') openArchive();
+    else if (act === 'archive-more') loadArchive();
+    else if (act === 'archive-undo') undoArchived(btn.getAttribute('data-id'));
+    else if (act === 'archive-close') closeArchive();
     else if (act === 'sched-mode') { setSchedMode(btn.getAttribute('data-mode')); render(true); }
     else if (act === 'sched-day' && schedState().mode === 'week') { schedState().pick = Number(btn.getAttribute('data-day')); render(true); } // 주 보기: 아래 목록만 바꾼다
     else if (act === 'sched-day' || act === 'sched-open-day') {
@@ -406,6 +446,7 @@
     if (['routine', 'schedule', 'todo'].indexOf(t) < 0 || t === state.tab) return;
     state.tab = t; lsSet(LS_TAB, t);
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
+    state.place = null; state.uniSheet = null; state.archive = null;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -449,7 +490,8 @@
       if (due && !t.done) bits.push(due);
       if (tog) bits.push(t.done ? nameOf(t.doneBy) + ' 님이 했어요' : nameOf(t.createdBy) + ' 님이 추가');
       else if (t.done) bits.push('완료');
-      return { id: t.id, title: t.title, done: t.done, slot: tog ? 'both' : (slotOf[t.scope] || 'me'), canCheck: canCheck, canEdit: canCheck,
+      var cat = catOf(t.cat);
+      return { id: t.id, title: t.title, icon: cat ? cat.icon : '', done: t.done, slot: tog ? 'both' : (slotOf[t.scope] || 'me'), canCheck: canCheck, canEdit: canCheck,
         lockText: nameOf(t.scope) + ' 님만 체크할 수 있어요', meta: bits.join(' · '), over: !t.done && TD.bucket(t, today) === 'overdue' };
     }
     function sec(key, items) {
@@ -458,6 +500,7 @@
         doneCount: s.doneCount, showDone: !!state.todoUi.showDone[key], count: '남은 ' + s.openCount + (s.doneCount ? ' · 완료 ' + s.doneCount : '') };
     }
     return {
+      view: state.todoView,
       together: sec('together', list.filter(function (t) { return t.scope === 'together'; })),
       people: people.map(function (p) { return Object.assign(sec(p.key, list.filter(function (t) { return t.scope === p.key; })), { name: p.name, slot: p.slot, mine: p.mine }); })
     };
@@ -473,16 +516,22 @@
   }
   function planHtml(other) {
     var V = RT.viewPlan, out = {};
-    if (state.tab === 'todo' && other) out.tab = V.todoTab(todoModel());
+    if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
-    if (state.todoForm) out.sheet = V.todoSheet(state.todoForm, state.sheetEntering);
+    var dm = state.uniSheet && state.uniSheet.kind === 'detail' ? uniDetailModel() : null;
+    if (state.place) out.sheet = V.placeScreen(placeModel());
+    else if (state.todoForm) out.sheet = V.todoSheet(todoFormView(state.todoForm), state.sheetEntering);
     else if (state.eventForm) out.sheet = V.eventSheet(Object.assign({}, state.eventForm, { skipInfo: skipInfo(state.eventForm), cats: catList() }), state.sheetEntering);
     else if (state.catSheet) out.sheet = V.catSheet(catModel(), state.sheetEntering);
+    else if (dm) out.sheet = V.uniDetail(dm, state.sheetEntering);
+    else if (state.uniSheet && state.uniSheet.kind === 'unplaced') out.sheet = V.uniUnplaced(unplacedModel(), state.sheetEntering);
+    else if (state.archive) out.sheet = V.archiveSheet(archiveModel(), state.sheetEntering);
     return out;
   }
   function openPlanSheet(kind, form) {
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false;
     state.todoForm = kind === 'todo' ? form : null; state.eventForm = kind === 'event' ? form : null; state.catSheet = null;
+    state.uniSheet = null; state.archive = null; state.place = null;
     state.sheetEntering = true; render(true);
   }
   var planReturn = null; // 시트를 닫으면 포커스를 돌려줄 버튼
@@ -512,15 +561,23 @@
   function addTodo(key) {
     if (!state.me) return;
     planReturn = '[data-act="todo-add"][data-key="' + CSS.escape(key) + '"]';
-    openPlanSheet('todo', { mode: 'add', scope: key === 'together' ? 'together' : state.me, title: '', choice: 'none', date: D.toKey(state.today), error: '' });
+    var last = lsGet(LS_TODOCAT), cat = last && catOf(last) ? last : null; // 카테고리는 지난번 고른 것
+    var fromPlane = key === 'plane';
+    openPlanSheet('todo', { mode: 'add', scope: key === 'together' ? 'together' : state.me, scopePick: fromPlane, placeDefault: fromPlane, cat: cat,
+      title: '', choice: 'none', date: D.toKey(state.today), error: '' });
+  }
+  /** 시트에 그릴 값: 카테고리 목록 · 평면 블록 미리보기 */
+  function todoFormView(f) {
+    var c = catOf(f.cat), sm = slotMap();
+    return Object.assign({}, f, { cats: catList(), preview: { short: RT.uni.short(String(f.title || '').trim() || '할 일'), icon: c ? c.icon : '', slot: f.scope === 'together' ? 'both' : (sm[f.scope] || 'me') } });
   }
   function editTodo(id) {
     var t = findTodo(id);
     if (!t || !(t.scope === 'together' || t.scope === state.me)) return;
     planReturn = '[data-act="todo-edit"][data-id="' + CSS.escape(id) + '"]';
-    openPlanSheet('todo', { mode: 'edit', id: id, scope: t.scope, title: t.title, choice: RT.todos.choiceOf(t.due, state.today), date: t.due || D.toKey(state.today), error: '' });
+    openPlanSheet('todo', { mode: 'edit', id: id, scope: t.scope, title: t.title, cat: t.cat && catOf(t.cat) ? t.cat : null, choice: RT.todos.choiceOf(t.due, state.today), date: t.due || D.toKey(state.today), error: '' });
   }
-  function saveTodo() {
+  function saveTodo(placeAfter) {
     var f = state.todoForm;
     if (!store || !f || f.saving || !state.me) return;
     var err = RT.todos.validate(f);
@@ -528,8 +585,18 @@
     var old = f.id ? findTodo(f.id) : null;
     if (f.id && !old) { closePlanSheet(); showToast('다른 기기에서 지워진 할 일이에요'); return; }
     var due = RT.todos.dueFrom(f.choice, state.today, f.date);
-    var t = old ? Object.assign({}, old, { title: String(f.title).trim(), due: due })
-      : { id: RT.store.newKey(), scope: f.scope, title: String(f.title).trim(), due: due, done: false, doneBy: null, doneAt: null, createdBy: state.me, createdAt: new Date().toISOString() };
+    var cat = f.cat && catOf(f.cat) ? f.cat : null;
+    var t = old ? Object.assign({}, old, { title: String(f.title).trim(), due: due, cat: cat })
+      : { id: RT.store.newKey(), scope: f.scope, title: String(f.title).trim(), due: due, cat: cat, ui: {}, done: false, doneBy: null, doneAt: null, createdBy: state.me, createdAt: new Date().toISOString() };
+    if (!old) lsSet(LS_TODOCAT, cat || '');
+    if (placeAfter === undefined) placeAfter = !old && !!f.placeDefault;
+    if (!old && placeAfter) {
+      // 바로 놓기 화면으로 (저장은 뒤에서 이어서 — 오프라인이어도 놓기는 계속할 수 있게)
+      store.saveTodo(t).catch(function () { showToast('저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+      state.todoForm = null; planReturn = null;
+      startPlace(t.id, Object.assign({ fresh: true }, t));
+      return;
+    }
     f.saving = true; f.error = ''; render(true);
     settle(store.saveTodo(t), f, function () { return state.todoForm === f; }, old ? '할 일을 고쳤어요' : '📝 할 일을 추가했어요',
       '[data-act="todo-add"][data-key="' + CSS.escape(t.scope) + '"]');
@@ -543,6 +610,8 @@
     if (now - lastPlanDelete < 400) return;
     f.saving = true; render(true);
     planReturn = null;
+    var dt = findTodo(f.id);
+    if (dt && dt.ui[state.me]) logUi(f.id, 'delete');
     settle(store.deleteTodo(f.id), f, function () { return state.todoForm === f; }, '할 일을 지웠어요', '[data-act="todo-add"][data-key="' + CSS.escape(f.scope) + '"]');
   }
   var togglingTodo = Object.create(null);
@@ -554,8 +623,330 @@
     setTimeout(function () { delete togglingTodo[id]; }, 800); // 두 번 눌림만 막는다 (오프라인이어도 되돌릴 수 있게)
     toggleScope[id] = t.scope;
     if (next && t.scope === 'together') showToast('✨ 함께 할 일 하나 끝!');
+    if (t.ui[state.me]) logUi(id, next ? 'done' : 'undo', t.ui[state.me]);
     store.saveTodo(Object.assign({}, t, { done: next, doneBy: next ? state.me : null, doneAt: next ? new Date().toISOString() : null }))
       .catch(function () { showToast('저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'); });
+  }
+
+  // ── u&I 평면 ──────────────────────────────────────────
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function catOf(id) { return id ? RT.cats.find(catList(), id) : null; }
+  function slotMap() { var m = {}; planPeople().forEach(function (p) { m[p.key] = p.slot; }); return m; }
+  function slotOfTodo(t, sm) { return t.scope === 'together' ? 'both' : ((sm || slotMap())[t.scope] || 'me'); }
+  function logUi(id, type, place) {
+    if (!store || !state.me) return;
+    store.logUi({ todo: id, by: state.me, type: type, u: place && place.u, i: place && place.i }).catch(function () { /* 기록은 못 남겨도 화면은 그대로 */ });
+  }
+  function setTodoView(v) {
+    v = v === 'plane' ? 'plane' : 'list';
+    if (v === state.todoView) return;
+    state.todoView = v; lsSet(LS_VIEW, v); render(true);
+  }
+  /** 누구의 평면에 올라갈 일: 그 사람 일 + 함께 할 일 중, 그 사람이 놓은 남은 일 */
+  function planeTasks(who) {
+    return todoList().filter(function (t) { return !t.done && (t.scope === who || t.scope === 'together') && t.ui[who]; });
+  }
+  function unplacedTasks() {
+    return todoList().filter(function (t) { return !t.done && (t.scope === state.me || t.scope === 'together') && !t.ui[state.me]; });
+  }
+  function uniWho() { var w = state.uni.who; return planPeople().some(function (p) { return p.key === w; }) ? w : state.me; }
+  function planeLayout(who) {
+    var byId = {};
+    RT.uni.layout(planeTasks(who).map(function (t) { return { id: t.id, createdAt: t.createdAt, place: t.ui[who] }; })).forEach(function (l) { byId[l.id] = l; });
+    return byId;
+  }
+  function uniModel() {
+    var U = RT.uni, who = uniWho(), sm = slotMap(), tasks = planeTasks(who), lay = planeLayout(who);
+    var counts = {}, keys = [];
+    var items = tasks.map(function (t) {
+      var l = lay[t.id], c = catOf(t.cat), k = c ? c.id : '-';
+      if (!counts[k]) { counts[k] = { icon: c ? c.icon : '', name: c ? c.name : '카테고리 없음', n: 0, order: c ? c.order : 999 }; keys.push(k); }
+      counts[k].n++;
+      return { id: t.id, short: U.short(t.title), icon: c ? c.icon : '', slot: slotOfTodo(t, sm), y0: l.y,
+        x: 5 + l.x * 90, y: 11 + (1 - l.y) * 80, shift: l.x > 0.78 ? '-86%' : l.x < 0.22 ? '-14%' : '-50%', flash: state.uni.flash === t.id,
+        aria: t.title + (t.scope === 'together' ? ' (함께)' : '') + ', ' + l.n + '개 중 ' + l.urgentRank + '번째로 급함 · ' + l.importantRank + '번째로 중요함' };
+    }).sort(function (a, b) { return b.y0 - a.y0; }); // 위(중요한 것)부터 그려서 아래 블록이 위 블록 꼬리를 덮지 않게
+    return { mode: state.uni.mode, mine: who === state.me, whoName: nameOf(who), items: items,
+      people: planPeople().map(function (p) { return { key: p.key, name: p.name, slot: p.slot, mine: p.mine, on: p.key === who }; }),
+      legend: keys.map(function (k) { return counts[k]; }).sort(function (a, b) { return a.order - b.order; }), unplaced: who === state.me ? unplacedTasks().length : 0 };
+  }
+  var uniReturn = null;
+  function openUniSheet(sheet, back) {
+    state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.archive = null;
+    state.uniSheet = sheet; uniReturn = back || null; state.sheetEntering = true; render(true);
+  }
+  function closeUniSheet() { state.uniSheet = null; focusAfter = [uniReturn, '[data-act="todo-view"][data-v="plane"]'].filter(Boolean); uniReturn = null; render(true); }
+  function uniDetailModel() {
+    var s = state.uniSheet, t = findTodo(s.id), who = uniWho();
+    if (!t) return null;
+    var l = planeLayout(who)[t.id] || null, c = catOf(t.cat), chips = [];
+    if (c) chips.push({ text: c.icon + ' ' + c.name });
+    chips.push(t.scope === 'together' ? { text: '함께 할 일', slot: 'both' } : { text: t.scope === state.me ? '내 일' : nameOf(t.scope) + ' 님 일', slot: slotOfTodo(t) });
+    var due = RT.todos.dueLabel(t, state.today); chips.push({ text: due ? '기한 ' + due : '기한 없음' });
+    var pl = t.ui[who], placed = '';
+    if (pl && pl.at) {
+      var d0 = D.dayOfIso(pl.at);
+      if (!isNaN(d0)) { placed = D.label(d0) + ' (' + D.DOW[D.parts(d0).w] + ') ' + D.timeLabel(pl.at) + '에 놓음'; if (state.today > d0) placed += ' · ' + (state.today - d0 + 1) + '일째 그 자리'; }
+      if (who !== state.me) placed = nameOf(who) + ' 님이 ' + placed;
+    }
+    var mine = who === state.me, can = t.scope === 'together' || t.scope === state.me;
+    return { id: t.id, title: t.title, chips: chips, n: l ? l.n : 0, urgentRank: l ? l.urgentRank : 0, importantRank: l ? l.importantRank : 0, placed: placed,
+      canDone: can && !t.done, canPlace: mine && can, canEdit: mine && can, confirmDelete: !!s.confirmDelete };
+  }
+  function unplacedModel() {
+    var sm = slotMap();
+    return { items: unplacedTasks().map(function (t) { var c = catOf(t.cat); return { id: t.id, title: t.title, icon: c ? c.icon : '', slot: slotOfTodo(t, sm) }; }) };
+  }
+  function uniDone() {
+    var s = state.uniSheet, t = s && findTodo(s.id);
+    if (!t) return;
+    state.uniSheet = null; uniReturn = null; focusAfter = ['[data-act="todo-view"][data-v="plane"]'];
+    toggleTodo(t.id);
+    if (t.scope !== 'together') showToast('✅ 완료! 평면에서 빠졌어요');
+    else render(true);
+  }
+  var lastUniDelete = 0;
+  function uniDelete() {
+    var s = state.uniSheet, t = s && findTodo(s.id), now = Date.now();
+    if (!t || !store || !(t.scope === 'together' || t.scope === state.me)) return;
+    if (!s.confirmDelete) { s.confirmDelete = true; lastUniDelete = now; render(true); return; }
+    if (now - lastUniDelete < 400) return;
+    if (t.ui[state.me]) logUi(t.id, 'delete');
+    state.uniSheet = null; uniReturn = null; focusAfter = ['[data-act="todo-view"][data-v="plane"]'];
+    store.deleteTodo(t.id).then(function () {}, function () { showToast('지우지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+    showToast('할 일을 지웠어요');
+  }
+
+  // 축 놓기: 급한 정도(u) → 중요한 정도(i). 세로선 위, 위로 갈수록 큼.
+  function placeLine(axis) {
+    var pl = state.place;
+    return RT.uni.line(planeTasks(state.me).filter(function (t) { return t.id !== pl.id; })
+      .map(function (t) { return { id: t.id, raw: t.ui[state.me][axis], createdAt: t.createdAt, title: t.title }; }));
+  }
+  /** 이 축에서 처음 보여 줄 자리: 놓은 적 있으면 그 순서의 틈, 없으면 가운데 */
+  function startPos(axis) {
+    var pl = state.place, raw = pl.raw[axis], ln = placeLine(axis);
+    if (raw === null || raw === undefined) return 0.5;
+    if (!ln.length) return raw;
+    return RT.uni.slotPos(ln.filter(function (o) { return o.raw < raw; }).length, ln);
+  }
+  function startPlace(id, info) {
+    var t = findTodo(id) || info;
+    if (!t || !state.me || !(t.scope === 'together' || t.scope === state.me)) return;
+    var cur = (t.ui && t.ui[state.me]) || null;
+    state.uniSheet = null; state.todoForm = null; state.archive = null; uniReturn = null;
+    state.place = { id: id, fresh: !!(info && info.fresh), title: t.title, scope: t.scope, cat: t.cat || null, axis: 'u', raw: { u: cur ? cur.u : null, i: cur ? cur.i : null }, cur: cur, touched: false, ask: null, hint: false };
+    state.place.p = startPos('u');
+    state.sheetEntering = true; render(true);
+  }
+  function josa(word) {
+    var ch = String(word || '').trim().slice(-1).charCodeAt(0);
+    if (ch >= 0xAC00 && ch <= 0xD7A3) return (ch - 0xAC00) % 28 ? '이' : '가';
+    return '이(가)';
+  }
+  function noteHtml(p, ln, axis) {
+    if (!ln.length) return axis === 'u' ? '가운데가 보통이에요. 급할수록 위로 올려 주세요' : '가운데가 보통이에요. 중요할수록 위로 올려 주세요';
+    var d = RT.uni.describe(p, ln, axis);
+    if (typeof d === 'string') return esc(d);
+    return '<b>' + esc(d.below) + '</b>보다 ' + esc(d.more) + '<br><b>' + esc(d.above) + '</b>보다 ' + esc(d.less);
+  }
+  function placeModel() {
+    var pl = state.place, U = RT.uni, ln = placeLine(pl.axis), c = catOf(pl.cat);
+    var nb = U.neighbors(pl.p, ln), ask = null, pv = -1;
+    if (pl.ask) { pv = U.askPivot(pl.ask); ask = { step: pl.ask.step, max: U.maxAsk(ln.length), pivot: ln[pv] ? ln[pv].title : '', word: U.WORDS[pl.axis].ask, josa: josa(pl.title) }; }
+    var marks = ln.map(function (o, k) {
+      return { title: o.title, pos: o.pos, near: !pl.ask && (o === nb.below || o === nb.above), pivot: k === pv, out: !!pl.ask && (k < pl.ask.lo || k >= pl.ask.hi) };
+    });
+    return { axis: pl.axis, title: pl.title, short: U.short(pl.title), icon: c ? c.icon : '', slot: slotOfTodo(pl), p: pl.p, marks: marks, hint: pl.hint && !pl.ask, ask: ask,
+      canAsk: ln.length > 0, noteHtml: noteHtml(pl.p, ln, pl.axis), saving: !!pl.saving,
+      sub: !ln.length ? '처음 놓는 할 일이에요' : pl.axis === 'u' ? '위로 갈수록 급해요 · 평면에서는 오른쪽으로 옮겨져요' : '위로 갈수록 중요해요' };
+  }
+  function closePlace() {
+    var pl = state.place;
+    state.place = null;
+    focusAfter = [pl ? '[data-act="uni-open"][data-id="' + CSS.escape(pl.id) + '"]' : null, '[data-act="uni-unplaced"]', '[data-act="todo-view"][data-v="plane"]'].filter(Boolean);
+    render(true);
+  }
+  function placeAsk() {
+    var pl = state.place;
+    if (!pl) return;
+    var n = placeLine(pl.axis).length;
+    if (!n) return;
+    pl.ask = RT.uni.askStart(n); pl.hint = false;
+    focusAfter = ['[data-act="place-ans"][data-v="yes"]']; focusInSheet = true;
+    render(true);
+  }
+  function placeAnswer(ans) {
+    var pl = state.place, U = RT.uni;
+    if (!pl || !pl.ask) return;
+    pl.ask = U.askAnswer(pl.ask, ans);
+    if (U.askDone(pl.ask)) {
+      pl.p = U.slotPos(U.askSlot(pl.ask), placeLine(pl.axis));
+      pl.ask = null; pl.hint = true; pl.touched = true;
+      focusAfter = ['[data-act="place-next"]'];
+    } else focusAfter = ['[data-act="place-ans"][data-v="yes"]'];
+    focusInSheet = true;
+    render(true);
+  }
+  /** 지금 축의 raw: 손대지 않았으면 원래 값 그대로 (다시 정하기에서 그냥 넘겨도 바뀌지 않게) */
+  function axisRaw() {
+    var pl = state.place, orig = pl.raw[pl.axis];
+    if (!pl.touched && orig !== null && orig !== undefined) return orig;
+    return Math.round(RT.uni.rawFrom(pl.p, placeLine(pl.axis)) * 10000) / 10000;
+  }
+  function placeNext() {
+    var pl = state.place;
+    if (!pl || pl.ask) return;
+    pl.raw[pl.axis] = axisRaw();
+    if (pl.axis === 'u') {
+      pl.axis = 'i'; pl.touched = false; pl.hint = false; pl.p = startPos('i');
+      focusAfter = ['[data-act="place-block"]']; focusInSheet = true;
+      render(true);
+      return;
+    }
+    finishPlace();
+  }
+  function placeBack() {
+    var pl = state.place;
+    if (!pl) return;
+    pl.raw.i = axisRaw();
+    pl.axis = 'u'; pl.touched = false; pl.hint = false; pl.ask = null; pl.p = startPos('u');
+    focusAfter = ['[data-act="place-block"]']; focusInSheet = true;
+    render(true);
+  }
+  function finishPlace() {
+    var pl = state.place;
+    if (!store || !pl) return;
+    var u = pl.raw.u, i = pl.raw.i;
+    store.placeTodo(pl.id, state.me, u, i).catch(function () { showToast('평면에 놓지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+    logUi(pl.id, pl.cur ? 'move' : 'add', { u: u, i: i });
+    var id = pl.id;
+    state.place = null;
+    state.todoView = 'plane'; lsSet(LS_VIEW, 'plane'); state.uni.who = state.me; state.uni.flash = id;
+    focusAfter = ['[data-act="uni-open"][data-id="' + CSS.escape(id) + '"]'];
+    showToast(pl.cur ? '자리를 옮겼어요' : '📍 평면에 놓았어요');
+    setTimeout(function () { if (state.uni.flash === id) { state.uni.flash = null; render(); } }, 1800);
+  }
+  // 끌어서 놓기 · 방향키 — 끄는 동안은 다시 그리지 않고 블록 · 문장만 옮긴다
+  var drag = null;
+  function placeTrack() { return appEl.querySelector('.pline__track'); }
+  function updatePlaceDom() {
+    var pl = state.place, ln = placeLine(pl.axis), top = (Math.round((1 - pl.p) * 100000) / 1000) + '%';
+    var b = appEl.querySelector('.pblock'); if (b) b.style.top = top;
+    var h = appEl.querySelector('.phint'); if (h) h.remove();
+    var n = document.getElementById('pnote'); if (n) n.innerHTML = noteHtml(pl.p, ln, pl.axis);
+    var nb = RT.uni.neighbors(pl.p, ln);
+    Array.prototype.forEach.call(appEl.querySelectorAll('.pmark[data-k]'), function (el) {
+      var o = ln[Number(el.getAttribute('data-k'))];
+      el.classList.toggle('is-near', !!o && (o === nb.below || o === nb.above));
+    });
+  }
+  function dragTo(clientY) {
+    var tr = placeTrack();
+    if (!tr || !state.place) return;
+    var r = tr.getBoundingClientRect();
+    var p = 1 - (clientY - r.top) / r.height;
+    state.place.p = p < 0 ? 0 : p > 1 ? 1 : p;
+    state.place.hint = false;
+    updatePlaceDom();
+  }
+  appEl.addEventListener('pointerdown', function (ev) {
+    if (!state.place || state.place.ask || !ev.target.closest('[data-pline]')) return;
+    ev.preventDefault();
+    drag = { id: ev.pointerId };
+    var line = ev.target.closest('[data-pline]');
+    try { line.setPointerCapture(ev.pointerId); } catch (e) {}
+    var b = appEl.querySelector('.pblock'); if (b) { b.classList.add('is-dragging'); b.focus({ preventScroll: true }); }
+    dragTo(ev.clientY);
+  });
+  appEl.addEventListener('pointermove', function (ev) { if (drag && ev.pointerId === drag.id) { ev.preventDefault(); dragTo(ev.clientY); } });
+  function endDrag(ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    drag = null;
+    if (!state.place) return;
+    state.place.touched = true;
+    render(true);
+  }
+  appEl.addEventListener('pointerup', endDrag);
+  appEl.addEventListener('pointercancel', endDrag);
+  function placeKey(ev) {
+    var pl = state.place;
+    if (!pl || pl.ask || !ev.target.closest || !ev.target.closest('.pblock')) return false;
+    var step = ev.shiftKey ? 0.1 : 0.03, d = 0;
+    if (ev.key === 'ArrowUp') d = step; else if (ev.key === 'ArrowDown') d = -step;
+    else if (ev.key === 'Home') d = 1; else if (ev.key === 'End') d = -1;
+    else return false;
+    ev.preventDefault();
+    pl.p = Math.max(0, Math.min(1, pl.p + d)); pl.touched = true; pl.hint = false;
+    render(true);
+    return true;
+  }
+  // 평면 블록이 새 자리로 미끄러지게 (FLIP) — 다시 그리기 전 자리를 재 두고, 그린 뒤 그 차이만큼 되돌렸다가 풀어 준다
+  var reduceMotion = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function flipMeasure() {
+    if (reduceMotion || state.tab !== 'todo') return null;
+    var out = {};
+    Array.prototype.forEach.call(appEl.querySelectorAll('[data-uni-pt]'), function (el) { var r = el.getBoundingClientRect(); out[el.getAttribute('data-uni-pt')] = { x: r.left, y: r.top }; });
+    return out;
+  }
+  function flipPlay(before) {
+    if (!before) return;
+    Array.prototype.forEach.call(appEl.querySelectorAll('[data-uni-pt]'), function (el) {
+      var b = before[el.getAttribute('data-uni-pt')];
+      if (!b || !el.animate) return;
+      var r = el.getBoundingClientRect(), dx = b.x - r.left, dy = b.y - r.top;
+      if (Math.abs(dx) + Math.abs(dy) < 1) return;
+      el.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    });
+  }
+
+  // 「완료한 일 보관함」: 어제까지 완료한 일 — 열 때만 30개씩 불러온다
+  var ARCHIVE_PAGE = 30;
+  function openArchive() {
+    if (!store) return;
+    state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.uniSheet = null;
+    state.archive = { items: [], loading: true, more: false, error: '' };
+    state.sheetEntering = true; render(true);
+    loadArchive();
+  }
+  function closeArchive() { state.archive = null; focusAfter = ['[data-act="archive-open"]']; render(true); }
+  function loadArchive() {
+    var a = state.archive;
+    if (!a || !store) return;
+    var last = a.items[a.items.length - 1];
+    var before = last && last.doneAt ? last.doneAt : RT.todos.dayStartIso(state.today);
+    a.loading = true; a.error = ''; if (a.items.length) render(true);
+    store.loadDone(before, ARCHIVE_PAGE).then(function (docs) {
+      if (state.archive !== a) return;
+      var seen = {}; a.items.forEach(function (t) { seen[t.id] = true; });
+      a.items = a.items.concat(RT.todos.fromDocs(docs).filter(function (t) { return t.done && !seen[t.id]; }));
+      a.more = docs.length >= ARCHIVE_PAGE; a.loading = false;
+      if (a.items.length > ARCHIVE_PAGE) focusAfter = ['[data-act="archive-more"]', '[data-act="archive-close"]'], focusInSheet = true;
+      render(true);
+    }, function () {
+      if (state.archive !== a) return;
+      a.loading = false; a.error = '불러오지 못했어요. 잠시 뒤 다시 열어 주세요.'; render(true);
+    });
+  }
+  function archiveModel() {
+    var a = state.archive, sm = slotMap();
+    return { loading: a.loading, more: a.more, error: a.error, groups: RT.todos.archiveGroups(a.items).map(function (g) {
+      return { label: g.label, items: g.items.map(function (t) {
+        var c = catOf(t.cat), tog = t.scope === 'together';
+        return { id: t.id, title: t.title, icon: c ? c.icon : '', slot: slotOfTodo(t, sm), canUndo: tog || t.scope === state.me,
+          meta: (tog ? '함께 · ' + nameOf(t.doneBy) + ' 님이 했어요' : t.scope === state.me ? '내 일' : nameOf(t.scope) + ' 님 일') + (t.doneAt ? ' · ' + D.timeLabel(t.doneAt) : '') };
+      }) };
+    }) };
+  }
+  function undoArchived(id) {
+    var a = state.archive, t = a && a.items.filter(function (x) { return x.id === id; })[0];
+    if (!t || !store || !(t.scope === 'together' || t.scope === state.me)) return;
+    a.items = a.items.filter(function (x) { return x.id !== id; });
+    store.saveTodo(Object.assign({}, t, { done: false, doneBy: null, doneAt: null })).catch(function () { showToast('되돌리지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+    if (t.ui[state.me]) logUi(id, 'undo', t.ui[state.me]);
+    showToast('남은 일로 되돌렸어요');
+    var nf = appEl.querySelector('.sheet [data-act="archive-undo"]') || appEl.querySelector('.sheet [data-act="archive-more"]') || appEl.querySelector('.sheet [data-act="archive-close"]');
+    if (nf) nf.focus({ preventScroll: true });
   }
 
   // 일정
@@ -1043,7 +1434,12 @@
     if (id === 'au-email') { state.auth.email = ev.target.value; return; }
     if (id === 'au-pass') { state.auth.password = ev.target.value; return; }
     if (id === 'me-name') { state.setup.name = ev.target.value; return; }
-    if (state.todoForm && (id === 'td-title' || id === 'td-date')) { state.todoForm[id === 'td-title' ? 'title' : 'date'] = ev.target.value; clearPlanError(state.todoForm, 'td-error'); return; }
+    if (state.todoForm && (id === 'td-title' || id === 'td-date')) {
+      state.todoForm[id === 'td-title' ? 'title' : 'date'] = ev.target.value; clearPlanError(state.todoForm, 'td-error');
+      var pvt = id === 'td-title' && appEl.querySelector('.upreview .upt__name-txt');
+      if (pvt) pvt.textContent = RT.uni.short(ev.target.value.trim() || '할 일');
+      return;
+    }
     if (id === 'cat-name' && state.catSheet && state.catSheet.edit) { var cf = state.catSheet.edit; cf.name = ev.target.value; clearPlanError(cf, 'cat-error'); var pv = appEl.querySelector('.cpreview__name'); if (pv) pv.textContent = cf.name.trim() || '이름'; return; }
     if (state.eventForm && /^ev-(title|short|date|start|end)$/.test(id)) { state.eventForm[id.slice(3)] = ev.target.value; clearPlanError(state.eventForm, 'ev-error'); return; }
     var f = state.manage && state.manage.form;
@@ -1063,10 +1459,14 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeTopSheet() {
+    if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
+    if (state.todoForm || state.eventForm || state.catSheet) { /* 아래로 */ }
+    else if (state.uniSheet) { closeUniSheet(); return; }
+    else if (state.archive) { closeArchive(); return; }
     if (state.catSheet) { if (state.catSheet.edit) { state.catSheet.edit = null; render(true); } else closeCats(); }
     else if (state.todoForm || state.eventForm) closePlanSheet();
     else if (state.notifyOpen) closeNotify();
@@ -1139,7 +1539,8 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm && !state.catSheet) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
@@ -1281,7 +1682,7 @@
         if (state.notifyOpen || (colorsChanged && state.status === 'ready')) render();
       }, function () { state.prefsReady = false; state.prefsError = true; if (state.notifyOpen) render(); }),
       store.watchTodos(function (list) { state.todoDocs = list; state.todoErr = ''; if (state.status === 'ready') render(); },
-        function () { state.todoErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
+        function () { state.todoErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }, RT.todos.dayStartIso(state.today)),
       store.watchEvents(function (list) { state.eventDocs = list; state.eventErr = ''; if (state.status === 'ready') render(); },
         function () { state.eventErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
       // 카테고리 — 아직 규칙이 없거나 막혀도 기본 6개로 보이게 둔다 (lost로 보내지 않음)
@@ -1330,6 +1731,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
+    state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 
   function startSession() {

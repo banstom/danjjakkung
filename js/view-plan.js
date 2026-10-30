@@ -33,7 +33,7 @@
   function todoRow(r, mini) {
     var box = '<button type="button" class="tcheck tcheck--' + r.slot + '" role="checkbox" aria-checked="' + r.done + '" data-act="todo-toggle" data-id="' + esc(r.id) + '"' +
       (r.canCheck ? '' : ' aria-disabled="true"') + ' aria-label="' + esc(r.title + (r.canCheck ? '' : ', ' + r.lockText)) + '">' + (r.done ? CHECK : '') + '</button>';
-    var text = '<span class="trow__title">' + esc(r.title) + '</span>' + (r.meta ? '<span class="trow__meta' + (r.over ? ' trow__meta--over' : '') + '">' + esc(r.meta) + '</span>' : '');
+    var text = '<span class="trow__title">' + (r.icon ? '<span class="trow__ico" aria-hidden="true">' + esc(r.icon) + '</span>' : '') + esc(r.title) + '</span>' + (r.meta ? '<span class="trow__meta' + (r.over ? ' trow__meta--over' : '') + '">' + esc(r.meta) + '</span>' : '');
     var body = r.canEdit
       ? '<button type="button" class="trow__text" data-act="todo-edit" data-id="' + esc(r.id) + '" aria-label="' + esc(r.title) + ' 고치기">' + text + '</button>'
       : '<span class="trow__text">' + text + '</span>';
@@ -64,7 +64,125 @@
         (p.mine ? '<button type="button" class="add-line add-line--mini" data-act="todo-add" data-key="' + esc(p.key) + '">＋ 추가</button>' : '') +
         '</section>';
     }).join('');
-    return '<div class="plan">' + tog + '<div class="tcols">' + cols + '</div></div>';
+    return '<div class="plan">' + todoBar(t) + tog + '<div class="tcols">' + cols + '</div>' + archiveLine(t) + '</div>';
+  }
+  function todoBar(t) {
+    return '<div class="plan__bar"><div class="seg" role="group" aria-label="할 일 보기">' +
+      '<button type="button" class="seg__btn" data-act="todo-view" data-v="list" aria-pressed="' + (t.view !== 'plane') + '">목록</button>' +
+      '<button type="button" class="seg__btn" data-act="todo-view" data-v="plane" aria-pressed="' + (t.view === 'plane') + '">평면</button></div></div>';
+  }
+  function archiveLine() {
+    return '<button type="button" class="more-btn more-btn--quiet uarch-btn" data-act="archive-open">완료한 일 보관함 ›</button>';
+  }
+
+  // ── u&I 평면 ──
+  function uniTab(t) {
+    if (t.error) return notice('할 일을 불러오지 못했어요', t.error);
+    var m = t.uni;
+    var who = m.people.length > 1 ? '<div class="seg seg--who" role="group" aria-label="누구의 평면">' + m.people.map(function (p) {
+      return '<button type="button" class="seg__btn" data-act="uni-who" data-v="' + esc(p.key) + '" aria-pressed="' + p.on + '"><span class="dot dot--' + p.slot + '"></span>' + esc(p.name) + (p.mine ? ' (나)' : '') + '</button>';
+    }).join('') + '</div>' : '';
+    var mode = '<div class="seg seg--mini" role="group" aria-label="표기 방식">' +
+      '<button type="button" class="seg__btn" data-act="uni-mode" data-v="block" aria-pressed="' + (m.mode === 'block') + '">블록</button>' +
+      '<button type="button" class="seg__btn" data-act="uni-mode" data-v="dot" aria-pressed="' + (m.mode === 'dot') + '">점</button></div>';
+    var pts = m.items.map(function (it) {
+      var label = m.mode === 'block'
+        ? '<span class="upt__tag" style="--shift:' + it.shift + '">' + (it.icon ? '<span aria-hidden="true">' + esc(it.icon) + '</span>' : '') + esc(it.short) + '</span><span class="upt__tail" aria-hidden="true"></span>'
+        : '<span class="upt__name">' + esc(it.short) + '</span>';
+      return '<button type="button" class="upt upt--' + m.mode + ' upt--' + it.slot + (it.flash ? ' is-flash' : '') + '" data-act="uni-open" data-id="' + esc(it.id) + '" data-uni-pt="' + esc(it.id) + '"' +
+        ' style="left:' + pct(it.x) + ';top:' + pct(it.y) + '" aria-label="' + esc(it.aria) + '">' + label + '<span class="upt__dot" aria-hidden="true"></span></button>';
+    }).join('');
+    var empty = !m.items.length ? '<p class="uempty">' + esc(m.mine ? (m.unplaced ? '아래 「평면에 놓기」로 할 일을 하나씩 놓아 보세요' : '할 일을 추가하고 평면에 놓아 보세요') : m.whoName + ' 님 평면에 놓인 일이 없어요') + '</p>' : '';
+    var plane = '<div class="uplane" role="group" aria-label="급한 정도 × 중요한 정도 평면">' +
+      '<span class="uq uq--now" aria-hidden="true"></span><span class="ux" aria-hidden="true"></span><span class="uy" aria-hidden="true"></span>' +
+      '<span class="ul ul--plan">계획할 일</span><span class="ul ul--now">지금 할 일</span><span class="ul ul--later">나중에</span><span class="ul ul--quick">빨리 쳐낼 일</span>' +
+      '<span class="uaxis uaxis--x">급함 →</span><span class="uaxis uaxis--y">↑ 중요함</span>' + empty + pts + '</div>';
+    var legend = m.legend.length ? '<p class="ulegend">' + m.legend.map(function (c) { return '<span>' + esc((c.icon ? c.icon + ' ' : '') + c.name + ' ' + c.n) + '</span>'; }).join('') + '</p>' : '';
+    var tray = m.mine && m.unplaced ? '<button type="button" class="utray" data-act="uni-unplaced"><span>아직 안 놓은 일 ' + m.unplaced + '개</span><span class="utray__go">평면에 놓기 ›</span></button>' : '';
+    var add = m.mine ? '<button type="button" class="add-line" data-act="todo-add" data-key="plane">＋ 할 일</button>' : '';
+    return '<div class="plan">' + todoBar(t) +
+      '<div class="uhead"><div class="uhead__title"><span class="uhead__name">u&amp;I</span><span class="uhead__sub">Urgent × Important</span></div>' + mode + '</div>' +
+      who + plane + legend + tray + add + archiveLine() + '</div>';
+  }
+
+  function infoChips(chips) {
+    return '<div class="uchips">' + chips.map(function (c) { return '<span class="uchip">' + (c.slot ? '<span class="dot dot--' + c.slot + '"></span>' : '') + esc(c.text) + '</span>'; }).join('') + '</div>';
+  }
+  /** 평면에서 할 일을 누르면: 카테고리 · 순서 · 놓은 때 + [완료] [위치 다시 정하기] [고치기] [삭제] */
+  function uniDetail(m, entering) {
+    var stats = m.n ? '<div class="ustats"><div class="ustat"><span class="ustat__k">급한 순서</span><span class="ustat__v">' + m.n + '개 중 ' + m.urgentRank + '번째</span></div>' +
+      '<div class="ustat"><span class="ustat__k">중요한 순서</span><span class="ustat__v">' + m.n + '개 중 ' + m.importantRank + '번째</span></div></div>' : '';
+    var acts = '';
+    if (m.canDone) acts += '<button type="button" class="solid-btn solid-btn--full" data-act="uni-done">완료</button>';
+    var row = [];
+    if (m.canPlace) row.push('<button type="button" class="ghost-btn" data-act="uni-place" data-id="' + esc(m.id) + '">위치 다시 정하기</button>');
+    if (m.canEdit) row.push('<button type="button" class="ghost-btn" data-act="uni-edit">고치기</button>');
+    if (row.length) acts += '<div class="rform__actions">' + row.join('') + '</div>';
+    if (m.canEdit) acts += '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="uni-delete">' + (m.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>';
+    var inner = infoChips(m.chips) + stats + (m.placed ? '<p class="sheet__sub">' + esc(m.placed) + '</p>' : '') + '<div class="uacts">' + acts + '</div>';
+    return sheetShell('uni-detail-title', m.title, '', inner, 'uni-close', entering);
+  }
+  /** 아직 안 놓은 일 → 하나 골라 놓기 */
+  function uniUnplaced(m, entering) {
+    var inner = '<div class="ulist">' + m.items.map(function (it) {
+      return '<button type="button" class="slist__item" data-act="uni-place" data-id="' + esc(it.id) + '"><span class="dot dot--' + it.slot + '"></span>' +
+        (it.icon ? '<span aria-hidden="true">' + esc(it.icon) + '</span>' : '') + '<span class="ulist__t">' + esc(it.title) + '</span><span class="ulist__go" aria-hidden="true">›</span></button>';
+    }).join('') + '</div>';
+    return sheetShell('uni-unplaced-title', '아직 안 놓은 일', '하나를 고르면 급한 정도부터 놓아요', inner, 'uni-close', entering);
+  }
+
+  /** 축 놓기 화면 (급한 정도 → 중요한 정도). 세로선 위, 위로 갈수록 급함 · 중요함 */
+  function placeScreen(m) {
+    var marks = m.marks.map(function (k, idx) {
+      return '<span class="pmark pmark--' + (idx % 2 ? 'l' : 'r') + (k.near ? ' is-near' : '') + (k.pivot ? ' is-pivot' : '') + (k.out ? ' is-out' : '') + '" data-k="' + idx + '" style="top:' + pct((1 - k.pos) * 100) + '">' +
+        '<span class="pmark__dot" aria-hidden="true"></span><span class="pmark__name">' + esc(k.title) + '</span></span>';
+    }).join('');
+    var block = '<button type="button" class="pblock pblock--' + m.slot + '" data-act="place-block" style="top:' + pct((1 - m.p) * 100) + '"' +
+      ' aria-label="' + esc(m.title + ', 위아래 방향키로 옮기기') + '" aria-describedby="pnote">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4"/></svg>' +
+      (m.icon ? '<span aria-hidden="true">' + esc(m.icon) + '</span>' : '') + esc(m.short) + '</button>' +
+      (m.hint ? '<span class="phint" style="top:' + pct((1 - m.p) * 100) + '">여기 어때?</span>' : '');
+    var bottom;
+    if (m.ask) {
+      bottom = '<section class="pask" aria-live="polite"><span class="pask__step">질문 ' + m.ask.step + ' · 많아야 ' + m.ask.max + '번</span>' +
+        '<p class="pask__q"><b>' + esc(m.title) + '</b>' + esc(m.ask.josa) + '<br>' + esc(m.ask.pivot) + '보다 ' + esc(m.ask.word) + '</p>' +
+        '<div class="pask__btns"><button type="button" class="ghost-btn" data-act="place-ans" data-v="no">아니요</button>' +
+        '<button type="button" class="ghost-btn ghost-btn--soft" data-act="place-ans" data-v="same">비슷해요</button>' +
+        '<button type="button" class="solid-btn" data-act="place-ans" data-v="yes">네</button></div>' +
+        '<button type="button" class="text-btn" data-act="place-stopask">그만하고 직접 놓기</button></section>';
+    } else {
+      bottom = '<p id="pnote" class="pnote" role="status">' + m.noteHtml + '</p>' +
+        '<div class="rform__actions">' +
+        (m.axis === 'i' ? '<button type="button" class="ghost-btn" data-act="place-back">‹ 급한 정도</button>' : (m.canAsk ? '<button type="button" class="ghost-btn ghost-btn--accent" data-act="place-ask">위치 추천 받기</button>' : '')) +
+        '<button type="button" class="solid-btn" data-act="place-next"' + (m.saving ? ' disabled' : '') + '>' + (m.axis === 'u' ? '다음 · 중요도' : (m.saving ? '놓는 중…' : '여기로 놓기')) + '</button></div>' +
+        (m.axis === 'i' && m.canAsk ? '<button type="button" class="text-btn" data-act="place-ask">위치 추천 받기</button>' : '');
+    }
+    return '<div class="sheet-layer"><section class="sheet place" role="dialog" aria-modal="true" aria-labelledby="place-title">' +
+      '<div class="place__top"><button type="button" class="place__x" data-act="place-cancel" aria-label="닫기">' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
+      '<span class="place__steps" aria-label="2단계 중 ' + (m.axis === 'u' ? 1 : 2) + '단계"><span class="is-on"></span><span' + (m.axis === 'i' ? ' class="is-on"' : '') + '></span></span><span class="place__pad"></span></div>' +
+      '<h2 id="place-title" class="place__title">' + (m.axis === 'u' ? '얼마나 급해요?' : '얼마나 중요해요?') + '</h2>' +
+      '<p class="place__sub">' + esc(m.sub) + '</p>' +
+      '<div class="pline" data-pline="1"><span class="pline__top">' + (m.axis === 'u' ? '급함' : '중요함') + '</span>' +
+      '<span class="pline__bottom">' + (m.axis === 'u' ? '덜 급함' : '덜 중요함') + '</span><div class="pline__track"><span class="pline__bar" aria-hidden="true"></span>' + marks + block + '</div></div>' +
+      '<div class="place__bottom">' + bottom + '</div></section></div>';
+  }
+
+  /** 완료한 일 보관함 (어제까지 완료한 일, 날짜마다) */
+  function archiveSheet(m, entering) {
+    var body;
+    if (m.error) body = '<p class="rform__error" role="alert">' + esc(m.error) + '</p>';
+    else if (!m.groups.length && m.loading) body = '<p class="tempty">불러오는 중…</p>';
+    else if (!m.groups.length) body = '<p class="tempty">아직 보관된 일이 없어요. 완료한 일은 다음 날 여기로 와요</p>';
+    else body = m.groups.map(function (g) {
+      return '<section class="agroup"><h3 class="agroup__day">' + esc(g.label) + ' <span>' + g.items.length + '개</span></h3>' + g.items.map(function (r) {
+        return '<div class="arow"><span class="dot dot--' + r.slot + '"></span><span class="arow__text"><span class="arow__title">' + (r.icon ? '<span aria-hidden="true">' + esc(r.icon) + '</span> ' : '') + esc(r.title) + '</span>' +
+          '<span class="trow__meta">' + esc(r.meta) + '</span></span>' +
+          (r.canUndo ? '<button type="button" class="more-btn arow__undo" data-act="archive-undo" data-id="' + esc(r.id) + '" aria-label="' + esc(r.title + ' 되돌리기') + '">되돌리기</button>' : '') + '</div>';
+      }).join('') + '</section>';
+    }).join('') + (m.more ? '<button type="button" class="more-btn" data-act="archive-more"' + (m.loading ? ' disabled' : '') + '>' + (m.loading ? '불러오는 중…' : '더 보기 ⌄') + '</button>' : '');
+    return sheetShell('archive-title', '완료한 일 보관함', '오늘 완료한 일은 목록에 있어요 · 되돌리면 다시 남은 일로', '<div class="alist">' + body + '</div>' +
+      '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="archive-close">닫기</button></div>', 'archive-close', entering);
   }
 
   var DUE_CHOICES = [['none', '없음'], ['today', '오늘'], ['tomorrow', '내일'], ['week', '이번 주'], ['date', '날짜']];
@@ -92,16 +210,27 @@
   }
   function todoSheet(f, entering) {
     if (!f) return '';
-    var inner = '<form class="pform" data-form="todo" novalidate>' +
+    var cats = f.cats || [];
+    var catRow = cats.length ? '<div class="field"><span class="field__label">카테고리 <span class="field__hint">· 시간표와 같은 목록</span></span><div class="pick-row" role="group" aria-label="카테고리">' + cats.map(function (c) {
+      return '<button type="button" class="pick" data-act="todo-cat" data-v="' + esc(c.id) + '" aria-pressed="' + (c.id === f.cat) + '">' + esc(c.icon + ' ' + c.name) + '</button>';
+    }).join('') + '</div></div>' : '';
+    var scopeRow = f.scopePick ? '<div class="field"><span class="field__label">누구 일</span>' + chipRow('todo-scope', [['me', '내 할 일'], ['together', '함께 할 일']], f.scope === 'together' ? 'together' : 'me', '누구 일') + '</div>' : '';
+    var preview = f.preview ? '<div class="upreview" aria-hidden="true"><span class="upreview__k">평면에서</span><span class="upt upt--block upt--' + f.preview.slot + ' upt--static"><span class="upt__tag">' + (f.preview.icon ? '<span>' + esc(f.preview.icon) + '</span>' : '') + '<span class="upt__name-txt">' + esc(f.preview.short) + '</span></span><span class="upt__tail"></span><span class="upt__dot"></span></span><span class="upreview__k">' + '7자까지 보여요</span></div>' : '';
+    var busy = f.saving ? ' disabled' : '';
+    var actions;
+    if (f.mode === 'edit') actions = '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="todo-cancel">취소</button><button type="submit" class="solid-btn"' + busy + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div>';
+    else if (f.placeDefault) actions = '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="todo-save-list"' + busy + '>목록에만 추가</button><button type="submit" class="solid-btn"' + busy + '>추가하고 평면에 놓기</button></div>';
+    else actions = '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="todo-cancel">취소</button><button type="submit" class="solid-btn"' + busy + '>' + (f.saving ? '저장 중…' : '추가하기') + '</button></div>' +
+      '<button type="button" class="text-btn" data-act="todo-save-place"' + busy + '>추가하고 평면에 놓기 ›</button>';
+    var inner = '<form class="pform" data-form="todo" novalidate>' + scopeRow +
       '<label class="field"><span class="field__label">할 일</span><input id="td-title" class="field__input" type="text" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="예: 주말 장보기" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="td-error"' : '') + '></label>' +
       '<div class="field"><span class="field__label" id="td-due-label">기한</span>' + chipRow('todo-due', DUE_CHOICES, f.choice, '기한') + '</div>' +
       (f.choice === 'date' ? '<label class="field"><span class="field__label">날짜</span><input id="td-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>' : '') +
-      errorLine('td-error', f) +
-      '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="todo-cancel">취소</button>' +
-      '<button type="submit" class="solid-btn"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : f.mode === 'edit' ? '저장' : '추가하기') + '</button></div>' +
+      catRow + preview +
+      errorLine('td-error', f) + actions +
       '</form>' +
       (f.mode === 'edit' ? '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="todo-delete"' + (f.saving ? ' disabled' : '') + '>' + (f.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>' : '');
-    return sheetShell('todo-sheet-title', f.mode === 'edit' ? '할 일 고치기' : (f.scope === 'together' ? '함께 할 일 추가' : '내 할 일 추가'),
+    return sheetShell('todo-sheet-title', f.mode === 'edit' ? '할 일 고치기' : (f.scopePick ? '할 일 추가' : f.scope === 'together' ? '함께 할 일 추가' : '내 할 일 추가'),
       f.scope === 'together' ? '둘 다 보고 체크할 수 있어요' : '짝꿍도 볼 수 있지만 체크는 나만 해요', inner, 'todo-cancel', entering);
   }
 
@@ -327,7 +456,7 @@
     return sheetShell('event-sheet-title', f.mode === 'edit' ? '일정 고치기' : '일정 추가', '짝꿍도 볼 수 있어요. 고치는 건 나(함께 일정은 둘 다)만', inner, 'event-cancel', entering);
   }
 
-  var api = { tabbar: tabbar, todoTab: todoTab, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet, catSheet: catSheet };
+  var api = { tabbar: tabbar, todoTab: todoTab, uniTab: uniTab, uniDetail: uniDetail, uniUnplaced: uniUnplaced, placeScreen: placeScreen, archiveSheet: archiveSheet, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet, catSheet: catSheet };
   root.RT = root.RT || {};
   root.RT.viewPlan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
