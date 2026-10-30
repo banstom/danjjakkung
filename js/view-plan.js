@@ -96,7 +96,7 @@
     var plane = '<div class="uplane" role="group" aria-label="급한 정도 × 중요한 정도 평면">' +
       '<span class="uq uq--now" aria-hidden="true"></span><span class="ux" aria-hidden="true"></span><span class="uy" aria-hidden="true"></span>' +
       '<span class="ul ul--plan">계획할 일</span><span class="ul ul--now">지금 할 일</span><span class="ul ul--later">나중에</span><span class="ul ul--quick">빨리 쳐낼 일</span>' +
-      '<span class="uaxis uaxis--x">급함 →</span><span class="uaxis uaxis--y">↑ 중요함</span>' + empty + pts + '</div>';
+      '<span class="uaxis uaxis--x">급함</span><span class="uaxis uaxis--y">중요함</span>' + empty + pts + '</div>';
     var legend = m.legend.length ? '<p class="ulegend">' + m.legend.map(function (c) { return '<span>' + esc((c.icon ? c.icon + ' ' : '') + c.name + ' ' + c.n) + '</span>'; }).join('') + '</p>' : '';
     var tray = m.mine && m.unplaced ? '<button type="button" class="utray" data-act="uni-unplaced"><span>아직 안 놓은 일 ' + m.unplaced + '개</span><span class="utray__go">평면에 놓기 ›</span></button>' : '';
     var add = m.mine ? '<button type="button" class="add-line" data-act="todo-add" data-key="plane">＋ 할 일</button>' : '';
@@ -153,14 +153,13 @@
     } else {
       bottom = '<p id="pnote" class="pnote" role="status">' + m.noteHtml + '</p>' +
         '<div class="rform__actions">' +
-        (m.axis === 'i' ? '<button type="button" class="ghost-btn" data-act="place-back">‹ 급한 정도</button>' : (m.canAsk ? '<button type="button" class="ghost-btn ghost-btn--accent" data-act="place-ask">위치 추천 받기</button>' : '')) +
-        '<button type="button" class="solid-btn" data-act="place-next"' + (m.saving ? ' disabled' : '') + '>' + (m.axis === 'u' ? '다음 · 중요도' : (m.saving ? '놓는 중…' : '여기로 놓기')) + '</button></div>' +
-        (m.axis === 'i' && m.canAsk ? '<button type="button" class="text-btn" data-act="place-ask">위치 추천 받기</button>' : '');
+        (m.canAsk ? '<button type="button" class="ghost-btn ghost-btn--accent" data-act="place-ask">위치 추천 받기</button>' : '') +
+        '<button type="button" class="solid-btn" data-act="place-next"' + (m.saving ? ' disabled' : '') + '>' + (m.axis === 'u' ? '다음 · 중요도' : (m.saving ? '놓는 중…' : '여기로 놓기')) + '</button></div>';
     }
     return '<div class="sheet-layer"><section class="sheet place" role="dialog" aria-modal="true" aria-labelledby="place-title">' +
       '<div class="place__top"><button type="button" class="place__x" data-act="place-cancel" aria-label="닫기">' +
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
-      '<span class="place__steps" aria-label="2단계 중 ' + (m.axis === 'u' ? 1 : 2) + '단계"><span class="is-on"></span><span' + (m.axis === 'i' ? ' class="is-on"' : '') + '></span></span><span class="place__pad"></span></div>' +
+      '<span class="place__steps" aria-label="2단계 중 ' + (m.axis === 'u' ? 1 : 2) + '단계"><span class="is-on"></span><span' + (m.axis === 'i' ? ' class="is-on"' : '') + '></span></span>' + (m.axis === 'i' && !m.ask ? '<button type="button" class="place__back" data-act="place-back">‹ 급한 정도</button>' : '<span class="place__pad"></span>') + '</div>' +
       '<h2 id="place-title" class="place__title">' + (m.axis === 'u' ? '얼마나 급해요?' : '얼마나 중요해요?') + '</h2>' +
       '<p class="place__sub">' + esc(m.sub) + '</p>' +
       '<div class="pline" data-pline="1"><span class="pline__top">' + (m.axis === 'u' ? '급함' : '중요함') + '</span>' +
@@ -227,6 +226,7 @@
       '<div class="field"><span class="field__label" id="td-due-label">기한</span>' + chipRow('todo-due', DUE_CHOICES, f.choice, '기한') + '</div>' +
       (f.choice === 'date' ? '<label class="field"><span class="field__label">날짜</span><input id="td-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>' : '') +
       catRow + preview +
+      '<label class="field"><span class="field__label">평면에 보일 이름 <span class="field__hint">· 선택, 7자까지</span></span><input id="td-short" class="field__input" type="text" maxlength="7" autocomplete="off" enterkeyhint="done" placeholder="' + esc(f.shortHint || '비우면 할 일 이름 그대로') + '" value="' + esc(f.short || '') + '"></label>' +
       errorLine('td-error', f) + actions +
       '</form>' +
       (f.mode === 'edit' ? '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="todo-delete"' + (f.saving ? ' disabled' : '') + '>' + (f.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>' : '');

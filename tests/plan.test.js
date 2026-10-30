@@ -55,6 +55,15 @@ test('완료한 일은 완료한 날까지 목록에, 다음 날부터 보관함
   assert.deepStrictEqual(g.map((x) => [x.label, x.items.map((t) => t.id)]), [['10월 28일 (수)', ['a']], ['10월 27일 (화)', ['b']], ['10월 25일 (일)', ['d']]]);
 });
 
+test('평면에 보일 이름: 비거나 할 일 이름과 같으면 저장 안 함, 7자까지', () => {
+  assert.strictEqual(T.shortFrom('  ', '세차하기'), null);
+  assert.strictEqual(T.shortFrom('세차하기', '세차하기'), null);
+  assert.strictEqual(T.shortFrom(' 생물 과제 ', '생물학 과제 제출하기'), '생물 과제');
+  assert.strictEqual(T.cleanShort('여덟글자이름이다'), null);
+  assert.strictEqual(T.validate({ title: 'x', short: '여덟글자이름이다', choice: 'none' }), '평면에 보일 이름은 7자까지 쓸 수 있어요');
+  assert.strictEqual(T.fromDocs([{ id: 'a', scope: 'u1', title: 'x', short: '짧게' }])[0].short, '짧게');
+});
+
 test('할 일 카테고리 · 평면 위치는 믿을 수 있는 값만', () => {
   const [t] = T.fromDocs([{ id: 'a', scope: 'u1', title: 'x', cat: 'study', ui: { u1: { u: 0.4, i: 1, at: 'z' }, u2: { u: 2, i: 0 }, u3: 'x' } }]);
   assert.strictEqual(t.cat, 'study');

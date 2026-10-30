@@ -1,6 +1,7 @@
 /* 할 일 계산 — 기한으로 줄 세우기, 3개까지만 보이기, 완료 접기. 화면 없음.
    todos/<id> : { scope: 'together' | <uid>, title, due: 'YYYY-MM-DD' | null, done, doneBy, doneAt, createdBy, createdAt, updatedAt,
-                  cat: 카테고리 id | null (시간표와 같은 목록), ui: { <uid>: { u, i, at } } (u&I 평면 위치, js/uni.js) }
+                  cat: 카테고리 id | null (시간표와 같은 목록), ui: { <uid>: { u, i, at } } (u&I 평면 위치, js/uni.js),
+                  short: 평면에 보일 이름 | null (1~7자, 없으면 할 일 이름 앞 7자) }
    완료한 일은 완료한 날까지만 목록에 남고, 다음 날부터는 「완료한 일」 보관함에서 본다 (지우지 않음). */
 (function (root) {
   'use strict';
@@ -51,6 +52,13 @@
   }
 
   var CAT_RE = /^[a-z0-9]{1,24}$/;
+  var SHORT_MAX = 7;
+  function cleanShort(v) { var s = typeof v === 'string' ? v.trim() : ''; return s && Array.from(s).length <= SHORT_MAX ? s : null; }
+  /** 저장할 평면 이름: 비었거나 할 일 이름과 같으면 null (할 일 이름을 그대로 씀) */
+  function shortFrom(input, title) {
+    var s = String(input || '').trim();
+    return !s || s === String(title || '').trim() ? null : s;
+  }
   function cleanUi(ui) {
     var out = {};
     if (!ui || typeof ui !== 'object') return out;
@@ -67,7 +75,7 @@
     }).map(function (t) {
       return { id: t.id, scope: t.scope, title: t.title, due: typeof t.due === 'string' && !isNaN(D.parse(t.due)) ? t.due : null,
         done: t.done === true, doneBy: t.doneBy || null, doneAt: t.doneAt || null, createdBy: t.createdBy || null, createdAt: t.createdAt || '',
-        cat: typeof t.cat === 'string' && CAT_RE.test(t.cat) ? t.cat : null, ui: cleanUi(t.ui) };
+        cat: typeof t.cat === 'string' && CAT_RE.test(t.cat) ? t.cat : null, ui: cleanUi(t.ui), short: cleanShort(t.short) };
     });
   }
 
@@ -127,10 +135,11 @@
     if (!title) return '할 일을 적어 주세요';
     if (title.length > TITLE_MAX) return '할 일은 ' + TITLE_MAX + '자까지 쓸 수 있어요';
     if (f.choice === 'date' && isNaN(D.parse(f.date))) return '날짜를 골라 주세요';
+    if (Array.from(String(f.short || '').trim()).length > SHORT_MAX) return '평면에 보일 이름은 ' + SHORT_MAX + '자까지 쓸 수 있어요';
     return '';
   }
 
-  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate, doneDay: doneDay, visible: visible, dayStartIso: dayStartIso, archiveGroups: archiveGroups, cleanUi: cleanUi };
+  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate, SHORT_MAX: SHORT_MAX, shortFrom: shortFrom, cleanShort: cleanShort, doneDay: doneDay, visible: visible, dayStartIso: dayStartIso, archiveGroups: archiveGroups, cleanUi: cleanUi };
   root.RT = root.RT || {};
   root.RT.todos = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

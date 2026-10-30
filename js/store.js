@@ -84,8 +84,8 @@
       saveTodo: function (t) {
         return db.doc('todos/' + t.id).set({
           scope: t.scope, title: t.title, due: t.due || null, done: !!t.done, doneBy: t.done ? t.doneBy : null, doneAt: t.done ? t.doneAt : null,
-          createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString(), cat: t.cat || null
-        }, { mergeFields: ['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat'] });
+          createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString(), cat: t.cat || null, short: t.short || null
+        }, { mergeFields: ['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'short'] });
       },
       /** 내 평면 위치만 바꾼다 (짝꿍이 놓은 위치는 그대로) */
       placeTodo: function (id, uid, u, i) {

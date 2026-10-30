@@ -77,7 +77,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
+  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
@@ -563,19 +563,26 @@
     planReturn = '[data-act="todo-add"][data-key="' + CSS.escape(key) + '"]';
     var last = lsGet(LS_TODOCAT), cat = last && catOf(last) ? last : null; // 카테고리는 지난번 고른 것
     var fromPlane = key === 'plane';
-    openPlanSheet('todo', { mode: 'add', scope: key === 'together' ? 'together' : state.me, scopePick: fromPlane, placeDefault: fromPlane, cat: cat,
+    openPlanSheet('todo', { mode: 'add', scope: key === 'together' ? 'together' : state.me, scopePick: fromPlane, placeDefault: fromPlane, cat: cat, short: '',
       title: '', choice: 'none', date: D.toKey(state.today), error: '' });
   }
   /** 시트에 그릴 값: 카테고리 목록 · 평면 블록 미리보기 */
   function todoFormView(f) {
     var c = catOf(f.cat), sm = slotMap();
-    return Object.assign({}, f, { cats: catList(), preview: { short: RT.uni.short(String(f.title || '').trim() || '할 일'), icon: c ? c.icon : '', slot: f.scope === 'together' ? 'both' : (sm[f.scope] || 'me') } });
+    return Object.assign({}, f, { cats: catList(), shortHint: '비우면 「' + RT.uni.short(String(f.title || '').trim() || '할 일') + '」',
+      preview: { short: previewShort(f), icon: c ? c.icon : '', slot: f.scope === 'together' ? 'both' : (sm[f.scope] || 'me') } });
+  }
+  /** 평면 블록 글자: 평면에 보일 이름이 있으면 그것, 없으면 할 일 이름 앞 7자 */
+  function blockName(t) { return t.short || RT.uni.short(t.title); }
+  function previewShort(f) {
+    var s = String(f.short || '').trim();
+    return s ? RT.uni.short(s) : RT.uni.short(String(f.title || '').trim() || '할 일');
   }
   function editTodo(id) {
     var t = findTodo(id);
     if (!t || !(t.scope === 'together' || t.scope === state.me)) return;
     planReturn = '[data-act="todo-edit"][data-id="' + CSS.escape(id) + '"]';
-    openPlanSheet('todo', { mode: 'edit', id: id, scope: t.scope, title: t.title, cat: t.cat && catOf(t.cat) ? t.cat : null, choice: RT.todos.choiceOf(t.due, state.today), date: t.due || D.toKey(state.today), error: '' });
+    openPlanSheet('todo', { mode: 'edit', id: id, scope: t.scope, title: t.title, short: t.short || '', cat: t.cat && catOf(t.cat) ? t.cat : null, choice: RT.todos.choiceOf(t.due, state.today), date: t.due || D.toKey(state.today), error: '' });
   }
   function saveTodo(placeAfter) {
     var f = state.todoForm;
@@ -586,8 +593,9 @@
     if (f.id && !old) { closePlanSheet(); showToast('다른 기기에서 지워진 할 일이에요'); return; }
     var due = RT.todos.dueFrom(f.choice, state.today, f.date);
     var cat = f.cat && catOf(f.cat) ? f.cat : null;
-    var t = old ? Object.assign({}, old, { title: String(f.title).trim(), due: due, cat: cat })
-      : { id: RT.store.newKey(), scope: f.scope, title: String(f.title).trim(), due: due, cat: cat, ui: {}, done: false, doneBy: null, doneAt: null, createdBy: state.me, createdAt: new Date().toISOString() };
+    var short = RT.todos.shortFrom(f.short, f.title);
+    var t = old ? Object.assign({}, old, { title: String(f.title).trim(), due: due, cat: cat, short: short })
+      : { id: RT.store.newKey(), scope: f.scope, title: String(f.title).trim(), due: due, cat: cat, short: short, ui: {}, done: false, doneBy: null, doneAt: null, createdBy: state.me, createdAt: new Date().toISOString() };
     if (!old) lsSet(LS_TODOCAT, cat || '');
     if (placeAfter === undefined) placeAfter = !old && !!f.placeDefault;
     if (!old && placeAfter) {
@@ -662,7 +670,7 @@
       var l = lay[t.id], c = catOf(t.cat), k = c ? c.id : '-';
       if (!counts[k]) { counts[k] = { icon: c ? c.icon : '', name: c ? c.name : '카테고리 없음', n: 0, order: c ? c.order : 999 }; keys.push(k); }
       counts[k].n++;
-      return { id: t.id, short: U.short(t.title), icon: c ? c.icon : '', slot: slotOfTodo(t, sm), y0: l.y,
+      return { id: t.id, short: blockName(t), icon: c ? c.icon : '', slot: slotOfTodo(t, sm), y0: l.y,
         x: 5 + l.x * 90, y: 11 + (1 - l.y) * 80, shift: l.x > 0.78 ? '-86%' : l.x < 0.22 ? '-14%' : '-50%', flash: state.uni.flash === t.id,
         aria: t.title + (t.scope === 'together' ? ' (함께)' : '') + ', ' + l.n + '개 중 ' + l.urgentRank + '번째로 급함 · ' + l.importantRank + '번째로 중요함' };
     }).sort(function (a, b) { return b.y0 - a.y0; }); // 위(중요한 것)부터 그려서 아래 블록이 위 블록 꼬리를 덮지 않게
@@ -735,7 +743,7 @@
     if (!t || !state.me || !(t.scope === 'together' || t.scope === state.me)) return;
     var cur = (t.ui && t.ui[state.me]) || null;
     state.uniSheet = null; state.todoForm = null; state.archive = null; uniReturn = null;
-    state.place = { id: id, fresh: !!(info && info.fresh), title: t.title, scope: t.scope, cat: t.cat || null, axis: 'u', raw: { u: cur ? cur.u : null, i: cur ? cur.i : null }, cur: cur, touched: false, ask: null, hint: false };
+    state.place = { id: id, fresh: !!(info && info.fresh), title: t.title, short: t.short || null, scope: t.scope, cat: t.cat || null, axis: 'u', raw: { u: cur ? cur.u : null, i: cur ? cur.i : null }, cur: cur, touched: false, ask: null, hint: false };
     state.place.p = startPos('u');
     state.sheetEntering = true; render(true);
   }
@@ -757,7 +765,7 @@
     var marks = ln.map(function (o, k) {
       return { title: o.title, pos: o.pos, near: !pl.ask && (o === nb.below || o === nb.above), pivot: k === pv, out: !!pl.ask && (k < pl.ask.lo || k >= pl.ask.hi) };
     });
-    return { axis: pl.axis, title: pl.title, short: U.short(pl.title), icon: c ? c.icon : '', slot: slotOfTodo(pl), p: pl.p, marks: marks, hint: pl.hint && !pl.ask, ask: ask,
+    return { axis: pl.axis, title: pl.title, short: blockName(pl), icon: c ? c.icon : '', slot: slotOfTodo(pl), p: pl.p, marks: marks, hint: pl.hint && !pl.ask, ask: ask,
       canAsk: ln.length > 0, noteHtml: noteHtml(pl.p, ln, pl.axis), saving: !!pl.saving,
       sub: !ln.length ? '처음 놓는 할 일이에요' : pl.axis === 'u' ? '위로 갈수록 급해요 · 평면에서는 오른쪽으로 옮겨져요' : '위로 갈수록 중요해요' };
   }
@@ -1437,7 +1445,15 @@
     if (state.todoForm && (id === 'td-title' || id === 'td-date')) {
       state.todoForm[id === 'td-title' ? 'title' : 'date'] = ev.target.value; clearPlanError(state.todoForm, 'td-error');
       var pvt = id === 'td-title' && appEl.querySelector('.upreview .upt__name-txt');
-      if (pvt) pvt.textContent = RT.uni.short(ev.target.value.trim() || '할 일');
+      if (pvt) pvt.textContent = previewShort(state.todoForm);
+      var sht = id === 'td-title' && document.getElementById('td-short');
+      if (sht) sht.placeholder = '비우면 「' + RT.uni.short(ev.target.value.trim() || '할 일') + '」';
+      return;
+    }
+    if (state.todoForm && id === 'td-short') {
+      state.todoForm.short = ev.target.value; clearPlanError(state.todoForm, 'td-error');
+      var pvs = appEl.querySelector('.upreview .upt__name-txt');
+      if (pvs) pvs.textContent = previewShort(state.todoForm);
       return;
     }
     if (id === 'cat-name' && state.catSheet && state.catSheet.edit) { var cf = state.catSheet.edit; cf.name = ev.target.value; clearPlanError(cf, 'cat-error'); var pv = appEl.querySelector('.cpreview__name'); if (pv) pv.textContent = cf.name.trim() || '이름'; return; }
@@ -1603,7 +1619,8 @@
     if (form.getAttribute('data-form') === 'auth') { state.auth.email = values.email; state.auth.password = values.password; submitAuth(); }
     else if (form.getAttribute('data-form') === 'setup') { state.setup.name = values.name; submitSetup(); }
     else if (form.getAttribute('data-form') === 'todo' && state.todoForm) {
-      state.todoForm.title = get('td-title'); if (document.getElementById('td-date')) state.todoForm.date = get('td-date'); saveTodo();
+      state.todoForm.title = get('td-title'); if (document.getElementById('td-date')) state.todoForm.date = get('td-date');
+      if (document.getElementById('td-short')) state.todoForm.short = get('td-short'); saveTodo();
     }
     else if (form.getAttribute('data-form') === 'event' && state.eventForm) {
       var ef = state.eventForm; ef.title = get('ev-title'); if (document.getElementById('ev-short')) ef.short = get('ev-short');

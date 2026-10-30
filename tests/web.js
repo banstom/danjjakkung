@@ -354,7 +354,9 @@ async function tick(page, dateKey, key) {
   console.log('평면에서 추가 시트:', await jm.textContent('#todo-sheet-title'), '| 누구:', (await jm.$$eval('[data-act="todo-scope"]', (e) => e.map((x) => x.textContent + ':' + x.getAttribute('aria-pressed')))).join(' '));
   await jm.fill('#td-title', '생물학 과제 제출하기');
   await jm.click('[data-act="todo-cat"][data-v="study"]');
-  console.log('미리보기:', await jm.textContent('.upreview .upt__tag'));
+  console.log('미리보기:', await jm.textContent('.upreview .upt__tag'), '| 이름 칸 안내:', await jm.getAttribute('#td-short', 'placeholder'));
+  await jm.fill('#td-short', '생물 과제');
+  console.log('평면 이름 넣으면 미리보기:', await jm.textContent('.upreview .upt__tag'));
   await jm.screenshot({ path: path.join(OUT, 'uni-add.png') });
   await jm.click('form[data-form="todo"] button[type="submit"]');
   await jm.waitForTimeout(150);
@@ -367,13 +369,17 @@ async function tick(page, dateKey, key) {
   let asked = 0;
   while (await jm.$('[data-act="place-ans"]')) { if (!asked) await jm.screenshot({ path: path.join(OUT, 'uni-ask.png') }); await jm.click('[data-act="place-ans"][data-v="yes"]'); asked++; }
   console.log('추천 질문:', askQ, '| 물은 수', asked, '| 말풍선', await jm.textContent('.phint'), '|', (await jm.textContent('#pnote')).trim());
+  const btnSpot = async () => { const b = await jm.locator('[data-act="place-ask"]').boundingBox(); return b && Math.round(b.x) + ',' + Math.round(b.y); };
+  const askSpotU = await btnSpot();
   await jm.click('[data-act="place-next"]');
+  console.log('추천 버튼 같은 자리(급함 → 중요함):', askSpotU === await btnSpot(), '| 이전 버튼:', await jm.textContent('.place__back'));
+  await jm.screenshot({ path: path.join(OUT, 'uni-place-i.png') });
   await jm.focus('.pblock'); for (let k = 0; k < 8; k++) await jm.keyboard.press('ArrowUp');
   console.log('방향키 중요도:', (await jm.textContent('#pnote')).trim());
   await jm.click('[data-act="place-next"]'); await jm.waitForTimeout(250);
   const jmUidU = accounts.get('junmin@example.com').uid;
   const bio = [...docs.entries()].find(([k, v]) => k.startsWith('todos/') && v.title === '생물학 과제 제출하기');
-  console.log('저장: cat', bio[1].cat, '| ui', JSON.stringify(bio[1].ui[jmUidU] && { u: bio[1].ui[jmUidU].u, i: bio[1].ui[jmUidU].i }));
+  console.log('저장: cat', bio[1].cat, '| short', bio[1].short, '| ui', JSON.stringify(bio[1].ui[jmUidU] && { u: bio[1].ui[jmUidU].u, i: bio[1].ui[jmUidU].i }));
   console.log('평면 블록:', (await jm.$$eval('.upt__tag', (e) => e.map((x) => x.textContent))).join(' / '));
   console.log('범례:', await jm.textContent('.ulegend'));
   await jm.screenshot({ path: path.join(OUT, 'uni-plane-block.png') });
