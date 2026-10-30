@@ -442,6 +442,12 @@
       '<button type="button" class="close-btn" data-act="cat-close">' + (m.hasBack ? esc(m.backLabel) : '닫기') + '</button>';
     return sheetShell('cat-sheet-title', '카테고리', '둘이 같이 쓰는 목록이에요 · 바꾸면 짝꿍 화면에도 바뀌어요', inner, 'cat-close', entering);
   }
+  /** 매주 일정: 언제부터 적용할지 — 앞으로 계속(그 주부터) | 처음부터 모든 주(지난 주에도 보임) */
+  function fromField(f) {
+    var lbl = RT.dates.label(RT.dates.parse(f.from)) + ' 주부터 앞으로 계속';
+    return '<div class="field"><span class="field__label">언제부터 <span class="field__hint">· 앞으로만 추가할까요?</span></span>' +
+      chipRow('ev-from', [['forward', lbl], ['all', '지난 주에도 (모든 주)']], f.fromMode === 'all' ? 'all' : 'forward', '언제부터') + '</div>';
+  }
   function eventSheet(f, entering) {
     if (!f) return '';
     if (f.mode === 'view') {
@@ -461,6 +467,7 @@
       (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
         multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'
         : '<label class="field"><span class="field__label">날짜</span><input id="ev-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>') +
+      (f.weekly ? fromField(f) : '') +
       timeFields(f) +
       errorLine('ev-error', f) +
       '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="event-cancel">취소</button>' +

@@ -62,13 +62,14 @@
   }
   function whenOnly(e) {
     if (!e.weekly) return D.full(D.parse(e.date)) + ' · ' + e.start + '–' + e.end;
-    if (!e.perDay) return '매주 ' + wdText(e.weekdays) + '요일 · ' + e.start + '–' + e.end;
-    return '매주 ' + e.weekdays.map(function (w) { return WD[w] + ' ' + e.times[w].start + '–' + e.times[w].end; }).join(' · ');
+    var since = e.from ? ' · ' + D.label(D.parse(e.from)) + '부터' : '';
+    if (!e.perDay) return '매주 ' + wdText(e.weekdays) + '요일 · ' + e.start + '–' + e.end + since;
+    return '매주 ' + e.weekdays.map(function (w) { return WD[w] + ' ' + e.times[w].start + '–' + e.times[w].end; }).join(' · ') + since;
   }
 
   var SKIP_MAX = 60;
   // 화면이 아는 필드 — 이 밖의 필드(더 새 버전 앱이 넣은 것)는 고쳐 저장할 때 그대로 둔다
-  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
+  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'from', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
   function extraOf(e) {
     var out = null;
     Object.keys(e).forEach(function (k) { if (KNOWN.indexOf(k) < 0) { out = out || {}; out[k] = e[k]; } });
@@ -109,14 +110,14 @@
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
       var cat = C.isId(e.cat) ? e.cat : null, c = catOf(cat, catList); // 지운 카테고리여도 id 는 남겨 둔다 (아이콘만 없음)
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
+        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], from: weekly && typeof e.from === 'string' && !isNaN(D.parse(e.from)) ? e.from : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
 
   /** 그날 일정 (매주 + 그날 한 번). 쉬는 날로 뺀 매주 일정은 없다 (opts.skipped 면 그것만) */
   function on(events, day, opts) {
     var wd = weekdayOf(day), key = D.toKey(day), want = !!(opts && opts.skipped);
-    return events.filter(function (e) { return (e.weekly ? e.weekdays.indexOf(wd) >= 0 : e.date === key) && isSkipped(e, day) === want; }).map(function (e) {
+    return events.filter(function (e) { return (e.weekly ? e.weekdays.indexOf(wd) >= 0 && (!e.from || day >= D.parse(e.from)) : e.date === key) && isSkipped(e, day) === want; }).map(function (e) {
       // 요일마다 시간이 다르면 그날 시간으로 (같은 id — 누르면 같은 일정이 열린다)
       return e.weekly && e.perDay ? Object.assign({}, e, { start: e.times[wd].start, end: e.times[wd].end }) : e;
     });

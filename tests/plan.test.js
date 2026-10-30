@@ -346,3 +346,14 @@ test('메모: 정리 · 200자 · 목록 한 줄 · 저장 규칙', () => {
   st.saveTodo(base); st.saveTodo(Object.assign({ memo: '조끼' }, base)); st.saveTodo(Object.assign({ memo: null, clearMemo: true }, base));
   assert.deepStrictEqual(sets.map(([, d, f]) => [('memo' in d) ? d.memo : '-', f.includes('memo')]), [['-', false], ['조끼', true], [null, true]]);
 });
+
+test('매주 일정 시작 주(from): 그 주 앞에는 안 보이고, 없으면 모든 주', () => {
+  const list = S.fromDocs([ev('a', 'u1', { from: '2026-11-09' }), ev('b', 'u1', {}), ev('c', 'u1', { from: 'x' })]);
+  assert.strictEqual(list[0].from, '2026-11-09');
+  assert.strictEqual(list[2].from, null);
+  const ids = (day) => S.on(list, D.parse(day)).map((e) => e.id).sort().join('');
+  assert.strictEqual(ids('2026-11-04'), 'bc'); // 수요일, 시작 주 앞
+  assert.strictEqual(ids('2026-11-11'), 'abc'); // 시작 주 수요일
+  assert.strictEqual(ids('2026-12-02'), 'abc');
+  assert.match(S.whenText(list[0]), /11월 9일부터/);
+});

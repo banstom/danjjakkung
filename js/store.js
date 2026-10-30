@@ -118,6 +118,7 @@
         Object.assign(doc, { owner: e.owner, title: e.title, weekly: !!e.weekly, weekday: days.length === 1 ? days[0] : null, date: e.weekly ? null : e.date,
           start: e.start, end: e.end, createdBy: e.createdBy, updatedAt: new Date().toISOString() });
         if (e.weekly && e.skip && e.skip.length) doc.skip = e.skip.slice(); // 쉬는 날 (없으면 필드 없음)
+        if (e.weekly && e.from) doc.from = e.from; // 이 날짜(그 주 월요일)부터 적용 (없으면 필드 없음 = 처음부터 모든 주)
         if (days.length > 1) doc.weekdays = days.slice();
         if (e.short) doc.short = e.short; // 표시할 이름 (일정 이름과 같거나 비면 필드 없음)
         if (e.cat) doc.cat = e.cat; // 카테고리 (없으면 필드 없음)
