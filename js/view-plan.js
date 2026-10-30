@@ -30,10 +30,12 @@
 
   // ── 할 일 ──
   var CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  // 메모 표시 (카테고리 아이콘 📝 과 헷갈리지 않게 그림으로)
+  var MEMO_ICO = '<svg class="memo-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9"/></svg>';
   function todoRow(r, mini) {
     var box = '<button type="button" class="tcheck tcheck--' + r.slot + '" role="checkbox" aria-checked="' + r.done + '" data-act="todo-toggle" data-id="' + esc(r.id) + '"' +
       (r.canCheck ? '' : ' aria-disabled="true"') + ' aria-label="' + esc(r.title + (r.canCheck ? '' : ', ' + r.lockText)) + '">' + (r.done ? CHECK : '') + '</button>';
-    var text = '<span class="trow__title">' + (r.icon ? '<span class="trow__ico" aria-hidden="true">' + esc(r.icon) + '</span>' : '') + esc(r.title) + '</span>' + (r.meta ? '<span class="trow__meta' + (r.over ? ' trow__meta--over' : '') + '">' + esc(r.meta) + '</span>' : '');
+    var text = '<span class="trow__title">' + (r.icon ? '<span class="trow__ico" aria-hidden="true">' + esc(r.icon) + '</span>' : '') + esc(r.title) + '</span>' + (r.memo ? '<span class="trow__memo" aria-label="' + esc('메모: ' + r.memo) + '"><span aria-hidden="true">' + MEMO_ICO + esc(r.memo) + '</span></span>' : '') + (r.meta ? '<span class="trow__meta' + (r.over ? ' trow__meta--over' : '') + '">' + esc(r.meta) + '</span>' : '');
     var body = r.canEdit
       ? '<button type="button" class="trow__text" data-act="todo-edit" data-id="' + esc(r.id) + '" aria-label="' + esc(r.title) + ' 고치기">' + text + '</button>'
       : '<span class="trow__text">' + text + '</span>';
@@ -98,11 +100,12 @@
       '<span class="ul ul--plan">계획할 일</span><span class="ul ul--now">지금 할 일</span><span class="ul ul--later">나중에</span><span class="ul ul--quick">빨리 쳐낼 일</span>' +
       '<span class="uaxis uaxis--x">급함</span><span class="uaxis uaxis--y">중요함</span>' + empty + pts + '</div>';
     var legend = m.legend.length ? '<p class="ulegend">' + m.legend.map(function (c) { return '<span>' + esc((c.icon ? c.icon + ' ' : '') + c.name + ' ' + c.n) + '</span>'; }).join('') + '</p>' : '';
+    var hint = m.mine && m.items.length ? '<p class="uhint">블록을 꾹 눌러 끌면 바로 옮겨져요 · 짧게 누르면 자세히</p>' : '';
     var tray = m.mine && m.unplaced ? '<button type="button" class="utray" data-act="uni-unplaced"><span>아직 안 놓은 일 ' + m.unplaced + '개</span><span class="utray__go">평면에 놓기 ›</span></button>' : '';
     var add = m.mine ? '<button type="button" class="add-line" data-act="todo-add" data-key="plane">＋ 할 일</button>' : '';
     return '<div class="plan">' + todoBar(t) +
       '<div class="uhead"><div class="uhead__title"><span class="uhead__name">u&amp;I</span><span class="uhead__sub">Urgent × Important</span></div>' + mode + '</div>' +
-      who + plane + legend + tray + add + archiveLine() + '</div>';
+      who + plane + hint + legend + tray + add + archiveLine() + '</div>';
   }
 
   function infoChips(chips) {
@@ -119,7 +122,8 @@
     if (m.canEdit) row.push('<button type="button" class="ghost-btn" data-act="uni-edit">고치기</button>');
     if (row.length) acts += '<div class="rform__actions">' + row.join('') + '</div>';
     if (m.canEdit) acts += '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="uni-delete">' + (m.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>';
-    var inner = infoChips(m.chips) + stats + (m.placed ? '<p class="sheet__sub">' + esc(m.placed) + '</p>' : '') + '<div class="uacts">' + acts + '</div>';
+    var memo = m.memo ? '<div class="umemo"><span class="umemo__k">' + MEMO_ICO + '메모</span><p class="umemo__t">' + esc(m.memo) + '</p></div>' : '';
+    var inner = infoChips(m.chips) + memo + stats + (m.placed ? '<p class="sheet__sub">' + esc(m.placed) + '</p>' : '') + '<div class="uacts">' + acts + '</div>';
     return sheetShell('uni-detail-title', m.title, '', inner, 'uni-close', entering);
   }
   /** 아직 안 놓은 일 → 하나 골라 놓기 */
@@ -212,7 +216,7 @@
     var cats = f.cats || [];
     var catRow = cats.length ? '<div class="field"><span class="field__label">카테고리 <span class="field__hint">· 시간표와 같은 목록</span></span><div class="pick-row" role="group" aria-label="카테고리">' + cats.map(function (c) {
       return '<button type="button" class="pick" data-act="todo-cat" data-v="' + esc(c.id) + '" aria-pressed="' + (c.id === f.cat) + '">' + esc(c.icon + ' ' + c.name) + '</button>';
-    }).join('') + '</div></div>' : '';
+    }).join('') + '<button type="button" class="pick pick--edit" data-act="cat-open" aria-label="카테고리 추가 · 고치기 · 순서 바꾸기">✎ 편집</button></div></div>' : '';
     var scopeRow = f.scopePick ? '<div class="field"><span class="field__label">누구 일</span>' + chipRow('todo-scope', [['me', '내 할 일'], ['together', '함께 할 일']], f.scope === 'together' ? 'together' : 'me', '누구 일') + '</div>' : '';
     var preview = f.preview ? '<div class="upreview" aria-hidden="true"><span class="upreview__k">평면에서</span><span class="upt upt--block upt--' + f.preview.slot + ' upt--static"><span class="upt__tag">' + (f.preview.icon ? '<span>' + esc(f.preview.icon) + '</span>' : '') + '<span class="upt__name-txt">' + esc(f.preview.short) + '</span></span><span class="upt__tail"></span><span class="upt__dot"></span></span><span class="upreview__k">' + '8자까지 보여요</span></div>' : '';
     var busy = f.saving ? ' disabled' : '';
@@ -225,6 +229,8 @@
       '<label class="field"><span class="field__label">할 일</span><input id="td-title" class="field__input" type="text" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="예: 주말 장보기" value="' + esc(f.title) + '"' + (f.error ? ' aria-invalid="true" aria-describedby="td-error"' : '') + '></label>' +
       '<div class="field"><span class="field__label" id="td-due-label">기한</span>' + chipRow('todo-due', DUE_CHOICES, f.choice, '기한') + '</div>' +
       (f.choice === 'date' ? '<label class="field"><span class="field__label">날짜</span><input id="td-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>' : '') +
+      '<label class="field"><span class="field__label">메모 <span class="field__hint">· 선택</span><span id="td-memo-count" class="field__count" aria-hidden="true">' + String(f.memo || '').length + ' / 200</span></span>' +
+      '<textarea id="td-memo" class="field__input field__input--memo" rows="2" maxlength="200" placeholder="예: 가기 전에 조끼 챙기기">' + esc(f.memo || '') + '</textarea></label>' +
       catRow + preview +
       '<label class="field"><span class="field__label">평면에 보일 이름 <span class="field__hint">· 선택, 8자까지</span></span><input id="td-short" class="field__input" type="text" maxlength="8" autocomplete="off" enterkeyhint="done" placeholder="' + esc(f.shortHint || '비우면 할 일 이름 그대로') + '" value="' + esc(f.short || '') + '"></label>' +
       errorLine('td-error', f) + actions +
@@ -415,17 +421,25 @@
         (f.confirmDelete && f.uses ? '<p class="muted cnote">이 카테고리를 쓰는 일정 ' + f.uses + '개는 카테고리 없이 보여요</p>' : '') : '') +
       '</div>';
   }
+  var ARROW = function (d) { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>'; };
   function catSheet(m, entering) {
     if (!m) return '';
-    var list = m.list.length ? m.list.map(function (c) {
-      return '<div class="mitem' + (m.edit && m.edit.id === c.id ? ' is-editing' : '') + '"><span class="emoji-tile" aria-hidden="true">' + esc(c.icon) + '</span>' +
-        '<div class="mitem__text"><span class="mitem__name">' + esc(c.name) + '</span><span class="mitem__status">' + (c.uses ? '일정 ' + c.uses + '개' : '아직 쓰는 일정 없음') + '</span></div>' +
-        (m.edit && m.edit.id === c.id ? '' : '<button type="button" class="small-btn" data-act="cat-edit" data-id="' + esc(c.id) + '" aria-label="' + esc(c.name) + ' 수정">수정</button>') + '</div>';
+    var last = m.list.length - 1;
+    var list = m.list.length ? m.list.map(function (c, k) {
+      var tail;
+      if (m.sorting) tail = '<span class="mitem__moves">' +
+        '<button type="button" class="small-btn small-btn--icon" data-act="cat-move" data-key="' + esc(c.id) + ':-1" aria-label="' + esc(c.name) + ' 위로"' + (k === 0 ? ' disabled' : '') + '>' + ARROW('M12 19V5M6 11l6-6 6 6') + '</button>' +
+        '<button type="button" class="small-btn small-btn--icon" data-act="cat-move" data-key="' + esc(c.id) + ':1" aria-label="' + esc(c.name) + ' 아래로"' + (k === last ? ' disabled' : '') + '>' + ARROW('M12 5v14M6 13l6 6 6-6') + '</button></span>';
+      else tail = m.edit && m.edit.id === c.id ? '' : '<button type="button" class="small-btn" data-act="cat-edit" data-id="' + esc(c.id) + '" aria-label="' + esc(c.name) + ' 수정">수정</button>';
+      return '<div class="mitem' + (m.edit && m.edit.id === c.id ? ' is-editing' : '') + (m.sorting ? ' mitem--sort' : '') + '">' + (m.sorting ? '<span class="mitem__num" aria-hidden="true">' + (k + 1) + '</span>' : '') + '<span class="emoji-tile" aria-hidden="true">' + esc(c.icon) + '</span>' +
+        '<div class="mitem__text"><span class="mitem__name">' + esc(c.name) + '</span><span class="mitem__status">' + (c.uses ? '일정 ' + c.uses + '개' : '아직 쓰는 일정 없음') + '</span></div>' + tail + '</div>';
     }).join('') : '<p class="muted">카테고리가 없어요. 새로 만들어 보세요</p>';
+    var sortBtn = m.list.length > 1 && !m.edit ? '<div class="mhead"><span class="mhead__hint">' + (m.sorting ? '화살표로 옮기면 바로 저장돼요 · 짝꿍 화면도 같은 순서' : '일정 · 할 일 카테고리 칩이 이 순서로 보여요') + '</span>' +
+      '<button type="button" class="small-btn' + (m.sorting ? ' small-btn--on' : '') + '" data-act="cat-sort" aria-pressed="' + !!m.sorting + '">' + (m.sorting ? '완료' : '↕ 순서 바꾸기') + '</button></div>' : '';
     var inner = (m.error ? '<p class="rform__error" role="alert">' + esc(m.error) + '</p>' : '') +
-      '<div class="mlist">' + list + '</div>' +
-      (m.edit ? catForm(m.edit, m.icons) : (m.full ? '<p class="muted">카테고리는 ' + m.max + '개까지 만들 수 있어요</p>' : '<button type="button" class="add-btn" data-act="cat-new">＋ 새 카테고리</button>')) +
-      '<button type="button" class="close-btn" data-act="cat-close">' + (m.hasBack ? '일정으로 돌아가기' : '닫기') + '</button>';
+      sortBtn + '<div class="mlist">' + list + '</div>' +
+      (m.edit ? catForm(m.edit, m.icons) : m.sorting ? '' : (m.full ? '<p class="muted">카테고리는 ' + m.max + '개까지 만들 수 있어요</p>' : '<button type="button" class="add-btn" data-act="cat-new">＋ 새 카테고리</button>')) +
+      '<button type="button" class="close-btn" data-act="cat-close">' + (m.hasBack ? esc(m.backLabel) : '닫기') + '</button>';
     return sheetShell('cat-sheet-title', '카테고리', '둘이 같이 쓰는 목록이에요 · 바꾸면 짝꿍 화면에도 바뀌어요', inner, 'cat-close', entering);
   }
   function eventSheet(f, entering) {

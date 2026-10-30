@@ -318,3 +318,31 @@ test('주 보기 지금 선: 이번 주의 오늘 칸에만', () => {
   assert.deepStrictEqual(S.week([], ['dj', 'jm'], 'jm', ws, today, { now: 630 }).now, { idx: 2, min: 630 });
   assert.strictEqual(S.week([], ['dj', 'jm'], 'jm', ws + 7, today, { now: 630 }).now, null);
 });
+
+test('메모: 정리 · 200자 · 목록 한 줄 · 저장 규칙', () => {
+  assert.strictEqual(T.memoFrom('  가기 전에 조끼 챙기기 \n'), '가기 전에 조끼 챙기기');
+  assert.strictEqual(T.memoFrom('   \n  '), null);
+  assert.strictEqual(T.memoFrom('조끼\r\n\n\n\n축구화  '), '조끼\n\n축구화');
+  assert.strictEqual(T.memoLine('조끼\n축구화'), '조끼 · 축구화');
+  assert.strictEqual(T.memoLine(null), '');
+  const ok = { title: '축구하기', choice: 'none' };
+  assert.strictEqual(T.validate(Object.assign({ memo: 'ㄱ'.repeat(200) }, ok)), '');
+  assert.match(T.validate(Object.assign({ memo: 'ㄱ'.repeat(201) }, ok)), /메모는 200자/);
+  const [a, b, c] = T.fromDocs([
+    { id: 'a', scope: 'together', title: '축구', memo: '조끼 챙기기' },
+    { id: 'b', scope: 'together', title: '축구', memo: '   ' },
+    { id: 'c', scope: 'together', title: '축구', memo: 5 }]);
+  assert.deepStrictEqual([a.memo, b.memo, c.memo], ['조끼 챙기기', null, null]);
+  const fs = require('fs'), path = require('path');
+  const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.ok(rules.includes("'short', 'memo'])") && rules.includes('d.memo.size() <= ' + T.MEMO_MAX));
+  const store = fs.readFileSync(path.join(__dirname, '..', 'js', 'store.js'), 'utf8');
+  // 메모는 있을 때 · 지울 때만 쓴다 (예전 규칙에서도 메모 없는 저장은 되게)
+  const { createStore } = require('../js/store');
+  const sets = [];
+  const db = { doc: (p) => ({ set: (d, o) => { sets.push([p, d, o.mergeFields]); return Promise.resolve(); } }) };
+  const st = createStore(db);
+  const base = { id: 'x', scope: 'together', title: '축구', createdBy: 'a', createdAt: 'z' };
+  st.saveTodo(base); st.saveTodo(Object.assign({ memo: '조끼' }, base)); st.saveTodo(Object.assign({ memo: null, clearMemo: true }, base));
+  assert.deepStrictEqual(sets.map(([, d, f]) => [('memo' in d) ? d.memo : '-', f.includes('memo')]), [['-', false], ['조끼', true], [null, true]]);
+});

@@ -213,6 +213,8 @@ body.has-exit { overflow: hidden; }
   height: 44px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px;
   font: inherit; font-size: 16px; color: var(--text); background: var(--input-bg); width: 100%; min-width: 0;
 }
+.field__input--memo { height: auto; min-height: 64px; padding: 10px 12px; line-height: 1.45; resize: vertical; }
+.field__count { float: right; font-weight: 400; font-variant-numeric: tabular-nums; }
 .field__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .icon-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 .icon-pick { height: 40px; padding: 0; border-radius: 10px; border: 2px solid transparent; background: var(--raised); font-size: 19px; }
@@ -313,6 +315,8 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .trow__title { font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
 .trow--mini .trow__title { font-size: 14px; }
 .trow__meta { font-size: 12px; color: var(--sub); }
+.trow__memo { font-size: 12px; color: var(--sub); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trow.is-done .trow__memo { opacity: .7; }
 .trow__meta--over { color: var(--warn); font-weight: 700; }
 .trow.is-done .trow__title { text-decoration: line-through; color: var(--sub); }
 .tempty { margin: 4px 2px; font-size: 13px; color: var(--sub); line-height: 1.5; }
@@ -650,3 +654,29 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 .kung__text { font-size: 14px; color: var(--text); }
 .kung__btn { flex: none; white-space: nowrap; }
 .kung__btn[disabled] { opacity: .55; }
+
+/* 할 일 메모 (v30) — 평면 상세 시트 */
+.umemo { margin: 10px 0 2px; padding: 10px 12px; border-radius: 12px; background: var(--raised); }
+.memo-ico { vertical-align: -1px; margin-right: 4px; }
+.umemo__k { display: block; font-size: 12px; font-weight: 600; color: var(--sub); margin-bottom: 4px; }
+.umemo__t { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* 평면에서 꾹 눌러 옮기기 (v30) */
+.upt { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.upt.is-lifted { z-index: 5; cursor: grabbing; }
+.upt.is-lifted .upt__tag, .upt.is-lifted .upt__dot { transform: scale(1.12); box-shadow: var(--toast-shadow); transition: transform .12s ease-out; }
+.upt.is-lifted.upt--block .upt__tag { transform: translateX(var(--shift, -50%)) scale(1.12); }
+.uplane.is-moving .upt:not(.is-lifted) { opacity: .55; }
+.uplane[data-over="now"] .uq--now { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.uhint { margin: 6px 2px 0; font-size: 12px; color: var(--sub); text-align: center; }
+
+/* 카테고리 순서 바꾸기 (v30) */
+.mhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.mhead__hint { font-size: 12px; color: var(--sub); line-height: 1.4; }
+.small-btn--on { background: var(--primary); border-color: var(--accent); color: var(--on-primary); }
+.mitem--sort { gap: 10px; }
+.mitem__num { width: 18px; flex-shrink: 0; text-align: center; font-size: 12px; font-weight: 700; color: var(--sub); font-variant-numeric: tabular-nums; }
+.mitem__moves { display: flex; gap: 6px; flex-shrink: 0; }
+.small-btn--icon { width: 40px; height: 40px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.small-btn--icon:disabled { opacity: .3; }
+.small-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

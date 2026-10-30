@@ -375,6 +375,13 @@ async function tick(page, dateKey, key) {
   console.log('미리보기:', await jm.textContent('.upreview .upt__tag'), '| 이름 칸 안내:', await jm.getAttribute('#td-short', 'placeholder'));
   await jm.fill('#td-short', '생물 과제');
   console.log('평면 이름 넣으면 미리보기:', await jm.textContent('.upreview .upt__tag'));
+  // (v30) 메모 · 할 일 시트에서도 카테고리 「편집」 → 돌아오면 적던 것 그대로
+  await jm.fill('#td-memo', '가기 전에\n조끼 챙기기');
+  console.log('메모 글자 수:', await jm.textContent('#td-memo-count'));
+  await jm.click('.sheet [data-act="cat-open"]');
+  console.log('할 일 → 카테고리 시트:', await jm.textContent('#cat-sheet-title'), '| 닫기 버튼:', await jm.textContent('.close-btn[data-act="cat-close"]'));
+  await jm.click('.close-btn[data-act="cat-close"]');
+  console.log('할 일로 돌아옴:', await jm.inputValue('#td-title'), '|', JSON.stringify(await jm.inputValue('#td-memo')), '|', await jm.inputValue('#td-short'), '| 카테고리', await jm.$$eval('[data-act="todo-cat"][aria-pressed="true"]', (e) => e.map((x) => x.textContent).join()));
   await jm.screenshot({ path: path.join(OUT, 'uni-add.png') });
   await jm.click('form[data-form="todo"] button[type="submit"]');
   await jm.waitForTimeout(150);
@@ -397,13 +404,46 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="place-next"]'); await jm.waitForTimeout(250);
   const jmUidU = accounts.get('junmin@example.com').uid;
   const bio = [...docs.entries()].find(([k, v]) => k.startsWith('todos/') && v.title === '생물학 과제 제출하기');
-  console.log('저장: cat', bio[1].cat, '| short', bio[1].short, '| ui', JSON.stringify(bio[1].ui[jmUidU] && { u: bio[1].ui[jmUidU].u, i: bio[1].ui[jmUidU].i }));
+  console.log('저장: cat', bio[1].cat, '| short', bio[1].short, '| memo', JSON.stringify(bio[1].memo), '| ui', JSON.stringify(bio[1].ui[jmUidU] && { u: bio[1].ui[jmUidU].u, i: bio[1].ui[jmUidU].i }));
   console.log('평면 블록:', (await jm.$$eval('.upt__tag', (e) => e.map((x) => x.textContent))).join(' / '));
   console.log('범례:', await jm.textContent('.ulegend'));
   await jm.screenshot({ path: path.join(OUT, 'uni-plane-block.png') });
   await jm.click('[data-act="uni-mode"][data-v="dot"]');
   await jm.screenshot({ path: path.join(OUT, 'uni-plane-dot.png') });
   await jm.click('[data-act="uni-mode"][data-v="block"]');
+  // (v30) 꾹 눌러 옮기기: 0.4초 누르면 들리고, 끌어서 놓으면 그 자리 이웃 사이로. 바로 끌면(스크롤) 안 옮겨짐
+  const bioId = bio[0].split('/')[1];
+  const plane = await jm.locator('.uplane').boundingBox();
+  const ptAt = async () => { const b = await jm.locator(`[data-uni-pt="${bioId}"]`).boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  const uiNow = () => JSON.stringify(docs.get(bio[0]).ui[jmUidU]);
+  let p0 = await ptAt(), uiBefore = uiNow();
+  await jm.mouse.move(p0.x, p0.y); await jm.mouse.down(); await jm.mouse.move(p0.x - 40, p0.y + 40, { steps: 3 }); await jm.mouse.up(); await jm.waitForTimeout(150);
+  console.log("바로 끌면 그대로:", uiNow() === uiBefore, '| 시트 안 열림', !(await jm.$('#uni-detail-title')));
+  p0 = await ptAt();
+  await jm.mouse.move(p0.x, p0.y); await jm.mouse.down(); await jm.waitForTimeout(480);
+  console.log('꾹 → 들림:', await jm.$$eval('.upt.is-lifted', (e) => e.length), '| 평면 is-moving', await jm.$eval('.uplane', (e) => e.classList.contains('is-moving')));
+  await jm.mouse.move(plane.x + plane.width * 0.15, plane.y + plane.height * 0.8, { steps: 8 });
+  await jm.screenshot({ path: path.join(OUT, 'uni-lift.png') });
+  await jm.mouse.up(); await jm.waitForTimeout(250);
+  const moved = docs.get(bio[0]).ui[jmUidU];
+  console.log('놓은 뒤:', await jm.textContent('.toast'), '| u', moved.u, 'i', moved.i, '| 바뀜', uiNow() !== uiBefore, '| 상세 안 열림', !(await jm.$('#uni-detail-title')));
+  const q = await jm.$eval(`[data-uni-pt="${bioId}"]`, (e) => { const r = e.getBoundingClientRect(), pr = e.parentElement.getBoundingClientRect(); return [(r.left + r.width / 2 - pr.left) / pr.width, (r.top + r.height / 2 - pr.top) / pr.height].map((v) => v.toFixed(2)); });
+  console.log('옮긴 뒤 화면 자리(왼쪽 아래 = 나중에):', q.join(','), '| 마지막 기록', [...docs.values()].filter((v) => v && v.type && v.todo === bioId).map((v) => v.type).join(','));
+  // 짧게 누르면 예전처럼 상세 (+ 메모)
+  await jm.click(`[data-act="uni-open"][data-id="${bioId}"]`);
+  console.log('상세 메모:', JSON.stringify(await jm.textContent('.umemo__t').catch(() => '(없음)')));
+  await jm.keyboard.press('Escape');
+  // 다진은 준민 평면을 꾹 눌러도 못 옮김
+  await dj.click('[data-act="todo-view"][data-v="plane"]'); await dj.click(`[data-act="uni-who"][data-v="${jmUidU}"]`).catch(() => {});
+  if (await dj.$(`[data-uni-pt="${bioId}"]`)) {
+    const db0 = await dj.locator(`[data-uni-pt="${bioId}"]`).boundingBox(); uiBefore = uiNow();
+    await dj.mouse.move(db0.x + 12, db0.y + 12); await dj.mouse.down(); await dj.waitForTimeout(480);
+    console.log('짝꿍 평면은 안 들림:', await dj.$$eval('.upt.is-lifted', (e) => e.length));
+    await dj.mouse.move(db0.x + 100, db0.y + 100, { steps: 4 }); await dj.mouse.up(); await dj.waitForTimeout(150);
+    console.log("짝꿍 평면 위치 그대로:", uiNow() === uiBefore); await dj.keyboard.press('Escape');
+  }
+  await dj.click(`[data-act="uni-who"][data-v="${accounts.get('dajin@example.com').uid}"]`).catch(() => {});
+  await dj.click('[data-act="todo-view"][data-v="list"]');
   // 상세
   await jm.click(`[data-act="uni-open"][data-id="${bio[0].split('/')[1]}"]`);
   console.log('상세:', await jm.textContent('#uni-detail-title'), '|', (await jm.$$eval('.uchip', (e) => e.map((x) => x.textContent))).join(', '), '|', (await jm.$$eval('.ustat__v', (e) => e.map((x) => x.textContent))).join(', '));
@@ -429,6 +469,10 @@ async function tick(page, dateKey, key) {
   await jm.click(`[data-act="uni-open"][data-id="${bio[0].split('/')[1]}"]`); await jm.click('[data-act="uni-done"]'); await jm.waitForTimeout(500);
   console.log('완료:', await jm.textContent('.toast'), '| 점', nBefore, '→', await jm.$$eval('.upt', (e) => e.length));
   await jm.click('[data-act="todo-view"][data-v="list"]');
+  await jm.click(`.tcard--col:has(#t-${jmUidU}) [data-act="todo-donelist"]`);
+  console.log('목록 메모 한 줄:', await jm.textContent(`[data-act="todo-edit"][data-id="${bioId}"] .trow__memo`).catch(() => '(없음)'));
+  await jm.screenshot({ path: path.join(OUT, 'todo-memo-list.png') });
+  await jm.click(`.tcard--col:has(#t-${jmUidU}) [data-act="todo-donelist"]`);
   console.log('목록 오늘 완료:', await jm.textContent(`.tcard--col:has(#t-${jmUidU}) [data-act="todo-donelist"]`));
   const logs = [...docs.entries()].filter(([k]) => k.startsWith('uiLog/')).map(([, v]) => v.type);
   console.log('기록(uiLog):', logs.join(','));
@@ -672,6 +716,18 @@ async function tick(page, dateKey, key) {
   const clubKey = [...docs.keys()].find((k) => k.startsWith('cats/c') && docs.get(k) && docs.get(k).name === '동아리');
   console.log('새 카테고리:', clubKey, JSON.stringify(docs.get(clubKey)), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-act') + ':' + document.activeElement.getAttribute('data-id')));
   await jm.screenshot({ path: path.join(OUT, 'cat-sheet.png') });
+  // (v30) 순서 바꾸기: 동아리를 두 칸 위로 → 바뀐 것만 저장, 끝에선 버튼이 막힘, 짝꿍 · 일정 폼 칩도 같은 순서
+  await jm.click('[data-act="cat-sort"]');
+  console.log('순서 모드:', await jm.textContent('.mhead__hint'), '| 맨 위 위로 막힘', await jm.$eval('[data-act="cat-move"][data-key="class:-1"]', (e) => e.disabled), '| 새로 만들기 숨김', !(await jm.$('[data-act="cat-new"]')));
+  const club = clubKey.slice(5);
+  await jm.click(`[data-act="cat-move"][data-key="${club}:-1"]`); await jm.click(`[data-act="cat-move"][data-key="${club}:-1"]`); await jm.waitForTimeout(200);
+  console.log('옮긴 뒤:', await jm.$$eval('.sheet .mitem__name', (e) => e.map((x) => x.textContent).join(',')), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-key')));
+  console.log('저장 order:', ['meet', 'etc', club].map((k) => k + '=' + (docs.get('cats/' + k) || {}).order).join(' '), '| 안 바뀐 것 문서 없음', !docs.get('cats/study'));
+  await jm.screenshot({ path: path.join(OUT, 'cat-sort.png') });
+  await jm.click('[data-act="cat-sort"]');
+  await jm.click('.close-btn[data-act="cat-close"]');
+  console.log('일정 폼 칩 순서:', await jm.$$eval('[data-act="ev-cat"]', (e) => e.map((x) => x.textContent).join(' ')));
+  await jm.click('[data-act="cat-open"]');
   await jm.click('.close-btn[data-act="cat-close"]');
   console.log('일정으로 돌아가기:', await jm.inputValue('#ev-title'), '| 골라진 카테고리', await jm.$$eval('[data-act="ev-cat"][aria-pressed="true"]', (e) => e.map((x) => x.textContent).join()), '| 포커스', await jm.evaluate(() => document.activeElement.getAttribute('data-act')));
   await jm.screenshot({ path: path.join(OUT, 'cat-event-form.png') });

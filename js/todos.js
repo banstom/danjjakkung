@@ -1,7 +1,8 @@
 /* 할 일 계산 — 기한으로 줄 세우기, 3개까지만 보이기, 완료 접기. 화면 없음.
    todos/<id> : { scope: 'together' | <uid>, title, due: 'YYYY-MM-DD' | null, done, doneBy, doneAt, createdBy, createdAt, updatedAt,
                   cat: 카테고리 id | null (시간표와 같은 목록), ui: { <uid>: { u, i, at } } (u&I 평면 위치, js/uni.js),
-                  short: 평면에 보일 이름 | null (1~8자, 없으면 할 일 이름 앞 8자) }
+                  short: 평면에 보일 이름 | null (1~8자, 없으면 할 일 이름 앞 8자),
+                  memo: 메모 | null (1~200자, 여러 줄 — 예: 「가기 전에 조끼 챙기기」) }
    완료한 일은 완료한 날까지만 목록에 남고, 다음 날부터는 「완료한 일」 보관함에서 본다 (지우지 않음). */
 (function (root) {
   'use strict';
@@ -59,6 +60,15 @@
     var s = String(input || '').trim();
     return !s || s === String(title || '').trim() ? null : s;
   }
+  var MEMO_MAX = 200;
+  function cleanMemo(v) { var s = typeof v === 'string' ? v.trim() : ''; return s && s.length <= MEMO_MAX ? s : null; }
+  /** 저장할 메모: 앞뒤 빈칸 · 빈 줄 정리, 비었으면 null */
+  function memoFrom(input) {
+    var s = String(input || '').replace(/\r\n?/g, '\n').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+    return s || null;
+  }
+  /** 목록 줄에 보일 메모 한 줄 (줄바꿈은 빈칸으로) */
+  function memoLine(memo) { return memo ? String(memo).replace(/\s*\n\s*/g, ' · ') : ''; }
   function cleanUi(ui) {
     var out = {};
     if (!ui || typeof ui !== 'object') return out;
@@ -75,7 +85,7 @@
     }).map(function (t) {
       return { id: t.id, scope: t.scope, title: t.title, due: typeof t.due === 'string' && !isNaN(D.parse(t.due)) ? t.due : null,
         done: t.done === true, doneBy: t.doneBy || null, doneAt: t.doneAt || null, createdBy: t.createdBy || null, createdAt: t.createdAt || '',
-        cat: typeof t.cat === 'string' && CAT_RE.test(t.cat) ? t.cat : null, ui: cleanUi(t.ui), short: cleanShort(t.short) };
+        cat: typeof t.cat === 'string' && CAT_RE.test(t.cat) ? t.cat : null, ui: cleanUi(t.ui), short: cleanShort(t.short), memo: cleanMemo(t.memo) };
     });
   }
 
@@ -136,10 +146,11 @@
     if (title.length > TITLE_MAX) return '할 일은 ' + TITLE_MAX + '자까지 쓸 수 있어요';
     if (f.choice === 'date' && isNaN(D.parse(f.date))) return '날짜를 골라 주세요';
     if (Array.from(String(f.short || '').trim()).length > SHORT_MAX) return '평면에 보일 이름은 ' + SHORT_MAX + '자까지 쓸 수 있어요';
+    if ((memoFrom(f.memo) || '').length > MEMO_MAX) return '메모는 ' + MEMO_MAX + '자까지 쓸 수 있어요';
     return '';
   }
 
-  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate, SHORT_MAX: SHORT_MAX, shortFrom: shortFrom, cleanShort: cleanShort, doneDay: doneDay, visible: visible, dayStartIso: dayStartIso, archiveGroups: archiveGroups, cleanUi: cleanUi };
+  var api = { LIMIT: LIMIT, TITLE_MAX: TITLE_MAX, endOfWeek: endOfWeek, bucket: bucket, sortOpen: sortOpen, sortDone: sortDone, dueLabel: dueLabel, fromDocs: fromDocs, section: section, dueFrom: dueFrom, choiceOf: choiceOf, validate: validate, SHORT_MAX: SHORT_MAX, shortFrom: shortFrom, cleanShort: cleanShort, doneDay: doneDay, visible: visible, dayStartIso: dayStartIso, archiveGroups: archiveGroups, cleanUi: cleanUi, MEMO_MAX: MEMO_MAX, cleanMemo: cleanMemo, memoFrom: memoFrom, memoLine: memoLine };
   root.RT = root.RT || {};
   root.RT.todos = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

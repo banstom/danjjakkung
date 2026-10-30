@@ -1,5 +1,5 @@
 /* 시간표 카테고리 — 둘이 같이 쓰는 목록. 화면 없음.
-   cats/<id> : { name, icon, order, updatedBy, updatedAt }   이름 · 아이콘을 바꾸거나 새로 만든 카테고리
+   cats/<id> : { name, icon, order, updatedBy, updatedAt }   이름 · 아이콘 · 순서를 바꾸거나 새로 만든 카테고리 (순서를 바꾸면 기본 카테고리도 문서가 생긴다)
                { deleted: true, updatedBy, updatedAt }        기본 카테고리를 지운 표시 (새로 만든 것은 문서를 지운다)
    문서가 하나도 없으면 기본 6개 그대로 — 그래서 처음에 따로 만들어 둘 것이 없다.
    일정(events)은 카테고리 id 만 적는다(cat). 지운 카테고리를 쓰던 일정은 아이콘 없이 보인다. */
@@ -66,7 +66,24 @@
     return (events || []).filter(function (e) { return e && e.cat === id; }).length;
   }
 
-  var api = { DEFAULTS: DEFAULTS, ICONS: ICONS, NAME_MAX: NAME_MAX, MAX: MAX, isId: isId, isDefault: isDefault, fromDocs: fromDocs, find: find, nextOrder: nextOrder, newId: newId, validate: validate, usage: usage };
+  /**
+   * 순서 바꾸기: id 를 dir(-1 위로 · +1 아래로) 칸 옮긴 뒤 0, 1, 2… 로 다시 매긴다.
+   * → 순서가 바뀌는 카테고리만 [{ id, name, icon, order }] (저장할 것). 못 옮기면 []
+   */
+  function move(list, id, dir) {
+    var k = -1;
+    for (var x = 0; x < list.length; x++) if (list[x].id === id) k = x;
+    var to = k + (dir < 0 ? -1 : 1);
+    if (k < 0 || to < 0 || to >= list.length) return [];
+    var next = list.slice();
+    var it = next.splice(k, 1)[0];
+    next.splice(to, 0, it);
+    return next.map(function (c, i) { return { id: c.id, name: c.name, icon: c.icon, order: i, was: c.order }; })
+      .filter(function (c) { return c.order !== c.was; })
+      .map(function (c) { return { id: c.id, name: c.name, icon: c.icon, order: c.order }; });
+  }
+
+  var api = { move: move, DEFAULTS: DEFAULTS, ICONS: ICONS, NAME_MAX: NAME_MAX, MAX: MAX, isId: isId, isDefault: isDefault, fromDocs: fromDocs, find: find, nextOrder: nextOrder, newId: newId, validate: validate, usage: usage };
   root.RT = root.RT || {};
   root.RT.cats = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

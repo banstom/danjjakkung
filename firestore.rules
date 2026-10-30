@@ -90,7 +90,9 @@ service cloud.firestore {
         && (!(request.auth.uid in nu) || validPlace(nu[request.auth.uid]));
     }
     function validTodo(d) {
-      return d.keys().hasOnly(['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'ui', 'short'])
+      return d.keys().hasOnly(['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'ui', 'short', 'memo'])
+        // 메모: 1~200자 (여러 줄)
+        && (d.get('memo', null) == null || (d.memo is string && d.memo.size() > 0 && d.memo.size() <= 200))
         && (d.get('short', null) == null || (d.short is string && d.short.size() > 0 && d.short.size() <= 8))
         && (d.get('cat', null) == null || (d.cat is string && d.cat.matches('^[a-z0-9]{1,24}$')))
         && d.scope is string && d.title is string && d.title.size() > 0 && d.title.size() <= 40

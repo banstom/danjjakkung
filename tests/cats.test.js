@@ -83,3 +83,26 @@ test('일정: 지금 카테고리 목록의 아이콘 · 이름이 붙는다', (
   // 목록을 안 주면 기본 6개
   assert.strictEqual(S.fromDocs([Object.assign({ id: 'a', cat: 'class' }, base)])[0].catIcon, '📚');
 });
+
+test('순서 바꾸기: 바뀌는 카테고리만 0부터 다시 매긴다', () => {
+  const list = C.fromDocs([{ id: 'cclub', name: '동아리', icon: '⚽', order: 6 }]);
+  // 맨 아래 동아리를 위로 → 기타(5)와 자리 바꿈
+  assert.deepStrictEqual(C.move(list, 'cclub', -1).map((c) => [c.id, c.order]), [['cclub', 5], ['etc', 6]]);
+  // 저장할 값에 이름 · 아이콘도 (기본 카테고리는 이때 문서가 생긴다)
+  assert.deepStrictEqual(C.move(list, 'class', 1)[0], { id: 'exercise', name: '운동', icon: '🏃', order: 0 });
+  // 끝에서는 못 옮김
+  assert.deepStrictEqual(C.move(list, 'class', -1), []);
+  assert.deepStrictEqual(C.move(list, 'cclub', 1), []);
+  assert.deepStrictEqual(C.move(list, 'nope', 1), []);
+  // 빈 번호(지운 기본 카테고리)가 있으면 아래 것들도 같이 당겨진다
+  const gap = C.fromDocs([{ id: 'work', deleted: true }]);
+  assert.deepStrictEqual(C.move(gap, 'class', 1).map((c) => [c.id, c.order]), [['exercise', 0], ['class', 1], ['meet', 3], ['etc', 4]]);
+  // 저장한 뒤 다시 읽으면 바뀐 순서
+  const after = C.fromDocs([{ id: 'cclub', name: '동아리', icon: '⚽', order: 6 }].concat(C.move(list, 'cclub', -1)));
+  assert.deepStrictEqual(after.slice(-2).map((c) => c.id), ['cclub', 'etc']);
+});
+
+test('저장 규칙: order 는 0~999 정수', () => {
+  const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.ok(rules.includes('d.order is int && d.order >= 0 && d.order <= 999'));
+});

@@ -57,7 +57,7 @@
       // ── 할 일 · 시간표 ──
       // todos/<id>  : { scope: 'together' | uid, title, due, done, doneBy, doneAt, createdBy, createdAt, updatedAt }
       // events/<id> : { owner: uid | 'both', title, (short), weekly, weekday, (weekdays), date, start, end, createdBy, updatedAt } — js/schedule.js 참고
-      //   + cat (카테고리 id | null), ui: { <uid>: { u, i, at } } (u&I 평면 위치 — 각자 자기 칸만)
+      //   + cat (카테고리 id | null), short, memo (메모 | null, 200자까지), ui: { <uid>: { u, i, at } } (u&I 평면 위치 — 각자 자기 칸만)
       // 할 일은 남은 일 + 오늘(sinceIso 이후) 완료한 일만 늘 듣는다 — 완료한 일이 쌓여도 여는 양은 그대로.
       // 그 전에 완료한 일은 보관함을 열 때만 loadDone 으로 조금씩.
       watchTodos: function (next, fail, sinceIso) {
@@ -81,11 +81,15 @@
         });
       },
       /** 아는 칸만 덮어쓴다 (mergeFields) — 평면 위치(ui)와 더 새 버전이 넣은 칸은 그대로 남는다 */
+      // 메모(memo)는 있을 때 · 지울 때(clearMemo)만 쓴다 — 메모 없는 할 일은 v30 이전 규칙에서도 저장되게
       saveTodo: function (t) {
-        return db.doc('todos/' + t.id).set({
+        var fields = ['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'short'];
+        var data = {
           scope: t.scope, title: t.title, due: t.due || null, done: !!t.done, doneBy: t.done ? t.doneBy : null, doneAt: t.done ? t.doneAt : null,
           createdBy: t.createdBy, createdAt: t.createdAt, updatedAt: new Date().toISOString(), cat: t.cat || null, short: t.short || null
-        }, { mergeFields: ['scope', 'title', 'due', 'done', 'doneBy', 'doneAt', 'createdBy', 'createdAt', 'updatedAt', 'cat', 'short'] });
+        };
+        if (t.memo || t.clearMemo) { data.memo = t.memo || null; fields.push('memo'); }
+        return db.doc('todos/' + t.id).set(data, { mergeFields: fields });
       },
       /** 내 평면 위치만 바꾼다 (짝꿍이 놓은 위치는 그대로) */
       placeTodo: function (id, uid, u, i) {
