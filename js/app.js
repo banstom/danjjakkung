@@ -572,7 +572,7 @@
     return Object.assign({}, f, { cats: catList(), shortHint: '비우면 「' + RT.uni.short(String(f.title || '').trim() || '할 일') + '」',
       preview: { short: previewShort(f), icon: c ? c.icon : '', slot: f.scope === 'together' ? 'both' : (sm[f.scope] || 'me') } });
   }
-  /** 평면 블록 글자: 평면에 보일 이름이 있으면 그것, 없으면 할 일 이름 앞 7자 */
+  /** 평면 블록 글자: 평면에 보일 이름이 있으면 그것, 없으면 할 일 이름 앞 8자 */
   function blockName(t) { return t.short || RT.uni.short(t.title); }
   function previewShort(f) {
     var s = String(f.short || '').trim();

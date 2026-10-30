@@ -1,7 +1,7 @@
 /* 할 일 계산 — 기한으로 줄 세우기, 3개까지만 보이기, 완료 접기. 화면 없음.
    todos/<id> : { scope: 'together' | <uid>, title, due: 'YYYY-MM-DD' | null, done, doneBy, doneAt, createdBy, createdAt, updatedAt,
                   cat: 카테고리 id | null (시간표와 같은 목록), ui: { <uid>: { u, i, at } } (u&I 평면 위치, js/uni.js),
-                  short: 평면에 보일 이름 | null (1~7자, 없으면 할 일 이름 앞 7자) }
+                  short: 평면에 보일 이름 | null (1~8자, 없으면 할 일 이름 앞 8자) }
    완료한 일은 완료한 날까지만 목록에 남고, 다음 날부터는 「완료한 일」 보관함에서 본다 (지우지 않음). */
 (function (root) {
   'use strict';
@@ -52,7 +52,7 @@
   }
 
   var CAT_RE = /^[a-z0-9]{1,24}$/;
-  var SHORT_MAX = 7;
+  var SHORT_MAX = 8;
   function cleanShort(v) { var s = typeof v === 'string' ? v.trim() : ''; return s && Array.from(s).length <= SHORT_MAX ? s : null; }
   /** 저장할 평면 이름: 비었거나 할 일 이름과 같으면 null (할 일 이름을 그대로 씀) */
   function shortFrom(input, title) {

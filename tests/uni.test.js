@@ -69,7 +69,8 @@ test('위치 추천: 많아야 ceil(log2(n+1))번, 틈 자리', () => {
   assert.strictEqual(U.slotOf(U.slotPos(2, ln), ln), 2);
 });
 
-test('블록 이름은 7자에서 자른다', () => {
-  assert.strictEqual(U.short('부모님께 전화드리기'), '부모님께 전화…');
+test('블록 이름은 8자에서 자른다', () => {
+  assert.strictEqual(U.short('부모님께 전화드리기'), '부모님께 전화드…');
+  assert.strictEqual(U.short('세차하고 장보기'), '세차하고 장보기'); // 빈칸 포함 8자는 그대로
   assert.strictEqual(U.short('세차하기'), '세차하기');
 });

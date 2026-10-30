@@ -4,7 +4,7 @@
 (function (root) {
   'use strict';
 
-  var SHORT = 7; // 블록 이름 글자 수
+  var SHORT = 8; // 블록 이름 글자 수
 
   /** 섞는 비율: 1개면 놓은 자리 그대로(1), 많아질수록 순위 쪽으로 */
   function weight(n) { return n <= 1 ? 1 : 1 / (1 + (n - 1) / 3); }

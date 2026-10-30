@@ -214,7 +214,7 @@
       return '<button type="button" class="pick" data-act="todo-cat" data-v="' + esc(c.id) + '" aria-pressed="' + (c.id === f.cat) + '">' + esc(c.icon + ' ' + c.name) + '</button>';
     }).join('') + '</div></div>' : '';
     var scopeRow = f.scopePick ? '<div class="field"><span class="field__label">누구 일</span>' + chipRow('todo-scope', [['me', '내 할 일'], ['together', '함께 할 일']], f.scope === 'together' ? 'together' : 'me', '누구 일') + '</div>' : '';
-    var preview = f.preview ? '<div class="upreview" aria-hidden="true"><span class="upreview__k">평면에서</span><span class="upt upt--block upt--' + f.preview.slot + ' upt--static"><span class="upt__tag">' + (f.preview.icon ? '<span>' + esc(f.preview.icon) + '</span>' : '') + '<span class="upt__name-txt">' + esc(f.preview.short) + '</span></span><span class="upt__tail"></span><span class="upt__dot"></span></span><span class="upreview__k">' + '7자까지 보여요</span></div>' : '';
+    var preview = f.preview ? '<div class="upreview" aria-hidden="true"><span class="upreview__k">평면에서</span><span class="upt upt--block upt--' + f.preview.slot + ' upt--static"><span class="upt__tag">' + (f.preview.icon ? '<span>' + esc(f.preview.icon) + '</span>' : '') + '<span class="upt__name-txt">' + esc(f.preview.short) + '</span></span><span class="upt__tail"></span><span class="upt__dot"></span></span><span class="upreview__k">' + '8자까지 보여요</span></div>' : '';
     var busy = f.saving ? ' disabled' : '';
     var actions;
     if (f.mode === 'edit') actions = '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="todo-cancel">취소</button><button type="submit" class="solid-btn"' + busy + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div>';
@@ -226,7 +226,7 @@
       '<div class="field"><span class="field__label" id="td-due-label">기한</span>' + chipRow('todo-due', DUE_CHOICES, f.choice, '기한') + '</div>' +
       (f.choice === 'date' ? '<label class="field"><span class="field__label">날짜</span><input id="td-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>' : '') +
       catRow + preview +
-      '<label class="field"><span class="field__label">평면에 보일 이름 <span class="field__hint">· 선택, 7자까지</span></span><input id="td-short" class="field__input" type="text" maxlength="7" autocomplete="off" enterkeyhint="done" placeholder="' + esc(f.shortHint || '비우면 할 일 이름 그대로') + '" value="' + esc(f.short || '') + '"></label>' +
+      '<label class="field"><span class="field__label">평면에 보일 이름 <span class="field__hint">· 선택, 8자까지</span></span><input id="td-short" class="field__input" type="text" maxlength="8" autocomplete="off" enterkeyhint="done" placeholder="' + esc(f.shortHint || '비우면 할 일 이름 그대로') + '" value="' + esc(f.short || '') + '"></label>' +
       errorLine('td-error', f) + actions +
       '</form>' +
       (f.mode === 'edit' ? '<div class="rform__more"><button type="button" class="text-btn text-btn--warn" data-act="todo-delete"' + (f.saving ? ' disabled' : '') + '>' + (f.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button></div>' : '');
