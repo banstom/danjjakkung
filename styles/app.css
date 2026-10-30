@@ -644,3 +644,9 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 .arow__title { font-size: 14px; font-weight: 600; color: var(--sub); text-decoration: line-through; text-decoration-color: var(--faint); overflow-wrap: anywhere; }
 .arow__undo { flex: none; min-height: 36px; }
 @media (prefers-reduced-motion: reduce) { .upt.is-flash .upt__tag, .upt.is-flash.upt--dot .upt__dot { animation: none; } }
+
+/* 꿍 보내기 */
+.kung { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.kung__text { font-size: 14px; color: var(--text); }
+.kung__btn { flex: none; white-space: nowrap; }
+.kung__btn[disabled] { opacity: .55; }

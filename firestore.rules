@@ -128,6 +128,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // 꿍 보내기: 하루에 한 번, 각자 짝꿍에게 (문서 이름 = <날짜>_<보내는 사람 uid> 라서 같은 날 두 번째는 막힌다)
+    // 남기기만 하고 고치거나 지우지 않는다. 서버가 문서가 생기면 짝꿍에게 알림을 보낸다.
+    match /kungs/{id} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'date', 'at'])
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string && request.resource.data.to != request.auth.uid
+        && exists(/databases/$(database)/documents/members/$(request.resource.data.to))
+        && isDate(request.resource.data.date)
+        && id == request.resource.data.date + '_' + request.auth.uid
+        && notFuture(request.resource.data.date)
+        && timestamp.date(int(request.resource.data.date.split('-')[0]), int(request.resource.data.date.split('-')[1]), int(request.resource.data.date.split('-')[2])) > request.time - duration.value(2, 'd')
+        && request.resource.data.at is string && request.resource.data.at.size() <= 40;
+      allow update, delete: if false;
+    }
+
     // ── 시간표 ──  내 일정은 나만, 함께(both) 일정은 둘 다 쓰고 지운다. 읽기는 둘 다.
     // 요일마다 시간: { '1': '10:00-11:00', '3': '16:00-17:00' } — 끝이 시작보다 늦어야
     function validSpan(v) {

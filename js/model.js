@@ -269,6 +269,7 @@
     var visibleCards = set.filter(function (r) { return r.end === null || r.end >= today; });
     var activeToday = routines.filter(function (r) { return activeOn(r, today); });
     return {
+      kung: kungFor(state, names, routines, today, isDone),
       header: header,
       empty: false,
       filter: filter,
@@ -285,6 +286,18 @@
       togetherToday: allPersons.filter(function (p) { return activeToday.some(function (r) { return r.owner === p; }); }).length > 1,
       emptyFilter: visibleCards.length === 0
     };
+  }
+
+  /** 꿍 보내기 칸: 짝꿍의 오늘 루틴이 남아 있으면 보낼 수 있고, 오늘 이미 보냈으면 잠긴다 (없으면 null) */
+  function kungFor(state, names, routines, today, isDone) {
+    if (!state.me || state.kungOff) return null;
+    var to = Object.keys(names).filter(function (k) { return k !== state.me; })[0];
+    if (!to) return null;
+    var theirs = routines.filter(function (r) { return r.owner === to && activeOn(r, today); });
+    if (!theirs.length) return null;
+    var remaining = theirs.filter(function (r) { return !isDone(r, today); }).length;
+    var sent = (state.kungs || []).some(function (k) { return k.from === state.me; });
+    return { to: to, toName: names[to], remaining: remaining, total: theirs.length, status: sent ? 'sent' : remaining === 0 ? 'done' : 'ready' };
   }
 
   var api = { build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn };

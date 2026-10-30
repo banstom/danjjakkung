@@ -125,6 +125,20 @@
       '</section></div>';
   }
 
+  // 꿍 보내기 — 짝꿍에게 하루 한 번 응원 알림
+  function kungBar(k) {
+    if (!k) return '';
+    var text, btn = '';
+    if (k.status === 'done') text = esc(k.toName) + ' 님은 오늘 루틴을 다 했어요 🎉';
+    else {
+      text = esc(k.toName) + ' 님 오늘 루틴 ' + esc(k.remaining) + '개 남았어요';
+      btn = k.status === 'sent'
+        ? '<button type="button" class="small-btn kung__btn" disabled>오늘 보냈어요</button>'
+        : '<button type="button" class="small-btn kung__btn" data-act="send-kung">💌 꿍 보내기</button>';
+    }
+    return '<section class="card kung" aria-label="꿍 보내기"><span class="kung__text">' + text + '</span>' + btn + '</section>';
+  }
+
   function chips(list, canManage) {
     return '<div class="chip-row"><div class="chips" role="group" aria-label="누구 기록을 볼까요">' + list.map(function (c) {
       return '<button type="button" class="chip" data-act="filter" data-id="' + esc(c.id) + '" aria-pressed="' + c.on + '">' + esc(c.label) + '</button>';
@@ -340,7 +354,7 @@
       out += (m.needsPick ? picker(m.people) : '') + notice('아직 등록된 루틴이 없어요', '「＋ 내 루틴」에서 첫 루틴을 추가해 보세요.') +
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');
     } else {
-      out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + grid(m.grid) +
+      out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + grid(m.grid) + kungBar(m.kung) +
         (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : m.cards.map(routineCard).join('')) + both(m.both);
     }
     if (status === 'ready') {

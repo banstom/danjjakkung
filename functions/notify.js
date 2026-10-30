@@ -47,4 +47,11 @@ function remindMessage({ missing, hide }) {
   return { title: TITLE, body: `⏰ 오늘 루틴 ${missing.length}개가 아직이에요 · ${missing.map((r) => r.name).join(', ')}` };
 }
 
-module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, dueRemind, remindMessage };
+/** 꿍 보내기 문구 — 남은 루틴 개수를 함께 알린다 (다 했거나 모르면 개수 없이) */
+function kungMessage({ who, remaining }) {
+  const base = `💌 ${who} 님이 꿍을 보냈어요`;
+  if (typeof remaining === 'number' && remaining > 0) return { title: TITLE, body: `${base} · 오늘 루틴 ${remaining}개 남았어요` };
+  return { title: TITLE, body: base };
+}
+
+module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, dueRemind, remindMessage, kungMessage };

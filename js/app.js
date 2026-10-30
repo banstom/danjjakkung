@@ -44,7 +44,9 @@
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     prefsReady: false,
     push: { busy: false, error: '', info: '' },
-    toast: ''
+    toast: '',
+    kungs: [],           // 오늘 보낸 꿍 (kungs 컬렉션, 날짜가 오늘인 것)
+    kungOff: false,      // 꿍 규칙이 아직 없거나 막혔으면 칸을 숨긴다
   };
   var store = null;
   var toastTimer = null;
@@ -71,7 +73,8 @@
       config: fullConfig(), manage: state.manage,
       checks: RT.store.mergeChecks(state.server, state.pending), meta: state.meta,
       me: state.me, identity: state.me ? 'account' : 'pending',
-      today: state.today, filter: state.filter, page: state.page, sheetDay: state.sheetDay
+      today: state.today, filter: state.filter, page: state.page, sheetDay: state.sheetDay,
+      kungs: state.kungs, kungOff: state.kungOff
     });
   }
 
@@ -163,7 +166,7 @@
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'send-kung': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -302,6 +305,22 @@
     if (msg) { lsSet(LS_SEEN, new Date().toISOString()); showToast(msg, 3600); }
   }
 
+  var kungBusy = false;
+  function sendKung() {
+    var k = model().kung;
+    if (!store || kungBusy || !k || k.status !== 'ready') return;
+    kungBusy = true;
+    var day = D.toKey(state.today);
+    state.kungs = state.kungs.concat([{ from: state.me, to: k.to, date: day }]); render(true); // 바로 잠근다
+    store.sendKung(state.me, k.to, day).then(function () {
+      kungBusy = false; showToast('💌 ' + k.toName + ' 님에게 꿍을 보냈어요');
+    }, function () {
+      kungBusy = false;
+      state.kungs = state.kungs.filter(function (x) { return x.from !== state.me; });
+      showToast('보내지 못했어요. 잠시 뒤 다시 눌러 주세요');
+    });
+  }
+
   function toggle(key) {
     if (!store || state.sheetDay === null || state.sheetDay > state.today) return;
     var r = routines().filter(function (x) { return x.key === key; })[0];
@@ -343,6 +362,7 @@
     else if (act === 'this-month') { state.page = 0; render(); var cur = appEl.querySelector('.cell.is-today') || appEl.querySelector('[data-act="page"]:not([disabled])'); if (cur) cur.focus({ preventScroll: true }); }
     else if (act === 'day') openSheet(Number(btn.getAttribute('data-day')));
     else if (act === 'toggle') toggle(btn.getAttribute('data-key'));
+    else if (act === 'send-kung') sendKung();
     else if (act === 'close') closeSheet();
     else if (act === 'auth-mode') { state.auth.mode = btn.getAttribute('data-id'); state.auth.error = ''; state.auth.info = ''; render(true); }
     else if (act === 'sign-out') signOut();
@@ -1582,7 +1602,7 @@
         if (state.sched.day === old) state.sched.day = now;
         if (state.sched.weekStart === RT.schedule.monStart(old)) state.sched.weekStart = RT.schedule.monStart(now);
       }
-      state.today = now; render();
+      state.today = now; watchKungs(); render();
     }
     else if (state.tab === 'schedule' && state.sched && state.sched.mode === 'day' && minute !== lastMinute && !state.eventForm) render();
     lastMinute = minute;
@@ -1679,7 +1699,15 @@
   // ── 저장소 연결 (끊기면 몇 번까지 다시 붙는다) ─────────────
   var subs = [];
   var retries = 0;
-  function unsubscribe() { subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; }
+  var kungUnsub = null;
+  function watchKungs() {
+    if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; }
+    if (!store || !state.uid) return;
+    state.kungs = [];
+    kungUnsub = store.watchKungs(D.toKey(state.today), function (list) { state.kungs = list; state.kungOff = false; if (state.status === 'ready') render(); },
+      function () { state.kungOff = true; state.kungs = []; if (state.status === 'ready') render(); }); // 규칙이 아직 없어도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
+  }
+  function unsubscribe() { subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } }
   function subscribe() {
     unsubscribe();
     subs = [
@@ -1713,6 +1741,7 @@
         ready();
       }, lost)
     ];
+    watchKungs();
   }
   var caughtUpOnce = false;
   function runCatchUpOnce() { if (!caughtUpOnce && checksDefinitive && state.me) { caughtUpOnce = true; runCatchUp(); } }

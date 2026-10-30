@@ -163,6 +163,7 @@ async function open(browser, name, opts = {}) {
       // ui: 내 칸만 바꿀 수 있다
       if (d) { const nu = d.ui || {}, ou = (old && old.ui) || {}; for (const k of new Set([...Object.keys(nu), ...Object.keys(ou)])) if (k !== uid && JSON.stringify(nu[k]) !== JSON.stringify(ou[k])) throw new Error('permission-denied'); } }
     if (p.startsWith('uiLog/')) { if (!d || d.by !== uid || docs.has(p)) throw new Error('permission-denied'); }
+    if (p.startsWith('kungs/')) { if (!d || d.from !== uid || docs.has(p) || p !== 'kungs/' + d.date + '_' + uid) throw new Error('permission-denied'); }
     if (p.startsWith('events/')) { const old = docs.get(p); for (const x of [old, d]) if (x && x.owner !== 'both' && x.owner !== uid) throw new Error('permission-denied'); }
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
     if (d === null) docs.delete(p); else docs.set(p, d);
@@ -264,6 +265,23 @@ async function tick(page, dateKey, key) {
   console.log('준민 시트 스쿼트 잠김:', await jm.getAttribute('.sheet [data-key]:not([data-key^="r"])', 'aria-disabled').catch(() => null),
     '| 잠긴 버튼들:', await jm.$$eval('.sheet [aria-disabled="true"]', (e) => e.length));
   await jm.click('.close-btn');
+
+  // 4-0) 꿍 보내기: 짝꿍이 다 했으면 칸만 보이고, 남았으면 하루 한 번 보낼 수 있다 (각자 기준)
+  {
+    const jmU = accounts.get('junmin@example.com').uid;
+    console.log('꿍 칸(다진 다 함):', (await jm.textContent('.kung__text').catch(() => '(없음)')), '| 버튼 수:', await jm.$$eval('[data-act="send-kung"]', (e) => e.length));
+    await tick(dj, '2026-10-27', null); // 다진 오늘 체크 풀기
+    await jm.waitForTimeout(400);
+    console.log('꿍 칸(다진 1개 남음):', await jm.textContent('.kung__text'), '| 버튼:', await jm.textContent('[data-act="send-kung"]'));
+    await jm.click('[data-act="send-kung"]');
+    await jm.waitForTimeout(300);
+    console.log('보낸 뒤 버튼:', await jm.textContent('.kung__btn'), '| 잠김:', await jm.$eval('.kung__btn', (e) => e.disabled), '| 토스트:', await jm.textContent('.toast').catch(() => '(없음)'));
+    console.log('kungs 문서:', JSON.stringify([...docs.entries()].filter(([k]) => k.startsWith('kungs/')).map(([k, v]) => [k, v.from === jmU, v.date])));
+    await dj.waitForTimeout(300);
+    console.log('다진 화면 꿍 칸(준민은 다 함, 다진 기준은 별도):', await dj.textContent('.kung__text').catch(() => '(없음)'));
+    await tick(dj, '2026-10-27', null); // 되돌리기
+    await jm.waitForTimeout(300);
+  }
 
   // 4-1) 할 일 탭: 함께 5개 → 3개까지 + 더 보기, 기한 순서, 짝꿍이 체크, 남의 할 일은 잠김
   async function addTodo(page, key, title, due, date) {

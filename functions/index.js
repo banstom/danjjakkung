@@ -1,6 +1,7 @@
 /* 단짝꿍 알림 서버 (Cloud Functions 2세대, 서울 리전)
    - onCheckCreated : 체크가 저장되면 짝꿍에게 "OO 님이 OO 완료!"
    - eveningReminder: 30분마다, 정해 둔 시간까지 내 루틴을 안 했으면 나에게 알림 (하루 한 번)
+   - onKungCreated  : 「꿍 보내기」 문서가 생기면 짝꿍에게 "OO 님이 꿍을 보냈어요 · 오늘 루틴 N개 남았어요"
    - onPing         : 앱의 「테스트 알림 보내기」
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
@@ -107,6 +108,24 @@ exports.eveningReminder = onSchedule({ schedule: '0,30 * * * *', timeZone: 'Asia
       logger.error('저녁 알림 실패', { uid: u.id, err: String(e) }); // 한 사람에서 막혀도 다음 사람은 계속
     }
   }
+});
+
+exports.onKungCreated = onDocumentCreated('kungs/{id}', async (event) => {
+  const k = event.data && event.data.data();
+  if (!k || !k.from || !k.to || typeof k.date !== 'string') return;
+  const { dateKey: today } = N.kstParts(new Date());
+  if (k.date !== today) return; // 오늘 보낸 꿍만 알린다
+  if (!(await once(`kung_${event.params.id}`))) return;
+  const pf = await prefsFor(k.to);
+  if (!pf.partner) return; // 짝꿍 알림을 꺼 둔 사람에게는 보내지 않는다
+  const rs = await db.collection('routines').where('owner', '==', k.to).get();
+  const active = rs.docs.map((d) => Object.assign({ key: d.id }, d.data())).filter((r) => N.activeOn(r, today));
+  let remaining = 0;
+  for (const r of active) {
+    const ck = await db.doc(`checks/${r.key}_${today}`).get();
+    if (!ck.exists || ck.data().done !== true) remaining++;
+  }
+  await sendTo(k.to, N.kungMessage({ who: await nameOf(k.from), remaining }), 'kung', `kung-${today}`);
 });
 
 exports.onPing = onDocumentCreated('users/{uid}/pings/{pid}', async (event) => {

@@ -37,3 +37,8 @@ test('저녁 알림 문구', () => {
   assert.strictEqual(N.remindMessage({ missing: [{ name: 'A' }, { name: 'B' }] }).body, '⏰ 오늘 루틴 2개가 아직이에요 · A, B');
   assert.strictEqual(N.remindMessage({ missing: [{ name: 'A' }], hide: true }).body, '⏰ 오늘 기록이 아직 남아 있어요');
 });
+test('꿍 보내기 문구: 남은 개수', () => {
+  assert.strictEqual(N.kungMessage({ who: '준민', remaining: 2 }).body, '💌 준민 님이 꿍을 보냈어요 · 오늘 루틴 2개 남았어요');
+  assert.strictEqual(N.kungMessage({ who: '준민', remaining: 0 }).body, '💌 준민 님이 꿍을 보냈어요');
+  assert.strictEqual(N.kungMessage({ who: '다진' }).body, '💌 다진 님이 꿍을 보냈어요');
+});

@@ -163,6 +163,16 @@
         return db.doc('users/' + uid + '/devices/' + deviceId).set({ token: d.token, platform: d.platform || 'web', ua: String(d.ua || '').slice(0, 80), updatedAt: new Date().toISOString() });
       },
       deleteDevice: function (uid, deviceId) { return db.doc('users/' + uid + '/devices/' + deviceId).delete(); },
+      // ── 꿍 보내기 ──
+      // kungs/<날짜>_<보낸 사람 uid> : { from, to, date, at } — 하루 한 번 (같은 이름이라 두 번째는 규칙이 막음), 남기기만
+      watchKungs: function (dateKey, next, fail) {
+        return db.collection('kungs').where('date', '==', dateKey).onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { return doc.data(); }));
+        }, fail);
+      },
+      sendKung: function (from, to, dateKey) {
+        return db.doc('kungs/' + dateKey + '_' + from).set({ from: from, to: to, date: dateKey, at: new Date().toISOString() });
+      },
       ping: function (uid) { return db.doc('users/' + uid + '/pings/' + newKey()).set({ at: new Date().toISOString() }); },
       /** 루틴 목록: routines/<key> 문서들 → next([{ key, icon, name, who, owner, start, end, order }]) */
       watchRoutines: function (next, fail) {
