@@ -120,8 +120,10 @@
         if (e.weekly && e.skip && e.skip.length) doc.skip = e.skip.slice(); // 쉬는 날 (없으면 필드 없음)
         // 그날만 바뀐 시간: { 'YYYY-MM-DD': 'HH:MM-HH:MM' } (없으면 필드 없음)
         var mk = e.weekly && e.moved ? Object.keys(e.moved) : [];
-        if (mk.length) { doc.moved = {}; mk.forEach(function (k) { doc.moved[k] = e.moved[k].start + '-' + e.moved[k].end; }); }
-        if (e.weekly && e.from) doc.from = e.from; // 이 날짜(그 주 월요일)부터 적용 (없으면 필드 없음 = 처음부터 모든 주)
+        var sp = function (t) { return t.start + '-' + t.end; };
+        if (mk.length) { doc.moved = {}; mk.forEach(function (k) { doc.moved[k] = (Array.isArray(e.moved[k]) ? e.moved[k] : [e.moved[k]]).map(sp).join(','); }); }
+        if (e.more && e.more.length) doc.more = e.more.map(sp); // 하루에 한 번 더 (없으면 필드 없음)
+        if (e.weekly && e.from) doc.from = e.from; // 이 날짜(그 주 월요일)부터 매주 (없으면 앱을 처음 쓴 주부터)
         if (days.length > 1) doc.weekdays = days.slice();
         if (e.short) doc.short = e.short; // 표시할 이름 (일정 이름과 같거나 비면 필드 없음)
         if (e.cat) doc.cat = e.cat; // 카테고리 (없으면 필드 없음)

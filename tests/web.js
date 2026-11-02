@@ -695,11 +695,11 @@ async function tick(page, dateKey, key) {
   console.log('바꾸기 전:', await bioTimes(jm));
   await jm.click('.sblock[aria-label^="일반생물"][aria-label*="화요일"]');
   await jm.click('[data-act="ev-move"]');
-  console.log('시간 칸:', await jm.textContent('.skipbox__title'), '| 값', await jm.inputValue('#ev-ms'), await jm.inputValue('#ev-me'));
-  await jm.fill('#ev-ms', '13:00'); await jm.fill('#ev-me', '12:00');
+  console.log('시간 칸:', await jm.textContent('.skipbox__title'), '| 값', await jm.inputValue('#ev-ms-0'), await jm.inputValue('#ev-me-0'));
+  await jm.fill('#ev-ms-0', '13:00'); await jm.fill('#ev-me-0', '12:00');
   await jm.click('[data-act="ev-move-save"]');
   console.log('거꾸로:', await jm.textContent('.skipbox .rform__error').catch(() => '(오류 없음)'));
-  await jm.fill('#ev-ms', '11:00'); await jm.fill('#ev-me', '13:00');
+  await jm.fill('#ev-ms-0', '11:00'); await jm.fill('#ev-me-0', '13:00');
   await jm.screenshot({ path: path.join(OUT, 'web-move-sheet.png') });
   await jm.click('[data-act="ev-move-save"]');
   await jm.waitForTimeout(250);
@@ -725,6 +725,48 @@ async function tick(page, dateKey, key) {
   await jm.click('.skipbox__row [data-act="ev-unmove"]');
   await jm.waitForTimeout(250);
   console.log('원래 시간으로:', JSON.stringify(docs.get(bioKey).moved || null), '| 블록', await bioTimes(jm));
+  // (v33) 하루에 여러 번: 다음 주(11/2 주)에 봉사 — 수 08–10 + 18–20 한 일정. 시작하는 주 = 그 주, 앞 주에는 안 보인다
+  await jm.click('[data-act="event-add"]');
+  console.log('시작하는 주 칸:', await jm.inputValue('#ev-from'), '|', await jm.textContent('#ev-from-note'), '| 모든 주 버튼', !!(await jm.$('[data-act="ev-from"]')));
+  await jm.fill('#ev-title', '봉사');
+  await jm.click('[data-act="ev-wd"][data-v="2"]');
+  await jm.fill('#ev-start', '08:00'); await jm.fill('#ev-end', '10:00');
+  await jm.click('[data-act="ev-more-add"]');
+  console.log('한 번 더 기본:', await jm.inputValue('#ev-xs-0'), await jm.inputValue('#ev-xe-0'));
+  await jm.fill('#ev-xs-0', '09:00'); await jm.fill('#ev-xe-0', '11:00');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  console.log('겹치면:', await jm.textContent('#ev-error'));
+  await jm.fill('#ev-xs-0', '18:00'); await jm.fill('#ev-xe-0', '20:00');
+  await jm.screenshot({ path: path.join(OUT, 'web-more-sheet.png'), fullPage: true });
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  const volKey = [...docs.entries()].find(([k, v]) => v && v.title === '봉사')[0];
+  const vol = (p) => p.$$eval('.sblock[aria-label^="봉사"]', (e) => e.map((x) => x.getAttribute('aria-label').split(', ')[1]).join(' / '));
+  console.log('봉사 저장:', JSON.stringify({ from: docs.get(volKey).from, start: docs.get(volKey).start, more: docs.get(volKey).more }), '| 블록', await vol(jm));
+  await jm.screenshot({ path: path.join(OUT, 'web-more-week.png'), fullPage: true });
+  await jm.click('[data-act="sched-week"][data-dir="-1"]');
+  console.log('앞 주(시작 전) 봉사:', (await vol(jm)) || '(없음)');
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  // 저녁 블록을 눌러도 같은 일정이 열리고, 이날만 시간 바꾸기는 두 시간 다
+  await jm.click('.sblock[aria-label^="봉사"][aria-label*="18:00"]');
+  console.log('저녁 블록 열기:', await jm.inputValue('#ev-title'), '| 한 번 더 줄', await jm.$$eval('[id^="ev-xs-"]', (e) => e.length));
+  await jm.click('[data-act="ev-move"]');
+  console.log('이날 시간 줄:', await jm.$$eval('.skipbox .drow:not(.drow--head)', (e) => e.map((x) => x.textContent).join(' / ')), await jm.inputValue('#ev-ms-1'));
+  await jm.fill('#ev-ms-1', '19:00'); await jm.fill('#ev-me-1', '21:00');
+  await jm.click('[data-act="ev-move-save"]');
+  await jm.waitForTimeout(250);
+  console.log('봉사 그날만:', JSON.stringify(docs.get(volKey).moved), '| 블록', await vol(jm));
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  console.log('그다음 주 봉사:', await vol(jm));
+  // 고치기에서 한 번 더 빼기
+  await jm.click('.sblock[aria-label^="봉사"]');
+  await jm.click('[data-act="ev-more-del"][data-v="0"]');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  console.log('한 번 더 뺀 뒤:', JSON.stringify(docs.get(volKey).more || null), '| 블록', await vol(jm));
+  await jm.click('.sblock[aria-label^="봉사"]');
+  await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="event-delete"]');
+  await jm.waitForTimeout(250);
   await jm.click('[data-act="sched-thisweek"]');
 
   // 카테고리: 일정 폼의 「편집」 → 둘이 같이 쓰는 목록에서 이름 · 아이콘 바꾸기, 새로 만들기, 지우기

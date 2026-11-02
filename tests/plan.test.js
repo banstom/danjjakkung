@@ -350,12 +350,12 @@ test('메모: 정리 · 200자 · 목록 한 줄 · 저장 규칙', () => {
 test('매주 일정 시작 주(from): 그 주 앞에는 안 보이고, 없으면 모든 주', () => {
   const list = S.fromDocs([ev('a', 'u1', { from: '2026-11-09' }), ev('b', 'u1', {}), ev('c', 'u1', { from: 'x' })]);
   assert.strictEqual(list[0].from, '2026-11-09');
-  assert.strictEqual(list[2].from, null);
+  assert.strictEqual(list[2].from, S.LAUNCH); // 이상하거나 없으면 앱을 처음 쓴 주부터
   const ids = (day) => S.on(list, D.parse(day)).map((e) => e.id).sort().join('');
   assert.strictEqual(ids('2026-11-04'), 'bc'); // 수요일, 시작 주 앞
   assert.strictEqual(ids('2026-11-11'), 'abc'); // 시작 주 수요일
   assert.strictEqual(ids('2026-12-02'), 'abc');
-  assert.match(S.whenText(list[0]), /11월 9일부터/);
+  assert.match(S.whenText(list[0]), /11월 9일 주부터/);
 });
 
 test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 먼저, 정리 · 저장 모양', () => {
@@ -363,7 +363,7 @@ test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 
   const list = S.fromDocs([ev('a', 'u1', { weekday: 2, start: '10:00', end: '12:00',
     moved: { '2026-11-04': '11:00-13:00', '2026-11-05': '09:00-10:00', '2026-11-11': '12:00-11:00', bad: '11:00-12:00' } })]);
   const e = list[0];
-  assert.deepStrictEqual(e.moved, { '2026-11-04': { start: '11:00', end: '13:00' } }); // 다른 요일 · 거꾸로 · 이상한 날짜는 버림
+  assert.deepStrictEqual(e.moved, { '2026-11-04': [{ start: '11:00', end: '13:00' }] }); // 다른 요일 · 거꾸로 · 이상한 날짜는 버림
   const at = (day) => S.on(list, D.parse(day)).map((x) => x.start + '-' + x.end + (x.movedFrom ? '*' + x.movedFrom : '')).join();
   assert.strictEqual(at('2026-11-04'), '11:00-13:00*10:00–12:00');
   assert.strictEqual(at('2026-11-11'), '10:00-12:00'); // 다음 주는 원래대로
@@ -379,7 +379,7 @@ test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 
   assert.deepStrictEqual(Object.keys(S.withMoved(Object.assign({}, e, { moved: { '2026-09-02': { start: '11:00', end: '12:00' } } }), null, null, today)), []);
   // 요일마다 시간이 다르면 원래 시간 = 그 요일 시간
   const per = S.fromDocs([ev('p', 'u1', { weekday: null, weekdays: [0, 2], times: { '0': '09:00-10:00', '2': '15:00-16:00' }, start: '09:00', end: '10:00', moved: { '2026-11-04': '17:00-18:00' } })])[0];
-  assert.deepStrictEqual(S.baseTime(per, D.parse('2026-11-04')), { start: '15:00', end: '16:00' });
+  assert.deepStrictEqual(S.baseSpans(per, D.parse('2026-11-04')), [{ start: '15:00', end: '16:00' }]);
   // 주 보기 목록 표시
   const w = S.week(list, ['u1', 'u2'], 'u1', D.parse('2026-11-02'), today, { pick: D.parse('2026-11-04') });
   assert.strictEqual(w.pick.items[0].movedFrom, '10:00–12:00');
@@ -391,4 +391,42 @@ test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 
   st.saveEvent(Object.assign({}, e, { moved: {}, createdBy: 'u1' }));
   assert.deepStrictEqual(sets[0][1].moved, { '2026-11-04': '11:00-13:00' });
   assert.ok(!('moved' in sets[1][1]));
+});
+
+test('하루에 여러 번(more): 같은 일정이 그날 시간마다 따로, 고치기는 하나', () => {
+  const list = S.fromDocs([ev('v', 'u1', { title: '봉사', weekday: 2, start: '08:00', end: '10:00', from: '2026-11-02',
+    more: ['18:00-20:00', '09:00-11:00', 'x', '21:00-20:00'] })]); // 겹치는 · 이상한 시간은 버림
+  const e = list[0];
+  assert.deepStrictEqual(e.more, [{ start: '18:00', end: '20:00' }]);
+  assert.strictEqual(S.whenText(e), '매주 수요일 · 08:00–10:00 · 18:00–20:00 · 11월 2일 주부터');
+  const day = S.on(list, D.parse('2026-11-04'));
+  assert.deepStrictEqual(day.map((x) => [x.id, x.start, x.part]), [['v', '08:00', 0], ['v', '18:00', 1]]);
+  const w = S.week(list, ['u1', 'u2'], 'u1', D.parse('2026-11-02'), today, { pick: D.parse('2026-11-04') });
+  assert.strictEqual(w.blocks.length, 2);
+  assert.deepStrictEqual(w.pick.items.map((x) => x.time), ['08:00–10:00', '18:00–20:00']);
+  // 그날만 시간 바꾸기는 그날 모든 시간을 한꺼번에
+  const mv = S.fromDocs([ev('v', 'u1', { weekday: 2, start: '08:00', end: '10:00', more: ['18:00-20:00'], moved: { '2026-11-04': '09:00-11:00,19:00-21:00' } })]);
+  assert.deepStrictEqual(S.on(mv, D.parse('2026-11-04')).map((x) => x.start + '-' + x.end + '*' + x.movedFrom), ['09:00-11:00*08:00–10:00 · 18:00–20:00', '19:00-21:00*08:00–10:00 · 18:00–20:00']);
+  // 한 번 일정도 하루에 여러 번
+  const once = S.fromDocs([{ id: 'o', owner: 'u1', title: 'o', weekly: false, date: '2026-11-05', start: '09:00', end: '10:00', more: ['13:00-14:00'] }]);
+  assert.strictEqual(S.on(once, D.parse('2026-11-05')).length, 2);
+  // 폼 검사
+  const f = { title: '봉사', weekly: true, weekdays: [2], from: '2026-11-02', start: '08:00', end: '10:00', more: [{ start: '09:30', end: '11:00' }] };
+  assert.match(S.validate(f), /겹쳐요/);
+  assert.strictEqual(S.validate(Object.assign({}, f, { more: [{ start: '18:00', end: '20:00' }] })), '');
+  assert.match(S.validate(Object.assign({}, f, { from: '' })), /시작하는 날/);
+  // 저장 모양
+  const sets = [];
+  const st = require('../js/store').createStore({ doc: (p) => ({ set: (d) => { sets.push(d); return Promise.resolve(); } }) });
+  st.saveEvent(Object.assign({}, mv[0], { createdBy: 'u1' }));
+  assert.deepStrictEqual(sets[0].more, ['18:00-20:00']);
+  assert.deepStrictEqual(sets[0].moved, { '2026-11-04': '09:00-11:00,19:00-21:00' });
+  assert.strictEqual(sets[0].from, S.LAUNCH);
+});
+
+test('시작 주가 없는 예전 매주 일정은 지난 학기(4~6월)에 안 보인다', () => {
+  const list = S.fromDocs([ev('old', 'u1', {})]);
+  assert.strictEqual(S.on(list, D.parse('2026-05-06')).length, 0);
+  assert.strictEqual(S.on(list, D.parse('2026-10-21')).length, 0);
+  assert.strictEqual(S.on(list, D.parse('2026-10-28')).length, 1);
 });

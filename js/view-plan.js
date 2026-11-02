@@ -258,7 +258,7 @@
     var w = b.full ? 100 : 50 / b.cols, left = b.full ? 0 : b.lane * 50 + w * b.col; // full: 주 보기 넓은 칸 · 일 보기 합친 함께 일정
     var showIco = b.icon && !(opts.compact && b.e - b.s < 50); // 주 보기에서 짧은 일정은 이름이 먼저
     var label = (showIco ? '<span class="sblock__ico" aria-hidden="true">' + esc(b.icon) + '</span>' : '') + '<span class="sblock__name">' + esc(opts.compact && b.short ? b.short : b.title) + '</span>'; // 주 보기는 표시할 이름
-    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' + (typeof b.day === 'number' ? ' data-day="' + b.day + '"' : '') +
+    return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0) + (b.part ? '.' + b.part : '')) + '"' + (typeof b.day === 'number' ? ' data-day="' + b.day + '"' : '') +
       (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
       ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번') + (b.movedFrom ? ', 이날만 시간 바뀜, 원래 ' + b.movedFrom : '')) + '">' +
@@ -301,7 +301,7 @@
   function pickList(p) {
     if (!p) return '';
     var rows = p.items.map(function (it) {
-      return '<button type="button" class="slist__item slist__item--' + it.slot + (it.weekly ? '' : ' slist__item--once') + (it.skipped ? ' slist__item--skipped' : '') + '" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@list') + '" data-day="' + it.day + '"' +
+      return '<button type="button" class="slist__item slist__item--' + it.slot + (it.weekly ? '' : ' slist__item--once') + (it.skipped ? ' slist__item--skipped' : '') + '" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@list' + (it.part ? '.' + it.part : '')) + '" data-day="' + it.day + '"' +
         ' aria-label="' + esc(it.title + ', ' + it.time + ', ' + it.who + (it.catName ? ', ' + it.catName : '') + (it.weekly ? ', 매주' : ', 한 번') + (it.skipped ? ', 이날은 쉬어요' : '') + (it.movedFrom ? ', 이날만 시간 바뀜, 원래 ' + it.movedFrom : '')) + '">' +
         (it.slot === 'both' ? '' : '<span class="slist__bar" aria-hidden="true"></span>') +
         (it.icon ? '<span class="slist__ico" aria-hidden="true">' + esc(it.icon) + '</span>' : '') +
@@ -343,7 +343,7 @@
   function restList(list) {
     if (!list || !list.length) return '';
     return '<section class="card slist" aria-label="이날 쉬는 일정"><div class="slist__head"><span class="slist__title-day">이날 쉬는 일정</span></div>' + list.map(function (it) {
-      return '<button type="button" class="slist__item slist__item--skipped" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@rest') + '" data-day="' + it.day + '" aria-label="' + esc(it.title + ', ' + it.time + ', 이날은 쉬어요') + '">' +
+      return '<button type="button" class="slist__item slist__item--skipped" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@rest' + (it.part ? '.' + it.part : '')) + '" data-day="' + it.day + '" aria-label="' + esc(it.title + ', ' + it.time + ', 이날은 쉬어요') + '">' +
         '<span class="slist__title">' + esc(it.title) + ' <span class="tag tag--rest">쉬어요</span></span><span class="slist__time">' + esc(it.time) + '</span></button>';
     }).join('') + '</section>';
   }
@@ -359,13 +359,26 @@
 
   var WD = [['0', '월'], ['1', '화'], ['2', '수'], ['3', '목'], ['4', '금'], ['5', '토'], ['6', '일']];
   // 시간: 요일이 여럿이면 「모두 같은 시간 | 요일마다 다르게」, 요일마다면 요일별 시작 · 끝 줄
+  /** 하루에 한 번 더 — 시간 줄 + 「＋ 하루에 한 번 더」 (모든 요일 같은 시간) */
+  function moreFields(f) {
+    var more = f.more || [], per = f.weekly && (f.weekdays || []).length > 1 && f.perDay;
+    var rows = more.map(function (t, i) {
+      return '<div class="drow drow--more">' +
+        '<input id="ev-xs-' + i + '" class="field__input" type="time" step="300" aria-label="' + (i + 2) + '번째 시작" value="' + esc(t.start) + '">' +
+        '<input id="ev-xe-' + i + '" class="field__input" type="time" step="300" aria-label="' + (i + 2) + '번째 끝" value="' + esc(t.end) + '">' +
+        '<button type="button" class="icon-btn drow__del" data-act="ev-more-del" data-v="' + i + '" aria-label="' + (i + 2) + '번째 시간 빼기">✕</button></div>';
+    }).join('');
+    return (rows ? '<div class="drows drows--more" role="group" aria-label="하루에 한 번 더"><span class="field__label">하루에 한 번 더 <span class="field__hint">· ' + (per ? '모든 요일 같은 시간' : '같은 날 다른 시간') + '</span></span>' + rows + '</div>' : '') +
+      (more.length < RT.schedule.MORE_MAX ? '<button type="button" class="ghost-btn ghost-btn--add" data-act="ev-more-add">＋ 하루에 한 번 더' + (per ? ' (모든 요일)' : '') + '</button>' : '') +
+      (more.length ? '<p class="muted shint">아침 · 저녁처럼 같은 일정이 하루에 ' + (more.length + 1) + '번 · 시간표엔 따로, 고치기는 하나로</p>' : '');
+  }
   function timeFields(f) {
     var days = f.weekly ? (f.weekdays || []) : [];
     var multi = days.length > 1, per = multi && f.perDay;
     var mode = multi ? '<div class="field"><span class="field__label">시간</span>' + chipRow('ev-timemode', [['same', '모두 같은 시간'], ['per', '요일마다 다르게']], per ? 'per' : 'same', '시간') + '</div>' : '';
     if (!per) {
       return mode + '<div class="ftime"><label class="field"><span class="field__label">시작</span><input id="ev-start" class="field__input" type="time" step="300" value="' + esc(f.start) + '"></label>' +
-        '<label class="field"><span class="field__label">끝</span><input id="ev-end" class="field__input" type="time" step="300" value="' + esc(f.end) + '"></label></div>';
+        '<label class="field"><span class="field__label">끝</span><input id="ev-end" class="field__input" type="time" step="300" value="' + esc(f.end) + '"></label></div>' + moreFields(f);
     }
     var NAMES = ['월', '화', '수', '목', '금', '토', '일'];
     return mode + '<div class="drows" role="group" aria-label="요일마다 시간"><div class="drow drow--head" aria-hidden="true"><span></span><span>시작</span><span>끝</span></div>' +
@@ -374,7 +387,7 @@
         return '<div class="drow"><b class="drow__day">' + NAMES[w] + '</b>' +
           '<input id="ev-ts-' + w + '" class="field__input" type="time" step="300" aria-label="' + NAMES[w] + '요일 시작" value="' + esc(t.start) + '">' +
           '<input id="ev-te-' + w + '" class="field__input" type="time" step="300" aria-label="' + NAMES[w] + '요일 끝" value="' + esc(t.end) + '"></div>';
-      }).join('') + '</div>';
+      }).join('') + '</div>' + moreFields(f);
   }
   // 매주 일정: 누른 날만(또는 그 주만) 쉬기 · 쉬는 날 목록 — 누르면 바로 저장
   function skipBox(k) {
@@ -385,9 +398,12 @@
       // 이날만 시간 바꾸기 — 시간 칸 두 개
       out += '<p class="skipbox__title">' + esc(o.label) + ' · 이날만 시간 바꾸기</p>' +
         '<div class="drows" role="group" aria-label="이날 시간"><div class="drow drow--head" aria-hidden="true"><span></span><span>시작</span><span>끝</span></div>' +
-        '<div class="drow"><b class="drow__day">이날</b>' +
-        '<input id="ev-ms" class="field__input" type="time" step="300" aria-label="이날 시작" value="' + esc(mv.start) + '">' +
-        '<input id="ev-me" class="field__input" type="time" step="300" aria-label="이날 끝" value="' + esc(mv.end) + '"></div></div>' +
+        mv.spans.map(function (t, i) {
+          var nm = mv.spans.length > 1 ? (i + 1) + '번째' : '이날';
+          return '<div class="drow"><b class="drow__day">' + nm + '</b>' +
+            '<input id="ev-ms-' + i + '" class="field__input" type="time" step="300" aria-label="' + nm + ' 시작" value="' + esc(t.start) + '">' +
+            '<input id="ev-me-' + i + '" class="field__input" type="time" step="300" aria-label="' + nm + ' 끝" value="' + esc(t.end) + '"></div>';
+        }).join('') + '</div>' +
         (mv.error ? '<p class="rform__error" role="alert">' + esc(mv.error) + '</p>' : '') +
         '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-move-cancel"' + dis + '>취소</button>' +
         '<button type="button" class="solid-btn" data-act="ev-move-save"' + dis + '>' + (k.busy ? '저장 중…' : '이날만 바꾸기') + '</button></div>' +
@@ -463,9 +479,11 @@
   }
   /** 매주 일정: 언제부터 적용할지 — 앞으로 계속(그 주부터) | 처음부터 모든 주(지난 주에도 보임) */
   function fromField(f) {
-    var lbl = RT.dates.label(RT.dates.parse(f.from)) + ' 주부터 앞으로 계속';
-    return '<div class="field"><span class="field__label">언제부터 <span class="field__hint">· 앞으로만 추가할까요?</span></span>' +
-      chipRow('ev-from', [['forward', lbl], ['all', '지난 주에도 (모든 주)']], f.fromMode === 'all' ? 'all' : 'forward', '언제부터') + '</div>';
+    var D = RT.dates, n = D.parse(f.from), S = RT.schedule;
+    var note = isNaN(n) ? '' : S.rangeText(S.monStart(n)) + ' 주부터 매주 · 그 앞 주에는 안 보여요';
+    return '<label class="field"><span class="field__label">시작하는 주 <span class="field__hint">· 이 날이 있는 주부터 앞으로 반복돼요</span></span>' +
+      '<input id="ev-from" class="field__input" type="date" value="' + esc(f.from || '') + '"></label>' +
+      (note ? '<p class="muted shint" id="ev-from-note">' + esc(note) + '</p>' : '');
   }
   function eventSheet(f, entering) {
     if (!f) return '';
