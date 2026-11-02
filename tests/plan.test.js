@@ -458,3 +458,30 @@ test('그 주만 다른 날로 옮기기: 수 · 금 과외 → 화 · 목', () 
   st.saveEvent(Object.assign({}, list[0], { createdBy: 'u1' }));
   assert.deepStrictEqual(sets[0].moved, { '2026-11-04': '2026-11-03 19:00-21:00', '2026-11-06': '2026-11-05 18:00-20:00' });
 });
+
+test('이번 주만 · 언제까지(until): 그 기간에만 보인다', () => {
+  const list = S.fromDocs([
+    ev('w', 'u1', { from: '2026-11-02', until: '2026-11-02' }),            // 이번 주만 (수)
+    ev('u', 'u1', { from: '2026-11-02', until: '2026-11-18' }),            // 11/16 주까지 (월요일로 맞춤)
+    ev('bad', 'u1', { from: '2026-11-09', until: '2026-11-02' }),          // 시작보다 앞이면 무시 → 계속
+  ]);
+  assert.deepStrictEqual(list.map((e) => [e.until, S.spanKind(e)]), [['2026-11-02', 'week'], ['2026-11-16', 'until'], [null, 'all']]);
+  const ids = (d) => S.on(list, D.parse(d)).map((e) => e.id).sort().join(',');
+  assert.strictEqual(ids('2026-10-28'), '');
+  assert.strictEqual(ids('2026-11-04'), 'u,w');
+  assert.strictEqual(ids('2026-11-11'), 'bad,u');
+  assert.strictEqual(ids('2026-11-18'), 'bad,u');
+  assert.strictEqual(ids('2026-11-25'), 'bad');
+  assert.match(S.whenText(list[0]), /11월 2일 – 8일 이번 주만 · 수요일/);
+  assert.match(S.whenText(list[1]), /11월 2일 주부터 11월 16일 주까지/);
+  // 폼 검사
+  const f = { title: 'x', weekly: true, weekdays: [2], from: '2026-11-09', span: 'until', until: '2026-11-03', start: '10:00', end: '11:00' };
+  assert.match(S.validate(f), /앞이에요/);
+  assert.strictEqual(S.validate(Object.assign({}, f, { until: '2026-11-15' })), ''); // 같은 주면 됨
+  // 저장
+  const sets = [];
+  const st = require('../js/store').createStore({ doc: () => ({ set: (d) => { sets.push(d); return Promise.resolve(); } }) });
+  st.saveEvent(Object.assign({}, list[1], { createdBy: 'u1' })); st.saveEvent(Object.assign({}, list[2], { createdBy: 'u1' }));
+  assert.strictEqual(sets[0].until, '2026-11-16');
+  assert.ok(!('until' in sets[1]));
+});

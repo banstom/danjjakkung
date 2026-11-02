@@ -10,6 +10,7 @@
                      하루에 여러 번이면 'HH:MM-HH:MM,HH:MM-HH:MM' (그날 모든 시간)
                      같은 주 다른 날로 옮기면 'YYYY-MM-DD HH:MM-HH:MM' (앞이 옮긴 날 — 수 과외를 그 주만 화로)
                    more: ['HH:MM-HH:MM', …] 하루에 한 번 더 (1~3개, 모든 요일 같은 시간) — 아침 · 저녁 봉사처럼 한 일정이 하루에 여러 번
+                   until: 'YYYY-MM-DD' 마지막 주의 월요일 (선택) — 그 주 일요일까지만 반복. from 과 같으면 「이번 주만」
                    from: 'YYYY-MM-DD' 매주 일정이 시작하는 주의 월요일 — 그 앞 주에는 안 보인다 (없으면 앱을 처음 쓴 주 LAUNCH)
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
@@ -85,13 +86,15 @@
     var more = e.more && e.more.length ? e.more : [];
     if (!e.weekly) return D.full(D.parse(e.date)) + ' · ' + spanText([{ start: e.start, end: e.end }].concat(more));
     var since = e.from && e.from !== LAUNCH ? ' · ' + D.label(D.parse(e.from)) + ' 주부터' : '';
+    if (e.until) since = e.until === e.from ? '' : ' · ' + D.label(D.parse(e.from)) + ' 주부터 ' + D.label(D.parse(e.until)) + ' 주까지';
+    if (e.until && e.until === e.from && !e.perDay) return rangeText(D.parse(e.from)) + ' 이번 주만 · ' + wdText(e.weekdays) + '요일 · ' + spanText([{ start: e.start, end: e.end }].concat(more));
     if (!e.perDay) return '매주 ' + wdText(e.weekdays) + '요일 · ' + spanText([{ start: e.start, end: e.end }].concat(more)) + since;
     return '매주 ' + e.weekdays.map(function (w) { return WD[w] + ' ' + e.times[w].start + '–' + e.times[w].end; }).join(' · ') + (more.length ? ' · 그리고 ' + spanText(more) : '') + since;
   }
 
   var SKIP_MAX = 60;
   // 화면이 아는 필드 — 이 밖의 필드(더 새 버전 앱이 넣은 것)는 고쳐 저장할 때 그대로 둔다
-  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'more', 'from', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
+  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'more', 'from', 'until', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
   function extraOf(e) {
     var out = null;
     Object.keys(e).forEach(function (k) { if (KNOWN.indexOf(k) < 0) { out = out || {}; out[k] = e[k]; } });
@@ -181,6 +184,18 @@
     });
     return out.sort(bySpan);
   }
+  function fromKey(e) { return typeof e.from === 'string' && !isNaN(D.parse(e.from)) ? e.from : LAUNCH; }
+  /** 마지막 주(월요일) — 이상하거나 시작 주보다 앞이면 없음(계속) */
+  function untilKey(e) {
+    var n = typeof e.until === 'string' ? D.parse(e.until) : NaN;
+    if (isNaN(n)) return null;
+    var m = monStart(n);
+    return m >= monStart(D.parse(fromKey(e))) ? D.toKey(m) : null;
+  }
+  /** 반복 종류: 'all'(매주 계속) | 'week'(이번 주만) | 'until'(언제까지) */
+  function spanKind(e) { return !e.weekly || !e.until ? 'all' : e.until === e.from ? 'week' : 'until'; }
+  /** 이 매주 일정이 그날 반복되는 기간 안인지 (시작 주 ~ 마지막 주 일요일) */
+  function active(e, n) { return (!e.from || n >= D.parse(e.from)) && (!e.until || n <= D.parse(e.until) + 6); }
   /** cats: 지금 카테고리 목록 (js/cats.js fromDocs, 안 주면 기본 6개) */
   function fromDocs(docs, cats) {
     var catList = cats || CATS;
@@ -194,7 +209,7 @@
       var cat = C.isId(e.cat) ? e.cat : null, c = catOf(cat, catList); // 지운 카테고리여도 id 는 남겨 둔다 (아이콘만 없음)
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
         cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], moved: weekly ? movedOf(e.moved, days) : {}, more: moreOf(e),
-        from: weekly ? (typeof e.from === 'string' && !isNaN(D.parse(e.from)) ? e.from : LAUNCH) : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
+        from: weekly ? fromKey(e) : null, until: weekly ? untilKey(e) : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
 
@@ -205,7 +220,7 @@
     function push(e, list, occ, from, moved) {
       list.forEach(function (t, i) { out.push(Object.assign({}, e, { start: t.start, end: t.end, part: i, parts: list.length, movedFrom: from, movedDay: moved, occ: occ })); });
     }
-    var started = function (e, n) { return !e.from || n >= D.parse(e.from); };
+    var started = active;
     events.forEach(function (e) {
       // 그날 시간마다 하나씩 (요일마다 다른 시간 · 하루에 한 번 더 · 그날만 바꾼 시간). 같은 id — 누르면 같은 일정이 열린다
       // occ = 원래 날 (다른 날로 옮긴 일정을 누르면 원래 날 기준으로 열린다)
@@ -366,7 +381,12 @@
     if (String(f.short == null ? '' : f.short).trim().length > SHORT_MAX) return '표시할 이름은 ' + SHORT_MAX + '자까지 쓸 수 있어요';
     if (f.weekly ? !weekdaysOf(f).length : isNaN(D.parse(f.date))) return f.weekly ? '요일을 골라 주세요' : '날짜를 골라 주세요';
     var days = f.weekly ? weekdaysOf(f) : [];
-    if (f.weekly && f.from !== undefined && isNaN(D.parse(f.from))) return '시작하는 날을 골라 주세요';
+    if (f.weekly && f.from !== undefined && isNaN(D.parse(f.from))) return f.span === 'week' ? '어느 주인지 골라 주세요' : '시작하는 날을 골라 주세요';
+    if (f.weekly && f.span === 'until') {
+      var un = D.parse(f.until);
+      if (isNaN(un)) return '끝나는 날을 골라 주세요';
+      if (monStart(un) < monStart(D.parse(f.from))) return '끝나는 주가 시작하는 주보다 앞이에요';
+    }
     var more = f.more || [];
     if (more.length > MORE_MAX) return '하루에 ' + (MORE_MAX + 1) + '번까지 넣을 수 있어요';
     for (var j = 0; j < more.length; j++) {
@@ -391,7 +411,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, moveTo: moveTo, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, moveTo: moveTo, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, spanKind: spanKind, active: active, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

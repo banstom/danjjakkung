@@ -480,12 +480,28 @@
     return sheetShell('cat-sheet-title', '카테고리', '둘이 같이 쓰는 목록이에요 · 바꾸면 짝꿍 화면에도 바뀌어요', inner, 'cat-close', entering);
   }
   /** 매주 일정: 언제부터 적용할지 — 앞으로 계속(그 주부터) | 처음부터 모든 주(지난 주에도 보임) */
+  /** 반복 기간 안내: '11월 2일 – 8일 주부터 매주' / '11월 2일 – 8일 이번 주만' / '11월 2일 주부터 11월 23일 – 29일 주까지 · 4주' */
+  function spanNote(f) {
+    var D = RT.dates, S = RT.schedule, n = D.parse(f.from);
+    if (isNaN(n)) return '';
+    var a = S.monStart(n);
+    if (f.span === 'week') return S.rangeText(a) + ' 한 주만 · 다른 주에는 안 보여요';
+    if (f.span === 'until') {
+      var u = D.parse(f.until);
+      if (isNaN(u)) return '';
+      var b = S.monStart(u);
+      if (b < a) return '끝나는 주가 시작하는 주보다 앞이에요';
+      return S.rangeText(a) + ' 주부터 ' + S.rangeText(b) + ' 주까지 · ' + ((b - a) / 7 + 1) + '주';
+    }
+    return S.rangeText(a) + ' 주부터 매주 · 그 앞 주에는 안 보여요';
+  }
   function fromField(f) {
-    var D = RT.dates, n = D.parse(f.from), S = RT.schedule;
-    var note = isNaN(n) ? '' : S.rangeText(S.monStart(n)) + ' 주부터 매주 · 그 앞 주에는 안 보여요';
-    return '<label class="field"><span class="field__label">시작하는 주 <span class="field__hint">· 이 날이 있는 주부터 앞으로 반복돼요</span></span>' +
+    var note = spanNote(f), week = f.span === 'week';
+    return '<label class="field"><span class="field__label">' + (week ? '어느 주' : '시작하는 주') + ' <span class="field__hint">· ' + (week ? '이 날이 있는 주에만' : '이 날이 있는 주부터 반복돼요') + '</span></span>' +
       '<input id="ev-from" class="field__input" type="date" value="' + esc(f.from || '') + '"></label>' +
-      (note ? '<p class="muted shint" id="ev-from-note">' + esc(note) + '</p>' : '');
+      (f.span === 'until' ? '<label class="field"><span class="field__label">끝나는 주 <span class="field__hint">· 이 날이 있는 주까지</span></span>' +
+        '<input id="ev-until" class="field__input" type="date" value="' + esc(f.until || '') + '"></label>' : '') +
+      '<p class="muted shint" id="ev-from-note">' + esc(note) + '</p>';
   }
   function eventSheet(f, entering) {
     if (!f) return '';
@@ -503,7 +519,7 @@
       '<label class="field"><span class="field__label">표시할 이름 <span class="field__hint">· 주 보기 칸에 보여요 · 비워 두면 일정 이름 그대로</span></span><input id="ev-short" class="field__input" type="text" maxlength="' + RT.schedule.SHORT_MAX + '" autocomplete="off" enterkeyhint="done" placeholder="예: 4디리" value="' + esc(f.short || '') + '"></label>' +
       '<div class="field"><span class="field__label">누구</span>' + (f.lockOwner ? '<p class="muted">함께 일정 · 둘 다 고칠 수 있어요</p>' : chipRow('ev-owner', [['me', '나'], ['both', '함께']], f.owner, '누구 일정')) + '</div>' +
       '<div class="field"><span class="field__label">카테고리</span>' + catRow(f.cats || RT.schedule.CATS, f.cat) + '</div>' +
-      '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['once', '한 번']], f.weekly ? 'weekly' : 'once', '반복') + '</div>' +
+      '<div class="field"><span class="field__label">반복</span>' + chipRow('ev-repeat', [['weekly', '매주'], ['week', '이번 주만'], ['until', '언제까지'], ['once', '한 번']], !f.weekly ? 'once' : f.span === 'week' ? 'week' : f.span === 'until' ? 'until' : 'weekly', '반복') + '</div>' +
       (f.weekly ? '<div class="field"><span class="field__label">요일 <span class="field__hint">· 여러 개 고를 수 있어요</span></span>' +
         multiRow('ev-wd', WD.map(function (w) { return [Number(w[0]), w[1]]; }), f.weekdays || [], '요일 (여러 개 고를 수 있어요)') + '</div>'
         : '<label class="field"><span class="field__label">날짜</span><input id="ev-date" class="field__input" type="date" value="' + esc(f.date) + '"></label>') +
@@ -517,7 +533,7 @@
     return sheetShell('event-sheet-title', f.mode === 'edit' ? '일정 고치기' : '일정 추가', '짝꿍도 볼 수 있어요. 고치는 건 나(함께 일정은 둘 다)만', inner, 'event-cancel', entering);
   }
 
-  var api = { tabbar: tabbar, todoTab: todoTab, uniTab: uniTab, uniDetail: uniDetail, uniUnplaced: uniUnplaced, placeScreen: placeScreen, archiveSheet: archiveSheet, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet, catSheet: catSheet };
+  var api = { tabbar: tabbar, todoTab: todoTab, uniTab: uniTab, uniDetail: uniDetail, uniUnplaced: uniUnplaced, placeScreen: placeScreen, archiveSheet: archiveSheet, todoSheet: todoSheet, scheduleTab: scheduleTab, eventSheet: eventSheet, spanNote: spanNote, catSheet: catSheet };
   root.RT = root.RT || {};
   root.RT.viewPlan = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

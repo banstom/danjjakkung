@@ -124,6 +124,7 @@
         // 다른 날로 옮겼으면 앞에 옮긴 날: 'YYYY-MM-DD HH:MM-HH:MM,…'
         if (mk.length) { doc.moved = {}; mk.forEach(function (k) { var m = e.moved[k]; doc.moved[k] = (m.to ? m.to + ' ' : '') + m.spans.map(sp).join(','); }); }
         if (e.more && e.more.length) doc.more = e.more.map(sp); // 하루에 한 번 더 (없으면 필드 없음)
+        if (e.weekly && e.until) doc.until = e.until; // 마지막 주 월요일 (없으면 계속, from 과 같으면 이번 주만)
         if (e.weekly && e.from) doc.from = e.from; // 이 날짜(그 주 월요일)부터 매주 (없으면 앱을 처음 쓴 주부터)
         if (days.length > 1) doc.weekdays = days.slice();
         if (e.short) doc.short = e.short; // 표시할 이름 (일정 이름과 같거나 비면 필드 없음)

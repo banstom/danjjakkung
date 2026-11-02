@@ -725,6 +725,48 @@ async function tick(page, dateKey, key) {
   await jm.click('.skipbox__row [data-act="ev-unmove"]');
   await jm.waitForTimeout(250);
   console.log('원래 시간으로:', JSON.stringify(docs.get(bioKey).moved || null), '| 블록', await bioTimes(jm));
+  // (v35) 반복: 이번 주만 · 언제까지 — 다음 주(11/2 주)에서 추가
+  const cnt = (p, t) => p.$$eval(`.sblock[aria-label^="${t}"]`, (e) => e.length);
+  await jm.click('[data-act="event-add"]');
+  console.log('반복 칩:', await jm.$$eval('[data-act="ev-repeat"]', (e) => e.map((x) => x.textContent + (x.getAttribute('aria-pressed') === 'true' ? '✓' : '')).join(' ')));
+  await jm.fill('#ev-title', '특강');
+  await jm.click('[data-act="ev-repeat"][data-v="week"]');
+  await jm.click('[data-act="ev-wd"][data-v="3"]');
+  console.log('이번 주만 칸:', await jm.textContent('.sheet .field__label:has(+ #ev-from), label:has(#ev-from) .field__label').catch(() => ''), '|', await jm.textContent('#ev-from-note'));
+  await jm.fill('#ev-start', '15:00'); await jm.fill('#ev-end', '17:00');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  const skKey = [...docs.entries()].find(([k, v]) => v && v.title === '특강')[0];
+  console.log('특강 저장:', JSON.stringify({ from: docs.get(skKey).from, until: docs.get(skKey).until }), '| 이 주', await cnt(jm, '특강'));
+  await jm.click('[data-act="event-add"]');
+  await jm.fill('#ev-title', '스터디2');
+  await jm.click('[data-act="ev-repeat"][data-v="until"]');
+  console.log('언제까지 기본:', await jm.inputValue('#ev-until'), '|', await jm.textContent('#ev-from-note'));
+  await jm.fill('#ev-until', '2026-10-28');
+  await jm.dispatchEvent('#ev-until', 'change');
+  console.log('앞 날짜 안내:', await jm.textContent('#ev-from-note'));
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  console.log('앞 날짜 저장:', await jm.textContent('#ev-error'));
+  await jm.fill('#ev-until', '2026-11-12'); await jm.dispatchEvent('#ev-until', 'change');
+  console.log('11/12까지:', await jm.textContent('#ev-from-note'));
+  await jm.screenshot({ path: path.join(OUT, 'web-until-sheet.png'), fullPage: true });
+  await jm.click('[data-act="ev-wd"][data-v="4"]');
+  await jm.fill('#ev-start', '13:00'); await jm.fill('#ev-end', '14:00');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  const stKey = [...docs.entries()].find(([k, v]) => v && v.title === '스터디2')[0];
+  console.log('스터디2 저장:', JSON.stringify({ from: docs.get(stKey).from, until: docs.get(stKey).until }));
+  const weeks = [];
+  for (const dir of [-1, 1, 1, 1]) { await jm.click(`[data-act="sched-week"][data-dir="${dir}"]`); weeks.push((await jm.textContent('.grid-range')) + ' 특강' + (await cnt(jm, '특강')) + ' 스터디' + (await cnt(jm, '스터디2'))); }
+  console.log('주마다:', weeks.join(' | '));
+  await jm.click('[data-act="sched-week"][data-dir="-1"]');
+  await jm.click('.sblock[aria-label^="스터디2"]');
+  console.log('고치기 반복:', await jm.$eval('[data-act="ev-repeat"][aria-pressed="true"]', (x) => x.textContent), '| 끝', await jm.inputValue('#ev-until'));
+  await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(250);
+  await jm.click('[data-act="sched-week"][data-dir="-1"]');
+  await jm.click('.sblock[aria-label^="특강"]');
+  console.log('특강 보기 문구 · 반복:', await jm.$eval('[data-act="ev-repeat"][aria-pressed="true"]', (x) => x.textContent));
+  await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(250);
   // (v34) 그 주만 다른 날로: 수 · 금 과외2 → 화 · 목 (다음 주는 그대로)
   await jm.click('[data-act="event-add"]');
   await jm.fill('#ev-title', '과외2');
