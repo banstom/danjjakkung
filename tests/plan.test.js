@@ -459,13 +459,13 @@ test('그 주만 다른 날로 옮기기: 수 · 금 과외 → 화 · 목', () 
   assert.deepStrictEqual(sets[0].moved, { '2026-11-04': '2026-11-03 19:00-21:00', '2026-11-06': '2026-11-05 18:00-20:00' });
 });
 
-test('이번 주만 · 언제까지(until): 그 기간에만 보인다', () => {
+test('이번 주만 · 언제까지(예전 until 모양도): 그 기간에만 보인다', () => {
   const list = S.fromDocs([
     ev('w', 'u1', { from: '2026-11-02', until: '2026-11-02' }),            // 이번 주만 (수)
     ev('u', 'u1', { from: '2026-11-02', until: '2026-11-18' }),            // 11/16 주까지 (월요일로 맞춤)
     ev('bad', 'u1', { from: '2026-11-09', until: '2026-11-02' }),          // 시작보다 앞이면 무시 → 계속
   ]);
-  assert.deepStrictEqual(list.map((e) => [e.until, S.spanKind(e)]), [['2026-11-02', 'week'], ['2026-11-16', 'until'], [null, 'all']]);
+  assert.deepStrictEqual(list.map((e) => [e.last, S.spanKind(e)]), [['2026-11-08', 'week'], ['2026-11-22', 'until'], [null, 'all']]);
   const ids = (d) => S.on(list, D.parse(d)).map((e) => e.id).sort().join(',');
   assert.strictEqual(ids('2026-10-28'), '');
   assert.strictEqual(ids('2026-11-04'), 'u,w');
@@ -473,7 +473,7 @@ test('이번 주만 · 언제까지(until): 그 기간에만 보인다', () => {
   assert.strictEqual(ids('2026-11-18'), 'bad,u');
   assert.strictEqual(ids('2026-11-25'), 'bad');
   assert.match(S.whenText(list[0]), /11월 2일 – 8일 이번 주만 · 수요일/);
-  assert.match(S.whenText(list[1]), /11월 2일 주부터 11월 16일 주까지/);
+  assert.match(S.whenText(list[1]), /11월 2일 주부터 11월 22일 \(일\)까지/);
   // 폼 검사
   const f = { title: 'x', weekly: true, weekdays: [2], from: '2026-11-09', span: 'until', until: '2026-11-03', start: '10:00', end: '11:00' };
   assert.match(S.validate(f), /앞이에요/);
@@ -482,6 +482,21 @@ test('이번 주만 · 언제까지(until): 그 기간에만 보인다', () => {
   const sets = [];
   const st = require('../js/store').createStore({ doc: () => ({ set: (d) => { sets.push(d); return Promise.resolve(); } }) });
   st.saveEvent(Object.assign({}, list[1], { createdBy: 'u1' })); st.saveEvent(Object.assign({}, list[2], { createdBy: 'u1' }));
-  assert.strictEqual(sets[0].until, '2026-11-16');
-  assert.ok(!('until' in sets[1]));
+  assert.strictEqual(sets[0].last, '2026-11-22');
+  assert.ok(!('until' in sets[0]) && !('last' in sets[1]));
+});
+
+test('언제까지 = 날짜(포함): 수 · 목 · 금 일정을 다음 주 목요일까지', () => {
+  // 이번 주(11/2 주) 수 · 목 · 금 + 다음 주 수 · 목 → 마지막 날 11/12(목)
+  const list = S.fromDocs([ev('x', 'u1', { weekday: null, weekdays: [2, 3, 4], from: '2026-11-02', last: '2026-11-12' })]);
+  const on = (d) => S.on(list, D.parse(d)).length;
+  assert.deepStrictEqual(['2026-11-04', '2026-11-05', '2026-11-06', '2026-11-11', '2026-11-12', '2026-11-13'].map(on), [1, 1, 1, 1, 1, 0]);
+  assert.strictEqual(S.spanKind(list[0]), 'until');
+  assert.match(S.whenText(list[0]), /11월 12일 \(목\)까지/);
+  // 시작 주 일요일이 마지막이면 이번 주만
+  assert.strictEqual(S.spanKind(S.fromDocs([ev('y', 'u1', { from: '2026-11-02', last: '2026-11-08' })])[0]), 'week');
+  // 끝나는 날이 시작 주 안이면 됨 (같은 주 수요일까지)
+  const f = { title: 'x', weekly: true, weekdays: [2], from: '2026-11-02', span: 'until', until: '2026-11-04', start: '10:00', end: '11:00' };
+  assert.strictEqual(S.validate(f), '');
+  assert.match(S.validate(Object.assign({}, f, { until: '2026-11-01' })), /앞이에요/);
 });

@@ -737,7 +737,7 @@ async function tick(page, dateKey, key) {
   await jm.click('form[data-form="event"] button[type="submit"]');
   await jm.waitForTimeout(250);
   const skKey = [...docs.entries()].find(([k, v]) => v && v.title === '특강')[0];
-  console.log('특강 저장:', JSON.stringify({ from: docs.get(skKey).from, until: docs.get(skKey).until }), '| 이 주', await cnt(jm, '특강'));
+  console.log('특강 저장:', JSON.stringify({ from: docs.get(skKey).from, last: docs.get(skKey).last }), '| 이 주', await cnt(jm, '특강'));
   await jm.click('[data-act="event-add"]');
   await jm.fill('#ev-title', '스터디2');
   await jm.click('[data-act="ev-repeat"][data-v="until"]');
@@ -749,13 +749,15 @@ async function tick(page, dateKey, key) {
   console.log('앞 날짜 저장:', await jm.textContent('#ev-error'));
   await jm.fill('#ev-until', '2026-11-12'); await jm.dispatchEvent('#ev-until', 'change');
   console.log('11/12까지:', await jm.textContent('#ev-from-note'));
+  await jm.click('[data-act="ev-wd"][data-v="2"]'); await jm.click('[data-act="ev-wd"][data-v="3"]');
+  console.log('수 · 목 · 금 고른 뒤:', await jm.textContent('#ev-from-note'));
   await jm.screenshot({ path: path.join(OUT, 'web-until-sheet.png'), fullPage: true });
   await jm.click('[data-act="ev-wd"][data-v="4"]');
   await jm.fill('#ev-start', '13:00'); await jm.fill('#ev-end', '14:00');
   await jm.click('form[data-form="event"] button[type="submit"]');
   await jm.waitForTimeout(250);
   const stKey = [...docs.entries()].find(([k, v]) => v && v.title === '스터디2')[0];
-  console.log('스터디2 저장:', JSON.stringify({ from: docs.get(stKey).from, until: docs.get(stKey).until }));
+  console.log('스터디2 저장:', JSON.stringify({ from: docs.get(stKey).from, last: docs.get(stKey).last, weekdays: docs.get(stKey).weekdays }));
   const weeks = [];
   for (const dir of [-1, 1, 1, 1]) { await jm.click(`[data-act="sched-week"][data-dir="${dir}"]`); weeks.push((await jm.textContent('.grid-range')) + ' 특강' + (await cnt(jm, '특강')) + ' 스터디' + (await cnt(jm, '스터디2'))); }
   console.log('주마다:', weeks.join(' | '));

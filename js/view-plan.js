@@ -489,9 +489,11 @@
     if (f.span === 'until') {
       var u = D.parse(f.until);
       if (isNaN(u)) return '';
-      var b = S.monStart(u);
-      if (b < a) return '끝나는 주가 시작하는 주보다 앞이에요';
-      return S.rangeText(a) + ' 주부터 ' + S.rangeText(b) + ' 주까지 · ' + ((b - a) / 7 + 1) + '주';
+      if (u < a) return '끝나는 날이 시작하는 주보다 앞이에요';
+      // 그 사이 고른 요일이 몇 번인지
+      var days = S.weekdaysOf(f), cnt = 0;
+      for (var n = a; n <= u; n++) if (days.indexOf(S.weekdayOf(n)) >= 0) cnt++;
+      return S.rangeText(a) + ' 주부터 ' + D.label(u) + ' (' + S.WD[S.weekdayOf(u)] + ')까지' + (cnt ? ' · ' + cnt + '번' : '');
     }
     return S.rangeText(a) + ' 주부터 매주 · 그 앞 주에는 안 보여요';
   }
@@ -499,7 +501,7 @@
     var note = spanNote(f), week = f.span === 'week';
     return '<label class="field"><span class="field__label">' + (week ? '어느 주' : '시작하는 주') + ' <span class="field__hint">· ' + (week ? '이 날이 있는 주에만' : '이 날이 있는 주부터 반복돼요') + '</span></span>' +
       '<input id="ev-from" class="field__input" type="date" value="' + esc(f.from || '') + '"></label>' +
-      (f.span === 'until' ? '<label class="field"><span class="field__label">끝나는 주 <span class="field__hint">· 이 날이 있는 주까지</span></span>' +
+      (f.span === 'until' ? '<label class="field"><span class="field__label">끝나는 날 <span class="field__hint">· 이 날까지 (이 날 포함)</span></span>' +
         '<input id="ev-until" class="field__input" type="date" value="' + esc(f.until || '') + '"></label>' : '') +
       '<p class="muted shint" id="ev-from-note">' + esc(note) + '</p>';
   }

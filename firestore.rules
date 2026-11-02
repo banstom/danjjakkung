@@ -160,11 +160,13 @@ service cloud.firestore {
     }
     function validEvent(d) {
       // 매주 · 요일 하나: weekday 숫자 / 매주 · 요일 여럿: weekday null + weekdays 목록(2~7개, 0~6) / 한 번: date
-      return d.keys().hasOnly(['owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'more', 'from', 'until', 'date', 'start', 'end', 'createdBy', 'updatedAt'])
+      return d.keys().hasOnly(['owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'more', 'from', 'until', 'last', 'date', 'start', 'end', 'createdBy', 'updatedAt'])
         // 시작 날짜: 매주 일정만 (이 날짜 앞의 주에는 안 보임)
         && (!('from' in d) || (d.weekly == true && isDate(d.from)))
         // 마지막 주(월요일): 매주 일정만, 시작 주가 있고 그보다 앞이 아님 (같으면 이번 주만)
         && (!('until' in d) || (d.weekly == true && isDate(d.until) && ('from' in d) && d.until >= d.from))
+        // 마지막 날(이 날 포함): 매주 일정만, 시작 주가 있고 그보다 앞이 아님
+        && (!('last' in d) || (d.weekly == true && isDate(d.last) && ('from' in d) && d.last >= d.from))
         // 쉬는 날: 매주 일정만, 날짜 1~60개 (날짜 모양은 앱이 거른다)
         && (!('skip' in d) || (d.weekly == true && d.skip is list && d.skip.size() >= 1 && d.skip.size() <= 60 && isDate(d.skip[0]) && isDate(d.skip[d.skip.size() - 1])))
         // 그날만 바뀐 시간: 매주 일정만, { 'YYYY-MM-DD': 'HH:MM-HH:MM' } 1~60개 (날짜 · 시간 모양은 앱이 거른다)

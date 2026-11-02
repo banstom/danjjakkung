@@ -1093,7 +1093,7 @@
     var S = RT.schedule;
     if (canEditEvent(e)) {
       openPlanSheet('event', { mode: 'edit', id: id, title: e.title, short: e.short || '', owner: e.owner === 'both' ? 'both' : 'me', lockOwner: e.owner === 'both', weekly: e.weekly,
-        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.catIcon ? e.cat : null, date: e.date || D.toKey(state.today), from: e.from || D.toKey(S.monStart(occDay !== null ? occDay : state.today)), span: S.spanKind(e), until: e.until ? D.toKey(D.parse(e.until) + 6) : '', start: e.start, end: e.end, more: copySpans(e.more), error: '', occDay: occDay });
+        weekdays: e.weekly ? e.weekdays.slice() : [S.weekdayOf(D.parse(e.date))], wdPicked: e.weekly ? true : undefined, perDay: !!e.perDay, times: copyTimes(e.times), cat: e.catIcon ? e.cat : null, date: e.date || D.toKey(state.today), from: e.from || D.toKey(S.monStart(occDay !== null ? occDay : state.today)), span: S.spanKind(e), until: e.last || '', start: e.start, end: e.end, more: copySpans(e.more), error: '', occDay: occDay });
       return;
     }
     var people = planPeople(), slot = 'me';
@@ -1153,7 +1153,7 @@
         f.from = D.toKey(S1.monStart(D.parse(f.date))); // 한 번 일정의 날짜가 있는 주부터
       }
       if (v === 'until' && isNaN(D.parse(f.until))) {
-        // 끝나는 주 기본: 시작 주 + 3주 (4주 동안) 의 일요일
+        // 끝나는 날 기본: 시작 주 + 3주 (4주 동안) 의 일요일
         var fs = D.parse(f.from);
         f.until = D.toKey((isNaN(fs) ? S1.monStart(state.today) : S1.monStart(fs)) + 27);
       }
@@ -1192,8 +1192,8 @@
     var perDay = usedRows && !RT.schedule.sameTimes(f.times, days);
     var e = { id: f.id || RT.store.newKey(), owner: f.owner === 'both' ? 'both' : state.me, title: String(f.title).trim(), short: RT.schedule.shortOf(f.title, f.short), weekly: !!f.weekly,
       weekdays: days, from: f.weekly ? D.toKey(RT.schedule.monStart(D.parse(f.from))) : null,
-      // 마지막 주(월요일): 이번 주만 = 시작 주, 언제까지 = 끝나는 날이 있는 주, 매주 = 없음
-      until: !f.weekly ? null : f.span === 'week' ? D.toKey(RT.schedule.monStart(D.parse(f.from))) : f.span === 'until' ? D.toKey(RT.schedule.monStart(D.parse(f.until))) : null, more: copySpans(f.more).sort(function (a, b) { return RT.schedule.toMin(a.start) - RT.schedule.toMin(b.start); }), date: f.weekly ? null : f.date, start: first.start, end: first.end,
+      // 마지막 날(포함): 이번 주만 = 시작 주 일요일, 언제까지 = 고른 날, 매주 = 없음
+      last: !f.weekly ? null : f.span === 'week' ? D.toKey(RT.schedule.monStart(D.parse(f.from)) + 6) : f.span === 'until' ? D.toKey(D.parse(f.until)) : null, more: copySpans(f.more).sort(function (a, b) { return RT.schedule.toMin(a.start) - RT.schedule.toMin(b.start); }), date: f.weekly ? null : f.date, start: first.start, end: first.end,
       times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat, catList()) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me,
       // 쉬는 날은 폼이 아니라 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
       skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [],
