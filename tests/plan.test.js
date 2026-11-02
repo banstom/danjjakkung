@@ -357,3 +357,38 @@ test('매주 일정 시작 주(from): 그 주 앞에는 안 보이고, 없으면
   assert.strictEqual(ids('2026-12-02'), 'abc');
   assert.match(S.whenText(list[0]), /11월 9일부터/);
 });
+
+test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 먼저, 정리 · 저장 모양', () => {
+  // 2026-11-04 = 수요일(2), 2026-11-06 = 금요일(4)
+  const list = S.fromDocs([ev('a', 'u1', { weekday: 2, start: '10:00', end: '12:00',
+    moved: { '2026-11-04': '11:00-13:00', '2026-11-05': '09:00-10:00', '2026-11-11': '12:00-11:00', bad: '11:00-12:00' } })]);
+  const e = list[0];
+  assert.deepStrictEqual(e.moved, { '2026-11-04': { start: '11:00', end: '13:00' } }); // 다른 요일 · 거꾸로 · 이상한 날짜는 버림
+  const at = (day) => S.on(list, D.parse(day)).map((x) => x.start + '-' + x.end + (x.movedFrom ? '*' + x.movedFrom : '')).join();
+  assert.strictEqual(at('2026-11-04'), '11:00-13:00*10:00–12:00');
+  assert.strictEqual(at('2026-11-11'), '10:00-12:00'); // 다음 주는 원래대로
+  // 쉬는 날이면 안 보임
+  const sk = S.fromDocs([ev('a', 'u1', { weekday: 2, start: '10:00', end: '12:00', skip: ['2026-11-04'], moved: { '2026-11-04': '11:00-13:00' } })]);
+  assert.strictEqual(S.on(sk, D.parse('2026-11-04')).length, 0);
+  // 바꾸기 · 되돌리기 · 4주 지난 날 정리
+  const today = D.parse('2026-11-02');
+  let m = S.withMoved(e, '2026-11-11', { start: '14:00', end: '15:00' }, today);
+  assert.deepStrictEqual(Object.keys(m), ['2026-11-04', '2026-11-11']);
+  m = S.withMoved(Object.assign({}, e, { moved: m }), '2026-11-04', null, today);
+  assert.deepStrictEqual(Object.keys(m), ['2026-11-11']);
+  assert.deepStrictEqual(Object.keys(S.withMoved(Object.assign({}, e, { moved: { '2026-09-02': { start: '11:00', end: '12:00' } } }), null, null, today)), []);
+  // 요일마다 시간이 다르면 원래 시간 = 그 요일 시간
+  const per = S.fromDocs([ev('p', 'u1', { weekday: null, weekdays: [0, 2], times: { '0': '09:00-10:00', '2': '15:00-16:00' }, start: '09:00', end: '10:00', moved: { '2026-11-04': '17:00-18:00' } })])[0];
+  assert.deepStrictEqual(S.baseTime(per, D.parse('2026-11-04')), { start: '15:00', end: '16:00' });
+  // 주 보기 목록 표시
+  const w = S.week(list, ['u1', 'u2'], 'u1', D.parse('2026-11-02'), today, { pick: D.parse('2026-11-04') });
+  assert.strictEqual(w.pick.items[0].movedFrom, '10:00–12:00');
+  assert.strictEqual(w.blocks[0].movedFrom, '10:00–12:00');
+  // 저장: { 'YYYY-MM-DD': 'HH:MM-HH:MM' }, 없으면 필드 없음
+  const sets = [];
+  const st = require('../js/store').createStore({ doc: (p) => ({ set: (d) => { sets.push([p, d]); return Promise.resolve(); } }) });
+  st.saveEvent(Object.assign({}, e, { createdBy: 'u1' }));
+  st.saveEvent(Object.assign({}, e, { moved: {}, createdBy: 'u1' }));
+  assert.deepStrictEqual(sets[0][1].moved, { '2026-11-04': '11:00-13:00' });
+  assert.ok(!('moved' in sets[1][1]));
+});

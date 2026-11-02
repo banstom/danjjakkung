@@ -6,6 +6,7 @@
                    short: 주 보기 블록에 보일 짧은 이름 (선택, 없으면 title 그대로 — 예: 4차산업혁명과디지털리터러시 → 4디리)
                    cat: 카테고리 id — 'class' 같은 기본 6개 또는 새로 만든 것 (js/cats.js, 없거나 지운 카테고리면 아이콘 없음)
                    skip: ['YYYY-MM-DD', …] 매주 일정에서 쉬는 날 (휴강 등) — 그날은 시간표에 안 보이고, 고른 요일 목록에만 「쉬어요」로 남는다
+                   moved: { 'YYYY-MM-DD': 'HH:MM-HH:MM' } 매주 일정에서 그날만 시간이 다른 날 (보강 · 시간 옮김) — 쉬는 날이 먼저
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
    화면 안에서는 언제나 weekdays(정렬된 배열)로 다룬다.
    주는 월요일에 시작한다. 사람 순서(persons)는 루틴 탭과 같아서 두 사람 화면에서 색 · 자리가 같다. */
@@ -69,7 +70,7 @@
 
   var SKIP_MAX = 60;
   // 화면이 아는 필드 — 이 밖의 필드(더 새 버전 앱이 넣은 것)는 고쳐 저장할 때 그대로 둔다
-  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'from', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
+  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'from', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
   function extraOf(e) {
     var out = null;
     Object.keys(e).forEach(function (k) { if (KNOWN.indexOf(k) < 0) { out = out || {}; out[k] = e[k]; } });
@@ -96,6 +97,37 @@
     list = skipsOf(list, e.weekdays || []).filter(function (k) { return D.parse(k) >= old; });
     return list.slice(Math.max(0, list.length - SKIP_MAX));
   }
+  /** 그날만 바뀐 시간: { 'YYYY-MM-DD': { start, end } } — 맞는 날짜 · 그 일정의 요일 · 맞는 시간만 */
+  function movedOf(raw, days) {
+    var out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    Object.keys(raw).sort().forEach(function (k) {
+      var n = D.parse(k), v = raw[k], m = null;
+      if (typeof v === 'string') m = /^(\d\d:\d\d)-(\d\d:\d\d)$/.exec(v);
+      else if (v && typeof v === 'object') m = [null, v.start, v.end];
+      if (isNaN(n) || D.toKey(n) !== k || days.indexOf(weekdayOf(n)) < 0 || !m) return;
+      if (!(toMin(m[1]) < toMin(m[2]))) return;
+      out[k] = { start: m[1], end: m[2] };
+    });
+    return out;
+  }
+  /** 그날만 시간 바꾸기 · 되돌리기 (span = { start, end } 또는 null) — 4주보다 오래된 날은 정리하고 최대 SKIP_MAX 개 */
+  function withMoved(e, key, span, today) {
+    var m = movedOf(e.moved, e.weekdays || []);
+    if (key) { if (span) m[key] = { start: span.start, end: span.end }; else delete m[key]; }
+    m = movedOf(m, e.weekdays || []);
+    var old = typeof today === 'number' ? today - 28 : -Infinity, keys = Object.keys(m).filter(function (k) { return D.parse(k) >= old; });
+    keys = keys.slice(Math.max(0, keys.length - SKIP_MAX));
+    var out = {};
+    keys.forEach(function (k) { out[k] = m[k]; });
+    return out;
+  }
+  /** 그날 원래 시간 (요일마다 다르면 그 요일 시간) */
+  function baseTime(e, day) {
+    var wd = weekdayOf(day);
+    return e.weekly && e.perDay && e.times && e.times[wd] ? e.times[wd] : { start: e.start, end: e.end };
+  }
+  function movedOn(e, day) { return e.weekly && e.moved ? e.moved[D.toKey(day)] || null : null; }
   function isSkipped(e, day) { return !!(e.weekly && e.skip && e.skip.indexOf(D.toKey(day)) >= 0); }
 
   /** cats: 지금 카테고리 목록 (js/cats.js fromDocs, 안 주면 기본 6개) */
@@ -110,7 +142,7 @@
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
       var cat = C.isId(e.cat) ? e.cat : null, c = catOf(cat, catList); // 지운 카테고리여도 id 는 남겨 둔다 (아이콘만 없음)
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], from: weekly && typeof e.from === 'string' && !isNaN(D.parse(e.from)) ? e.from : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
+        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], moved: weekly ? movedOf(e.moved, days) : {}, from: weekly && typeof e.from === 'string' && !isNaN(D.parse(e.from)) ? e.from : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
 
@@ -118,7 +150,9 @@
   function on(events, day, opts) {
     var wd = weekdayOf(day), key = D.toKey(day), want = !!(opts && opts.skipped);
     return events.filter(function (e) { return (e.weekly ? e.weekdays.indexOf(wd) >= 0 && (!e.from || day >= D.parse(e.from)) : e.date === key) && isSkipped(e, day) === want; }).map(function (e) {
-      // 요일마다 시간이 다르면 그날 시간으로 (같은 id — 누르면 같은 일정이 열린다)
+      // 요일마다 시간이 다르면 그날 시간으로, 그날만 바꾼 시간이 있으면 그 시간으로 (같은 id — 누르면 같은 일정이 열린다)
+      var mv = movedOn(e, day);
+      if (mv) { var b = baseTime(e, day); return Object.assign({}, e, { start: mv.start, end: mv.end, movedFrom: b.start + '–' + b.end }); }
       return e.weekly && e.perDay ? Object.assign({}, e, { start: e.times[wd].start, end: e.times[wd].end }) : e;
     });
   }
@@ -165,7 +199,7 @@
       lanesOf(e, persons).forEach(function (lane, k) {
         lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: e.catIcon || '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
-          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end });
+          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end, movedFrom: e.movedFrom || null });
       });
     });
     return packLane(lanes[0]).concat(packLane(lanes[1]));
@@ -216,7 +250,7 @@
     var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
       .sort(function (a, b) { return toMin(a[0].start) - toMin(b[0].start) || toMin(a[0].end) - toMin(b[0].end); }).map(function (x) {
         var e = x[0], k = persons.indexOf(e.owner);
-        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], day: pick,
+        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], movedFrom: x[1] ? null : e.movedFrom || null, day: pick,
           slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
       });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
@@ -277,7 +311,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, baseTime: baseTime, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

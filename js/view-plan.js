@@ -261,7 +261,7 @@
     return '<button type="button" class="sblock sblock--' + b.slot + (b.weekly ? '' : ' sblock--once') + (opts.compact ? ' sblock--compact' : '') + (b.dup ? ' sblock--dup' : '') + (b.full && opts.compact ? ' sblock--full' : '') + '" data-act="event-open" data-id="' + esc(b.id) + '" data-at="' + esc(b.id + '@' + (b.dayIdx || 0)) + '"' + (typeof b.day === 'number' ? ' data-day="' + b.day + '"' : '') +
       (b.dup ? ' tabindex="-1" aria-hidden="true"' : '') +
       ' style="top:' + top + ';height:' + h + ';left:calc(' + pct(left) + ' + 1px);width:calc(' + pct(w) + ' - 2px)"' +
-      ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번')) + '">' +
+      ' aria-label="' + esc(b.title + ', ' + b.time + (opts.dayLabel ? ', ' + opts.dayLabel : '') + (b.weekly ? ', 매주' : ', 한 번') + (b.movedFrom ? ', 이날만 시간 바뀜, 원래 ' + b.movedFrom : '')) + '">' +
       '<span class="sblock__title">' + label + '</span>' + (opts.compact ? '' : '<span class="sblock__time">' + esc(b.time) + '</span>') + '</button>';
   }
   function hourLines(H, withLabels, labelFull) {
@@ -302,10 +302,10 @@
     if (!p) return '';
     var rows = p.items.map(function (it) {
       return '<button type="button" class="slist__item slist__item--' + it.slot + (it.weekly ? '' : ' slist__item--once') + (it.skipped ? ' slist__item--skipped' : '') + '" data-act="event-open" data-id="' + esc(it.id) + '" data-at="' + esc(it.id + '@list') + '" data-day="' + it.day + '"' +
-        ' aria-label="' + esc(it.title + ', ' + it.time + ', ' + it.who + (it.catName ? ', ' + it.catName : '') + (it.weekly ? ', 매주' : ', 한 번') + (it.skipped ? ', 이날은 쉬어요' : '')) + '">' +
+        ' aria-label="' + esc(it.title + ', ' + it.time + ', ' + it.who + (it.catName ? ', ' + it.catName : '') + (it.weekly ? ', 매주' : ', 한 번') + (it.skipped ? ', 이날은 쉬어요' : '') + (it.movedFrom ? ', 이날만 시간 바뀜, 원래 ' + it.movedFrom : '')) + '">' +
         (it.slot === 'both' ? '' : '<span class="slist__bar" aria-hidden="true"></span>') +
         (it.icon ? '<span class="slist__ico" aria-hidden="true">' + esc(it.icon) + '</span>' : '') +
-        '<span class="slist__title">' + esc(it.title) + (it.skipped ? ' <span class="tag tag--rest">쉬어요</span>' : '') + '</span><span class="slist__who">' + esc(it.who) + '</span>' +
+        '<span class="slist__title">' + esc(it.title) + (it.skipped ? ' <span class="tag tag--rest">쉬어요</span>' : '') + (it.movedFrom ? ' <span class="tag tag--rest">이날만 🕐</span>' : '') + '</span><span class="slist__who">' + esc(it.who) + '</span>' +
         '<span class="slist__time">' + esc(it.time) + '</span></button>';
     }).join('');
     return '<section class="card slist" aria-label="' + esc(p.title) + ' 일정">' +
@@ -378,15 +378,34 @@
   }
   // 매주 일정: 누른 날만(또는 그 주만) 쉬기 · 쉬는 날 목록 — 누르면 바로 저장
   function skipBox(k) {
-    if (!k || (!k.occ && !k.list.length)) return '';
-    var dis = k.busy ? ' disabled' : '', o = k.occ, out = '<section class="skipbox" aria-label="쉬는 날">';
-    if (o) {
-      out += '<p class="skipbox__title">' + esc(o.label) + (o.skipped ? ' · 쉬는 날' : '') + '</p>';
+    var moves = (k && k.moves) || [];
+    if (!k || (!k.occ && !k.list.length && !moves.length)) return '';
+    var dis = k.busy ? ' disabled' : '', o = k.occ, mv = k.move, out = '<section class="skipbox" aria-label="이날만 바꾸기">';
+    if (o && mv && mv.key === o.key && !o.skipped) {
+      // 이날만 시간 바꾸기 — 시간 칸 두 개
+      out += '<p class="skipbox__title">' + esc(o.label) + ' · 이날만 시간 바꾸기</p>' +
+        '<div class="drows" role="group" aria-label="이날 시간"><div class="drow drow--head" aria-hidden="true"><span></span><span>시작</span><span>끝</span></div>' +
+        '<div class="drow"><b class="drow__day">이날</b>' +
+        '<input id="ev-ms" class="field__input" type="time" step="300" aria-label="이날 시작" value="' + esc(mv.start) + '">' +
+        '<input id="ev-me" class="field__input" type="time" step="300" aria-label="이날 끝" value="' + esc(mv.end) + '"></div></div>' +
+        (mv.error ? '<p class="rform__error" role="alert">' + esc(mv.error) + '</p>' : '') +
+        '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-move-cancel"' + dis + '>취소</button>' +
+        '<button type="button" class="solid-btn" data-act="ev-move-save"' + dis + '>' + (k.busy ? '저장 중…' : '이날만 바꾸기') + '</button></div>' +
+        '<p class="skipbox__hint">원래 ' + esc(o.base) + ' · 다른 주는 그대로예요</p>';
+    } else if (o) {
+      out += '<p class="skipbox__title">' + esc(o.label) + (o.skipped ? ' · 쉬는 날' : o.moved ? ' · ' + esc(o.moved) + '로 바뀜' : '') + '</p>';
       out += o.skipped
         ? '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-unskip" data-v="' + esc(o.key) + '"' + dis + '>이날 다시 하기</button></div>'
-        : '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.key) + '"' + dis + '>🌿 이날만 쉬기</button>' +
+        : '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-move" data-v="' + esc(o.key) + '"' + dis + '>🕐 ' + (o.moved ? '이날 시간 다시 바꾸기' : '이날만 시간 바꾸기') + '</button>' +
+          (o.moved ? '<button type="button" class="ghost-btn" data-act="ev-unmove" data-v="' + esc(o.key) + '"' + dis + '>원래 시간으로 (' + esc(o.base) + ')</button>' : '') +
+          '<button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.key) + '"' + dis + '>🌿 이날만 쉬기</button>' +
           (o.weekKey && !o.weekSkipped ? '<button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.weekKey) + '"' + dis + '>이번 주 모두 쉬기</button>' : '') + '</div>';
-      out += '<p class="skipbox__hint">휴강처럼 그날만 시간표에서 빠져요 · 매주 일정은 그대로</p>';
+      out += '<p class="skipbox__hint">그날만 시간을 옮기거나(보강 등) 쉬어요 · 매주 일정은 그대로</p>';
+    }
+    if (moves.length) {
+      out += '<div class="skipbox__list"><span class="field__label">시간 바꾼 날 <span class="field__hint">· 누르면 원래 시간으로</span></span><div class="chips chips--wrap">' + moves.map(function (x) {
+        return '<button type="button" class="chip chip--rest' + (x.past ? ' is-past' : '') + '" data-act="ev-unmove" data-v="' + esc(x.key) + '" aria-label="' + esc(x.label + ' 원래 시간으로') + '"' + dis + '>🕐 ' + esc(x.label) + ' ✕</button>';
+      }).join('') + '</div></div>';
     }
     if (k.list.length) {
       out += '<div class="skipbox__list"><span class="field__label">쉬는 날 <span class="field__hint">· 누르면 다시 해요</span></span><div class="chips chips--wrap">' + k.list.map(function (x) {
@@ -453,7 +472,8 @@
     if (f.mode === 'view') {
       var info = '<div class="einfo"><p class="einfo__title"><span class="dot dot--' + f.slot + '"></span>' + esc(f.title) + '</p>' +
         '<p class="einfo__line">' + esc(f.whenText) + '</p><p class="einfo__line">' + esc(f.whoText) + '</p>' +
-        (f.skipText ? '<p class="einfo__line einfo__rest">🌿 ' + esc(f.skipText) + '</p>' : '') + '</div>' +
+        (f.skipText ? '<p class="einfo__line einfo__rest">🌿 ' + esc(f.skipText) + '</p>' : '') +
+        (f.moveText ? '<p class="einfo__line einfo__rest">🕐 ' + esc(f.moveText) + '</p>' : '') + '</div>' +
         (f.canEdit ? '<button type="button" class="solid-btn solid-btn--full" data-act="event-edit">수정하기</button>' : '<p class="muted">' + esc(f.lockText) + '</p>') +
         '<button type="button" class="close-btn" data-act="event-cancel">닫기</button>';
       return sheetShell('event-sheet-title', '일정', '', info, 'event-cancel', entering);

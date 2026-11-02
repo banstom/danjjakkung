@@ -80,7 +80,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end'];
+  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-ms', 'ev-me'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
@@ -170,6 +170,7 @@
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
+    'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v',
     'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v', 'ev-from': 'data-v',
     'cat-open': null, 'cat-sort': null, 'cat-move': 'data-key', 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null,
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
@@ -436,6 +437,10 @@
     else if (act === 'event-edit') { if (state.eventForm && state.eventForm.mode === 'view') openEvent(state.eventForm.id, true, null, state.eventForm.occDay); }
     else if (act === 'ev-skip') skipEvent(btn.getAttribute('data-v'), true);
     else if (act === 'ev-unskip') skipEvent(btn.getAttribute('data-v'), false);
+    else if (act === 'ev-move') openMove(btn.getAttribute('data-v'));
+    else if (act === 'ev-move-cancel') { if (state.eventForm) { state.eventForm.move = null; render(true); } }
+    else if (act === 'ev-move-save') saveMove();
+    else if (act === 'ev-unmove') moveEvent(btn.getAttribute('data-v'), null);
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
     else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode' || act === 'ev-cat' || act === 'ev-from') setEventField(act, btn.getAttribute('data-v'));
@@ -1094,7 +1099,8 @@
     openPlanSheet('event', { mode: 'view', id: id, title: e.title, slot: slot,
       whenText: S.whenText(e),
       whoText: nameOf(e.owner) + ' 님 일정', canEdit: false, lockText: nameOf(e.owner) + ' 님만 고칠 수 있어요',
-      occDay: occDay, skipText: occDay !== null && S.isSkipped(e, occDay) ? D.full(occDay) + '은 쉬는 날이에요' : '' });
+      occDay: occDay, skipText: occDay !== null && S.isSkipped(e, occDay) ? D.full(occDay) + '은 쉬는 날이에요' : '',
+      moveText: occDay !== null && !S.isSkipped(e, occDay) && S.movedOn(e, occDay) ? D.full(occDay) + '은 ' + S.movedOn(e, occDay).start + '–' + S.movedOn(e, occDay).end + ' (원래 ' + S.baseTime(e, occDay).start + '–' + S.baseTime(e, occDay).end + ')' : '' });
   }
   function copyTimes(t) { var o = {}; if (t) Object.keys(t).forEach(function (k) { o[k] = { start: t[k].start, end: t[k].end }; }); return o; }
   function setEventField(act, v) {
@@ -1163,7 +1169,9 @@
       weekdays: days, from: f.weekly && f.fromMode !== 'all' && f.from ? f.from : null, date: f.weekly ? null : f.date, start: first.start, end: first.end,
       times: perDay ? copyTimes(f.times) : null, cat: RT.schedule.catOf(f.cat, catList()) ? f.cat : null, createdBy: old ? old.createdBy || state.me : state.me,
       // 쉬는 날은 폼이 아니라 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
-      skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [], extra: old ? old.extra : null };
+      skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [],
+      // 그날만 바꾼 시간도 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
+      moved: f.weekly && old && old.weekly ? RT.schedule.withMoved({ moved: old.moved, weekdays: days }, null, null, state.today) : {}, extra: old ? old.extra : null };
     f.saving = true; f.error = ''; render(true);
     settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
   }
@@ -1175,12 +1183,18 @@
     if (f.occDay !== null && f.occDay !== undefined && e.weekdays.indexOf(S.weekdayOf(f.occDay)) >= 0) {
       var ws = S.monStart(f.occDay), key = D.toKey(f.occDay);
       var weekKeys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
+      var mv = S.movedOn(e, f.occDay), base = S.baseTime(e, f.occDay);
       occ = { key: key, label: D.full(f.occDay), skipped: S.isSkipped(e, f.occDay),
+        moved: mv ? mv.start + '–' + mv.end : '', base: base.start + '–' + base.end,
         weekKey: e.weekdays.length > 1 ? 'week:' + key : null, weekLabel: D.label(ws) + ' 주',
         weekSkipped: weekKeys.every(function (k) { return e.skip.indexOf(k) >= 0; }) };
     }
     var list = e.skip.map(function (k) { var n = D.parse(k); return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')', past: n < state.today }; });
-    return { occ: occ, list: list, busy: !!f.saving };
+    var moves = Object.keys(e.moved || {}).map(function (k) {
+      var n = D.parse(k), m = e.moved[k];
+      return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ') ' + m.start + '–' + m.end, past: n < state.today };
+    });
+    return { occ: occ, list: list, moves: moves, move: f.move || null, busy: !!f.saving };
   }
   /** 쉬는 날: key = 'YYYY-MM-DD' 하나 또는 'week:YYYY-MM-DD'(그 주 이 일정의 모든 요일). 누르면 바로 저장된다. */
   function skipEvent(v, on) {
@@ -1210,6 +1224,50 @@
       settle(store.saveEvent(doc), f, function () { return state.eventForm === f; }, msg, '[data-act="event-add"]');
     } else {
       // 「쉬는 날」 목록에서 되돌리기 → 시트는 그대로 (폼에 적던 것도 그대로)
+      store.saveEvent(doc).then(function () { showToast(msg); }, function () { showToast('저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+    }
+  }
+  /** 「이날만 시간 바꾸기」: 누른 칸의 날 시간 칸을 연다 (지금 그날 시간으로 채워서) */
+  function openMove(key) {
+    var f = state.eventForm, S = RT.schedule;
+    if (!f || f.mode !== 'edit' || f.saving) return;
+    var e = findEvent(f.id), n = D.parse(key);
+    if (!e || !e.weekly || isNaN(n)) return;
+    var cur = S.movedOn(e, n) || S.baseTime(e, n);
+    f.move = { key: key, start: cur.start, end: cur.end, error: '' };
+    render(true);
+    setTimeout(function () { var el = document.getElementById('ev-ms'); if (el && el.focus) el.focus(); }, 0);
+  }
+  function saveMove() {
+    var f = state.eventForm, S = RT.schedule;
+    if (!f || !f.move || f.saving) return;
+    var ms = document.getElementById('ev-ms'), me = document.getElementById('ev-me');
+    if (ms) f.move.start = ms.value;
+    if (me) f.move.end = me.value;
+    var s = S.toMin(f.move.start), t = S.toMin(f.move.end);
+    if (isNaN(s) || isNaN(t)) { f.move.error = '시작 · 끝 시간을 골라 주세요'; render(true); return; }
+    if (t <= s) { f.move.error = '끝 시간이 시작보다 늦어야 해요'; render(true); return; }
+    moveEvent(f.move.key, { start: f.move.start, end: f.move.end });
+  }
+  /** 그날만 시간 바꾸기(span) · 원래 시간으로(span = null). 누르면 바로 저장된다. */
+  function moveEvent(key, span) {
+    var f = state.eventForm, S = RT.schedule;
+    if (!store || !f || !f.id || f.saving || f.mode !== 'edit') return;
+    var e = findEvent(f.id), n = D.parse(key);
+    if (!e || !e.weekly || isNaN(n)) return;
+    var base = S.baseTime(e, n);
+    if (span && span.start === base.start && span.end === base.end) span = null; // 원래 시간과 같으면 되돌리기
+    var next = S.withMoved(e, key, span, state.today);
+    if (span && !next[key]) { f.move.error = '시간을 바꾼 날은 ' + S.SKIP_MAX + '개까지예요'; render(true); return; }
+    var doc = Object.assign({}, e, { moved: next, times: e.perDay ? e.times : null });
+    var label = D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')';
+    var msg = span ? '🕐 ' + label + ' ' + e.title + ' ' + span.start + '–' + span.end + '로 바꿨어요' : label + ' ' + e.title + ' 원래 시간(' + base.start + '–' + base.end + ')으로';
+    var fromOcc = f.occDay !== null && f.occDay !== undefined && D.toKey(f.occDay) === key;
+    if (fromOcc || span) {
+      f.saving = true; render(true);
+      settle(store.saveEvent(doc), f, function () { return state.eventForm === f; }, msg, '[data-act="event-add"]');
+    } else {
+      // 「시간 바꾼 날」 목록에서 되돌리기 → 시트는 그대로
       store.saveEvent(doc).then(function () { showToast(msg); }, function () { showToast('저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); });
     }
   }
@@ -1466,6 +1524,7 @@
     if (ev.target.id === 'ev-date' && state.eventForm) { state.eventForm.date = ev.target.value; return; }
     if (ev.target.id === 'ev-start' && state.eventForm) { state.eventForm.start = ev.target.value; return; }
     if (ev.target.id === 'ev-end' && state.eventForm) { state.eventForm.end = ev.target.value; return; }
+    if ((ev.target.id === 'ev-ms' || ev.target.id === 'ev-me') && state.eventForm && state.eventForm.move) { state.eventForm.move[ev.target.id === 'ev-ms' ? 'start' : 'end'] = ev.target.value; state.eventForm.move.error = ''; var me0 = document.querySelector('.skipbox .rform__error'); if (me0) me0.remove(); return; }
     var tm = /^ev-t([se])-(\d)$/.exec(ev.target.id);
     if (tm && state.eventForm) { var tf = state.eventForm, tw = Number(tm[2]); tf.times[tw] = tf.times[tw] || { start: tf.start, end: tf.end }; tf.times[tw][tm[1] === 's' ? 'start' : 'end'] = ev.target.value; return; }
     if (ev.target.id !== 'nt-remind') return;

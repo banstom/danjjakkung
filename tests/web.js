@@ -690,6 +690,41 @@ async function tick(page, dateKey, key) {
   console.log('이번 주 모두:', JSON.stringify(docs.get(bioKey).skip), '| 블록', await bioCount(jm));
   await jm.click('[data-act="sched-week"][data-dir="1"]');
   console.log('다음 주 블록:', await bioCount(jm));
+  // (v32) 그날만 시간 바꾸기 — 다음 주 화요일 일반생물만 11:00–13:00, 그다음 주는 그대로 → 원래 시간으로
+  const bioTimes = (p) => p.$$eval('.sblock[aria-label^="일반생물"]', (e) => e.map((x) => x.getAttribute('aria-label').split(', ').slice(1, 3).join(' ')).join(' / '));
+  console.log('바꾸기 전:', await bioTimes(jm));
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="화요일"]');
+  await jm.click('[data-act="ev-move"]');
+  console.log('시간 칸:', await jm.textContent('.skipbox__title'), '| 값', await jm.inputValue('#ev-ms'), await jm.inputValue('#ev-me'));
+  await jm.fill('#ev-ms', '13:00'); await jm.fill('#ev-me', '12:00');
+  await jm.click('[data-act="ev-move-save"]');
+  console.log('거꾸로:', await jm.textContent('.skipbox .rform__error').catch(() => '(오류 없음)'));
+  await jm.fill('#ev-ms', '11:00'); await jm.fill('#ev-me', '13:00');
+  await jm.screenshot({ path: path.join(OUT, 'web-move-sheet.png') });
+  await jm.click('[data-act="ev-move-save"]');
+  await jm.waitForTimeout(250);
+  console.log('바꾼 뒤: 저장', JSON.stringify(docs.get(bioKey).moved), '| 토스트', await jm.textContent('.toast').catch(() => ''), '| 블록', await bioTimes(jm));
+  await jm.screenshot({ path: path.join(OUT, 'web-move-week.png'), fullPage: true });
+  await dj.click('[data-act="sched-week"][data-dir="1"]').catch(() => {});
+  await dj.waitForTimeout(150);
+  console.log('다진 화면:', await bioTimes(dj));
+  const djMoved = await dj.$('.sblock[aria-label^="일반생물"][aria-label*="시간 바뀜"]');
+  if (djMoved) { await djMoved.click(); console.log('다진 보기:', await dj.$$eval('.einfo__rest', (e) => e.map((x) => x.textContent).join(' | '))); await dj.keyboard.press('Escape'); }
+  await dj.click('[data-act="sched-thisweek"]').catch(() => {});
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  console.log('그다음 주:', await bioTimes(jm));
+  await jm.click('[data-act="sched-week"][data-dir="-1"]');
+  // 고치기에서 이름만 바꿔 저장해도 바꾼 시간은 그대로
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="목요일"]');
+  console.log('다른 날 열기: 바꾼 날 목록', await jm.$$eval('[data-act="ev-unmove"]', (e) => e.map((x) => x.textContent).join(', ')));
+  await jm.click('.sheet [type="submit"]');
+  await jm.waitForTimeout(250);
+  console.log('저장 뒤 유지:', JSON.stringify(docs.get(bioKey).moved));
+  await jm.click('.sblock[aria-label^="일반생물"][aria-label*="시간 바뀜"]');
+  console.log('바뀐 날 열기:', await jm.textContent('.skipbox__title'), '|', await jm.$$eval('.skipbox__row [data-act]', (e) => e.map((x) => x.textContent).join(' / ')));
+  await jm.click('.skipbox__row [data-act="ev-unmove"]');
+  await jm.waitForTimeout(250);
+  console.log('원래 시간으로:', JSON.stringify(docs.get(bioKey).moved || null), '| 블록', await bioTimes(jm));
   await jm.click('[data-act="sched-thisweek"]');
 
   // 카테고리: 일정 폼의 「편집」 → 둘이 같이 쓰는 목록에서 이름 · 아이콘 바꾸기, 새로 만들기, 지우기
