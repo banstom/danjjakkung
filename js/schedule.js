@@ -8,6 +8,7 @@
                    skip: ['YYYY-MM-DD', …] 매주 일정에서 쉬는 날 (휴강 등) — 그날은 시간표에 안 보이고, 고른 요일 목록에만 「쉬어요」로 남는다
                    moved: { 'YYYY-MM-DD': 'HH:MM-HH:MM' } 매주 일정에서 그날만 시간이 다른 날 (보강 · 시간 옮김) — 쉬는 날이 먼저
                      하루에 여러 번이면 'HH:MM-HH:MM,HH:MM-HH:MM' (그날 모든 시간)
+                     같은 주 다른 날로 옮기면 'YYYY-MM-DD HH:MM-HH:MM' (앞이 옮긴 날 — 수 과외를 그 주만 화로)
                    more: ['HH:MM-HH:MM', …] 하루에 한 번 더 (1~3개, 모든 요일 같은 시간) — 아침 · 저녁 봉사처럼 한 일정이 하루에 여러 번
                    from: 'YYYY-MM-DD' 매주 일정이 시작하는 주의 월요일 — 그 앞 주에는 안 보인다 (없으면 앱을 처음 쓴 주 LAUNCH)
                    date: 'YYYY-MM-DD' (한 번일 때), start: 'HH:MM', end: 'HH:MM', createdBy, updatedAt }
@@ -117,25 +118,35 @@
     list = skipsOf(list, e.weekdays || []).filter(function (k) { return D.parse(k) >= old; });
     return list.slice(Math.max(0, list.length - SKIP_MAX));
   }
-  /** 그날만 바뀐 시간: { 'YYYY-MM-DD': { start, end } } — 맞는 날짜 · 그 일정의 요일 · 맞는 시간만 */
+  /** 그날만 바뀐 날 · 시간: { '원래 날': { to: '옮긴 날' | null, spans: [{ start, end }, …] } }
+      맞는 날짜 · 그 일정의 요일 · 맞는 시간 · 옮긴 날은 같은 주 안만 */
   function movedOf(raw, days) {
     var out = {};
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
     Object.keys(raw).sort().forEach(function (k) {
       var n = D.parse(k), v = raw[k];
       if (isNaN(n) || D.toKey(n) !== k || days.indexOf(weekdayOf(n)) < 0) return;
-      // 'HH:MM-HH:MM' · 'a-b,c-d' · { start, end } · [{ start, end }, …] → [{ start, end }, …]
-      var parts = typeof v === 'string' ? v.split(',') : Array.isArray(v) ? v : [v];
+      // 'HH:MM-HH:MM' · 'a-b,c-d' · 'YYYY-MM-DD a-b' · [{ start, end }, …] · { to, spans } → { to, spans }
+      var to = null, sp = v;
+      if (typeof v === 'string') { var m = /^(\d{4}-\d\d-\d\d) (.+)$/.exec(v); if (m) { to = m[1]; sp = m[2]; } }
+      else if (v && typeof v === 'object' && !Array.isArray(v) && Array.isArray(v.spans)) { to = v.to || null; sp = v.spans; }
+      var parts = typeof sp === 'string' ? sp.split(',') : Array.isArray(sp) ? sp : [sp];
       var list = parts.map(spanOf);
       if (!list.length || list.length > MORE_MAX + 1 || list.some(function (t) { return !t; }) || overlaps(list)) return;
-      out[k] = list.sort(bySpan);
+      if (to !== null) {
+        var tn = D.parse(to);
+        if (isNaN(tn) || D.toKey(tn) !== to || monStart(tn) !== monStart(n)) return; // 같은 주 안만
+        if (to === k) to = null;
+      }
+      out[k] = { to: to, spans: list.sort(bySpan) };
     });
     return out;
   }
-  /** 그날만 시간 바꾸기 · 되돌리기 (span = [{ start, end }, …] 또는 null) — 4주보다 오래된 날은 정리하고 최대 SKIP_MAX 개 */
-  function withMoved(e, key, span, today) {
+  /** 그날만 날 · 시간 바꾸기 · 되돌리기 (span = [{ start, end }, …] 또는 null, to = 옮길 날 'YYYY-MM-DD' 또는 null)
+      4주보다 오래된 날은 정리하고 최대 SKIP_MAX 개 */
+  function withMoved(e, key, span, today, to) {
     var m = movedOf(e.moved, e.weekdays || []);
-    if (key) { if (span) m[key] = (Array.isArray(span) ? span : [span]).map(function (t) { return { start: t.start, end: t.end }; }); else delete m[key]; }
+    if (key) { if (span) m[key] = { to: to && to !== key ? to : null, spans: (Array.isArray(span) ? span : [span]).map(function (t) { return { start: t.start, end: t.end }; }) }; else delete m[key]; }
     m = movedOf(m, e.weekdays || []);
     var old = typeof today === 'number' ? today - 28 : -Infinity, keys = Object.keys(m).filter(function (k) { return D.parse(k) >= old; });
     keys = keys.slice(Math.max(0, keys.length - SKIP_MAX));
@@ -152,7 +163,11 @@
   /** 그날 실제 시간들 (그날만 바꾼 시간이 먼저) */
   function spansOn(e, day) { return movedOn(e, day) || baseSpans(e, day); }
   function sameSpans(a, b) { return a.length === b.length && a.every(function (t, i) { return t.start === b[i].start && t.end === b[i].end; }); }
-  function movedOn(e, day) { return e.weekly && e.moved && e.moved[D.toKey(day)] ? e.moved[D.toKey(day)].slice() : null; }
+  /** 그날(원래 날) 바뀐 시간들 · 옮긴 날 */
+  function movedOn(e, day) { var m = e.weekly && e.moved ? e.moved[D.toKey(day)] : null; return m ? m.spans.slice() : null; }
+  function moveTo(e, day) { var m = e.weekly && e.moved ? e.moved[D.toKey(day)] : null; return m && m.to ? m.to : null; }
+  /** '수 10:00–12:00' 처럼 요일 붙인 원래 시간 (다른 날로 옮겼을 때) */
+  function fromText(e, day, moved) { return (moved ? WD[weekdayOf(day)] + ' ' : '') + spanText(baseSpans(e, day)); }
   function isSkipped(e, day) { return !!(e.weekly && e.skip && e.skip.indexOf(D.toKey(day)) >= 0); }
 
   /** 하루에 한 번 더: 맞는 시간만, 첫 시간 · 서로 안 겹치게, 시작 순, 3개까지 */
@@ -187,11 +202,25 @@
   function on(events, day, opts) {
     var wd = weekdayOf(day), key = D.toKey(day), want = !!(opts && opts.skipped);
     var out = [];
-    events.filter(function (e) { return (e.weekly ? e.weekdays.indexOf(wd) >= 0 && (!e.from || day >= D.parse(e.from)) : e.date === key) && isSkipped(e, day) === want; }).forEach(function (e) {
+    function push(e, list, occ, from, moved) {
+      list.forEach(function (t, i) { out.push(Object.assign({}, e, { start: t.start, end: t.end, part: i, parts: list.length, movedFrom: from, movedDay: moved, occ: occ })); });
+    }
+    var started = function (e, n) { return !e.from || n >= D.parse(e.from); };
+    events.forEach(function (e) {
       // 그날 시간마다 하나씩 (요일마다 다른 시간 · 하루에 한 번 더 · 그날만 바꾼 시간). 같은 id — 누르면 같은 일정이 열린다
-      var mv = e.weekly ? movedOn(e, day) : null, list = mv || baseSpans(e, day);
-      var from = mv ? spanText(baseSpans(e, day)) : null;
-      list.forEach(function (t, i) { out.push(Object.assign({}, e, { start: t.start, end: t.end, part: i, parts: list.length, movedFrom: from })); });
+      // occ = 원래 날 (다른 날로 옮긴 일정을 누르면 원래 날 기준으로 열린다)
+      if (!e.weekly) { if (e.date === key && !want) push(e, baseSpans(e, day), day, null, false); return; }
+      if (e.weekdays.indexOf(wd) >= 0 && started(e, day) && isSkipped(e, day) === want && (want || !moveTo(e, day))) {
+        var mv = movedOn(e, day);
+        push(e, mv || baseSpans(e, day), day, mv ? fromText(e, day, false) : null, false);
+      }
+      // 같은 주 다른 날에서 이날로 옮겨 온 것
+      if (want) return;
+      Object.keys(e.moved || {}).forEach(function (k) {
+        var m = e.moved[k], n = D.parse(k);
+        if (m.to !== key || !started(e, n) || isSkipped(e, n)) return;
+        push(e, m.spans, n, fromText(e, n, true), true);
+      });
     });
     return out;
   }
@@ -238,7 +267,8 @@
       lanesOf(e, persons).forEach(function (lane, k) {
         lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: e.catIcon || '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
-          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end, movedFrom: e.movedFrom || null, part: e.part || 0, parts: e.parts || 1 });
+          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end, movedFrom: e.movedFrom || null, movedDay: !!e.movedDay, part: e.part || 0, parts: e.parts || 1 });
+        if (typeof e.occ === 'number') lanes[lane][lanes[lane].length - 1].day = e.occ; // 누르면 원래 날로 연다
       });
     });
     return packLane(lanes[0]).concat(packLane(lanes[1]));
@@ -289,7 +319,7 @@
     var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
       .sort(function (a, b) { return toMin(a[0].start) - toMin(b[0].start) || toMin(a[0].end) - toMin(b[0].end); }).map(function (x) {
         var e = x[0], k = persons.indexOf(e.owner);
-        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], movedFrom: x[1] ? null : e.movedFrom || null, part: e.part || 0, parts: e.parts || 1, day: pick,
+        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], movedFrom: x[1] ? null : e.movedFrom || null, movedDay: !!e.movedDay, part: e.part || 0, parts: e.parts || 1, day: typeof e.occ === 'number' ? e.occ : pick,
           slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
       });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
@@ -361,7 +391,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, moveTo: moveTo, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

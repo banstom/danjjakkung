@@ -725,6 +725,52 @@ async function tick(page, dateKey, key) {
   await jm.click('.skipbox__row [data-act="ev-unmove"]');
   await jm.waitForTimeout(250);
   console.log('원래 시간으로:', JSON.stringify(docs.get(bioKey).moved || null), '| 블록', await bioTimes(jm));
+  // (v34) 그 주만 다른 날로: 수 · 금 과외2 → 화 · 목 (다음 주는 그대로)
+  await jm.click('[data-act="event-add"]');
+  await jm.fill('#ev-title', '과외2');
+  await jm.click('[data-act="ev-wd"][data-v="2"]'); await jm.click('[data-act="ev-wd"][data-v="4"]');
+  await jm.fill('#ev-start', '20:00'); await jm.fill('#ev-end', '21:30');
+  await jm.click('form[data-form="event"] button[type="submit"]');
+  await jm.waitForTimeout(250);
+  const tuKey = [...docs.entries()].find(([k, v]) => v && v.title === '과외2')[0];
+  const tu = (p) => p.$$eval('.sblock[aria-label^="과외2"]', (e) => e.map((x) => x.getAttribute('aria-label').split(', ').slice(1, 3).join(' ')).join(' / '));
+  console.log('과외2 처음:', await tu(jm));
+  await jm.click('.sblock[aria-label^="과외2"][aria-label*="수요일"]');
+  await jm.click('[data-act="ev-move"]');
+  console.log('옮길 날 칩:', await jm.$$eval('[data-act="ev-move-day"]', (e) => e.map((x) => x.textContent + (x.getAttribute('aria-pressed') === 'true' ? '✓' : '')).join(' ')));
+  await jm.fill('#ev-ms-0', '19:00'); await jm.fill('#ev-me-0', '20:30');
+  await jm.click('[data-act="ev-move-day"]:nth-child(2)'); // 화
+  console.log('화 고른 뒤: 버튼', await jm.textContent('[data-act="ev-move-save"]'), '| 시간 그대로', await jm.inputValue('#ev-ms-0'));
+  await jm.screenshot({ path: path.join(OUT, 'web-moveday-sheet.png'), fullPage: true });
+  await jm.click('[data-act="ev-move-save"]');
+  await jm.waitForTimeout(250);
+  console.log('수→화:', JSON.stringify(docs.get(tuKey).moved), '| 토스트', await jm.textContent('.toast').catch(() => ''), '| 블록', await tu(jm));
+  await jm.click('.sblock[aria-label^="과외2"][aria-label*="금요일"]');
+  await jm.click('[data-act="ev-move"]');
+  await jm.click('[data-act="ev-move-day"]:nth-child(4)'); // 목
+  await jm.click('[data-act="ev-move-save"]');
+  await jm.waitForTimeout(250);
+  console.log('금→목:', JSON.stringify(docs.get(tuKey).moved), '| 블록', await tu(jm));
+  await jm.screenshot({ path: path.join(OUT, 'web-moveday-week.png'), fullPage: true });
+  await dj.click('[data-act="sched-week"][data-dir="1"]').catch(() => {});
+  await dj.waitForTimeout(150);
+  console.log('다진 화면:', await tu(dj));
+  const djTu = await dj.$('.sblock[aria-label^="과외2"][aria-label*="화요일"]');
+  if (djTu) { await djTu.click(); console.log('다진 보기:', await dj.$$eval('.einfo__rest', (e) => e.map((x) => x.textContent).join(' | '))); await dj.keyboard.press('Escape'); }
+  await dj.click('[data-act="sched-thisweek"]').catch(() => {});
+  await jm.click('[data-act="sched-week"][data-dir="1"]');
+  console.log('그다음 주 과외2:', await tu(jm));
+  await jm.click('[data-act="sched-week"][data-dir="-1"]');
+  // 화요일로 옮긴 블록을 누르면 원래 날(수) 기준으로 열리고 「원래대로」
+  await jm.click('.sblock[aria-label^="과외2"][aria-label*="화요일"]');
+  console.log('옮긴 블록 열기:', await jm.textContent('.skipbox__title'), '|', await jm.$$eval('.skipbox__row [data-act]', (e) => e.map((x) => x.textContent).join(' / ')));
+  console.log('바꾼 날 목록:', await jm.$$eval('.chip--rest', (e) => e.map((x) => x.textContent).join(', ')));
+  await jm.click('.skipbox__row [data-act="ev-unmove"]');
+  await jm.waitForTimeout(250);
+  console.log('원래대로:', JSON.stringify(docs.get(tuKey).moved), '| 블록', await tu(jm));
+  await jm.click('.sblock[aria-label^="과외2"]');
+  await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="event-delete"]');
+  await jm.waitForTimeout(250);
   // (v33) 하루에 여러 번: 다음 주(11/2 주)에 봉사 — 수 08–10 + 18–20 한 일정. 시작하는 주 = 그 주, 앞 주에는 안 보인다
   await jm.click('[data-act="event-add"]');
   console.log('시작하는 주 칸:', await jm.inputValue('#ev-from'), '|', await jm.textContent('#ev-from-note'), '| 모든 주 버튼', !!(await jm.$('[data-act="ev-from"]')));

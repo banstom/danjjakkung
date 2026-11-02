@@ -363,7 +363,7 @@ test('그날만 시간 바꾸기(moved): 그날만 다른 시간, 쉬는 날이 
   const list = S.fromDocs([ev('a', 'u1', { weekday: 2, start: '10:00', end: '12:00',
     moved: { '2026-11-04': '11:00-13:00', '2026-11-05': '09:00-10:00', '2026-11-11': '12:00-11:00', bad: '11:00-12:00' } })]);
   const e = list[0];
-  assert.deepStrictEqual(e.moved, { '2026-11-04': [{ start: '11:00', end: '13:00' }] }); // 다른 요일 · 거꾸로 · 이상한 날짜는 버림
+  assert.deepStrictEqual(e.moved, { '2026-11-04': { to: null, spans: [{ start: '11:00', end: '13:00' }] } }); // 다른 요일 · 거꾸로 · 이상한 날짜는 버림
   const at = (day) => S.on(list, D.parse(day)).map((x) => x.start + '-' + x.end + (x.movedFrom ? '*' + x.movedFrom : '')).join();
   assert.strictEqual(at('2026-11-04'), '11:00-13:00*10:00–12:00');
   assert.strictEqual(at('2026-11-11'), '10:00-12:00'); // 다음 주는 원래대로
@@ -429,4 +429,32 @@ test('시작 주가 없는 예전 매주 일정은 지난 학기(4~6월)에 안 
   assert.strictEqual(S.on(list, D.parse('2026-05-06')).length, 0);
   assert.strictEqual(S.on(list, D.parse('2026-10-21')).length, 0);
   assert.strictEqual(S.on(list, D.parse('2026-10-28')).length, 1);
+});
+
+test('그 주만 다른 날로 옮기기: 수 · 금 과외 → 화 · 목', () => {
+  // 2026-11-04 수 → 11-03 화, 11-06 금 → 11-05 목. 다음 주는 그대로
+  const docs = [ev('t', 'u1', { title: '과외', weekday: null, weekdays: [2, 4], start: '19:00', end: '21:00',
+    moved: { '2026-11-04': '2026-11-03 19:00-21:00', '2026-11-06': '2026-11-05 18:00-20:00', '2026-11-11': '2026-11-17 19:00-21:00' } })];
+  const list = S.fromDocs(docs);
+  assert.deepStrictEqual(Object.keys(list[0].moved), ['2026-11-04', '2026-11-06']); // 다른 주로는 못 옮김
+  const at = (d) => S.on(list, D.parse(d)).map((x) => x.start + (x.movedDay ? '*' + x.movedFrom + '@' + D.toKey(x.occ) : '')).join();
+  assert.strictEqual(at('2026-11-03'), '19:00*수 19:00–21:00@2026-11-04');
+  assert.strictEqual(at('2026-11-04'), '');
+  assert.strictEqual(at('2026-11-05'), '18:00*금 19:00–21:00@2026-11-06');
+  assert.strictEqual(at('2026-11-06'), '');
+  assert.strictEqual(at('2026-11-11'), '19:00'); // 다음 주 수요일은 그대로
+  // 주 보기: 블록을 누르면 원래 날(occ)로 열린다
+  const w = S.week(list, ['u1', 'u2'], 'u1', D.parse('2026-11-02'), D.parse('2026-11-02'), { pick: D.parse('2026-11-03') });
+  assert.deepStrictEqual(w.blocks.map((b) => [b.dayIdx, D.toKey(b.day), b.movedDay]), [[1, '2026-11-04', true], [3, '2026-11-06', true]]);
+  assert.strictEqual(w.pick.items[0].day, D.parse('2026-11-04'));
+  // 원래 날을 쉬면 옮긴 날에도 없음
+  const sk = S.fromDocs([Object.assign({}, docs[0], { skip: ['2026-11-04'] })]);
+  assert.strictEqual(S.on(sk, D.parse('2026-11-03')).length, 0);
+  // 옮기기 · 되돌리기 · 저장 모양
+  let m = S.withMoved(list[0], '2026-11-04', [{ start: '19:00', end: '21:00' }], D.parse('2026-11-02'), '2026-11-02');
+  assert.deepStrictEqual(m['2026-11-04'], { to: '2026-11-02', spans: [{ start: '19:00', end: '21:00' }] });
+  const sets = [];
+  const st = require('../js/store').createStore({ doc: () => ({ set: (d) => { sets.push(d); return Promise.resolve(); } }) });
+  st.saveEvent(Object.assign({}, list[0], { createdBy: 'u1' }));
+  assert.deepStrictEqual(sets[0].moved, { '2026-11-04': '2026-11-03 19:00-21:00', '2026-11-06': '2026-11-05 18:00-20:00' });
 });

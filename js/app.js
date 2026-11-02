@@ -171,7 +171,7 @@
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
-    'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v',
+    'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v', 'ev-move-day': 'data-v',
     'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v', 'ev-more-add': null, 'ev-more-del': 'data-v',
     'cat-open': null, 'cat-sort': null, 'cat-move': 'data-key', 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null,
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
@@ -441,6 +441,7 @@
     else if (act === 'ev-move') openMove(btn.getAttribute('data-v'));
     else if (act === 'ev-move-cancel') { if (state.eventForm) { state.eventForm.move = null; render(true); } }
     else if (act === 'ev-move-save') saveMove();
+    else if (act === 'ev-move-day') pickMoveDay(btn.getAttribute('data-v'));
     else if (act === 'ev-unmove') moveEvent(btn.getAttribute('data-v'), null);
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
@@ -1101,7 +1102,12 @@
       whenText: S.whenText(e),
       whoText: nameOf(e.owner) + ' 님 일정', canEdit: false, lockText: nameOf(e.owner) + ' 님만 고칠 수 있어요',
       occDay: occDay, skipText: occDay !== null && S.isSkipped(e, occDay) ? D.full(occDay) + '은 쉬는 날이에요' : '',
-      moveText: occDay !== null && !S.isSkipped(e, occDay) && S.movedOn(e, occDay) ? D.full(occDay) + '은 ' + S.spanText(S.movedOn(e, occDay)) + ' (원래 ' + S.spanText(S.baseSpans(e, occDay)) + ')' : '' });
+      moveText: occDay !== null && !S.isSkipped(e, occDay) && S.movedOn(e, occDay) ? D.full(occDay) + ' 일정은 ' + movedText(e, occDay) + ' (원래 ' + S.spanText(S.baseSpans(e, occDay)) + ')' : '' });
+  }
+  /** '11월 3일 (화) 10:00–12:00로 옮겼어요' / '11:00–13:00로 바뀌었어요' */
+  function movedText(e, n) {
+    var S = RT.schedule, to = S.moveTo(e, n), sp = S.spanText(S.movedOn(e, n));
+    return to ? D.label(D.parse(to)) + ' (' + S.WD[S.weekdayOf(D.parse(to))] + ') ' + sp + '로 옮겼어요' : sp + '로 바뀌었어요';
   }
   function copySpans(l) { return (l || []).map(function (t) { return { start: t.start, end: t.end }; }); }
   function copyTimes(t) { var o = {}; if (t) Object.keys(t).forEach(function (k) { o[k] = { start: t[k].start, end: t[k].end }; }); return o; }
@@ -1197,14 +1203,15 @@
       var weekKeys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
       var mv = S.movedOn(e, f.occDay);
       occ = { key: key, label: D.full(f.occDay), skipped: S.isSkipped(e, f.occDay),
-        moved: mv ? S.spanText(mv) : '', base: S.spanText(S.baseSpans(e, f.occDay)),
+        moved: mv ? movedText(e, f.occDay) : '', base: S.spanText(S.baseSpans(e, f.occDay)),
         weekKey: e.weekdays.length > 1 ? 'week:' + key : null, weekLabel: D.label(ws) + ' 주',
         weekSkipped: weekKeys.every(function (k) { return e.skip.indexOf(k) >= 0; }) };
     }
     var list = e.skip.map(function (k) { var n = D.parse(k); return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')', past: n < state.today }; });
     var moves = Object.keys(e.moved || {}).map(function (k) {
       var n = D.parse(k);
-      return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ') ' + S.spanText(e.moved[k]), past: n < state.today };
+      var to = e.moved[k].to, tn = to ? D.parse(to) : n;
+      return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')' + (to ? ' → ' + D.label(tn) + ' (' + S.WD[S.weekdayOf(tn)] + ')' : '') + ' ' + S.spanText(e.moved[k].spans), past: tn < state.today };
     });
     return { occ: occ, list: list, moves: moves, move: f.move || null, busy: !!f.saving };
   }
@@ -1245,40 +1252,55 @@
     if (!f || f.mode !== 'edit' || f.saving) return;
     var e = findEvent(f.id), n = D.parse(key);
     if (!e || !e.weekly || isNaN(n)) return;
-    f.move = { key: key, spans: copySpans(S.spansOn(e, n)), error: '' };
+    var ws = S.monStart(n);
+    f.move = { key: key, to: S.moveTo(e, n) || key, spans: copySpans(S.spansOn(e, n)), error: '',
+      // 옮길 날: 그 주 월~일 (원래 날이 기본)
+      days: [0, 1, 2, 3, 4, 5, 6].map(function (i) { return { key: D.toKey(ws + i), wd: S.WD[i], date: D.parts(ws + i).d, orig: ws + i === n }; }) };
     render(true);
     setTimeout(function () { var el = document.getElementById('ev-ms-0'); if (el && el.focus) el.focus(); }, 0);
   }
-  function saveMove() {
-    var f = state.eventForm, S = RT.schedule;
-    if (!f || !f.move || f.saving) return;
-    var list = f.move.spans;
-    list.forEach(function (t, i) {
+  function readMoveSpans(f) {
+    f.move.spans.forEach(function (t, i) {
       var ms = document.getElementById('ev-ms-' + i), me = document.getElementById('ev-me-' + i);
       if (ms) t.start = ms.value;
       if (me) t.end = me.value;
     });
+  }
+  function pickMoveDay(key) {
+    var f = state.eventForm;
+    if (!f || !f.move || f.saving) return;
+    readMoveSpans(f); // 적던 시간은 그대로
+    f.move.to = key; f.move.error = ''; render(true);
+  }
+  function saveMove() {
+    var f = state.eventForm, S = RT.schedule;
+    if (!f || !f.move || f.saving) return;
+    readMoveSpans(f);
+    var list = f.move.spans;
     for (var i = 0; i < list.length; i++) {
       var s = S.toMin(list[i].start), t = S.toMin(list[i].end), nm = list.length > 1 ? (i + 1) + '번째 ' : '';
       if (isNaN(s) || isNaN(t)) { f.move.error = nm + '시작 · 끝 시간을 골라 주세요'; render(true); return; }
       if (t <= s) { f.move.error = nm + '끝 시간이 시작보다 늦어야 해요'; render(true); return; }
     }
     if (S.overlaps(list)) { f.move.error = '이날 시간들이 서로 겹쳐요'; render(true); return; }
-    moveEvent(f.move.key, copySpans(list).sort(function (a, b) { return S.toMin(a.start) - S.toMin(b.start); }));
+    moveEvent(f.move.key, copySpans(list).sort(function (a, b) { return S.toMin(a.start) - S.toMin(b.start); }), f.move.to);
   }
-  /** 그날만 시간 바꾸기(span) · 원래 시간으로(span = null). 누르면 바로 저장된다. */
-  function moveEvent(key, span) {
+  /** 그날만 날 · 시간 바꾸기(span, to) · 원래대로(span = null). 누르면 바로 저장된다. */
+  function moveEvent(key, span, to) {
     var f = state.eventForm, S = RT.schedule;
     if (!store || !f || !f.id || f.saving || f.mode !== 'edit') return;
     var e = findEvent(f.id), n = D.parse(key);
     if (!e || !e.weekly || isNaN(n)) return;
     var base = S.baseSpans(e, n);
-    if (span && S.sameSpans(span, base)) span = null; // 원래 시간과 같으면 되돌리기
-    var next = S.withMoved(e, key, span, state.today);
-    if (span && !next[key]) { f.move.error = '시간을 바꾼 날은 ' + S.SKIP_MAX + '개까지예요'; render(true); return; }
+    if (!to || to === key) to = null;
+    if (span && !to && S.sameSpans(span, base)) span = null; // 원래 날 · 시간과 같으면 되돌리기
+    var next = S.withMoved(e, key, span, state.today, to);
+    if (span && !next[key]) { f.move.error = '바꾼 날은 ' + S.SKIP_MAX + '개까지예요'; render(true); return; }
     var doc = Object.assign({}, e, { moved: next, times: e.perDay ? e.times : null });
     var label = D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')';
-    var msg = span ? '🕐 ' + label + ' ' + e.title + ' ' + S.spanText(span) + '로 바꿨어요' : label + ' ' + e.title + ' 원래 시간(' + S.spanText(base) + ')으로';
+    var tl = to ? D.label(D.parse(to)) + ' (' + S.WD[S.weekdayOf(D.parse(to))] + ') ' : '';
+    var msg = span ? (to ? '📅 ' + label + ' ' + e.title + ' → ' + tl + S.spanText(span) + '로 옮겼어요' : '🕐 ' + label + ' ' + e.title + ' ' + S.spanText(span) + '로 바꿨어요')
+      : label + ' ' + e.title + ' 원래대로(' + S.spanText(base) + ')';
     var fromOcc = f.occDay !== null && f.occDay !== undefined && D.toKey(f.occDay) === key;
     if (fromOcc || span) {
       f.saving = true; render(true);

@@ -685,3 +685,6 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 .drow--more { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; }
 .drow__del { width: 32px; height: 36px; }
 .ghost-btn--add { margin-top: 8px; width: 100%; border-style: dashed; color: var(--text); }
+/* 이날만 옮길 날 (v34) — 7칸 한 줄 */
+.pick-row--days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.pick-row--days .pick { padding: 8px 0; font-size: 13px; min-width: 0; white-space: normal; line-height: 1.2; }
