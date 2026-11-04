@@ -7,8 +7,8 @@ test('한국 시간: UTC 15:10 = 다음 날 00:10', () => {
   assert.deepStrictEqual(N.kstParts(new Date('2026-10-27T12:00:00Z')), { dateKey: '2026-10-27', hhmm: '21:00' });
 });
 test('설정 기본값', () => {
-  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false });
-  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true });
+  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true });
+  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true });
 });
 test('짝꿍 체크 문구: 오늘 · 어제만, 숨김', () => {
   const r = { name: '스쿼트 100개' };
@@ -41,4 +41,31 @@ test('꿍 보내기 문구: 남은 개수', () => {
   assert.strictEqual(N.kungMessage({ who: '준민', remaining: 2 }).body, '💌 준민 님이 꿍을 보냈어요 · 오늘 루틴 2개 남았어요');
   assert.strictEqual(N.kungMessage({ who: '준민', remaining: 0 }).body, '💌 준민 님이 꿍을 보냈어요');
   assert.strictEqual(N.kungMessage({ who: '다진' }).body, '💌 다진 님이 꿍을 보냈어요');
+});
+test('일요일 돌아보기: 설정 기본은 켬, 끈 사람만 꺼짐', () => {
+  assert.strictEqual(N.prefsOf(null).weekly, true);
+  assert.strictEqual(N.prefsOf({ notify: { partner: true, hide: false } }).weekly, true);
+  assert.strictEqual(N.prefsOf({ weekly: false, notify: { partner: true } }).weekly, false);
+  assert.strictEqual(N.prefsOf({ notify: { weekly: false } }).weekly, true); // notify 안의 값은 보지 않는다 (옛 앱이 덮어쓰는 곳)
+});
+test('일요일 돌아보기: 모두 해낸 날은 앱 달력의 「모두」와 같은 규칙', () => {
+  const dates = ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'];
+  const routines = [
+    { key: 'squat', owner: 'dj', start: '2026-10-18' },
+    { key: 'run', owner: 'jm', start: '2026-10-18' },
+    { key: 'water', owner: 'jm', start: '2026-10-29' },
+    { key: 'old', owner: 'jm', start: '2026-10-01', end: '2026-10-27' }
+  ];
+  const done = new Set(['squat|2026-10-26', 'run|2026-10-26', 'old|2026-10-26', 'squat|2026-10-27', 'run|2026-10-27',
+    'squat|2026-10-31', 'run|2026-10-31', 'water|2026-10-31', 'run|2026-11-01', 'water|2026-11-01']);
+  // 10/26 모두 · 10/27 old 안 함 → 아님 · 10/31 모두 · 11/1 다진 안 함 → 아님
+  assert.strictEqual(N.allDoneDays({ routines, done, persons: ['dj', 'jm'], dates }), 2);
+  // 한 사람만 루틴이 있는 날은 그 사람이 다 하면 모두 (그날 참여 중인 사람 기준)
+  assert.strictEqual(N.allDoneDays({ routines: [routines[0]], done, persons: ['dj', 'jm'], dates }), 3);
+  assert.strictEqual(N.allDoneDays({ routines: [], done, persons: ['dj', 'jm'], dates }), 0);
+});
+test('일요일 돌아보기 문구', () => {
+  assert.strictEqual(N.weeklyMessage({ allDays: 2, together: 3 }).body, '🎉 이번 주 우리 · 모두 해낸 날 2일 · 함께 끝낸 일 3개 · 한 주를 돌아볼까요?');
+  assert.strictEqual(N.weeklyMessage({ allDays: 0, together: 1 }).body, '🎉 이번 주 우리 · 함께 끝낸 일 1개 · 한 주를 돌아볼까요?');
+  assert.strictEqual(N.weeklyMessage({ allDays: 0, together: 0 }).body, '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?');
 });

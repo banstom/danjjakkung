@@ -14,10 +14,11 @@ function addDays(dateKey, n) {
   return d.toISOString().slice(0, 10);
 }
 
-/** 내 알림 설정 (문서가 없으면 기본값: 짝꿍 알림 켬, 저녁 알림 끔, 이름 보임) */
+/** 내 알림 설정 (문서가 없으면 기본값: 짝꿍 알림 켬, 저녁 알림 끔, 이름 보임, 일요일 돌아보기 켬) */
 function prefsOf(doc) {
   const n = (doc && doc.notify) || {};
-  return { partner: n.partner !== false, remindAt: typeof n.remindAt === 'string' ? n.remindAt : null, hide: n.hide === true };
+  // weekly 는 notify 밖(users.weekly)에 있다 — 옛 버전 앱이 notify 를 통째로 저장해도 지워지지 않게
+  return { partner: n.partner !== false, remindAt: typeof n.remindAt === 'string' ? n.remindAt : null, hide: n.hide === true, weekly: !(doc && doc.weekly === false) };
 }
 
 /** 짝꿍이 체크했을 때 문구. 오늘 · 어제 기록만 알린다 (지난 기록을 몰아서 채울 때 알림이 쏟아지지 않게). */
@@ -54,4 +55,40 @@ function kungMessage({ who, remaining }) {
   return { title: TITLE, body: base };
 }
 
-module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, dueRemind, remindMessage, kungMessage };
+/** 한 주(dates: 'YYYY-MM-DD' 7개)에서 모두 해낸 날 수 — 앱 루틴 탭 달력의 「모두」와 같은 규칙 (js/model.js dayLevel).
+    그날 하고 있는 루틴이 있고, 그날 참여 중인 사람(그만두지 않은 루틴이 있는 사람)이 각자 자기 루틴을 다 한 날. */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** 앱(js/model.js routinesFrom)과 같은 정리: 이상한 키 · 사람 · 시작일은 빼고, 그만둔 날이 시작일보다 앞이면 시작일 하루만 */
+function cleanRoutines(list) {
+  return (list || []).filter((r) => r && SAFE_ID.test(String(r.key || '')) && SAFE_ID.test(String(r.owner || '')) && r.owner !== 'all' && DATE.test(String(r.start || '')))
+    .map((r) => {
+      const end = typeof r.end === 'string' && DATE.test(r.end) ? r.end : null;
+      return Object.assign({}, r, { end: end && end < r.start ? r.start : end });
+    });
+}
+function allDoneDays({ routines: raw, done, persons, dates }) {
+  const routines = cleanRoutines(raw);
+  return dates.filter((d) => {
+    const active = routines.filter((r) => activeOn(r, d));
+    if (!active.length) return false;
+    const joined = persons.filter((p) => routines.some((r) => r.owner === p && (!r.end || r.end >= d)));
+    return joined.every((p) => {
+      const mine = active.filter((r) => r.owner === p);
+      return mine.length > 0 && mine.every((r) => done.has(r.key + '|' + d));
+    });
+  }).length;
+}
+
+/** 일요일 저녁 돌아보기 문구 */
+function weeklyMessage({ allDays, together }) {
+  if (allDays > 0 || together > 0) {
+    const parts = [];
+    if (allDays > 0) parts.push(`모두 해낸 날 ${allDays}일`);
+    if (together > 0) parts.push(`함께 끝낸 일 ${together}개`);
+    return { title: TITLE, body: `🎉 이번 주 우리 · ${parts.join(' · ')} · 한 주를 돌아볼까요?` };
+  }
+  return { title: TITLE, body: '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?' };
+}
+
+module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage };

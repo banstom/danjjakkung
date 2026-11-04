@@ -91,6 +91,12 @@
         if (t.memo || t.clearMemo) { data.memo = t.memo || null; fields.push('memo'); }
         return db.doc('todos/' + t.id).set(data, { mergeFields: fields });
       },
+      /** 돌아보기: [fromIso, toIso) 사이에 완료한 일 (한 필드 범위 조건이라 색인이 따로 필요 없다) */
+      loadDoneBetween: function (fromIso, toIso) {
+        return db.collection('todos').where('doneAt', '>=', fromIso).where('doneAt', '<', toIso).get().then(function (q) {
+          return q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); });
+        });
+      },
       /** 내 평면 위치만 바꾼다 (짝꿍이 놓은 위치는 그대로) */
       placeTodo: function (id, uid, u, i) {
         var patch = { updatedAt: new Date().toISOString() };
@@ -151,7 +157,7 @@
         return isDefault ? db.doc('cats/' + id).set({ deleted: true, updatedBy: uid, updatedAt: new Date().toISOString() }) : db.doc('cats/' + id).delete();
       },
       // ── 알림 ──
-      // users/<uid>                 : { notify: { partner, remindAt, hide }, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용
+      // users/<uid>                 : { notify: { partner, remindAt, hide }, weekly, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용 (weekly: 일요일 돌아보기, 없으면 켬)
       //   colors: { '<테마 id>': { self, partner } } — 테마마다 내 화면의 나 · 상대 색 (없으면 그 테마 기본색)
       //   알림 설정과 색은 각자 자기 칸만 덮어쓴다 (mergeFields) — 한쪽을 저장해도 다른 쪽이 지워지지 않게
       // users/<uid>/devices/<기기>   : { token, platform, ua, updatedAt }                     — 기기마다 하나 (웹 · 나중에 iOS/안드로이드 앱)
@@ -167,6 +173,10 @@
           tz: 'Asia/Seoul', updatedAt: new Date().toISOString()
         }, { mergeFields: ['notify', 'tz', 'updatedAt'] });
       },
+      /** 일요일 저녁 돌아보기 알림 (v37) — notify 밖에 따로 둔다: 옛 버전 앱이 notify 를 통째로 저장해도 지워지지 않게. 없으면 켬 */
+      saveWeekly: function (uid, on) {
+        return db.doc('users/' + uid).set({ weekly: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['weekly', 'updatedAt'] });
+      },
       /** 색 전체를 통째로 바꾼다 (테마 하나를 기본으로 되돌리면 그 칸이 빠진다). */
       saveColors: function (uid, colors) {
         return db.doc('users/' + uid).set({ colors: colors, updatedAt: new Date().toISOString() }, { mergeFields: ['colors', 'updatedAt'] });
@@ -177,6 +187,12 @@
       deleteDevice: function (uid, deviceId) { return db.doc('users/' + uid + '/devices/' + deviceId).delete(); },
       // ── 꿍 보내기 ──
       // kungs/<날짜>_<보낸 사람 uid> : { from, to, date, at } — 하루 한 번 (같은 이름이라 두 번째는 규칙이 막음), 남기기만
+      /** 돌아보기: [fromKey, toKey) 날짜의 꿍 (둘이 보낸 것 모두) */
+      loadKungs: function (fromKey, toKey) {
+        return db.collection('kungs').where('date', '>=', fromKey).where('date', '<', toKey).get().then(function (q) {
+          return q.docs.map(function (doc) { return doc.data(); });
+        });
+      },
       watchKungs: function (dateKey, next, fail) {
         return db.collection('kungs').where('date', '==', dateKey).onSnapshot(function (q) {
           next(q.docs.map(function (doc) { return doc.data(); }));

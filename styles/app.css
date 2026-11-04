@@ -688,3 +688,51 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 /* 이날만 옮길 날 (v34) — 7칸 한 줄 */
 .pick-row--days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
 .pick-row--days .pick { padding: 8px 0; font-size: 13px; min-width: 0; white-space: normal; line-height: 1.2; }
+
+/* ── 돌아보기 (v37, 목업 design/mockups/01-review 시안 A) ── */
+.rv-us { display: flex; flex-direction: column; gap: 10px; }
+.rv-us .grid-head { margin-bottom: 0; }
+.rv-title { margin: 0; font-size: 16px; font-weight: 700; }
+.rv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.rv-sub { font-size: 12px; color: var(--sub); white-space: nowrap; }
+.rv-quad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* 루틴 × 요일 */
+.rv-grid { display: grid; grid-template-columns: minmax(0, 9fr) repeat(7, minmax(0, 2fr)); gap: 5px; align-items: center; }
+.rv-grid .dow { font-size: 11px; }
+.rv-who { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--sub); margin-top: 6px; }
+.rv-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; font-weight: 600; }
+.rv-name__text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-name--both { color: var(--tint-text); }
+.emoji-tile.rv-tile { width: 26px; height: 26px; font-size: 15px; border-radius: 8px; }
+.rv-cell { height: 26px; border-radius: 7px; box-sizing: border-box; }
+.rv-cell--both { background: var(--both); position: relative; }
+/* 「모두」는 색만으로 구분하지 않게 가운데 점 (글자색 --both-ink: 함께 색 위 글자) */
+.rv-cell--both::after { content: ''; position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; background: var(--both-ink); }
+.swatch.rv-cell--both::after { width: 4px; height: 4px; margin: -2px 0 0 -2px; }
+.swatch.rv-cell--pre { border-width: 1px; }
+.rv-cell--pre { border: 1.5px dashed var(--line); }
+.rv-cell--future { border: 1.5px dashed var(--line); opacity: 0.5; }
+.rv-sep { grid-column: 1 / -1; height: 1px; background: var(--divider); margin: 4px 0; }
+/* 끝낸 일 — 평면 네 칸 (위: 중요, 오른쪽: 급함 — 할 일 평면과 같은 자리) */
+.mini-plane { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.mini-plane__q { background: var(--raised); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.mini-plane__q.is-key { background: var(--tint); }
+.mini-plane__q.is-key .mini-plane__label, .mini-plane__q.is-key .mini-plane__n { color: var(--tint-text); }
+.mini-plane__label { font-size: 12px; color: var(--sub); }
+.mini-plane__n { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rv-note { margin: 10px 0 0; font-size: 13px; color: var(--sub); }
+.rv-note b { color: var(--text); }
+.rv-note--sub { margin-top: 4px; font-size: 12px; }
+.rv-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.rv-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 8px; font-size: 13px; }
+.rv-bar--routine { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 48px; }
+.rv-bar__track { display: block; height: 10px; border-radius: 999px; background: var(--empty); overflow: hidden; }
+.rv-bar__fill { display: block; height: 100%; border-radius: 999px; }
+.rv-bar__n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rv-fill--both { background: var(--both); }
+.rv-fill--her { background: var(--her); }
+.rv-fill--me { background: var(--me); }
+/* 아래 탭이 넷일 때 글자가 넘치지 않게 */
+.tabbar__btn span { white-space: nowrap; }
+/* 아주 좁은 화면(≤360px)에서는 돌아보기 줄 아이콘을 빼서 루틴 이름을 더 보인다 */
+@media (max-width: 360px) { .emoji-tile.rv-tile { display: none; } }

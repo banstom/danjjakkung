@@ -50,7 +50,7 @@
     } else {
       dev = '<button type="button" class="solid-btn solid-btn--full" data-act="push-on"' + (n.busy ? ' disabled' : '') + '>' + (n.busy ? '켜는 중…' : '🔔 이 기기에서 알림 켜기') + '</button>';
     }
-    var p = n.prefs || { partner: true, remindAt: null, hide: false };
+    var p = n.prefs || { partner: true, remindAt: null, hide: false, weekly: true };
     var off = !n.prefsReady;
     var opts = '<option value=""' + (!p.remindAt ? ' selected' : '') + '>끄기</option>' + n.times.map(function (t) {
       return '<option value="' + t + '"' + (p.remindAt === t ? ' selected' : '') + '>' + esc(t) + '</option>';
@@ -69,6 +69,7 @@
       switchRow('pref-partner', p.partner, '짝꿍 완료 알림', '짝꿍이 루틴을 체크하면 바로 알려 줘요', off) +
       '<div class="nrow"><div class="nrow__text"><label class="nrow__title" for="nt-remind">저녁 미완료 알림</label><span class="nrow__desc">이 시간까지 내 루틴을 체크하지 않았으면 알려 줘요</span></div>' +
       '<select id="nt-remind" class="nselect"' + (off ? ' disabled' : '') + '>' + opts + '</select></div>' +
+      switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
       switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요', off) +
       '</div>' +
       '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +

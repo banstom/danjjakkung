@@ -1,0 +1,48 @@
+/* 통계(돌아보기) 목업 전용 부품 — 색은 styles/tokens.css 변수만 쓴다 */
+.rv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.rv-title { margin: 0; font-size: 16px; font-weight: 700; }
+.rv-sub { font-size: 12px; color: var(--sub); }
+.rv-quad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+/* 루틴 × 요일 */
+.rv-grid { display: grid; grid-template-columns: 112px repeat(7, minmax(0, 1fr)); gap: 5px; align-items: center; }
+.rv-grid .dow { font-size: 11px; }
+.rv-who { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--sub); margin-top: 6px; }
+.rv-name { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rv-name .emoji-tile { width: 26px; height: 26px; font-size: 15px; border-radius: 8px; }
+.rv-cell { height: 26px; border-radius: 7px; }
+.rv-cell.lv-pre { border: 1.5px dashed var(--line); box-sizing: border-box; }
+.rv-both .rv-name { color: var(--tint-text); }
+.rv-cell.is-both { background: var(--both); }
+.rv-sep { grid-column: 1 / -1; height: 1px; background: var(--divider); margin: 4px 0; }
+
+/* 끝낸 일 평면 2 × 2 */
+.mini-plane { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; }
+.mini-plane__q { background: var(--raised); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.mini-plane__q.is-key { background: var(--tint); }
+.mini-plane__q.is-key .mini-plane__n, .mini-plane__q.is-key .mini-plane__label { color: var(--tint-text); }
+.mini-plane__label { font-size: 12px; color: var(--sub); }
+.mini-plane__n { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rv-note { margin: 10px 0 0; font-size: 13px; color: var(--sub); }
+.rv-note b { color: var(--text); }
+
+/* 사람별 막대 */
+.rv-bars { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.rv-bar { display: grid; grid-template-columns: 56px 1fr 28px; align-items: center; gap: 8px; font-size: 13px; }
+.rv-bar__track { height: 10px; border-radius: 999px; background: var(--empty); overflow: hidden; }
+.rv-bar__fill { display: block; height: 100%; border-radius: 999px; }
+.rv-bar__n { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 배너 · 회고 시트 */
+.rv-banner { display: flex; align-items: center; gap: 12px; background: var(--tint); }
+.rv-banner__text { flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
+.rv-banner__title { font-size: 15px; font-weight: 700; color: var(--tint-text); }
+.rv-banner__sub { font-size: 12px; color: var(--tint-text); }
+.rv-story { background: var(--raised); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.rv-story__big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; color: var(--tint-text); }
+.rv-dots { display: flex; justify-content: center; gap: 6px; }
+.rv-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); }
+.rv-dots i.on { width: 18px; background: var(--accent); }
+.rv-strip { display: flex; gap: 8px; align-items: stretch; }
+.rv-strip .stat { flex: 1 1 0; }
+.frame-label { position: fixed; top: 0; left: 0; right: 0; z-index: 99; text-align: center; font-size: 12px; font-weight: 700; padding: 4px; background: var(--text); color: var(--surface); }

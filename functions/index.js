@@ -3,6 +3,7 @@
    - eveningReminder: 30분마다, 정해 둔 시간까지 내 루틴을 안 했으면 나에게 알림 (하루 한 번)
    - onKungCreated  : 「꿍 보내기」 문서가 생기면 짝꿍에게 "OO 님이 꿍을 보냈어요 · 오늘 루틴 N개 남았어요"
    - onPing         : 앱의 「테스트 알림 보내기」
+   - weeklyReview   : 일요일 밤 9시, 이번 주 「모두 해낸 날 · 함께 끝낸 일」을 알리고 누르면 돌아보기 탭 (v37)
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
@@ -17,6 +18,7 @@ setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10, memory: '256MiB'
 
 const APP_URL = 'https://banstom.github.io/danjjakkung/';
 const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으로 연다
+const LOOK_URL = APP_URL + '?tab=look';    // 일요일 돌아보기 알림은 돌아보기 탭으로
 const ICON = APP_URL + 'icons/icon-192.png';
 
 /* 짝꿍 찾기 — 지금은 members 전체(두 사람)가 한 짝이다.
@@ -37,7 +39,7 @@ async function prefsFor(uid) {
 /** 한 사람의 모든 기기로 보낸다.
     웹은 data만 보내고 서비스 워커(sw.js)가 언제나 알림을 띄운다 (아이폰은 안 띄운 알림이 쌓이면 구독을 끊는다).
     나중에 iOS·안드로이드 앱이 생기면 platform에 따라 apns/android 설정만 더하면 된다. */
-async function sendTo(uid, msg, kind, tag) {
+async function sendTo(uid, msg, kind, tag, link) {
   const devs = await db.collection(`users/${uid}/devices`).get();
   const seen = new Set();
   const list = devs.docs.filter((d) => {
@@ -46,7 +48,7 @@ async function sendTo(uid, msg, kind, tag) {
     seen.add(t); return true;
   });
   if (!list.length) return 0;
-  const data = { kind, title: msg.title, body: msg.body, tag: tag || kind, link: OPEN_URL, icon: ICON };
+  const data = { kind, title: msg.title, body: msg.body, tag: tag || kind, link: link || OPEN_URL, icon: ICON };
   const res = await admin.messaging().sendEachForMulticast({
     tokens: list.map((d) => d.data().token),
     data,
@@ -133,4 +135,28 @@ exports.onPing = onDocumentCreated('users/{uid}/pings/{pid}', async (event) => {
   const minute = new Date().toISOString().slice(0, 16);
   if (!(await once(`ping_${event.params.uid}_${minute}`))) return; // 1분에 한 번만
   await sendTo(event.params.uid, { title: N.TITLE, body: '🔔 알림이 잘 와요! 짝꿍이 체크하면 이렇게 알려 줄게요' }, 'test', 'test');
+});
+
+// 일요일 밤 9시: 이번 주(월~일) 둘이 함께 해낸 것 — 두 사람에게 같은 숫자 (각자 「일요일 저녁 돌아보기」를 끄면 안 보냄)
+exports.weeklyReview = onSchedule({ schedule: '0 21 * * 0', timeZone: 'Asia/Seoul' }, async () => {
+  const { dateKey: sun } = N.kstParts(new Date());
+  const mon = N.addDays(sun, -6);
+  const dates = [0, 1, 2, 3, 4, 5, 6].map((i) => N.addDays(mon, i));
+  const persons = (await db.collection('members').get()).docs.map((d) => d.id);
+  const routines = (await db.collection('routines').get()).docs.map((d) => Object.assign({ key: d.id }, d.data()));
+  const cks = await db.collection('checks').where('date', '>=', mon).where('date', '<=', sun).get();
+  const done = new Set(cks.docs.map((d) => d.data()).filter((c) => c.done === true).map((c) => c.routine + '|' + c.date));
+  const monIso = new Date(mon + 'T00:00:00+09:00').toISOString();
+  const tds = await db.collection('todos').where('doneAt', '>=', monIso).get();
+  const together = tds.docs.map((d) => d.data()).filter((t) => t.done === true && t.scope === 'together').length;
+  const msg = N.weeklyMessage({ allDays: N.allDoneDays({ routines, done, persons, dates }), together });
+  for (const uid of persons) {
+    try {
+      if (!N.prefsOf((await db.doc(`users/${uid}`).get()).data()).weekly) continue;
+      if (!(await once(`weekly_${uid}_${sun}`))) continue; // 한 주에 한 번
+      await sendTo(uid, msg, 'weekly', `weekly-${sun}`, LOOK_URL);
+    } catch (e) {
+      logger.error('돌아보기 알림 실패', { uid, err: String(e) });
+    }
+  }
 });

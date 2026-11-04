@@ -300,7 +300,7 @@
     return { to: to, toName: names[to], remaining: remaining, total: theirs.length, status: sent ? 'sent' : remaining === 0 ? 'done' : 'ready' };
   }
 
-  var api = { build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn };
+  var api = { build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn, dayLevel: dayLevel };
   root.RT = RT;
   RT.model = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

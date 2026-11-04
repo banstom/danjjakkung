@@ -1,6 +1,7 @@
 // node tests/web.js <shots-dir>
 // 사이트판을 http로 띄우고, Firebase 대신 가짜(메모리) 로그인 · 저장소를 끼워서 두 사람 흐름을 확인한다.
 const { chromium } = require('playwright');
+const assert = require('assert');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -493,6 +494,55 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="todo-view"][data-v="list"]');
   await dj.click(`[data-act="uni-who"][data-v="${accounts.get('dajin@example.com').uid}"]`); await dj.click('[data-act="todo-view"][data-v="list"]');
 
+  // 4-1a) 돌아보기 탭 (v37): 이번 주 · 지난주 · 달, 두 사람 화면 숫자가 같다, 끝낸 일 · 꿍은 열 때만 불러온다
+  const rvNums = (p) => p.$$eval('.rv-us .stat__value', (e) => e.map((x) => x.textContent).join(' / '));
+  const rvDone = (p) => p.textContent('.card[aria-label="끝낸 일 돌아보기"] .rv-sub');
+  await jm.evaluate(() => { window.__reads = 0; });
+  await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForSelector('.rv-us'); await jm.waitForTimeout(250);
+  assert.strictEqual((await jm.$$eval('.tabbar__btn span', (e) => e.map((x) => x.textContent))).join(' · '), '루틴 · 시간표 · 할 일 · 돌아보기');
+  assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '이번 주 우리');
+  assert.strictEqual(await jm.textContent('.rv-us .grid-range'), '10월 26일 – 11월 1일');
+  assert.ok(await jm.$eval('[data-act="rv-page"][data-dir="-1"]', (e) => e.disabled), '이번 주는 다음이 막힘');
+  const rows = await jm.$$eval('.rv-grid .rv-name__text', (e) => e.map((x) => x.textContent));
+  assert.strictEqual(await jm.$$eval('.rv-cell', (e) => e.length), rows.length * 7, '줄마다 7칸');
+  assert.strictEqual(rows[rows.length - 1], '모두 해낸 날');
+  console.log('돌아보기:', await rvNums(jm), '| 줄', rows.join(', '), '|', await rvDone(jm), '| 불러온 문서', await jm.evaluate(() => window.__reads));
+  await jm.screenshot({ path: path.join(OUT, 'review-week.png'), fullPage: true });
+  await jm.click('[data-act="rv-page"][data-dir="1"]'); await jm.waitForTimeout(250);
+  assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '지난주 우리');
+  assert.ok(await jm.$('[data-act="rv-now"]'), '지난주에는 「이번 주」 버튼');
+  await jm.click('[data-act="rv-page"][data-dir="-1"]'); await jm.waitForTimeout(150);
+  // 회귀(점검 AI): 넘긴 쪽 버튼이 막히면 포커스가 반대쪽 버튼으로 (body로 빠지지 않게)
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act') + ':' + document.activeElement.getAttribute('data-dir')), 'rv-page:1');
+  await jm.click('[data-act="rv-mode"][data-v="month"]'); await jm.waitForTimeout(250);
+  assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '이번 달 우리');
+  assert.ok((await jm.$$('.rv-bar--routine')).length > 0, '달 보기는 루틴 막대');
+  await jm.screenshot({ path: path.join(OUT, 'review-month.png'), fullPage: true });
+  await jm.click('[data-act="rv-mode"][data-v="week"]'); await jm.waitForTimeout(250);
+  await dj.click('[data-act="tab"][data-tab="look"]'); await dj.waitForSelector('.rv-us'); await dj.waitForTimeout(250);
+  assert.strictEqual(await rvNums(dj), await rvNums(jm), '두 사람 화면 숫자가 같다');
+  // 짝꿍이 끝내면 탭을 떠나지 않아도 더해지고, 되돌리면 바로 빠진다 (회귀(점검 AI): 불러 둔 옛 사본이 남던 문제)
+  const n0 = await rvDone(jm);
+  await dj.click('[data-act="tab"][data-tab="todo"]');
+  const tid = await dj.getAttribute('.tcard--together .trow:not(.is-done) [data-act="todo-toggle"]', 'data-id');
+  await dj.click(`[data-act="todo-toggle"][data-id="${tid}"]`); await dj.waitForTimeout(300);
+  const n1 = await rvDone(jm);
+  assert.strictEqual(parseInt(n1, 10), parseInt(n0, 10) + 1, '짝꿍이 끝내면 바로 +1: ' + n0 + ' → ' + n1);
+  await jm.click('[data-act="tab"][data-tab="todo"]'); await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForTimeout(300); // 다시 열어 그 일을 불러 둔 상태로
+  await dj.waitForTimeout(900); // 두 번 눌림 막기(0.8초)가 풀린 뒤
+  if (!(await dj.$(`[data-act="todo-toggle"][data-id="${tid}"]`))) await dj.click('.tcard--together [data-act="todo-donelist"]');
+  await dj.click(`[data-act="todo-toggle"][data-id="${tid}"]`); await dj.waitForTimeout(300);
+  assert.strictEqual(docs.get('todos/' + tid).done, false, '짝꿍이 되돌림');
+  assert.strictEqual(await rvDone(jm), n0, '되돌리면 바로 빠진다');
+  // 좁은 화면(320px)에서도 아래 탭 넷이 넘치지 않는다
+  await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(150);
+  const tabFit = await jm.$$eval('.tabbar__btn', (bs) => bs.every((b) => { const r = b.getBoundingClientRect(), t = b.querySelector('span').getBoundingClientRect(); return r.right <= 320.5 && t.left >= r.left - 0.5 && t.right <= r.right + 0.5; }));
+  assert.ok(tabFit, '320px 아래 탭');
+  await jm.screenshot({ path: path.join(OUT, 'review-320.png') });
+  await jm.setViewportSize({ width: 390, height: 844 });
+  console.log('돌아보기 확인 끝 (주 · 지난주 · 달 · 두 사람 · 실시간 · 320px)');
+  await jm.click('[data-act="tab"][data-tab="todo"]');
+
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
   async function addEvent(page, title, opts) {
     await page.click('[data-act="event-add"]');
@@ -954,6 +1004,16 @@ async function tick(page, dateKey, key) {
   await jp.click('[data-act="pref-hide"]');
   await jp.waitForTimeout(150);
   console.log('설정 바꿈:', JSON.stringify(docs.get('users/' + jmUid).notify), '| 스위치:', await jp.getAttribute('[data-act="pref-partner"]', 'aria-checked'), await jp.inputValue('#nt-remind'));
+  // 일요일 돌아보기 (v37): 처음엔 켜짐, 끄면 weekly:false 만 남고, 다시 켜면 칸이 빠진다 (옛 규칙에서도 저장되게)
+  // 일요일 돌아보기 (v37): 처음엔 켜짐. users.weekly 에 따로 저장 — 옛 앱이 notify 를 통째로 저장해도 남는다
+  assert.strictEqual(await jp.getAttribute('[data-act="pref-weekly"]', 'aria-checked'), 'true', '돌아보기 알림 처음 켜짐');
+  await jp.click('[data-act="pref-weekly"]'); await jp.waitForTimeout(150);
+  assert.strictEqual(docs.get('users/' + jmUid).weekly, false, '끄면 users.weekly=false');
+  { const d = Object.assign({}, docs.get('users/' + jmUid), { notify: { partner: true, remindAt: null, hide: false } }); docs.set('users/' + jmUid, d); await pushAll(['users/' + jmUid]); await jp.waitForTimeout(150); }
+  assert.strictEqual(await jp.getAttribute('[data-act="pref-weekly"]', 'aria-checked'), 'false', '옛 앱이 notify 를 덮어써도 꺼진 채');
+  await jp.click('[data-act="pref-weekly"]'); await jp.waitForTimeout(150);
+  assert.strictEqual(docs.get('users/' + jmUid).weekly, true, '다시 켬');
+  console.log('돌아보기 알림 켬/끔: users.weekly 저장 확인');
   await jp.click('[data-act="push-test"]');
   await jp.waitForTimeout(200);
   console.log('테스트 요청:', [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/pings/')).length, '|', await jp.textContent('.nbox__info'));
@@ -999,7 +1059,7 @@ async function tick(page, dateKey, key) {
   // 화면마다 14개 테마로 찍어 둔다 (하드코딩 색 · 대비 눈으로 점검)
   for (const id of THEME_IDS) {
     await jm.evaluate((v) => { localStorage.setItem('danjjakkung.theme', v); RT.themes.apply(v); }, id);
-    for (const tab of ['routine', 'todo', 'schedule']) {
+    for (const tab of ['routine', 'todo', 'look', 'schedule']) {
       await jm.click(`[data-act="tab"][data-tab="${tab}"]`);
       await jm.waitForTimeout(120);
       await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });

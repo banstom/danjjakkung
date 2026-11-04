@@ -251,8 +251,9 @@ service cloud.firestore {
       allow read: if isMember() && request.auth.uid == uid;
       // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'updatedAt'])
         && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
+        && (!('weekly' in request.resource.data) || request.resource.data.weekly is bool)
         && (!('colors' in request.resource.data) || validColors(request.resource.data.colors));
       allow delete: if false;
 

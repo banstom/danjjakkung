@@ -13,7 +13,8 @@
   var TABS = [
     { id: 'routine', label: '루틴', d: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>' },
     { id: 'schedule', label: '시간표', d: '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>' },
-    { id: 'todo', label: '할 일', d: '<path d="M4 7l2 2 3.5-3.5M4 15l2 2 3.5-3.5M13 8h7M13 16h7"/>' }
+    { id: 'todo', label: '할 일', d: '<path d="M4 7l2 2 3.5-3.5M4 15l2 2 3.5-3.5M13 8h7M13 16h7"/>' },
+    { id: 'look', label: '돌아보기', d: '<path d="M5 20V11M12 20V5M19 20v-6"/>' }
   ];
   function tabbar(active) {
     return '<nav class="tabbar" aria-label="화면 이동">' + TABS.map(function (t) {

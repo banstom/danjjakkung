@@ -25,7 +25,8 @@
     sheetEntering: false,
     routineDocs: [],     // routines 컬렉션
     manage: null,        // 「내 루틴」 시트 { open, form: { key, name, icon, start, error, saving, confirmDelete } }
-    tab: 'routine',      // 아래 탭: routine | schedule | todo
+    tab: 'routine',      // 아래 탭: routine | schedule | todo | look(돌아보기)
+    review: { mode: 'week', page: 0, key: null, todos: [], kungs: [], loading: false, error: '' }, // 돌아보기: 주 · 달, page = 몇 칸 전, 기간 안에 끝낸 일 · 꿍 (열 때 불러옴)
     todoDocs: [], todoErr: '', eventDocs: [], eventErr: '',
     todoUi: { expanded: {}, showDone: {} },  // 묶음마다 「더 보기」 · 「완료 보기」
     todoForm: null,      // 할 일 추가 · 고치기 시트
@@ -42,6 +43,7 @@
     themeOpen: false,    // 「테마」 시트
     colors: null,        // 내 계정의 나 · 상대 색 (users 문서의 colors, 테마마다) — null = 아직 모름
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
+    weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
     prefsReady: false,
     push: { busy: false, error: '', info: '' },
     toast: '',
@@ -87,9 +89,10 @@
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
-    var q = /[?&]tab=(routine|schedule|todo)/.exec(root.location.search || '');
+    var q = /[?&]tab=(routine|schedule|todo|look)/.exec(root.location.search || '');
     var t = q ? q[1] : lsGet(LS_TAB);
-    if (t === 'schedule' || t === 'todo' || t === 'routine') state.tab = t;
+    if (t === 'schedule' || t === 'todo' || t === 'routine' || t === 'look') state.tab = t;
+    // 돌아보기는 언제나 이번 주부터 (주소로 열어도 · 다시 열어도)
     if (q) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
   })();
   function typing() {
@@ -167,7 +170,7 @@
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'send-kung': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'send-kung': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -176,7 +179,8 @@
     'cat-open': null, 'cat-sort': null, 'cat-move': 'data-key', 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null,
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
-    'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null };
+    'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
+    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -410,6 +414,14 @@
     else if (act === 'place-stopask') { if (state.place) { state.place.ask = null; focusAfter = ['[data-act="place-block"]']; focusInSheet = true; render(true); } }
     else if (act === 'place-next') placeNext();
     else if (act === 'place-back') placeBack();
+    else if (act === 'rv-mode') { if (btn.getAttribute('data-v') !== state.review.mode) setReview(btn.getAttribute('data-v'), 0); }
+    else if (act === 'rv-page') {
+      var rvDir = Number(btn.getAttribute('data-dir'));
+      focusAfter = ['[data-act="rv-page"][data-dir="' + rvDir + '"]:not([disabled])', '[data-act="rv-page"][data-dir="' + (-rvDir) + '"]:not([disabled])'];
+      setReview(state.review.mode, state.review.page + rvDir);
+    }
+    else if (act === 'rv-now') { focusAfter = ['[data-act="rv-page"][data-dir="1"]']; setReview(state.review.mode, 0); }
+    else if (act === 'rv-retry') { state.review.key = null; state.review.kungs = []; render(true); }
     else if (act === 'archive-open') openArchive();
     else if (act === 'archive-more') loadArchive();
     else if (act === 'archive-undo') undoArchived(btn.getAttribute('data-id'));
@@ -468,12 +480,14 @@
     else if (act === 'push-test') pushTest();
     else if (act === 'pref-partner') setPref({ partner: !(currentPrefs().partner) });
     else if (act === 'pref-hide') setPref({ hide: !(currentPrefs().hide) });
+    else if (act === 'pref-weekly') setWeekly(!state.weeklyOn);
   });
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
   function setTab(t) {
-    if (['routine', 'schedule', 'todo'].indexOf(t) < 0 || t === state.tab) return;
+    if (['routine', 'schedule', 'todo', 'look'].indexOf(t) < 0 || t === state.tab) return;
     state.tab = t; lsSet(LS_TAB, t);
+    if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     state.place = null; state.uniSheet = null; state.archive = null;
     render(true);
@@ -547,6 +561,7 @@
     var V = RT.viewPlan, out = {};
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
+    if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
     var dm = state.uniSheet && state.uniSheet.kind === 'detail' ? uniDetailModel() : null;
     if (state.place) out.sheet = V.placeScreen(placeModel());
     else if (state.todoForm) out.sheet = V.todoSheet(todoFormView(state.todoForm), state.sheetEntering);
@@ -557,6 +572,44 @@
     else if (state.archive) out.sheet = V.archiveSheet(archiveModel(), state.sheetEntering);
     return out;
   }
+  // ── 돌아보기 ──
+  /** 기간이 바뀌면(주 · 달 · 넘기기 · 날짜가 바뀜) 그 기간에 끝낸 일과 꿍을 불러온다. 루틴 · 일정은 이미 듣고 있는 것을 쓴다 */
+  function reviewModel() {
+    var rv = state.review;
+    var key = rv.mode + '|' + rv.page + '|' + state.today;
+    if (rv.key !== key && store) { rv.key = key; rv.loading = true; rv.error = ''; setTimeout(function () { loadReview(key); }, 0); }
+    var seen = {}, kungs = rv.kungs === null || state.kungOff ? null : state.kungs.concat(rv.kungs).filter(function (k) { var id = k && k.date + '_' + k.from; if (!id || seen[id]) return false; seen[id] = true; return true; });
+    var now = new Date();
+    var m = RT.review.build({ mode: rv.mode, page: rv.page, today: state.today, config: fullConfig(), checks: RT.store.mergeChecks(state.server, state.pending),
+      persons: planPeople(), todos: RT.review.mergeTodos(state.todoDocs, rv.todos), kungs: kungs, events: eventList(), nowMin: now.getHours() * 60 + now.getMinutes() });
+    m.loading = rv.loading; m.error = rv.error;
+    return m;
+  }
+  function loadReview(key) {
+    var rv = state.review;
+    if (!store || !key || rv.key !== key) return; // 그사이 다른 기간으로 넘겼으면 그 기간 것만 불러온다
+    var r = RT.review.rangeOf(rv.mode, state.today, rv.page);
+    var a = D.parts(r.from), b = D.parts(r.to + 1);
+    var fromIso = new Date(a.y, a.m - 1, a.d).toISOString(), toIso = new Date(b.y, b.m - 1, b.d).toISOString();
+    Promise.all([
+      store.loadDoneBetween(fromIso, toIso),
+      store.loadKungs(D.toKey(r.from), D.toKey(r.to + 1)).catch(function () { return null; }) // 꿍 규칙이 아직 없으면 꿍 칸만 숨긴다
+    ]).then(function (res) {
+      if (state.review.key !== key) return;
+      rv.todos = res[0]; rv.kungs = res[1]; rv.loading = false; render();
+    }, function () {
+      if (state.review.key !== key) return;
+      rv.loading = false; rv.error = '끝낸 일을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 불러와 주세요.'; render();
+    });
+  }
+  function resetReview() { state.review.mode = 'week'; state.review.page = 0; state.review.key = null; }
+  function setReview(mode, page) {
+    var rv = state.review;
+    rv.mode = mode === 'month' ? 'month' : 'week';
+    rv.page = Math.max(0, page | 0);
+    render(true);
+  }
+
   function openPlanSheet(kind, form) {
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false;
     state.todoForm = kind === 'todo' ? form : null; state.eventForm = kind === 'event' ? form : null; state.catSheet = null;
@@ -1451,7 +1504,7 @@
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
   var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
-  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}); }
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn }); }
   function notifyModel() {
     var P = RT.push;
     return {
@@ -1561,6 +1614,12 @@
     return store.saveNotify(state.uid, next).catch(function () {
       state.prefs = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요');
     });
+  }
+  function setWeekly(on) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    var before = state.weeklyOn;
+    state.weeklyOn = on; render(true);
+    store.saveWeekly(state.uid, on).catch(function () { state.weeklyOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
   function setPref(patch) {
     if (!store || !state.uid || !state.prefsReady) return;
@@ -1857,8 +1916,8 @@
   root.addEventListener('focus', checkToday);
   if (root.navigator.serviceWorker && root.navigator.serviceWorker.addEventListener) {
     root.navigator.serviceWorker.addEventListener('message', function (ev) {
-      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo)/.exec(String(d.link || ''));
-      if (d.type === 'open' && q && state.status === 'ready') setTab(q[1]);
+      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look)/.exec(String(d.link || ''));
+      if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
     });
   }
   root.addEventListener('pageshow', checkToday);
@@ -1966,6 +2025,7 @@
       // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
       store.watchUser(state.uid, function (doc, fromCache) {
         state.prefs = doc && doc.notify ? doc.notify : null;
+        state.weeklyOn = !(doc && doc.weekly === false);
         var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};
         var colorsChanged = JSON.stringify(colors) !== JSON.stringify(state.colors);
         state.colors = colors;

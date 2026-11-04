@@ -22,6 +22,7 @@ GitHub Pages(사이트) + Firebase(로그인 · 기록 저장)로 돌아가고, 
 | `js/model.js` | 기록 → 화면에 보일 값 |
 | `js/view.js` | 화면 그리기 (부품마다 함수 하나) |
 | `js/todos.js` `js/schedule.js` `js/cats.js` | 할 일 · 시간표 · 시간표 카테고리(둘이 같이 쓰는 목록) 계산 |
+| `js/review.js` `js/view-review.js` | 돌아보기 탭 — 주 · 달 동안 함께 해낸 것 계산 · 그리기 (목업 `design/mockups/01-review`) |
 | `js/store.js` | Firestore 읽기 · 쓰기 |
 | `js/firebase.js` `js/firebase-config.js` | Firebase 연결 · 로그인 |
 | `js/app.js` | 상태 · 버튼 · 알림 |
