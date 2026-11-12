@@ -41,6 +41,8 @@
   --strong: var(--primary);        /* 켜진 스위치 · 지금 선 — 카드 위에서 3:1 이상 */
   --primary-edge: var(--primary);  /* 채운 버튼의 가장자리 (채움이 아주 연한 테마는 진하게) */
   --success: #2E7D4F;
+  --tomato-green: #8CC152;  /* 토마토 성장 막대 — 토마토 색은 테마와 상관없이 고정 (js/tomato.js 와 같음) */
+  --tomato-red: #E5483B;
   --warning: #9A5B00;
   --scrim: rgba(30, 28, 40, 0.4);
   --shadow: 0 -8px 24px rgba(30, 28, 40, 0.08);

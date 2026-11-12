@@ -327,6 +327,32 @@ async function tick(page, dateKey, key) {
     await jm.waitForTimeout(300);
   }
 
+  // 4-0c) (v40 · v41) 토마토 · 주간 퀘스트: 시작일(11/12)이 테스트 시계(10/27)보다 뒤라 10/26 으로 앞당겨 본다
+  {
+    for (const p of [jm, dj]) {
+      await p.evaluate(() => { window.RT.grow.START = window.RT.dates.fromYMD(2026, 10, 26); });
+      await p.click('[data-act="tab"][data-tab="todo"]'); await p.click('[data-act="tab"][data-tab="routine"]');
+      await p.waitForSelector('.grow'); await p.waitForSelector('.quest');
+    }
+    const growText = (p) => p.$eval('.grow', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+    const questText = (p) => p.$eval('.quest', (e) => e.textContent.replace(/\s+/g, ' ').trim());
+    console.log('토마토(준민):', await growText(jm));
+    console.log('퀘스트(준민):', await questText(jm));
+    assert.strictEqual(await questText(dj), await questText(jm), '두 사람 퀘스트가 같다');
+    assert.strictEqual(await growText(dj), await growText(jm), '두 사람 토마토가 같다');
+    // 순서: 사람 칩 → 토마토 → 달력 → (꿍) → 퀘스트 → 루틴 카드
+    console.log('루틴 탭 순서:', (await jm.$$eval('main > *, .app > *', (e) => e.map((x) => x.className.split(' ').filter((c) => /^(chip-row|grow|grid-card|card|kung|quest|rgroup)$/.test(c)).join('.')).filter(Boolean))).join(' → '));
+    await jm.screenshot({ path: path.join(OUT, 'web-grow-routine.png'), fullPage: true });
+    await jm.click('[data-act="open-grow"]'); await jm.waitForSelector('#grow-title');
+    console.log('토마토 시트:', await jm.$eval('.gbig', (e) => e.textContent.replace(/\s+/g, ' ').trim()), '|', await jm.$eval('.gstats', (e) => e.textContent.replace(/\s+/g, ' ').trim()));
+    await jm.screenshot({ path: path.join(OUT, 'web-grow-sheet.png'), fullPage: true });
+    await jm.keyboard.press('Escape'); await jm.waitForTimeout(150);
+    assert.strictEqual(await jm.$$eval('#grow-title', (e) => e.length), 0, 'Esc 로 닫힘');
+    await jm.click('[data-act="open-quest"]'); await jm.waitForSelector('.quest--review');
+    console.log('돌아보기 퀘스트:', await jm.$eval('.quest--review', (e) => e.textContent.replace(/\s+/g, ' ').trim()));
+    await jm.click('[data-act="tab"][data-tab="routine"]'); await jm.waitForSelector('.grow');
+  }
+
   // 4-1) 할 일 탭: 함께 5개 → 3개까지 + 더 보기, 기한 순서, 짝꿍이 체크, 남의 할 일은 잠김
   async function addTodo(page, key, title, due, date) {
     await page.click(`[data-act="todo-add"][data-key="${key}"]`);

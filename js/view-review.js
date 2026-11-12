@@ -100,7 +100,10 @@
       '<button type="button" class="small-btn" data-act="rv-retry">다시 불러오기</button></section>';
     if (m.empty && !m.loading) return out + '<section class="card notice" role="status"><h2 class="notice__title">아직 돌아볼 기록이 없어요</h2>' +
       '<p class="notice__body">루틴을 체크하거나 할 일을 끝내면 여기에 모여요.</p></section>';
-    return out + routineCard(m.routine) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
+    var quest = m.quest && RT.view ? '<section class="card quest quest--review" aria-label="이 주 퀘스트"><span class="quest__head"><span class="quest__title">' +
+      (m.page === 0 ? '이번 주 퀘스트' : '이 주 퀘스트') + '</span><span class="quest__hint">' + (m.quest.allDone ? '보너스까지 성공!' : m.quest.done ? '퀘스트 성공 · 토마토 +5' : m.page === 0 ? '일요일까지 둘이 함께' : '이 주는 아쉬웠어요') + '</span></span>' +
+      RT.view.questBody(m.quest) + '</section>' : '';
+    return out + quest + routineCard(m.routine) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
   }
 
   var api = { tab: tab };

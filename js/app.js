@@ -49,6 +49,8 @@
     push: { busy: false, error: '', info: '' },
     toast: '',
     kungs: [],           // 오늘 보낸 꿍 (kungs 컬렉션, 날짜가 오늘인 것)
+    grow: { key: null, todos: [], kungs: [], ok: false }, // 토마토 · 퀘스트용 지난 기록 (끝낸 일 · 꿍, 하루에 한 번 불러옴, v40 · v41)
+    growOpen: false,     // 「우리 토마토」 시트
     kungOff: false,      // 꿍 규칙이 아직 없거나 막혔으면 칸을 숨긴다
   };
   var store = null;
@@ -86,6 +88,7 @@
   var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
+  var LS_QUEST = 'danjjakkung.questSeen';
   var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
@@ -126,15 +129,19 @@
     if (state.place && !state.place.fresh && !findTodo(state.place.id)) { state.place = null; setTimeout(function () { showToast('다른 기기에서 지워졌거나 완료된 할 일이에요'); }, 0); }
     if (state.uniSheet && state.uniSheet.kind === 'detail' && !findTodo(state.uniSheet.id)) state.uniSheet = null;
     var other = state.tab !== 'routine';
+    var ex = state.status === 'ready' && (!other || state.tab === 'look' || state.growOpen) ? extras() : null;
+    state.extras = ex;
+    if (ex && !other && !m.empty) { m.grow = ex.grow; m.quest = ex.quest; }
+    if (state.growOpen && !(ex && ex.grow)) state.growOpen = false;
     var plan = state.status === 'ready' ? planHtml(other) : {};
     var flipBefore = flipMeasure();
-    var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || plan.sheet) && state.status === 'ready');
+    var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || state.growOpen || plan.sheet) && state.status === 'ready');
     var entering = state.sheetEntering;
     m.header.canSignOut = state.status === 'ready';
     m.header.bell = state.status === 'ready' && RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? 'on' : 'off') : null;
     m.header.palette = state.status === 'ready' && RT.themes ? RT.themes.byId(RT.themes.current()).name : null;
     if (state.status !== 'ready') m.header.meName = '';
-    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
+    appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
@@ -172,7 +179,7 @@
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
     'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'send-kung': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -492,6 +499,9 @@
     else if (act === 'pref-hide') setPref({ hide: !(currentPrefs().hide) });
     else if (act === 'pref-weekly') setWeekly(!state.weeklyOn);
     else if (act === 'pref-todo') setTodoNotify(!state.todoNotifyOn);
+    else if (act === 'open-grow') { state.growOpen = true; state.sheetEntering = true; focusAfter = ['[data-act="close-grow"]']; focusInSheet = true; render(true); }
+    else if (act === 'close-grow') closeGrow();
+    else if (act === 'open-quest') { resetReview(); setTab('look'); }
   });
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
@@ -499,6 +509,7 @@
     if (['routine', 'schedule', 'todo', 'look'].indexOf(t) < 0 || t === state.tab) return;
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
+    if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     state.place = null; state.uniSheet = null; state.archive = null;
     render(true);
@@ -594,6 +605,7 @@
     var m = RT.review.build({ mode: rv.mode, page: rv.page, today: state.today, config: fullConfig(), checks: RT.store.mergeChecks(state.server, state.pending),
       persons: planPeople(), todos: RT.review.mergeTodos(state.todoDocs, rv.todos), kungs: kungs, events: eventList(), nowMin: now.getHours() * 60 + now.getMinutes() });
     m.loading = rv.loading; m.error = rv.error;
+    m.quest = rv.mode === 'week' && state.extras && state.extras.quests ? state.extras.quests[RT.review.rangeOf('week', state.today, rv.page).from] || null : null;
     return m;
   }
   function loadReview(key) {
@@ -612,6 +624,63 @@
       if (state.review.key !== key) return;
       rv.loading = false; rv.error = '끝낸 일을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 불러와 주세요.'; render();
     });
+  }
+  // ── 함께 키우기 · 주간 퀘스트 (v40 · v41): 저장 없이 기록에서 계산 ──
+  // 퀘스트 목표는 지난 4주로 정하므로, 토마토 시작 주 4주 전부터의 끝낸 일 · 꿍을 하루에 한 번 불러 둔다 (오늘 것은 듣고 있는 값과 합친다)
+  function growFrom() { return Math.min(RT.schedule.monStart(RT.grow.START), RT.schedule.monStart(state.today)) - 28; }
+  function ensureGrow() {
+    var g = state.grow, key = D.toKey(state.today);
+    if (!store || state.status !== 'ready' || g.key === key) return;
+    g.key = key;
+    var from = growFrom(), a = D.parts(from), b = D.parts(state.today + 1);
+    var fromIso = new Date(a.y, a.m - 1, a.d).toISOString(), toIso = new Date(b.y, b.m - 1, b.d).toISOString();
+    Promise.all([
+      store.loadDoneBetween(fromIso, toIso),
+      store.loadKungs(D.toKey(from), D.toKey(state.today + 1)).catch(function () { return null; })
+    ]).then(function (res) {
+      if (g.key !== key) return;
+      g.todos = res[0]; g.kungs = res[1]; g.ok = true; render();
+    }, function () { if (g.key === key) g.key = null; }); // 다음에 그릴 때 다시 (그동안 토마토 칸만 안 보임)
+  }
+  function extras() {
+    ensureGrow();
+    var g = state.grow;
+    if (!g.ok || !RT.grow || !RT.quest) return null;
+    var cfg = fullConfig(), routinesAll = RT.model.routinesFrom(cfg);
+    if (!routinesAll.length) return null;
+    var checks = RT.store.mergeChecks(state.server, state.pending), persons = planPeople();
+    var todos = RT.review.mergeTodos(state.todoDocs, g.todos);
+    var kungs = g.kungs === null ? null : (function () {
+      var seen = {};
+      return g.kungs.concat(state.kungs || []).filter(function (k) { var id = k.date + '_' + k.from; if (seen[id]) return false; seen[id] = true; return true; });
+    })();
+    var events = eventList(), now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+    var curMon = RT.schedule.monStart(state.today), firstStart = Math.min.apply(null, routinesAll.map(function (r) { return r.start; }));
+    var from = growFrom(), cache = {};
+    function statsFor(mon) {
+      if (mon < from || mon > curMon || mon + 6 < firstStart) return null;
+      if (!cache[mon]) cache[mon] = RT.quest.statsOf(RT.review.build({ mode: 'week', page: (curMon - mon) / 7, today: state.today, config: cfg, checks: checks,
+        persons: persons, todos: todos, kungs: kungs, events: events, nowMin: nowMin }));
+      return cache[mon];
+    }
+    var quests = {}, list = [];
+    for (var mon = RT.schedule.monStart(RT.grow.START); mon <= curMon; mon += 7) {
+      var q = RT.quest.build({ mon: mon, weeks: [statsFor(mon), statsFor(mon - 7), statsFor(mon - 14), statsFor(mon - 21), statsFor(mon - 28)] });
+      quests[mon] = q; list.push(q);
+    }
+    var grow = RT.grow.build({ routines: routinesAll, checks: checks, persons: persons.map(function (p) { return p.key; }), todos: todos, today: state.today,
+      quests: list.map(function (q) { return { mon: q.mon, done: q.done, allDone: q.allDone }; }) });
+    var quest = quests[curMon];
+    celebrate(quest);
+    return { grow: grow, quest: quest, quests: quests };
+  }
+  /** 퀘스트를 처음 채운 순간 한 번만 축하 (이 기기에 본 주를 적어 둔다) */
+  function celebrate(q) {
+    if (!q || !q.done) return;
+    var seen = lsGet(LS_QUEST) || '', id = q.week + (q.allDone ? 'b' : 'm');
+    if (seen === id || (seen === q.week + 'b')) return;
+    lsSet(LS_QUEST, id);
+    setTimeout(function () { showToast(q.allDone ? '🎉 보너스 퀘스트까지 성공! 토마토 +2' : '🎉 이번 주 퀘스트 성공! 토마토가 쑥 자랐어요 (+5)'); }, 0);
   }
   function resetReview() { state.review.mode = 'week'; state.review.page = 0; state.review.key = null; }
   function setReview(mode, page) {
@@ -1840,10 +1909,12 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
+  function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
+    if (state.growOpen) { closeGrow(); return; }
     if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
     if (state.todoForm || state.eventForm || state.catSheet) { /* 아래로 */ }
     else if (state.uniSheet) { closeUniSheet(); return; }
@@ -1920,7 +1991,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -1947,7 +2018,7 @@
         if (state.sched.day === old) state.sched.day = now;
         if (state.sched.weekStart === RT.schedule.monStart(old)) state.sched.weekStart = RT.schedule.monStart(now);
       }
-      state.today = now; watchKungs(); render();
+      state.today = now; state.grow.key = null; watchKungs(); render();
     }
     else if (state.tab === 'schedule' && state.sched && state.sched.mode === 'day' && minute !== lastMinute && !state.eventForm) render();
     lastMinute = minute;

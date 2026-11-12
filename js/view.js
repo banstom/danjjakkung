@@ -128,6 +128,64 @@
   }
 
   // 꿍 보내기 — 짝꿍에게 하루 한 번 응원 알림
+  // ── 함께 키우기 · 주간 퀘스트 (v40 · v41) ──
+  function tomatoSvg(g, size) {
+    return RT.tomato ? RT.tomato.svg(g.stageKey, { size: size, thirsty: g.thirsty, label: '우리 토마토 · ' + g.stageName }) : '';
+  }
+  function growCard(g) {
+    if (!g) return '';
+    var sub = g.thirsty ? '목말라 보여요 · 오늘 루틴을 해 볼까요?' : g.line;
+    return '<button type="button" class="card grow" data-act="open-grow" aria-label="우리 토마토 자세히 · ' + esc(g.stageName) + ', ' + esc(g.score) + '점">' +
+      '<span class="grow__pic">' + tomatoSvg(g, 64) + '</span>' +
+      '<span class="grow__body"><span class="grow__title">우리 토마토 <b>' + esc(g.stageName) + '</b>' + (g.harvested ? '<span class="grow__harvest">🍅 ' + esc(g.harvested) + '</span>' : '') + '</span>' +
+      '<span class="grow__sub">' + esc(sub) + '</span>' +
+      '<span class="grow__bar" aria-hidden="true"><span style="width:' + Math.max(4, g.pct) + '%"></span></span>' +
+      '<span class="grow__next">' + esc(g.next.name) + '까지 ' + esc(g.next.need) + '점' + (g.todayPts ? ' · 오늘 +' + esc(g.todayPts) : '') + '</span></span>' +
+      '</button>';
+  }
+  function questRow(it, bonus) {
+    return '<div class="qrow' + (it.done ? ' qrow--done' : '') + (bonus ? ' qrow--bonus' : '') + '">' +
+      '<span class="qrow__label">' + (bonus ? '<span class="qrow__tag">보너스</span>' : '') + esc(it.icon + ' ' + it.text) + '</span>' +
+      '<span class="qrow__val">' + (it.done ? '성공 🎉' : esc(it.progress)) + '</span>' +
+      '<span class="qrow__bar" aria-hidden="true"><span style="width:' + Math.max(3, it.pct) + '%"></span></span></div>';
+  }
+  function questBody(q) {
+    return questRow(q.main, false) + questRow(q.bonus, true);
+  }
+  function questCard(q) {
+    if (!q) return '';
+    return '<button type="button" class="card quest" data-act="open-quest" aria-label="이번 주 퀘스트 · ' + esc(q.main.text) + ' ' + (q.main.done ? '성공' : esc(q.main.progress)) + ', 돌아보기에서 보기">' +
+      '<span class="quest__head"><span class="quest__title">이번 주 퀘스트</span><span class="quest__hint">둘이 함께 채워요 · 성공하면 토마토 +5</span></span>' +
+      questBody(q) + '</button>';
+  }
+  function growSheet(g, entering) {
+    var stages = RT.grow ? RT.grow.STAGES : [];
+    var bars = g.week.map(function (d) {
+      var h = Math.round(d.pts / (RT.grow ? RT.grow.DAY_MAX : 6) * 100);
+      return '<span class="gweek__day' + (d.rest ? ' gweek__day--rest' : '') + '"><span class="gweek__bar"><span style="height:' + Math.max(d.pts ? 8 : 0, h) + '%"></span></span>' +
+        '<span class="gweek__n">' + (d.rest ? '쉼' : '+' + d.pts) + '</span><span class="gweek__dow">' + esc(['일', '월', '화', '수', '목', '금', '토'][RT.dates.parts(d.day).w]) + '</span></span>';
+    }).join('');
+    return '<div class="sheet-layer">' +
+      '<button type="button" class="scrim" data-act="close-grow" aria-label="닫기"></button>' +
+      '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="grow-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<div class="sheet__head"><h2 id="grow-title" class="sheet__title">우리 토마토</h2></div>' +
+      '<div class="gbig">' + tomatoSvg(g, 168) +
+      '<p class="gbig__stage">' + esc(g.stageName) + ' · ' + esc(g.score) + '점</p><p class="gbig__line">' + esc(g.thirsty ? '목말라 보여요 · 둘 중 한 명이라도 오늘 루틴을 다 하면 다시 자라요' : g.line) + '</p>' +
+      '<span class="grow__bar grow__bar--big" aria-hidden="true"><span style="width:' + Math.max(4, g.pct) + '%"></span></span>' +
+      '<p class="gbig__next">' + esc(g.next.name) + '까지 ' + esc(g.next.need) + '점 남았어요</p></div>' +
+      '<div class="gstats"><span><b>' + esc(g.todayPts) + '</b>오늘</span><span><b>' + esc(g.weekPts) + '</b>이번 주</span><span><b>' + esc(g.harvested) + '</b>수확한 토마토</span></div>' +
+      '<h3 class="gsub">최근 7일</h3><div class="gweek">' + bars + '</div>' +
+      '<h3 class="gsub">단계</h3><ol class="gstages">' + stages.map(function (s, i) {
+        return '<li class="' + (i < g.stage ? 'is-past' : i === g.stage ? 'is-now' : '') + '"><span>' + esc(s.name) + '</span><span>' + esc(s.min) + '점</span></li>';
+      }).join('') + '<li><span>수확 → 새 씨앗</span><span>' + esc(RT.grow ? RT.grow.CYCLE : 200) + '점</span></li></ol>' +
+      '<h3 class="gsub">이렇게 자라요</h3><ul class="grules">' +
+      '<li>둘 다 루틴을 모두 해낸 날 <b>+3</b></li><li>한 사람이라도 자기 루틴을 다 한 날 <b>+1</b></li><li>함께 할 일 하나 끝낼 때마다 <b>+1</b></li>' +
+      '<li>이번 주 퀘스트 성공 <b>+5</b> · 보너스 <b>+2</b></li><li>하루 최대 6점 · 안 해도 줄거나 시들지 않아요 · 쉬는 날은 그대로</li></ul>' +
+      '<button type="button" class="close-btn" data-act="close-grow">닫기</button>' +
+      '</section></div>';
+  }
+
   function kungBar(k) {
     if (!k) return '';
     var text, btn = '';
@@ -396,11 +454,12 @@
       out += (m.needsPick ? picker(m.people) : '') + notice('아직 등록된 루틴이 없어요', '「＋ 내 루틴」에서 첫 루틴을 추가해 보세요.') +
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');
     } else {
-      out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + grid(m.grid) + kungBar(m.kung) +
+      out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + growCard(m.grow) + grid(m.grid) + kungBar(m.kung) + questCard(m.quest) +
         (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : routineGroups(m)) + both(m.both);
     }
     if (status === 'ready') {
-      out += opts.notify ? notifySheet(opts.notify, opts.sheetEntering)
+      out += opts.grow ? growSheet(opts.grow, opts.sheetEntering)
+        : opts.notify ? notifySheet(opts.notify, opts.sheetEntering)
         : opts.theme ? themeSheet(opts.theme, opts.sheetEntering)
         : opts.sheetHtml ? opts.sheetHtml
         : opts.tab && opts.tab !== 'routine' ? ''
@@ -411,7 +470,7 @@
     return out;
   }
 
-  var api = { page: page, esc: esc, TITLE: TITLE };
+  var api = { questBody: questBody, page: page, esc: esc, TITLE: TITLE };
   root.RT = root.RT || {};
   root.RT.view = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
