@@ -749,3 +749,11 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 .rest .field__input { margin-top: 8px; }
 .rest__hint { display: block; margin-top: 6px; font-size: 12px; color: var(--sub); }
 .rest__note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--raised); font-size: 13px; font-weight: 600; }
+
+/* ── 루틴 카드 사람별 묶음 (v39) ── */
+.rgroup { display: flex; flex-direction: column; gap: 12px; }
+.rgroup + .rgroup, .rgroup:first-of-type { margin-top: 4px; }
+.rgroup__head { display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 4px; font-size: 15px; font-weight: 700; color: var(--text); }
+.rgroup__dot { width: 10px; height: 10px; border-radius: 5px; }
+.rgroup__me { padding: 1px 7px; border-radius: 999px; background: var(--raised); font-size: 11px; font-weight: 700; color: var(--sub); }
+.rgroup__count { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--sub); }

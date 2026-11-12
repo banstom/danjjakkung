@@ -318,6 +318,7 @@ async function tick(page, dateKey, key) {
     console.log('준민 시트 다진 줄:', (await jm.$$eval('.sheet .row', (e) => e.map((x) => x.textContent.replace(/\s+/g, ' ').trim()))).join(' | '));
     await jm.click('.close-btn');
     await jm.screenshot({ path: path.join(OUT, 'web-rest-partner.png'), fullPage: true });
+    console.log('(v39) 사람별 묶음:', (await jm.$$eval('.rgroup__head', (e) => e.map((x) => x.textContent.replace(/\s+/g, ' ').trim()))).join(' | '));
     await dj.screenshot({ path: path.join(OUT, 'web-rest-card.png'), fullPage: true });
     await dj.click('.routine__rest [data-act="wake-routine"]');
     await dj.waitForTimeout(250);

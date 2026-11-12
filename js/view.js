@@ -258,6 +258,17 @@
       }).join('') + '</div></section>';
   }
 
+  // 사람별로 모은 루틴 카드 (v39) — 「전체」에서 두 사람이면 이름 머리말, 한 사람만 보일 땐 카드만
+  function routineGroups(m) {
+    if (!m.grouped) return m.cards.map(routineCard).join('');
+    return m.groups.map(function (g) {
+      return '<section class="rgroup" aria-label="' + esc(g.name) + ' 루틴">' +
+        '<h2 class="rgroup__head"><span class="dot rgroup__dot dot--' + g.dot + '" aria-hidden="true"></span>' + esc(g.name) + (g.mine ? ' <span class="rgroup__me">나</span>' : '') +
+        '<span class="rgroup__count">루틴 ' + g.cards.length + '개</span></h2>' +
+        g.cards.map(routineCard).join('') + '</section>';
+    }).join('');
+  }
+
   function routineCard(k) {
     return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + '">' +
       '<div class="routine__head">' +
@@ -386,7 +397,7 @@
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');
     } else {
       out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + grid(m.grid) + kungBar(m.kung) +
-        (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : m.cards.map(routineCard).join('')) + both(m.both);
+        (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : routineGroups(m)) + both(m.both);
     }
     if (status === 'ready') {
       out += opts.notify ? notifySheet(opts.notify, opts.sheetEntering)

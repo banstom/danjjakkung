@@ -114,3 +114,16 @@ test('내 루틴 시트: 쉬는 중 · 예약 상태와 버튼', () => {
   assert.equal(form.manage.form.rest.checkedToday, true);
   assert.equal(form.manage.form.rest.note, '11월 13일부터 다시 시작할 때까지 쉬어요');
 });
+
+test('(v39) 루틴 카드는 사람별로 모은다: 전체면 두 묶음 · 칩 순서 · 한 사람 필터면 묶음 표시 없음', () => {
+  const c = cfg([]);
+  c.routines.push({ key: 'gym', icon: '🏋️', name: '헬스', owner: 'me', start: key(11, 1), end: null, order: 2 });
+  c.routines.push({ key: 'yoga', icon: '🧘', name: '요가', owner: 'her', start: key(11, 1), end: null, order: 3 });
+  const m = M.build({ config: c, checks: {}, today: day(11, 12), filter: 'all', page: 0, me: 'me' });
+  assert.equal(m.grouped, true);
+  assert.deepEqual(m.groups.map((g) => [g.person, g.mine, g.cards.map((x) => x.key).join(',')]), [['her', false, 'read,yoga'], ['me', true, 'run,gym']]);
+  assert.deepEqual(m.chips.slice(1).map((x) => x.id), m.groups.map((g) => g.person));
+  const one = M.build({ config: c, checks: {}, today: day(11, 12), filter: 'me', page: 0, me: 'me' });
+  assert.equal(one.grouped, false);
+  assert.deepEqual(one.cards.map((x) => x.key), ['run', 'gym']);
+});

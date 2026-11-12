@@ -402,6 +402,12 @@
     var persons = filter === 'all' ? allPersons : [filter];
     var visibleCards = set.filter(function (r) { return r.end === null || r.end >= today; });
     var activeToday = routines.filter(function (r) { return activeOn(r, today); });
+    var cards = visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); });
+    // 카드는 사람별로 모은다 (v39) — 순서는 위 사람 칩과 같고, 한 사람 안에서는 루틴 순서 그대로
+    var groups = persons.map(function (p) {
+      var list = cards.filter(function (c) { return c.owner === p; });
+      return { person: p, name: names[p] || (list[0] && list[0].who) || '', dot: slots[p] === 0 ? 'her' : 'me', mine: p === state.me, cards: list };
+    }).filter(function (g) { return g.cards.length; });
     return {
       kung: kungFor(state, names, routines, today, isDone),
       header: header,
@@ -410,7 +416,9 @@
       chips: chipsFor(routines, names, filter),
       canManage: !!state.me,
       grid: gridFor(set, persons, today, state.page || 0, isDone),
-      cards: visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); }),
+      cards: cards,
+      groups: groups,
+      grouped: filter === 'all' && groups.length > 1,
       both: filter === 'all' ? bothFor(routines, persons, today, isDone) : null,
       sheet: sheetFor(routines, names, today, state.sheetDay, isDone, state.me || null, state.meta, allPersons),
       manage: manage,
