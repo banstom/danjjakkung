@@ -228,7 +228,7 @@ async function tick(page, dateKey, key) {
 
 (async () => {
   await new Promise((r) => setTimeout(r, 700));
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
 
   // 1) 준민: 처음 열면 로그인 화면 → 가입 → 이름 → 빈 화면
   const jm = await open(browser, '준민');
@@ -281,6 +281,48 @@ async function tick(page, dateKey, key) {
     await dj.waitForTimeout(300);
     console.log('다진 화면 꿍 칸(준민은 다 함, 다진 기준은 별도):', await dj.textContent('.kung__text').catch(() => '(없음)'));
     await tick(dj, '2026-10-27', null); // 되돌리기
+    await jm.waitForTimeout(300);
+  }
+
+  // 4-0b) (v38) 루틴 쉬기: 오늘 체크했으면 내일부터 · 예약은 「쉬기 취소」 / 오늘부터 쉬면 카드 「쉬는 중」 · 짝꿍 꿍 칸 없음 · 모두 해낸 날은 남은 사람 기준 → 다시 시작
+  {
+    const restOf = (owner) => { const e = [...docs.entries()].find(([k, v]) => k.startsWith('routines/') && v.owner === owner); return JSON.stringify(e && e[1].rest); };
+    const jmU = accounts.get('junmin@example.com').uid, djU = accounts.get('dajin@example.com').uid;
+    await jm.click('[data-act="open-manage"]');
+    await jm.click('[data-act="edit-routine"]');
+    await jm.click('[data-act="rest-open"]');
+    console.log('쉬기 칸(준민, 오늘 체크함):', await jm.textContent('.rest__note'), '| 오늘 칩 막힘:', await jm.$eval('[data-act="rest-from"][data-v="today"]', (e) => e.disabled));
+    await jm.screenshot({ path: path.join(OUT, 'web-rest-form.png') });
+    await jm.click('[data-act="rest-save"]');
+    await jm.waitForTimeout(250);
+    console.log('저장(준민):', restOf(jmU), '| 목록:', await jm.textContent('.mitem__status'), '| 버튼:', await jm.textContent('.mitem [data-act="wake-routine"]'));
+    await jm.click('[data-act="close-manage"]');
+    console.log('준민 카드 예약 줄:', await jm.textContent('.routine__rest span'));
+    await jm.click('.routine__rest [data-act="wake-routine"]');
+    await jm.waitForTimeout(250);
+    console.log('쉬기 취소 뒤:', restOf(jmU), '| 줄 남음:', await jm.$$eval('.routine__rest', (e) => e.length));
+
+    await tick(dj, '2026-10-27', null); // 다진 오늘 체크 풀기 → 오늘부터 쉴 수 있다
+    await dj.click('[data-act="open-manage"]');
+    await dj.click('[data-act="edit-routine"]');
+    await dj.click('[data-act="rest-open"]');
+    await dj.click('[data-act="rest-until"][data-v="3"]');
+    console.log('쉬기 칸(다진, 3일):', await dj.textContent('.rest__note'));
+    await dj.click('[data-act="rest-save"]');
+    await dj.waitForTimeout(250);
+    await dj.click('[data-act="close-manage"]');
+    console.log('저장(다진):', restOf(djU), '| 카드:', await dj.textContent('.routine--rest .routine__rest span'), '| 연속 칸:', (await dj.$$eval('.routine--rest .stat__label', (e) => e.map((x) => x.textContent))).join(' / '));
+    await jm.waitForTimeout(300);
+    console.log('준민 화면 꿍 칸(다진 쉬는 중):', await jm.$$eval('.kung', (e) => e.length), '| 오늘 칸:', await jm.getAttribute('.cell.is-today', 'class'), '| 다진 카드 다시 시작 버튼(준민 화면):', await jm.$$eval('.routine--rest [data-act="wake-routine"]', (e) => e.length));
+    await jm.click('.cell.is-today');
+    console.log('준민 시트 다진 줄:', (await jm.$$eval('.sheet .row', (e) => e.map((x) => x.textContent.replace(/\s+/g, ' ').trim()))).join(' | '));
+    await jm.click('.close-btn');
+    await jm.screenshot({ path: path.join(OUT, 'web-rest-partner.png'), fullPage: true });
+    await dj.screenshot({ path: path.join(OUT, 'web-rest-card.png'), fullPage: true });
+    await dj.click('.routine__rest [data-act="wake-routine"]');
+    await dj.waitForTimeout(250);
+    console.log('다시 시작 뒤(오늘 시작한 쉬기는 지움):', restOf(djU), '| 토스트:', await dj.textContent('.toast').catch(() => '(없음)'));
+    await tick(dj, '2026-10-27', null); // 다시 체크 (뒤 흐름 그대로)
     await jm.waitForTimeout(300);
   }
 
@@ -1014,6 +1056,20 @@ async function tick(page, dateKey, key) {
   await jp.click('[data-act="pref-weekly"]'); await jp.waitForTimeout(150);
   assert.strictEqual(docs.get('users/' + jmUid).weekly, true, '다시 켬');
   console.log('돌아보기 알림 켬/끔: users.weekly 저장 확인');
+  // (v38) 함께 할 일 알림: 짝꿍 알림이 꺼져 있으면 막힘, 켜져 있으면 users.todoNotify 로 따로 저장
+  {
+    const partnerOn = (await jp.getAttribute('[data-act="pref-partner"]', 'aria-checked')) === 'true';
+    console.log('함께 할 일 스위치(짝꿍 알림 ' + (partnerOn ? '켬' : '끔') + '):', await jp.getAttribute('[data-act="pref-todo"]', 'aria-checked'), '| 막힘:', await jp.$eval('[data-act="pref-todo"]', (e) => e.disabled));
+    if (!partnerOn) { await jp.click('[data-act="pref-partner"]'); await jp.waitForTimeout(150); }
+    assert.strictEqual(await jp.getAttribute('[data-act="pref-todo"]', 'aria-checked'), 'true', '함께 할 일 알림 처음 켜짐');
+    await jp.click('[data-act="pref-todo"]'); await jp.waitForTimeout(150);
+    assert.strictEqual(docs.get('users/' + jmUid).todoNotify, false, '끄면 users.todoNotify=false');
+    assert.strictEqual(docs.get('users/' + jmUid).weekly, true, 'weekly 는 그대로');
+    await jp.click('[data-act="pref-todo"]'); await jp.waitForTimeout(150);
+    assert.strictEqual(docs.get('users/' + jmUid).todoNotify, true, '다시 켬');
+    if (!partnerOn) { await jp.click('[data-act="pref-partner"]'); await jp.waitForTimeout(150); }
+    console.log('함께 할 일 알림 켬/끔: users.todoNotify 저장 확인');
+  }
   await jp.click('[data-act="push-test"]');
   await jp.waitForTimeout(200);
   console.log('테스트 요청:', [...docs.keys()].filter((k) => k.startsWith('users/' + jmUid + '/pings/')).length, '|', await jp.textContent('.nbox__info'));

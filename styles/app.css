@@ -736,3 +736,16 @@ html.is-theming, html.is-theming * { transition: background-color .25s ease, col
 .tabbar__btn span { white-space: nowrap; }
 /* 아주 좁은 화면(≤360px)에서는 돌아보기 줄 아이콘을 빼서 루틴 이름을 더 보인다 */
 @media (max-width: 360px) { .emoji-tile.rv-tile { display: none; } }
+
+/* ── 쉬기 (v38) ── 쉬는 날 칸은 빈칸과 구별되게 옅은 빗금 */
+.lv-rest { background: repeating-linear-gradient(135deg, var(--empty) 0 3px, transparent 3px 7px); color: var(--faint); box-shadow: inset 0 0 0 1px var(--empty); }
+.routine--rest .routine__names, .routine--rest .stats, .routine--rest .routine__count, .routine--rest .emoji-tile { opacity: .55; }
+.routine__rest { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px 8px 12px; border-radius: 12px; background: var(--raised); font-size: 13px; font-weight: 600; color: var(--text); }
+.routine__rest .small-btn { flex: none; }
+.mitem--rest .mitem__name, .mitem--rest .emoji-tile { opacity: .6; }
+.mitem .small-btn + .small-btn { margin-left: -4px; }
+.rest__sub { margin: 0; font-size: 13px; color: var(--sub); }
+.rest__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rest .field__input { margin-top: 8px; }
+.rest__hint { display: block; margin-top: 6px; font-size: 12px; color: var(--sub); }
+.rest__note { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--raised); font-size: 13px; font-weight: 600; }

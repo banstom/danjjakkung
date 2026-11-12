@@ -7,8 +7,8 @@ test('한국 시간: UTC 15:10 = 다음 날 00:10', () => {
   assert.deepStrictEqual(N.kstParts(new Date('2026-10-27T12:00:00Z')), { dateKey: '2026-10-27', hhmm: '21:00' });
 });
 test('설정 기본값', () => {
-  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true });
-  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true });
+  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true });
+  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true });
 });
 test('짝꿍 체크 문구: 오늘 · 어제만, 숨김', () => {
   const r = { name: '스쿼트 100개' };
@@ -41,6 +41,22 @@ test('꿍 보내기 문구: 남은 개수', () => {
   assert.strictEqual(N.kungMessage({ who: '준민', remaining: 2 }).body, '💌 준민 님이 꿍을 보냈어요 · 오늘 루틴 2개 남았어요');
   assert.strictEqual(N.kungMessage({ who: '준민', remaining: 0 }).body, '💌 준민 님이 꿍을 보냈어요');
   assert.strictEqual(N.kungMessage({ who: '다진' }).body, '💌 다진 님이 꿍을 보냈어요');
+});
+test('함께 할 일 알림 (v38): 문구 · 숨기기 · 설정 기본은 켬', () => {
+  assert.strictEqual(N.todoMessage({ type: 'add', who: '준민', title: ' 장보기 ' }).body, '📝 준민 님이 함께 할 일을 추가했어요 · 장보기');
+  assert.strictEqual(N.todoMessage({ type: 'done', who: '다진', title: '장보기' }).body, '✅ 다진 님이 함께 할 일을 끝냈어요 · 장보기');
+  assert.strictEqual(N.todoMessage({ type: 'done', who: '다진', title: '장보기', hide: true }).body, '✅ 다진 님이 함께 할 일을 끝냈어요');
+  assert.strictEqual(N.todoMessage({ type: 'add', who: '준민', title: '' }).body, '📝 준민 님이 함께 할 일을 추가했어요');
+  assert.strictEqual(N.prefsOf({ todoNotify: false }).todo, false);
+  assert.strictEqual(N.prefsOf({ notify: { partner: true } }).todo, true);
+});
+test('쉬기 (v38): 쉬는 날은 하고 있는 루틴이 아니다 (저녁 알림 · 꿍)', () => {
+  const r = { key: 'run', owner: 'jm', start: '2026-11-01', end: null, rest: [{ from: '2026-11-05', to: '2026-11-07' }, { from: '2026-11-20', to: null }, { from: 'x' }] };
+  assert.strictEqual(N.activeOn(r, '2026-11-04'), true);
+  assert.strictEqual(N.activeOn(r, '2026-11-06'), false);
+  assert.strictEqual(N.activeOn(r, '2026-11-08'), true);
+  assert.strictEqual(N.activeOn(r, '2026-12-25'), false);
+  assert.strictEqual(N.activeOn(Object.assign({}, r, { rest: 'nope' }), '2026-11-06'), true);
 });
 test('일요일 돌아보기: 설정 기본은 켬, 끈 사람만 꺼짐', () => {
   assert.strictEqual(N.prefsOf(null).weekly, true);

@@ -158,7 +158,15 @@ test('회귀(점검 AI): 서버의 「모두 해낸 날」(functions/notify.js)�
       const start = D.toKey(day(10, 20) + Math.floor(rnd() * 12));
       const endRoll = rnd();
       const end = endRoll < 0.6 ? null : D.toKey(day(10, 18) + Math.floor(rnd() * 16)); // 시작보다 앞인 그만둔 날도 섞는다
-      rs.push({ key: 'r' + k, icon: '🏃', name: 'r' + k, who: '', owner: rnd() < 0.5 ? JUN : DAJIN, start, end, order: k });
+      // v38 쉬기: 기간 0~3개 (열린 기간 · 시작일 앞 · 끝이 앞인 이상한 기간도 섞는다)
+      const rest = [];
+      const nr = Math.floor(rnd() * 4);
+      for (let j = 0; j < nr; j++) {
+        const f = day(10, 16) + Math.floor(rnd() * 18);
+        const roll = rnd();
+        rest.push({ from: D.toKey(f), to: roll < 0.3 ? null : D.toKey(f + Math.floor(rnd() * 6) - (roll > 0.92 ? 3 : 0)) });
+      }
+      rs.push({ key: 'r' + k, icon: '🏃', name: 'r' + k, who: '', owner: rnd() < 0.5 ? JUN : DAJIN, start, end, order: k, rest: nr ? rest : undefined });
     }
     if (rnd() < 0.1) rs.push({ key: 'bad key', owner: JUN, start: '2026-10-26' }); // 이상한 키는 둘 다 뺀다
     const done = new Set();
@@ -169,6 +177,8 @@ test('회귀(점검 AI): 서버의 「모두 해낸 날」(functions/notify.js)�
     const isDone = (r, d) => done.has(r.key + '|' + D.toKey(d));
     const client = dates.filter((k) => M.dayLevel(clean, persons, D.parse(k), isDone).level === 'full').length;
     assert.equal(server, client, 'round ' + round + ' ' + JSON.stringify(rs));
+    // 하루하루 「하고 있는 루틴」도 같다 (저녁 알림 · 꿍 남은 개수)
+    clean.forEach((r) => dates.forEach((k) => assert.equal(N.activeOn(N.cleanRoutines(rs).find((x) => x.key === r.key), k), M.activeOn(r, D.parse(k)), 'active ' + round + ' ' + r.key + ' ' + k)));
   }
 });
 test('회귀: 기간을 넘겨 불러오는 동안 「함께 끝낸 일」 · 「꿍」은 앞 기간 숫자 대신 「–」', () => {

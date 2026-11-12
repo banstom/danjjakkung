@@ -43,8 +43,10 @@ service cloud.firestore {
     // 루틴: 만든 사람(owner)만 고치고 지운다
     function validRoutine() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'updatedAt'])
+      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'rest', 'updatedAt'])
         && d.owner == request.auth.uid
+        // 쉬기 (v38): [{ from, to|null }] 30개까지 — 기간 하나하나는 규칙에서 반복 검사를 못 해 앱이 정리하고 이상한 값은 화면에서 무시한다
+        && (!('rest' in d) || (d.rest is list && d.rest.size() <= 30))
         && d.name is string && d.name.size() > 0 && d.name.size() <= 20
         && d.icon is string && d.icon.size() <= 8
         && isDate(d.start)
@@ -251,9 +253,10 @@ service cloud.firestore {
       allow read: if isMember() && request.auth.uid == uid;
       // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'updatedAt'])
         && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
         && (!('weekly' in request.resource.data) || request.resource.data.weekly is bool)
+        && (!('todoNotify' in request.resource.data) || request.resource.data.todoNotify is bool)
         && (!('colors' in request.resource.data) || validColors(request.resource.data.colors));
       allow delete: if false;
 

@@ -44,6 +44,7 @@
     colors: null,        // 내 계정의 나 · 상대 색 (users 문서의 colors, 테마마다) — null = 아직 모름
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
+    todoNotifyOn: true,  // 함께 할 일 알림 (users/<uid>.todoNotify, 없으면 켬, v38)
     prefsReady: false,
     push: { busy: false, error: '', info: '' },
     toast: '',
@@ -170,7 +171,8 @@
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'send-kung': null,
+    'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'send-kung': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -385,6 +387,14 @@
     else if (act === 'stop-routine') stopRoutine();
     else if (act === 'resume-routine') resumeRoutine(btn.getAttribute('data-key'));
     else if (act === 'delete-routine') deleteRoutine();
+    else if (act === 'rest-open') { var rf0 = state.manage && state.manage.form; if (rf0 && rf0.key) { rf0.rest = { from: RT.store.mergeChecks(state.server, state.pending)[rf0.key + '|' + D.toKey(state.today)] ? 'tomorrow' : 'today', until: 'open' }; rf0.error = ''; render(true); } }
+    else if (act === 'rest-cancel') { var rf1 = state.manage && state.manage.form; if (rf1) { rf1.rest = null; render(true); } }
+    else if (act === 'rest-from' || act === 'rest-until') {
+      var rf2 = state.manage && state.manage.form && state.manage.form.rest;
+      if (rf2) { rf2[act === 'rest-from' ? 'from' : 'until'] = btn.getAttribute('data-v'); rf2.error = ''; render(true); }
+    }
+    else if (act === 'rest-save') saveRest();
+    else if (act === 'wake-routine') wakeRoutine(btn.getAttribute('data-key'));
     else if (act === 'tab') setTab(btn.getAttribute('data-tab'));
     else if (act === 'todo-toggle') toggleTodo(btn.getAttribute('data-id'));
     else if (act === 'todo-edit') editTodo(btn.getAttribute('data-id'));
@@ -481,6 +491,7 @@
     else if (act === 'pref-partner') setPref({ partner: !(currentPrefs().partner) });
     else if (act === 'pref-hide') setPref({ hide: !(currentPrefs().hide) });
     else if (act === 'pref-weekly') setWeekly(!state.weeklyOn);
+    else if (act === 'pref-todo') setTodoNotify(!state.todoNotifyOn);
   });
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
@@ -1504,7 +1515,7 @@
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
   var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
-  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn }); }
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn, todo: state.todoNotifyOn }); }
   function notifyModel() {
     var P = RT.push;
     return {
@@ -1621,11 +1632,21 @@
     state.weeklyOn = on; render(true);
     store.saveWeekly(state.uid, on).catch(function () { state.weeklyOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
+  function setTodoNotify(on) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    var before = state.todoNotifyOn;
+    state.todoNotifyOn = on; render(true);
+    store.saveTodoNotify(state.uid, on).catch(function () { state.todoNotifyOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
+  }
   function setPref(patch) {
     if (!store || !state.uid || !state.prefsReady) return;
     savePrefs(Object.assign(currentPrefs(), patch));
   }
   appEl.addEventListener('change', function (ev) {
+    // 쉬기 날짜: 고르면 안내(며칠 쉬어요)가 바뀌도록 다시 그린다
+    if ((ev.target.id === 'rs-from' || ev.target.id === 'rs-until') && state.manage && state.manage.form && state.manage.form.rest) {
+      var rsf = state.manage.form.rest; rsf[ev.target.id === 'rs-from' ? 'fromDate' : 'untilDate'] = ev.target.value; rsf.error = ''; render(true); return;
+    }
     // 날짜 · 시간 칸은 고른 순간 값만 담는다 (다시 그리지 않음)
     if (ev.target.id === 'td-date' && state.todoForm) { state.todoForm.date = ev.target.value; return; }
     if (ev.target.id === 'ev-date' && state.eventForm) { state.eventForm.date = ev.target.value; return; }
@@ -1733,6 +1754,29 @@
     resuming[key] = true;
     persist(Object.assign({}, old, { end: null }), '다시 시작해요! 쉬었던 날은 연속에서 빠져요', false)
       .then(function () { delete resuming[key]; });
+  }
+  // ── 쉬기 (v38) ──
+  function saveRest() {
+    var f = state.manage && state.manage.form;
+    var old = f && f.key ? rawRoutine(f.key) : null;
+    if (!store || !old || !f.rest || f.saving || old.owner !== state.me) return;
+    var r = routines().filter(function (x) { return x.key === old.key; })[0];
+    if (!r) return;
+    var p = RT.model.restPlan(f.rest, r, state.today, !!RT.store.mergeChecks(state.server, state.pending)[old.key + '|' + D.toKey(state.today)]);
+    if (p.error) { f.rest.error = p.error; f.rest.errorFresh = true; render(true); return; }
+    var msg = p.from === state.today ? '🌿 오늘부터 쉬어요. 쉬는 동안 연속 기록은 그대로예요' : '🌿 ' + D.label(p.from) + '부터 쉬어요';
+    persist(Object.assign({}, old, { rest: RT.model.restAdd(old.rest, p.from, p.to) }), msg, true);
+  }
+  var waking = Object.create(null);
+  function wakeRoutine(key) {
+    var old = rawRoutine(key);
+    if (!store || !old || old.owner !== state.me || waking[key]) return;
+    var r = routines().filter(function (x) { return x.key === key; })[0];
+    var info = r ? RT.model.restInfo(r, state.today) : null;
+    if (!info) return;
+    waking[key] = true;
+    persist(Object.assign({}, old, { rest: RT.model.restWake(old.rest, state.today) }), info.now ? '💪 오늘부터 다시 시작해요' : '쉬기를 취소했어요', false)
+      .then(function () { delete waking[key]; });
   }
   var lastDeleteTap = 0;
   function deleteRoutine() {
@@ -2026,6 +2070,7 @@
       store.watchUser(state.uid, function (doc, fromCache) {
         state.prefs = doc && doc.notify ? doc.notify : null;
         state.weeklyOn = !(doc && doc.weekly === false);
+        state.todoNotifyOn = !(doc && doc.todoNotify === false);
         var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};
         var colorsChanged = JSON.stringify(colors) !== JSON.stringify(state.colors);
         state.colors = colors;

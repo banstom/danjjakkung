@@ -84,6 +84,7 @@
         var done = 0, active = 0;
         var cells = days.map(function (day) {
           if (day > today) return 'future';
+          if (M.restingOn(x, day)) return 'rest';
           if (!M.activeOn(x, day)) return 'pre';
           active++;
           if (isDone(x, day)) { done++; return 'full'; }
@@ -96,7 +97,7 @@
     var allCells = days.map(function (day) {
       if (day > today) return 'future';
       var lv = M.dayLevel(routines, keys, day, isDone);
-      return lv.level === 'full' ? 'full' : lv.level === 'pre' ? 'pre' : 'none';
+      return lv.level === 'full' ? 'full' : lv.level === 'pre' ? 'pre' : lv.level === 'rest' ? 'rest' : 'none';
     });
     var allDays = allCells.filter(function (c) { return c === 'full'; }).length;
 
@@ -141,7 +142,8 @@
       mode: r.mode, page: r.page, label: r.label, title: r.title,
       canPrev: r.from > earliest, canNext: r.page > 0,
       us: { allDays: allDays, togetherDone: together, kungs: kungOk ? kungs.length : null, togetherTime: hoursText(togetherMin), togetherMin: togetherMin },
-      routine: { week: r.mode === 'week', dows: r.mode === 'week' ? ['월', '화', '수', '목', '금', '토', '일'] : [], groups: groups, all: allCells, done: cellsDone, total: cellsAll },
+      routine: { week: r.mode === 'week', dows: r.mode === 'week' ? ['월', '화', '수', '목', '금', '토', '일'] : [], groups: groups, all: allCells, done: cellsDone, total: cellsAll,
+        hasRest: allCells.indexOf('rest') >= 0 || groups.some(function (g) { return g.rows.some(function (x) { return x.cells.indexOf('rest') >= 0; }); }) },
       todos: { total: done.length, quads: QUADS.map(function (q) { return { key: q.key, label: q.label, n: quad[q.key] }; }), plan: quad.plan, unplaced: unplaced, byWho: byWho },
       kung: kungOk ? { n: kungs.length, rescued: rescued } : null,
       empty: !hasAny

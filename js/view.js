@@ -69,8 +69,9 @@
       switchRow('pref-partner', p.partner, '짝꿍 완료 알림', '짝꿍이 루틴을 체크하면 바로 알려 줘요', off) +
       '<div class="nrow"><div class="nrow__text"><label class="nrow__title" for="nt-remind">저녁 미완료 알림</label><span class="nrow__desc">이 시간까지 내 루틴을 체크하지 않았으면 알려 줘요</span></div>' +
       '<select id="nt-remind" class="nselect"' + (off ? ' disabled' : '') + '>' + opts + '</select></div>' +
+      switchRow('pref-todo', p.todo !== false && p.partner, '함께 할 일 알림', '짝꿍이 함께 할 일을 추가하거나 끝내면 알려 줘요' + (p.partner ? '' : ' · 짝꿍 알림을 켜야 와요'), off || !p.partner) +
       switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
-      switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요', off) +
+      switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요 · 함께 할 일 이름도 숨겨요', off) +
       '</div>' +
       '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +
       '<button type="button" class="close-btn" data-act="close-notify">닫기</button>' +
@@ -149,7 +150,32 @@
   }
 
   // 「내 루틴」 시트 — 목록, 추가 · 고치기 칸
+  // 쉬기 칸 (v38) — 루틴 고치기 안에서 「🌿 쉬기」를 누르면 이 칸으로 바뀐다
+  function restPanel(f) {
+    var r = f.rest;
+    function chipsOf(list, act, label) {
+      return '<div class="chips rest__chips" role="group" aria-label="' + esc(label) + '">' + list.map(function (o) {
+        return '<button type="button" class="chip" data-act="' + act + '" data-v="' + esc(o.v) + '" aria-pressed="' + !!o.on + '"' + (o.off ? ' disabled' : '') + '>' + esc(o.label) + '</button>';
+      }).join('') + '</div>';
+    }
+    return '<div class="rform rest" role="group" aria-labelledby="rest-title">' +
+      '<span id="rest-title" class="rform__title">🌿 ' + esc(f.name) + ' 쉬기</span>' +
+      '<p class="rest__sub">부상이나 사정으로 당분간 못 할 때 · 쉬는 날은 체크 칸이 없고 연속 기록도 끊기지 않아요</p>' +
+      '<div class="field"><span class="field__label">언제부터</span>' + chipsOf(r.fromOpts, 'rest-from', '언제부터') +
+      (r.from === 'date' ? '<input id="rs-from" class="field__input" type="date" value="' + esc(r.fromDate) + '" aria-label="쉬기 시작하는 날">' : '') +
+      (r.checkedToday ? '<span class="rest__hint">오늘은 이미 체크해서 내일부터 쉴 수 있어요</span>' : '') + '</div>' +
+      '<div class="field"><span class="field__label">언제까지</span>' + chipsOf(r.untilOpts, 'rest-until', '언제까지') +
+      (r.until === 'date' ? '<input id="rs-until" class="field__input" type="date" value="' + esc(r.untilDate) + '" aria-label="마지막으로 쉬는 날 (이 날 포함)">' : '') + '</div>' +
+      (r.note ? '<p class="rest__note" role="status">' + esc(r.note) + '</p>' : '') +
+      (r.error ? '<p class="rform__error"' + (r.errorFresh ? ' role="alert"' : '') + '>' + esc(r.error) + '</p>' : '') +
+      '<div class="rform__actions">' +
+      '<button type="button" class="ghost-btn" data-act="rest-cancel">돌아가기</button>' +
+      '<button type="button" class="solid-btn" data-act="rest-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '🌿 쉬기') + '</button>' +
+      '</div></div>';
+  }
+
   function routineForm(f) {
+    if (f.rest) return restPanel(f);
     var icons = f.icons.map(function (ic) {
       return '<button type="button" class="icon-pick" data-act="pick-icon" data-icon="' + esc(ic.e) + '" aria-pressed="' + ic.on + '" aria-label="아이콘 ' + esc(ic.e) + '">' + esc(ic.e) + '</button>';
     }).join('');
@@ -167,7 +193,8 @@
       '<button type="button" class="ghost-btn" data-act="cancel-form">취소</button>' +
       '<button type="button" class="solid-btn" data-act="save-routine"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : f.confirmStart ? '그래도 저장' : f.mode === 'edit' ? '저장' : '루틴 추가하기') + '</button>' +
       '</div>' +
-      (f.mode === 'edit' && (f.canStop || f.canDelete) ? '<div class="rform__more">' +
+      (f.mode === 'edit' && (f.canStop || f.canDelete || f.canRest) ? '<div class="rform__more">' +
+        (f.canRest ? '<button type="button" class="text-btn" data-act="rest-open"' + (f.saving ? ' disabled' : '') + '>🌿 당분간 쉬기</button>' : '') +
         (f.canStop ? '<button type="button" class="text-btn" data-act="stop-routine"' + (f.saving ? ' disabled' : '') + '>오늘까지 하고 그만하기</button>' : '') +
         (f.canDelete ? '<button type="button" class="text-btn text-btn--warn" data-act="delete-routine"' + (f.saving ? ' disabled' : '') + '>' + (f.confirmDelete ? '한 번 더 누르면 삭제돼요' : '삭제') + '</button>' : '') +
         '</div>' : '') +
@@ -177,12 +204,13 @@
   function manageSheet(mg, meName, entering) {
     if (!mg) return '';
     function item(it, ended) {
-      return '<div class="mitem' + (ended ? ' mitem--ended' : '') + '">' +
+      return '<div class="mitem' + (ended ? ' mitem--ended' : '') + (it.resting ? ' mitem--rest' : '') + '">' +
         '<span class="emoji-tile" aria-hidden="true">' + esc(it.icon) + '</span>' +
         '<div class="mitem__text"><span class="mitem__name">' + esc(it.name) + '</span><span class="mitem__status">' + esc(it.status) + '</span></div>' +
         (ended
           ? '<button type="button" class="small-btn" data-act="resume-routine" data-key="' + esc(it.key) + '">다시 하기</button>'
-          : (it.editing ? '' : '<button type="button" class="small-btn" data-act="edit-routine" data-key="' + esc(it.key) + '" aria-label="' + esc(it.name) + ' 수정">수정</button>')) +
+          : (it.wake && !it.editing ? '<button type="button" class="small-btn" data-act="wake-routine" data-key="' + esc(it.key) + '" aria-label="' + esc(it.name + ' ' + it.wake) + '">' + esc(it.wake) + '</button>' : '') +
+            (it.editing ? '' : '<button type="button" class="small-btn" data-act="edit-routine" data-key="' + esc(it.key) + '" aria-label="' + esc(it.name) + ' 수정">수정</button>')) +
         '</div>';
     }
     var f = mg.form;
@@ -231,7 +259,7 @@
   }
 
   function routineCard(k) {
-    return '<section class="card routine" aria-label="' + esc(k.name) + ' 기록">' +
+    return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + '">' +
       '<div class="routine__head">' +
       '<span class="emoji-tile" aria-hidden="true">' + esc(k.icon) + '</span>' +
       '<div class="routine__names"><span class="routine__name">' + esc(k.name) + '</span>' +
@@ -243,6 +271,8 @@
       '<div class="stat' + (k.clean ? ' stat--clean' : '') + '"><span class="stat__label">' + esc(k.streakLabel) + '</span><span class="stat__value">' + (k.started ? '🔥 ' : '') + esc(k.streakValue) + '</span></div>' +
       '</div>' +
       '<p class="routine__hint">' + esc(k.hint) + '</p>' +
+      (k.rest || k.restSoon ? '<div class="routine__rest"><span>' + esc(k.rest || k.restSoon) + '</span>' +
+        (k.canWake ? '<button type="button" class="small-btn" data-act="wake-routine" data-key="' + esc(k.key) + '">' + (k.rest ? '다시 시작' : '쉬기 취소') + '</button>' : '') + '</div>' : '') +
       '</section>';
   }
 

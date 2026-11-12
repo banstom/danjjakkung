@@ -4,9 +4,10 @@
    - onKungCreated  : 「꿍 보내기」 문서가 생기면 짝꿍에게 "OO 님이 꿍을 보냈어요 · 오늘 루틴 N개 남았어요"
    - onPing         : 앱의 「테스트 알림 보내기」
    - weeklyReview   : 일요일 밤 9시, 이번 주 「모두 해낸 날 · 함께 끝낸 일」을 알리고 누르면 돌아보기 탭 (v37)
+   - onTodoCreated · onTodoUpdated : 함께 할 일이 생기거나 끝나면 짝꿍에게 (v38, 누르면 할 일 탭)
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
-const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
@@ -19,6 +20,7 @@ setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10, memory: '256MiB'
 const APP_URL = 'https://banstom.github.io/danjjakkung/';
 const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으로 연다
 const LOOK_URL = APP_URL + '?tab=look';    // 일요일 돌아보기 알림은 돌아보기 탭으로
+const TODO_URL = APP_URL + '?tab=todo';    // 함께 할 일 알림은 할 일 탭으로
 const ICON = APP_URL + 'icons/icon-192.png';
 
 /* 짝꿍 찾기 — 지금은 members 전체(두 사람)가 한 짝이다.
@@ -128,6 +130,30 @@ exports.onKungCreated = onDocumentCreated('kungs/{id}', async (event) => {
     if (!ck.exists || ck.data().done !== true) remaining++;
   }
   await sendTo(k.to, N.kungMessage({ who: await nameOf(k.from), remaining }), 'kung', `kung-${today}`);
+});
+
+// 함께 할 일 (v38): 만든 사람 · 끝낸 사람의 짝꿍에게. 할 일 하나에 「추가」 · 「끝냄」 각각 한 번만 (되돌렸다 다시 끝내도)
+async function todoNotify(id, type, t, by) {
+  if (!t || t.scope !== 'together' || !by) return;
+  if (!(await once(`todo_${type}_${id}`))) return;
+  const who = await nameOf(by);
+  for (const p of await partnersOf(by)) {
+    const pf = await prefsFor(p);
+    if (!pf.partner || !pf.todo) continue; // 짝꿍 알림 · 함께 할 일 알림 둘 다 켜져 있어야
+    // 같은 tag 라 연달아 여러 개면 폰에는 마지막 것만 남는다
+    await sendTo(p, N.todoMessage({ type, who, title: t.title, hide: pf.hide }), 'todo', 'todo', TODO_URL);
+  }
+}
+exports.onTodoCreated = onDocumentCreated('todos/{id}', async (event) => {
+  const t = event.data && event.data.data();
+  if (!t) return;
+  await todoNotify(event.params.id, 'add', t, t.createdBy);
+  if (t.done === true) await todoNotify(event.params.id, 'done', t, t.doneBy); // 만들면서 바로 끝낸 경우
+});
+exports.onTodoUpdated = onDocumentUpdated('todos/{id}', async (event) => {
+  const before = event.data && event.data.before.data(), after = event.data && event.data.after.data();
+  if (!before || !after || before.done === true || after.done !== true) return; // 안 끝남 → 끝남 일 때만
+  await todoNotify(event.params.id, 'done', after, after.doneBy);
 });
 
 exports.onPing = onDocumentCreated('users/{uid}/pings/{pid}', async (event) => {

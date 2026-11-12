@@ -1,7 +1,7 @@
 /* 저장소 — Firestore(웹)와 artifact db 둘 다 같은 모양으로 쓴다.
    members/<uid>         : { name, joinedAt }   (웹: 로그인한 사람의 이름)
    config/app            : { ownerPerson, guestPerson, people }   (artifact 판에서만)
-   routines/<key>        : { icon, name, who, owner, start:'YYYY-MM-DD', end:'YYYY-MM-DD'|null, order }
+   routines/<key>        : { icon, name, who, owner, start:'YYYY-MM-DD', end:'YYYY-MM-DD'|null, order, rest?: [{ from, to|null }] }
    checks/<루틴>_<날짜>   : { routine, date:'YYYY-MM-DD', done:true, by:'사람 키', byUid, at:ISO }  (안 한 날은 문서 없음) */
 (function (root) {
   'use strict';
@@ -157,7 +157,7 @@
         return isDefault ? db.doc('cats/' + id).set({ deleted: true, updatedBy: uid, updatedAt: new Date().toISOString() }) : db.doc('cats/' + id).delete();
       },
       // ── 알림 ──
-      // users/<uid>                 : { notify: { partner, remindAt, hide }, weekly, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용 (weekly: 일요일 돌아보기, 없으면 켬)
+      // users/<uid>                 : { notify: { partner, remindAt, hide }, weekly, todoNotify, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용 (weekly: 일요일 돌아보기, 없으면 켬)
       //   colors: { '<테마 id>': { self, partner } } — 테마마다 내 화면의 나 · 상대 색 (없으면 그 테마 기본색)
       //   알림 설정과 색은 각자 자기 칸만 덮어쓴다 (mergeFields) — 한쪽을 저장해도 다른 쪽이 지워지지 않게
       // users/<uid>/devices/<기기>   : { token, platform, ua, updatedAt }                     — 기기마다 하나 (웹 · 나중에 iOS/안드로이드 앱)
@@ -176,6 +176,10 @@
       /** 일요일 저녁 돌아보기 알림 (v37) — notify 밖에 따로 둔다: 옛 버전 앱이 notify 를 통째로 저장해도 지워지지 않게. 없으면 켬 */
       saveWeekly: function (uid, on) {
         return db.doc('users/' + uid).set({ weekly: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['weekly', 'updatedAt'] });
+      },
+      /** 함께 할 일 알림 (v38) — weekly 처럼 notify 밖에 따로. 없으면 켬 */
+      saveTodoNotify: function (uid, on) {
+        return db.doc('users/' + uid).set({ todoNotify: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['todoNotify', 'updatedAt'] });
       },
       /** 색 전체를 통째로 바꾼다 (테마 하나를 기본으로 되돌리면 그 칸이 빠진다). */
       saveColors: function (uid, colors) {
@@ -208,10 +212,13 @@
           next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { key: doc.id }); }));
         }, fail);
       },
-      /** 루틴 하나 저장 (새로 만들기 · 고치기 · 그만하기 모두 이것으로). */
+      /** 루틴 하나 저장 (새로 만들기 · 고치기 · 그만하기 · 쉬기 모두 이것으로).
+       *  아는 칸만 덮어쓴다 (mergeFields, v38) — 쉬기(rest)는 바꿀 때만 넣고, 더 새 버전이 넣은 칸은 그대로 남는다 */
       saveRoutine: function (r) {
         var body = { icon: r.icon, name: r.name, who: r.who, owner: r.owner, start: r.start, end: r.end || null, order: r.order, updatedAt: new Date().toISOString() };
-        return db.doc('routines/' + r.key).set(body);
+        var fields = Object.keys(body);
+        if (Array.isArray(r.rest)) { body.rest = r.rest.map(function (p) { return { from: p.from, to: p.to || null }; }); fields.push('rest'); }
+        return db.doc('routines/' + r.key).set(body, { mergeFields: fields });
       },
       deleteRoutine: function (key) { return db.doc('routines/' + key).delete(); },
       /** next(map, meta, changes)

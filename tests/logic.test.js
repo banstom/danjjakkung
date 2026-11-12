@@ -89,7 +89,7 @@ test('화면 모델 10/26: 카드 두 장, 테니스는 D-1, 그리드는 10/18 
   assert.equal(sq.dayValue, '9일차');
   assert.equal(sq.streakValue, '4일');
   assert.equal(sq.streakLabel, '연속 · 오늘 하면 5일차');
-  assert.match(sq.hint, /최근 쉰 날 10월 21일/);
+  assert.match(sq.hint, /최근 못 한 날 10월 21일/);
   assert.equal(tn.started, false);
   assert.equal(tn.dayValue, 'D-1');
   assert.equal(m.grid.range, '2026년 10월');
