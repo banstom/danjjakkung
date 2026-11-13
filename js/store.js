@@ -1,7 +1,7 @@
 /* 저장소 — Firestore(웹)와 artifact db 둘 다 같은 모양으로 쓴다.
    members/<uid>         : { name, joinedAt }   (웹: 로그인한 사람의 이름)
    config/app            : { ownerPerson, guestPerson, people }   (artifact 판에서만)
-   routines/<key>        : { icon, name, who, owner, start:'YYYY-MM-DD', end:'YYYY-MM-DD'|null, order, rest?: [{ from, to|null }] }
+   routines/<key>        : { icon, name, who, owner, start:'YYYY-MM-DD', end:'YYYY-MM-DD'|null, order, rest?: [{ from, to|null }], when?: { cue?, at?, remind? } | null }
    checks/<루틴>_<날짜>   : { routine, date:'YYYY-MM-DD', done:true, by:'사람 키', byUid, at:ISO }  (안 한 날은 문서 없음) */
 (function (root) {
   'use strict';
@@ -177,6 +177,11 @@
       saveWeekly: function (uid, on) {
         return db.doc('users/' + uid).set({ weekly: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['weekly', 'updatedAt'] });
       },
+      /** 켬 · 끔 설정 하나 (v41 missNotify 등) — notify 밖에 따로 */
+      saveFlag: function (uid, field, on) {
+        var body = { updatedAt: new Date().toISOString() }; body[field] = !!on;
+        return db.doc('users/' + uid).set(body, { mergeFields: [field, 'updatedAt'] });
+      },
       /** 함께 할 일 알림 (v38) — weekly 처럼 notify 밖에 따로. 없으면 켬 */
       saveTodoNotify: function (uid, on) {
         return db.doc('users/' + uid).set({ todoNotify: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['todoNotify', 'updatedAt'] });
@@ -218,6 +223,8 @@
         var body = { icon: r.icon, name: r.name, who: r.who, owner: r.owner, start: r.start, end: r.end || null, order: r.order, updatedAt: new Date().toISOString() };
         var fields = Object.keys(body);
         if (Array.isArray(r.rest)) { body.rest = r.rest.map(function (p) { return { from: p.from, to: p.to || null }; }); fields.push('rest'); }
+        // 언제 할지 (v41): 고친 때만 넣는다. null = 언제든
+        if ('when' in r) { body.when = r.when && root.RT.model ? root.RT.model.whenFrom(r.when) : null; fields.push('when'); }
         return db.doc('routines/' + r.key).set(body, { mergeFields: fields });
       },
       deleteRoutine: function (key) { return db.doc('routines/' + key).delete(); },

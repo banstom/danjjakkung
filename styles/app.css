@@ -805,3 +805,31 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .gstages li.is-past { color: var(--text); }
 .gstages li.is-now { background: var(--tint); color: var(--tint-text); font-weight: 700; }
 .grules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text); }
+
+/* ── 달력 비율 5단계 (v41): 모두 해낸 날 색을 옅게 → 진하게. 100% 만 원래 색 + ✓ ── */
+.lv-s1 { background: color-mix(in srgb, var(--lv-full) 26%, var(--empty)); color: var(--empty-text); }
+.lv-s2 { background: color-mix(in srgb, var(--lv-full) 50%, var(--empty)); color: var(--empty-text); }
+.lv-s3 { background: color-mix(in srgb, var(--lv-full) 66%, var(--empty)); color: var(--lv-full-text); }
+.cell.lv-full { position: relative; font-weight: 700; }
+.cell.lv-full::after { content: '✓'; position: absolute; right: 6px; bottom: 4px; font-size: 12px; font-weight: 800; line-height: 1; }
+.legend__ramp { gap: 2px; }
+.legend__ramp .swatch + .legend__label { margin-left: 4px; }
+.day-sum { margin: 0 0 2px; font-size: 14px; font-weight: 700; color: var(--text); }
+.day-sum--full { color: var(--tint-text); }
+
+/* ── 언제 할지 · 어제 놓침 (v41) ── */
+.routine__when { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--tint-text); }
+.routine__when--any { font-weight: 500; color: var(--sub); }
+.miss-tag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--toast-fg); font-size: 11px; font-weight: 700; vertical-align: 2px; }
+.routine--missed { box-shadow: inset 0 0 0 1.5px var(--warn); }
+.miss-banner { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--tint); color: var(--tint-text); font-size: 14px; font-weight: 700; }
+.when .seg { display: flex; margin-bottom: 4px; }
+.when .seg__btn { flex: 1; white-space: nowrap; }
+.when__row { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.when__sub { font-size: 12px; font-weight: 600; color: var(--sub); }
+.when__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.when__time { display: flex; align-items: center; gap: 10px; }
+.when__time .field__input { flex: 1; }
+.when .nrow { margin-top: 8px; }
+.when__preview { margin: 8px 0 0; font-size: 12px; color: var(--sub); }
+.chip--sm { padding: 5px 10px; font-size: 12px; }

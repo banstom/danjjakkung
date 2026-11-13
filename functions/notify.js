@@ -19,7 +19,8 @@ function prefsOf(doc) {
   const n = (doc && doc.notify) || {};
   // weekly 는 notify 밖(users.weekly)에 있다 — 옛 버전 앱이 notify 를 통째로 저장해도 지워지지 않게
   return { partner: n.partner !== false, remindAt: typeof n.remindAt === 'string' ? n.remindAt : null, hide: n.hide === true, weekly: !(doc && doc.weekly === false),
-    todo: !(doc && doc.todoNotify === false) }; // 함께 할 일 알림 (v38, users.todoNotify — 없으면 켬)
+    todo: !(doc && doc.todoNotify === false), // 함께 할 일 알림 (v38, users.todoNotify — 없으면 켬)
+    miss: !(doc && doc.missNotify === false) }; // 아침 8시 어제 놓친 루틴 알림 (v41, users.missNotify — 없으면 켬)
 }
 
 /** 짝꿍이 체크했을 때 문구. 오늘 · 어제 기록만 알린다 (지난 기록을 몰아서 채울 때 알림이 쏟아지지 않게). */
@@ -64,6 +65,38 @@ function remindMessage({ missing, hide }) {
   if (hide) return { title: TITLE, body: '⏰ 오늘 기록이 아직 남아 있어요' };
   if (missing.length === 1) return { title: TITLE, body: `${missing[0].icon || '⏰'} 오늘 ${missing[0].name} 아직이에요` };
   return { title: TITLE, body: `⏰ 오늘 루틴 ${missing.length}개가 아직이에요 · ${missing.map((r) => r.name).join(', ')}` };
+}
+
+/** 언제 할지 (v41) — 앱 js/model.js whenFrom 과 같은 규칙. 없거나 이상하면 null */
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+function whenOf(r) {
+  const w = r && r.when;
+  if (!w || typeof w !== 'object') return null;
+  const cue = typeof w.cue === 'string' ? w.cue.trim().slice(0, 20) : '';
+  const at = typeof w.at === 'string' && HHMM.test(w.at) ? w.at : '';
+  if (!cue && !at) return null;
+  return { cue, at, remind: !!at && w.remind === true };
+}
+const toMin = (hhmm) => parseInt(hhmm.slice(0, 2), 10) * 60 + parseInt(hhmm.slice(3, 5), 10);
+/** 정해 둔 시각 알림을 지금 보낼 때인가: 그 시각부터 45분 안 (15분마다 돌므로 한 번은 걸림, 늦게 만든 루틴이 몇 시간 뒤 울리지 않게) */
+function dueAt(at, hhmm) {
+  if (!HHMM.test(at || '') || !HHMM.test(hhmm || '')) return false;
+  const d = toMin(hhmm) - toMin(at);
+  return d >= 0 && d < 45;
+}
+/** 아침 8시 알림 때인가 (08:00 ~ 08:44) */
+function dueMorning(hhmm) { return dueAt('08:00', hhmm); }
+/** 정해 둔 시각 알림 문구 */
+function atMessage({ r, hide }) {
+  const w = whenOf(r) || {};
+  if (hide) return { title: TITLE, body: '⏰ 정해 둔 루틴 할 시간이에요' };
+  return { title: TITLE, body: `${r.icon || '⏰'} ${w.cue ? w.cue + ' · ' : ''}${r.name} 할 시간이에요` };
+}
+/** 어제 놓친 루틴 문구 (없으면 null) */
+function missMessage({ missed, hide }) {
+  if (!missed || !missed.length) return null;
+  if (hide) return { title: TITLE, body: '🌅 어제 못 한 루틴이 있어요 · 오늘은 꼭! 💪' };
+  return { title: TITLE, body: `🌅 어제 못 한 루틴이 ${missed.length}개 있어요 · ${missed.map((r) => r.name).join(', ')} · 오늘은 꼭! 💪` };
 }
 
 /** 꿍 보내기 문구 — 남은 루틴 개수를 함께 알린다 (다 했거나 모르면 개수 없이) */
@@ -122,4 +155,4 @@ function weeklyMessage({ allDays, together }) {
   return { title: TITLE, body: '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?' };
 }
 
-module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage };
+module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };

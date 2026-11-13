@@ -5,6 +5,7 @@
    - onPing         : 앱의 「테스트 알림 보내기」
    - weeklyReview   : 일요일 밤 9시, 이번 주 「모두 해낸 날 · 함께 끝낸 일」을 알리고 누르면 돌아보기 탭 (v37)
    - onTodoCreated · onTodoUpdated : 함께 할 일이 생기거나 끝나면 짝꿍에게 (v38, 누르면 할 일 탭)
+   - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
@@ -154,6 +155,44 @@ exports.onTodoUpdated = onDocumentUpdated('todos/{id}', async (event) => {
   const before = event.data && event.data.before.data(), after = event.data && event.data.after.data();
   if (!before || !after || before.done === true || after.done !== true) return; // 안 끝남 → 끝남 일 때만
   await todoNotify(event.params.id, 'done', after, after.doneBy);
+});
+
+// 루틴 시계 (v41): 15분마다. ① 아침 8시 — 어제 해야 했는데 안 한 내 루틴이 있으면 (하루 한 번, users.missNotify 끄면 안 옴)
+//                         ② 정해 둔 시각(when.at, remind) — 그 시각부터 45분 안에, 오늘 아직 안 했으면 (루틴마다 하루 한 번)
+exports.routineClock = onSchedule({ schedule: '*/15 * * * *', timeZone: 'Asia/Seoul' }, async () => {
+  const { dateKey, hhmm } = N.kstParts(new Date());
+  const yesterday = N.addDays(dateKey, -1);
+  const morning = N.dueMorning(hhmm);
+  const rsAll = await db.collection('routines').get();
+  const routines = N.cleanRoutines(rsAll.docs.map((d) => Object.assign({ key: d.id }, d.data())));
+  const timed = routines.filter((r) => { const w = N.whenOf(r); return w && w.remind && N.dueAt(w.at, hhmm); });
+  if (!morning && !timed.length) return;
+  const checked = async (key, day) => (await db.doc(`checks/${key}_${day}`).get()).exists;
+  const prefs = {};
+  const prefOf = async (uid) => (prefs[uid] = prefs[uid] || await prefsFor(uid));
+  for (const r of timed) {
+    try {
+      if (!N.activeOn(r, dateKey) || await checked(r.key, dateKey)) continue;
+      if (!(await once(`at_${r.key}_${dateKey}`))) continue;
+      const pf = await prefOf(r.owner);
+      await sendTo(r.owner, N.atMessage({ r, hide: pf.hide }), 'at', `at_${r.key}`);
+    } catch (e) { logger.error('routineClock at', r.key, e); }
+  }
+  if (!morning) return;
+  const owners = [...new Set(routines.map((r) => r.owner).filter(Boolean))];
+  for (const uid of owners) {
+    try {
+      const pf = await prefOf(uid);
+      if (!pf.miss) continue;
+      if (!(await once(`miss_${uid}_${dateKey}`))) continue;
+      const missed = [];
+      for (const r of routines.filter((x) => x.owner === uid && N.activeOn(x, yesterday) && N.activeOn(x, dateKey))) {
+        if (!(await checked(r.key, yesterday))) missed.push(r);
+      }
+      const msg = N.missMessage({ missed, hide: pf.hide });
+      if (msg) await sendTo(uid, msg, 'miss', 'miss');
+    } catch (e) { logger.error('routineClock miss', uid, e); }
+  }
 });
 
 exports.onPing = onDocumentCreated('users/{uid}/pings/{pid}', async (event) => {

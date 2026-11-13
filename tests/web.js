@@ -327,6 +327,35 @@ async function tick(page, dateKey, key) {
     await jm.waitForTimeout(300);
   }
 
+  // 4-0d) (v41) 언제 할지 · 달력 5단계 · 시트 요약 줄
+  {
+    const routineOf = (owner) => [...docs.entries()].find(([k, v]) => k.startsWith('routines/') && v.owner === owner);
+    const jmU = accounts.get('junmin@example.com').uid;
+    await jm.click('[data-act="open-manage"]');
+    await jm.click('[data-act="edit-routine"]');
+    await jm.click('[data-act="when-mode"][data-v="set"]');
+    await jm.click('[data-act="when-cue"][data-v="수업 끝나고"]');
+    await jm.fill('#rt-at', '18:30'); await jm.dispatchEvent('#rt-at', 'change');
+    await jm.click('[data-act="when-remind"]');
+    console.log('언제 폼:', await jm.textContent('.when__preview'), '| 알림 스위치:', await jm.getAttribute('[data-act="when-remind"]', 'aria-checked'));
+    await jm.screenshot({ path: path.join(OUT, 'web-when-form.png') });
+    await jm.click('[data-act="save-routine"]'); await jm.waitForTimeout(250);
+    console.log('저장(when):', JSON.stringify(routineOf(jmU)[1].when));
+    assert.deepStrictEqual(routineOf(jmU)[1].when, { cue: '수업 끝나고', at: '18:30', remind: true });
+    await jm.click('[data-act="close-manage"]');
+    console.log('카드 「언제」:', (await jm.$$eval('.routine__when', (e) => e.map((x) => x.textContent))).join(' | '));
+    console.log('달력 칸 단계:', (await jm.$$eval('.cells .cell:not(.lv-out)', (e) => e.map((x) => (x.className.match(/lv-(\w+)/) || [])[1]))).join(' '));
+    await jm.click('.cell.is-today');
+    console.log('시트 요약 줄:', await jm.textContent('.day-sum'));
+    await jm.click('.close-btn');
+    await jm.screenshot({ path: path.join(OUT, 'web-v41-routine.png'), fullPage: true });
+    // 언제든으로 되돌리면 when: null
+    await jm.click('[data-act="open-manage"]'); await jm.click('[data-act="edit-routine"]');
+    await jm.click('[data-act="when-mode"][data-v="any"]'); await jm.click('[data-act="save-routine"]'); await jm.waitForTimeout(250);
+    assert.strictEqual(routineOf(jmU)[1].when, null, '언제든 → when null');
+    await jm.click('[data-act="close-manage"]');
+  }
+
   // 4-0c) (v40 · v41) 토마토 · 주간 퀘스트: 시작일(11/12)이 테스트 시계(10/27)보다 뒤라 10/26 으로 앞당겨 본다
   {
     for (const p of [jm, dj]) {

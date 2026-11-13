@@ -10,7 +10,7 @@
     prev: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
     next: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'
   };
-  var CELL_TEXT = { full: '함', none: '안 함', pre: '시작 전', future: '아직', rest: '쉼' };
+  var CELL_TEXT = { full: '함', none: '안 함', pre: '시작 전', future: '아직', rest: '쉼', s1: '조금 함', s2: '절반쯤 함', s3: '거의 다 함' };
 
   function stat(label, value, clean) {
     return '<div class="stat' + (clean ? ' stat--clean' : '') + '"><span class="stat__label">' + esc(label) + '</span><span class="stat__value">' + esc(value) + '</span></div>';
@@ -36,7 +36,7 @@
 
   function cells(list, both, name) {
     return list.map(function (c, i) {
-      var cls = c === 'full' ? (both ? 'rv-cell--both' : 'lv-full') : c === 'none' ? 'lv-none' : c === 'pre' ? 'rv-cell--pre' : c === 'rest' ? 'lv-rest' : 'rv-cell--future';
+      var cls = c === 'full' ? (both ? 'rv-cell--both' : 'lv-full') : c === 'none' ? 'lv-none' : c === 'pre' ? 'rv-cell--pre' : c === 'rest' ? 'lv-rest' : /^s[123]$/.test(c) ? 'lv-' + c : 'rv-cell--future';
       return '<span class="rv-cell ' + cls + '" role="img" aria-label="' + esc(name + ' ' + ['월', '화', '수', '목', '금', '토', '일'][i] + ' ' + CELL_TEXT[c]) + '"></span>';
     }).join('');
   }
@@ -54,6 +54,7 @@
       });
       body += '<div class="rv-sep"></div><span class="rv-name rv-name--both"><span class="emoji-tile rv-tile" aria-hidden="true">🎉</span><span class="rv-name__text">모두 해낸 날</span></span>' + cells(rt.all, true, '모두 해낸 날') + '</div>' +
         '<div class="grid-foot"><span class="legend"><span class="legend__item"><span class="swatch lv-none"></span>안 함</span><span class="legend__item"><span class="swatch lv-full"></span>함</span>' +
+        '<span class="legend__item"><span class="swatch lv-s1"></span><span class="swatch lv-s2"></span><span class="swatch lv-s3"></span>일부</span>' +
         '<span class="legend__item"><span class="swatch rv-cell--both"></span>모두</span>' +
         (rt.hasRest ? '<span class="legend__item"><span class="swatch lv-rest"></span>쉼</span>' : '') + '<span class="legend__item"><span class="swatch rv-cell--pre"></span>시작 전 · 아직</span></span></div>';
     } else {

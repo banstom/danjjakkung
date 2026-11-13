@@ -101,7 +101,7 @@ test('화면 모델 10/26: 카드 두 장, 테니스는 D-1, 그리드는 10/18 
   assert.equal(c26.today, true);
   assert.equal(c26.level, 'none');
   // 테니스 시작 전에 다진만 스쿼트한 날은 '모두'가 아니라 '일부'
-  assert.equal(m.grid.cells.find((c) => c.day === day(10, 22)).level, 'half');
+  assert.equal(m.grid.cells.find((c) => c.day === day(10, 22)).level, 's3');
   assert.equal(m.grid.cells.find((c) => c.day === day(10, 27)).level, 'future');
   assert.equal(m.both.value, '—');
 });
@@ -187,9 +187,10 @@ test('[점검 9] owner가 이상하거나 all이면 그 루틴을 뺀다', () =>
 test('[점검 10·12] 오늘 칸 이름에 "오늘", 범례는 루틴 수에 맞게', () => {
   const m = M.build({ config, checks, today: day(10, 26), filter: 'all', page: 0, sheetDay: null });
   assert.match(m.grid.cells.find((c) => c.today).aria, /오늘/);
-  assert.deepEqual(m.grid.legend.map((l) => l.label), ['안 함', '일부', '모두']);
+  assert.deepEqual(m.grid.legend.map((l) => l.level), ['none', 's1', 's2', 's3', 'full']); // v41: 비율 5단계
+  assert.deepEqual(m.grid.legend.map((l) => l.label), ['안 함', '', '', '많이', '모두']);
   const three = { routines: config.routines.concat([{ key: 'run', icon: '', name: '런닝', who: '다진', owner: 'her', start: '2026-10-18' }]) };
-  assert.equal(M.build({ config: three, checks, today: day(10, 26), filter: 'all' }).grid.legend[1].label, '일부');
+  assert.equal(M.build({ config: three, checks, today: day(10, 26), filter: 'all' }).grid.legend.length, 5);
 });
 
 test('[점검 6] 저장 중인 탭은 오래된 저장소 값보다 앞선다', () => {
@@ -218,7 +219,7 @@ test('[점검 1] 저장이 끝내 실패하면 setDone이 거절된다(화면이
 
 test('[사용자 지적] 한 사람만 루틴을 하던 기간은 전체 보기에서 "모두" 색이 아니다', () => {
   const all = M.build({ config, checks, today: day(10, 26), filter: 'all' });
-  for (const d of [18, 22, 23, 24, 25]) assert.equal(all.grid.cells.find((c) => c.day === day(10, d)).level, 'half', '10/' + d);
+  for (const d of [18, 22, 23, 24, 25]) assert.equal(all.grid.cells.find((c) => c.day === day(10, d)).level, 's3', '10/' + d);
   const her = M.build({ config, checks, today: day(10, 26), filter: 'her' });
   assert.equal(her.grid.cells.find((c) => c.day === day(10, 22)).level, 'full'); // 다진 칩에서는 완료
   const c = { ...checks, 'squat|2026-10-27': true, 'tennis|2026-10-27': true };
@@ -319,7 +320,7 @@ test('루틴을 그만하면 마지막 날까지만 세고, 다음 날부터 카
   const m = M.build({ config: c, checks, today: day(10, 27), me: 'me' });
   assert.deepEqual(m.cards.map((k) => k.key), ['tennis']);
   assert.equal(m.grid.cells.find((x) => x.day === day(10, 26)).level, 'pre'); // 그만둔 뒤 테니스 시작 전 → 루틴 없음
-  assert.equal(m.grid.cells.find((x) => x.day === day(10, 22)).level, 'half'); // 지난 기록은 남는다
+  assert.equal(m.grid.cells.find((x) => x.day === day(10, 22)).level, 's3'); // 지난 기록은 남는다
   const sheet = M.build({ config: c, checks, today: day(10, 27), me: 'me', sheetDay: day(10, 27) }).sheet;
   assert.deepEqual(sheet.rows.map((r) => r.key), ['tennis']); // 그만둔 루틴은 시트에도 없다
 });
@@ -332,7 +333,7 @@ test('나중에 루틴을 추가해도 지난 "모두" 날은 그대로 (사람 
   // 11월 1일부터는 준민이 테니스와 독서를 둘 다 해야 '모두'
   const c2 = { ...c, 'squat|2026-11-01': true, 'tennis|2026-11-01': true };
   const nov = M.build({ config: cfg3(extra), checks: c2, today: day(11, 1), me: 'me' });
-  assert.equal(nov.grid.cells.find((x) => x.day === day(11, 1)).level, 'half');
+  assert.equal(nov.grid.cells.find((x) => x.day === day(11, 1)).level, 's3');
   const c3 = { ...c2, 'read|2026-11-01': true };
   assert.equal(M.build({ config: cfg3(extra), checks: c3, today: day(11, 1) }).grid.cells.find((x) => x.day === day(11, 1)).level, 'full');
 });

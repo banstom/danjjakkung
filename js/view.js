@@ -69,6 +69,7 @@
       switchRow('pref-partner', p.partner, '짝꿍 완료 알림', '짝꿍이 루틴을 체크하면 바로 알려 줘요', off) +
       '<div class="nrow"><div class="nrow__text"><label class="nrow__title" for="nt-remind">저녁 미완료 알림</label><span class="nrow__desc">이 시간까지 내 루틴을 체크하지 않았으면 알려 줘요</span></div>' +
       '<select id="nt-remind" class="nselect"' + (off ? ' disabled' : '') + '>' + opts + '</select></div>' +
+      switchRow('pref-miss', p.miss !== false, '아침에 어제 놓친 루틴 알려 주기', '어제 못 한 내 루틴이 있으면 아침 8시에 알려 줘요 · 이틀 연속은 안 놓치게', off) +
       switchRow('pref-todo', p.todo !== false && p.partner, '함께 할 일 알림', '짝꿍이 함께 할 일을 추가하거나 끝내면 알려 줘요' + (p.partner ? '' : ' · 짝꿍 알림을 켜야 와요'), off || !p.partner) +
       switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
       switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요 · 함께 할 일 이름도 숨겨요', off) +
@@ -232,6 +233,27 @@
       '</div></div>';
   }
 
+  // 「언제 할까요?」 (v41) — 무엇 다음에(문장) · 시각 둘 다 가능, 둘 다 비우면 언제든
+  function whenField(w) {
+    if (!w) return '';
+    var out = '<div class="field when"><span class="field__label" id="rt-when-label">언제 할까요?</span>' +
+      '<div class="seg" role="group" aria-labelledby="rt-when-label">' +
+      '<button type="button" class="seg__btn" data-act="when-mode" data-v="set" aria-pressed="' + (w.mode === 'set') + '">정해 둘래요</button>' +
+      '<button type="button" class="seg__btn" data-act="when-mode" data-v="any" aria-pressed="' + (w.mode === 'any') + '">언제든</button></div>';
+    if (w.mode === 'set') {
+      out += '<label class="when__row"><span class="when__sub">무엇 다음에</span>' +
+        '<input id="rt-cue" class="field__input" type="text" maxlength="' + w.cueMax + '" autocomplete="off" placeholder="예: 일어나자마자" value="' + esc(w.cue) + '"></label>' +
+        '<div class="chips when__chips" role="group" aria-label="예시">' + w.cues.map(function (c) {
+          return '<button type="button" class="chip chip--sm" data-act="when-cue" data-v="' + esc(c.v) + '" aria-pressed="' + c.on + '">' + esc(c.v) + '</button>';
+        }).join('') + '</div>' +
+        '<label class="when__row"><span class="when__sub">몇 시에</span><span class="when__time"><input id="rt-at" class="field__input" type="time" value="' + esc(w.at) + '">' +
+        (w.at ? '<button type="button" class="text-btn" data-act="when-clear-at">시각 지우기</button>' : '') + '</span></label>' +
+        (w.at ? switchRow('when-remind', w.remind, '이 시각에 알려 주기', '아직 안 했으면 ' + w.at + '쯤 알림이 와요 (최대 15분 늦을 수 있어요)', false) : '') +
+        '<p class="when__preview">카드에는 「' + esc(w.preview) + '」로 보여요</p>';
+    }
+    return out + '</div>';
+  }
+
   function routineForm(f) {
     if (f.rest) return restPanel(f);
     var icons = f.icons.map(function (ic) {
@@ -245,6 +267,7 @@
       '<div class="field"><span class="field__label" id="rt-icon-label">아이콘</span><div class="icon-grid" role="group" aria-labelledby="rt-icon-label">' + icons + '</div></div>' +
       '<label class="field"><span class="field__label">시작일</span>' +
       '<input id="rt-start" class="field__input" type="date" value="' + esc(f.start) + '"' + (f.error ? ' aria-describedby="rt-error"' : '') + '></label>' +
+      whenField(f.when) +
       // 새로 생긴 안내만 소리 내어 읽게 한다 (다시 그릴 때마다 반복하지 않도록)
       (f.error ? '<p id="rt-error" class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
       '<div class="rform__actions">' +
@@ -293,7 +316,13 @@
       return '<button type="button" class="cell lv-' + c.level + (c.today ? ' is-today" aria-current="date' : '') + '" data-act="day" data-day="' + c.day + '"' +
         (c.disabled ? ' disabled' : '') + ' aria-label="' + esc(c.aria) + '">' + esc(c.label) + '</button>';
     }).join('');
-    var legend = g.legend.map(function (l) { return '<span class="legend__item"><span class="swatch lv-' + l.level + '"></span>' + esc(l.label) + '</span>'; }).join('');
+    // 옅은 세 칸은 붙여서 한 덩어리로 (적게 → 많이)
+    var legend = g.legend.map(function (l) {
+      var sw = '<span class="swatch lv-' + l.level + '"></span>';
+      return /^s[12]$/.test(l.level) ? sw : /^s3$/.test(l.level) ? sw + '<span class="legend__label">' + esc(l.label) + '</span></span>' :
+        l.level === 'none' && g.legend.length > 2 ? '<span class="legend__item">' + sw + esc(l.label) + '</span><span class="legend__item legend__ramp">' :
+        '<span class="legend__item">' + sw + esc(l.label) + '</span>';
+    }).join('');
     return '<section class="card grid-card" aria-label="달성 그리드">' +
       '<div class="grid-head">' +
       '<button type="button" class="icon-btn" data-act="page" data-dir="1" aria-label="이전 달"' + (g.canPrev ? '' : ' disabled') + '>' + CHEVRON.prev + '</button>' +
@@ -328,11 +357,12 @@
   }
 
   function routineCard(k) {
-    return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + '">' +
+    return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + (k.missed ? ' routine--missed' : '') + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + (k.missed ? ', 어제 놓침' : '') + '">' +
       '<div class="routine__head">' +
       '<span class="emoji-tile" aria-hidden="true">' + esc(k.icon) + '</span>' +
-      '<div class="routine__names"><span class="routine__name">' + esc(k.name) + '</span>' +
-      '<span class="routine__who"><span class="dot dot--' + esc(k.dot) + '"></span>' + esc(k.who) + ' · ' + esc(k.startText) + '</span></div>' +
+      '<div class="routine__names"><span class="routine__name">' + esc(k.name) + (k.missed ? '<span class="miss-tag">어제 놓침</span>' : '') + '</span>' +
+      '<span class="routine__who"><span class="dot dot--' + esc(k.dot) + '"></span>' + esc(k.who) + ' · ' + esc(k.startText) + '</span>' +
+      (k.rest ? '' : '<span class="routine__when' + (k.whenSet ? '' : ' routine__when--any') + '">' + esc(k.when) + '</span>') + '</div>' +
       (k.count ? '<span class="routine__count">달성 ' + esc(k.count) + '</span>' : '') +
       '</div>' +
       '<div class="stats">' +
@@ -371,6 +401,7 @@
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="sheet-title" class="sheet__title">' + esc(s.title) + '</h2>' + (s.isToday ? '<span class="tag">오늘</span>' : '') + '</div>' +
+      '<p class="day-sum' + (s.full ? ' day-sum--full' : '') + '">' + esc(s.summary) + (s.full ? ' ✓' : '') + '</p>' +
       '<p class="sheet__sub">' + esc(s.sub) + '</p>' +
       '<div class="rows">' + rows + '</div>' +
       '<button type="button" class="close-btn" data-act="close">닫기</button>' +
@@ -455,6 +486,7 @@
         (m.canManage ? '<button type="button" class="add-btn" data-act="open-manage">＋ 내 루틴</button>' : '');
     } else {
       out += (m.needsPick ? picker(m.people) : '') + chips(m.chips, m.canManage) + growCard(m.grow) + grid(m.grid) + kungBar(m.kung) + questCard(m.quest) +
+        (m.missedMine ? '<p class="miss-banner" role="status">어제 못 한 루틴이 ' + esc(m.missedMine) + '개 있어요 · 오늘은 꼭! 💪</p>' : '') +
         (m.emptyFilter ? '<p class="muted muted--card">지금 하고 있는 루틴이 없어요</p>' : routineGroups(m)) + both(m.both);
     }
     if (status === 'ready') {

@@ -7,8 +7,8 @@ test('한국 시간: UTC 15:10 = 다음 날 00:10', () => {
   assert.deepStrictEqual(N.kstParts(new Date('2026-10-27T12:00:00Z')), { dateKey: '2026-10-27', hhmm: '21:00' });
 });
 test('설정 기본값', () => {
-  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true });
-  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true });
+  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true, miss: true });
+  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true, miss: true });
 });
 test('짝꿍 체크 문구: 오늘 · 어제만, 숨김', () => {
   const r = { name: '스쿼트 100개' };

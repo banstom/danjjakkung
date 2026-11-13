@@ -36,7 +36,7 @@ test('루틴 × 요일: 사람별로 묶고, 시작 전은 pre, 모두 해낸 �
   const water = m.routine.groups[1].rows[1];
   assert.deepEqual(water.cells, ['pre', 'pre', 'pre', 'none', 'none', 'full', 'full']);
   // 모두: 10/26(둘 다 — water 시작 전), 10/31(셋 다). 11/1은 다진이 안 해서 아님
-  assert.deepEqual(m.routine.all, ['full', 'none', 'none', 'none', 'none', 'full', 'none']);
+  assert.deepEqual(m.routine.all, ['full', 's2', 'none', 'none', 'none', 'full', 's1']); // v41: 일부 한 날은 비율 단계
   assert.equal(m.us.allDays, 2);
   assert.equal(m.routine.done, 8 - 1); // 지난주 칸만 (11/2 run 은 이번 주)
   assert.equal(m.routine.total, 7 + 7 + 4);

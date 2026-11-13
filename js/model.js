@@ -12,6 +12,29 @@
   var SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
   var NAME_MAX = 20;
   var REST_MAX = 30;
+  var CUE_MAX = 20;
+  var HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+  var WHEN_CUES = ['일어나자마자', '아침 먹고 나서', '수업 끝나고', '씻기 전에', '자기 전에'];
+
+  /** 언제 할지 (v41): { cue?: 무엇 다음에(20자), at?: 'HH:MM', remind?: 시각에 알림 } — 둘 다 없으면 null(언제든) */
+  function whenFrom(w) {
+    if (!w || typeof w !== 'object') return null;
+    var cue = typeof w.cue === 'string' ? w.cue.trim().slice(0, CUE_MAX) : '';
+    var at = typeof w.at === 'string' && HHMM.test(w.at) ? w.at : '';
+    if (!cue && !at) return null;
+    var out = {};
+    if (cue) out.cue = cue;
+    if (at) { out.at = at; if (w.remind === true) out.remind = true; }
+    return out;
+  }
+  /** 카드에 보일 「언제」 — 아이콘은 시각(없으면 문장)으로 아침 · 낮 · 저녁 */
+  function whenText(w) {
+    if (!w) return '언제든';
+    var h = w.at ? parseInt(w.at, 10) : null, c = w.cue || '';
+    var icon = h !== null ? (h < 5 ? '🌙' : h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙')
+      : /일어나|아침|출근|등교/.test(c) ? '☀️' : /자기|잠|밤|씻/.test(c) ? '🌙' : /점심|수업|학교|퇴근|하교/.test(c) ? '🌤️' : '📌';
+    return icon + ' ' + [c, w.at || ''].filter(Boolean).join(' · ');
+  }
 
   /**
    * 쉬기 기간 정리: [{ from, to|null }] (날짜 문자열) → [{ from, to }] (day number, to = null 은 다시 시작할 때까지).
@@ -63,7 +86,7 @@
         who: String(r.who || ''), owner: String(r.owner || r.who || ''),
         start: D.parse(r.start), end: isNaN(end) ? null : end,
         order: typeof r.order === 'number' ? r.order : i,
-        rest: r.rest
+        rest: r.rest, when: whenFrom(r.when)
       };
     }).filter(function (r) {
       return SAFE_ID.test(r.key) && SAFE_ID.test(r.owner) && r.owner !== 'all' && !isNaN(r.start);
@@ -120,7 +143,10 @@
     var who = names[r.owner] || r.who;
     var ri = restInfo(r, today);
     // 사람 표시 점 색: 먼저 루틴을 만든 사람 = 진한 색, 다음 사람 = 중간 색 (사람 키가 무엇이든)
+    // 어제 해야 했는데 안 한 루틴 (v41 — 이틀 연속은 안 놓치기). 쉬는 날 · 시작 전 · 그만둔 뒤는 아님
+    var missed = activeOn(r, today - 1) && activeOn(r, today) && !isDone(r, today - 1) && !isDone(r, today);
     var base = { key: r.key, icon: r.icon, name: r.name, who: who, owner: r.owner, dot: slots[r.owner] === 0 ? 'her' : 'me', startText: D.label(r.start) + ' 시작',
+      when: whenText(r.when), whenSet: !!r.when, missed: missed,
       rest: ri && ri.now ? ri.text : '', restSoon: ri && !ri.now ? ri.text : '', canWake: !!ri && !!me && r.owner === me };
     if (!sum.started) {
       return Object.assign(base, {
@@ -165,7 +191,19 @@
       var mine = active.filter(function (r) { return r.owner === p; });
       return mine.length > 0 && mine.every(function (r) { return isDone(r, day); });
     });
-    return { level: everyone ? 'full' : done > 0 ? 'half' : 'none', active: active.length, done: done };
+    var level = everyone ? 'full' : done > 0 ? 'half' : 'none';
+    return { level: level, active: active.length, done: done, pct: Math.round(done / active.length * 100), step: stepOf(level, done, active.length) };
+  }
+
+  /**
+   * 달력 칸 단계 (v41): 둘이 합쳐 한 비율 — 0% · 1–33% · 34–66% · 67–99% · 100%(모두 해낸 날)
+   * 'full' 은 dayLevel 의 「모두 해낸 날」과 같은 뜻 (퀘스트 · 토마토와 같음). 비율이 100%라도 루틴이 없는 사람이 있으면 s3
+   */
+  function stepOf(level, done, active) {
+    if (level === 'full') return 'full';
+    if (!done) return 'none';
+    var pct = done / active * 100;
+    return pct <= 33.5 ? 's1' : pct <= 66.5 ? 's2' : 's3';
   }
 
   var MONTHS_AROUND = 12;
@@ -189,18 +227,17 @@
       if (day < monthFirst || day > monthLast) { cells.push({ day: day, level: 'out', out: true }); continue; }
       var future = day > today;
       var dl = dayLevel(set, persons, day, isDone);
-      var lv = future ? 'future' : dl.level;
+      var lv = future ? 'future' : dl.level === 'pre' || dl.level === 'rest' ? dl.level : dl.step;
       cells.push({
         day: day, level: lv, today: day === today,
         label: String(D.parts(day).d),
         disabled: future || lv === 'pre' || lv === 'rest',
-        aria: D.full(day) + (day === today ? ', 오늘' : '') + (future ? '' : lv === 'pre' ? ', 루틴 없음' : lv === 'rest' ? ', 쉬는 날' : ', ' + dl.active + '개 중 ' + dl.done + '개 완료')
+        aria: D.full(day) + (day === today ? ', 오늘' : '') + (future ? '' : lv === 'pre' ? ', 루틴 없음' : lv === 'rest' ? ', 쉬는 날' : ', ' + dl.active + '개 중 ' + dl.done + '개 완료' + (lv === 'full' ? ', 모두 해냄' : ''))
       });
     }
-    var legend = persons.length > 1
-      ? [{ level: 'none', label: '안 함' }, { level: 'half', label: '일부' }, { level: 'full', label: '모두' }]
-      : [{ level: 'none', label: '안 함' }, { level: 'half', label: '일부' }, { level: 'full', label: '완료' }];
-    if (persons.length === 1 && set.length === 1) legend = [legend[0], legend[2]];
+    // 범례: 안 함 · 옅은 → 진한 세 칸(적게 → 많이) · 모두(✓)
+    var legend = [{ level: 'none', label: '안 함' }, { level: 's1', label: '' }, { level: 's2', label: '' }, { level: 's3', label: '많이' }, { level: 'full', label: persons.length > 1 ? '모두' : '완료' }];
+    if (persons.length === 1 && set.length === 1) legend = [legend[0], legend[4]];
     if (cells.some(function (c) { return c.level === 'rest'; })) legend.push({ level: 'rest', label: '쉼' });
     return { cells: cells, legend: legend, page: p, canPrev: p < maxPage, canNext: p > minPage, isThisMonth: p === 0, range: y + '년 ' + m + '월' };
   }
@@ -258,10 +295,19 @@
     });
     var mineActive = active.filter(function (r) { return r.owner === me; });
     var sub = active.length + '개 중 ' + cnt + '개 완료';
+    // 요약 줄 (v41): 둘이 합쳐 7 / 9개 (78%) · 준민 4/5 · 다진 3/4
+    var owners = [];
+    active.forEach(function (r) { if (owners.indexOf(r.owner) < 0) owners.push(r.owner); });
+    if (persons && persons.length) owners.sort(function (a, b) { return persons.indexOf(a) - persons.indexOf(b); });
+    var summary = (owners.length > 1 ? '둘이 합쳐 ' : '') + cnt + ' / ' + active.length + '개 (' + Math.round(cnt / active.length * 100) + '%)' +
+      (owners.length > 1 ? owners.map(function (o) {
+        var a = active.filter(function (r) { return r.owner === o; });
+        return ' · ' + (names[o] || o) + ' ' + a.filter(function (r) { return isDone(r, day); }).length + '/' + a.length;
+      }).join('') : '');
     if (isToday && dayLevel(routines, persons, day, isDone).level === 'full') sub = '모두 완료! 오늘도 해냈어요';
     if (!me) sub += ' · 먼저 누구인지 골라 주세요';
     else if (mineActive.length) sub += isToday ? ' · 내 루틴만 체크할 수 있어요' : ' · 내 루틴은 눌러서 고칠 수 있어요';
-    return { day: day, title: D.full(day), isToday: isToday, sub: sub, rows: rows };
+    return { day: day, title: D.full(day), isToday: isToday, sub: sub, summary: summary, full: dayLevel(routines, persons, day, isDone).level === 'full', rows: rows };
   }
 
   /** 「내 루틴」 시트 */
@@ -297,7 +343,8 @@
         canStop: !!editing && (editing.end === null || editing.end > today) && editing.start <= today,
         canDelete: !!editing && !hasChecks(editing),
         canRest: !!editing && (editing.end === null || editing.end > today) && !restInfo(editing, today),
-        rest: editing && f.rest ? restForm(f.rest, editing, today, hasCheckOn(editing, today)) : null
+        rest: editing && f.rest ? restForm(f.rest, editing, today, hasCheckOn(editing, today)) : null,
+        when: whenForm(f.when)
       };
     }
     return {
@@ -305,6 +352,27 @@
       ended: mine.filter(function (r) { return r.end !== null && r.end < today; }).map(item),
       form: form
     };
+  }
+
+  /** 「언제 할까요?」 폼 (v41) */
+  function whenForm(w) {
+    w = w || { mode: 'any' };
+    var cue = w.cue || '';
+    return {
+      mode: w.mode === 'set' ? 'set' : 'any', cue: cue, at: w.at || '', remind: !!w.remind && !!w.at, cueMax: CUE_MAX,
+      cues: WHEN_CUES.map(function (c) { return { v: c, on: c === cue.trim() }; }),
+      preview: w.mode === 'set' ? whenText(whenFrom({ cue: cue, at: w.at })) : '언제든'
+    };
+  }
+  /** 폼 → 저장할 when (null = 언제든) */
+  function whenSave(w) {
+    if (!w || w.mode !== 'set') return null;
+    return whenFrom({ cue: w.cue, at: w.at, remind: !!w.remind });
+  }
+  /** 저장된 when → 폼 */
+  function whenEdit(raw) {
+    var w = whenFrom(raw);
+    return w ? { mode: 'set', cue: w.cue || '', at: w.at || '', remind: !!w.remind } : { mode: 'any', cue: '', at: '', remind: false };
   }
 
   var REST_UNTIL = [{ v: 'open', label: '다시 시작할 때까지' }, { v: '3', label: '3일' }, { v: '7', label: '1주' }, { v: '14', label: '2주' }, { v: 'date', label: '날짜까지' }];
@@ -368,12 +436,36 @@
 
   /** 입력한 루틴 확인. 문제가 있으면 한국어 안내, 없으면 ''. */
   function validateRoutine(f) {
+    if (f.when && f.when.mode === 'set') {
+      if (String(f.when.cue || '').trim().length > CUE_MAX) return '「언제」 문장은 ' + CUE_MAX + '자까지 쓸 수 있어요';
+      if (f.when.at && !HHMM.test(f.when.at)) return '시각을 다시 골라 주세요';
+    }
     var name = String(f.name || '').trim();
     if (!name) return '루틴 이름을 적어 주세요';
     if (name.length > NAME_MAX) return '이름은 ' + NAME_MAX + '자까지 쓸 수 있어요';
     if (!ICONS.isAllowed(f.icon)) return '아이콘을 골라 주세요';
     if (isNaN(D.parse(f.start))) return '시작일을 골라 주세요';
     return '';
+  }
+
+  /**
+   * 카드 순서 (v41): 어제 놓친 것 → 「언제」를 정한 것(시각 순, 시각 없이 문장만 정한 것은 그 뒤) → 언제든 → 시작 전.
+   * 같은 자리에선 원래 루틴 순서 그대로 (안정 정렬)
+   */
+  function sortCards(cards, routines, today) {
+    var byKey = {};
+    routines.forEach(function (r) { byKey[r.key] = r; });
+    function rank(c) {
+      var r = byKey[c.key];
+      if (!r || r.start > today) return [4, ''];
+      if (c.missed) return [0, ''];
+      if (r.when && r.when.at) return [1, r.when.at];
+      if (r.when) return [2, ''];
+      return [3, ''];
+    }
+    return cards.map(function (c, i) { return { c: c, i: i, k: rank(c) }; }).sort(function (a, b) {
+      return a.k[0] - b.k[0] || (a.k[1] < b.k[1] ? -1 : a.k[1] > b.k[1] ? 1 : 0) || a.i - b.i;
+    }).map(function (x) { return x.c; });
   }
 
   /**
@@ -402,7 +494,7 @@
     var persons = filter === 'all' ? allPersons : [filter];
     var visibleCards = set.filter(function (r) { return r.end === null || r.end >= today; });
     var activeToday = routines.filter(function (r) { return activeOn(r, today); });
-    var cards = visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); });
+    var cards = sortCards(visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); }), routines, today);
     // 카드는 사람별로 모은다 (v39) — 순서는 위 사람 칩과 같고, 한 사람 안에서는 루틴 순서 그대로
     var groups = persons.map(function (p) {
       var list = cards.filter(function (c) { return c.owner === p; });
@@ -418,6 +510,8 @@
       grid: gridFor(set, persons, today, state.page || 0, isDone),
       cards: cards,
       groups: groups,
+      // 어제 놓친 내 루틴 (v41): 「어제 못 한 루틴이 n개 있어요 · 오늘은 꼭!」
+      missedMine: state.me ? cards.filter(function (c) { return c.missed && c.owner === state.me; }).length : 0,
       grouped: filter === 'all' && groups.length > 1,
       both: filter === 'all' ? bothFor(routines, persons, today, isDone) : null,
       sheet: sheetFor(routines, names, today, state.sheetDay, isDone, state.me || null, state.meta, allPersons),
@@ -442,7 +536,7 @@
     return { to: to, toName: names[to], remaining: remaining, total: theirs.length, status: sent ? 'sent' : remaining === 0 ? 'done' : 'ready' };
   }
 
-  var api = { build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn, aliveOn: aliveOn, restingOn: restingOn, restOn: restOn, restFrom: restFrom, restInfo: restInfo,
+  var api = { stepOf: stepOf, whenFrom: whenFrom, whenText: whenText, whenSave: whenSave, whenEdit: whenEdit, sortCards: sortCards, WHEN_CUES: WHEN_CUES, build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn, aliveOn: aliveOn, restingOn: restingOn, restOn: restOn, restFrom: restFrom, restInfo: restInfo,
     restPlan: restPlan, restAdd: restAdd, restWake: restWake, dayLevel: dayLevel };
   root.RT = RT;
   RT.model = api;

@@ -97,7 +97,7 @@
     var allCells = days.map(function (day) {
       if (day > today) return 'future';
       var lv = M.dayLevel(routines, keys, day, isDone);
-      return lv.level === 'full' ? 'full' : lv.level === 'pre' ? 'pre' : lv.level === 'rest' ? 'rest' : 'none';
+      return lv.level === 'pre' || lv.level === 'rest' ? lv.level : lv.step; // v41: 달력과 같은 5단계 (none · s1 · s2 · s3 · full)
     });
     var allDays = allCells.filter(function (c) { return c === 'full'; }).length;
 
