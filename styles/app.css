@@ -833,3 +833,9 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .when .nrow { margin-top: 8px; }
 .when__preview { margin: 8px 0 0; font-size: 12px; color: var(--sub); }
 .chip--sm { padding: 5px 10px; font-size: 12px; }
+
+/* ── 칸 시트 사람별 묶음 (v42) ── */
+.sgroup { display: flex; flex-direction: column; gap: 8px; }
+.sgroup + .sgroup { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sgroup__head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.sgroup .row__who { display: none; }

@@ -98,3 +98,16 @@ test('서버: whenOf · dueAt(그 시각부터 45분 안) · 아침 8시 · 문�
     assert.deepEqual(a ? { cue: a.cue || '', at: a.at || '', remind: !!a.remind } : null, s, JSON.stringify(w));
   }
 });
+
+test('(v42) 칸 시트: 진행 중인 루틴만, 사람별로 묶음 (사람 칩 순서 · n/m)', () => {
+  const config = { people, routines: [
+    R('a', 'me', { order: 0 }), R('b', 'her', { order: 1 }), R('c', 'me', { order: 2 }),
+    R('late', 'her', { order: 3, start: key(11, 20) }),                       // 시작 전
+    R('nap', 'her', { order: 4, rest: [{ from: key(11, 10), to: null }] }),   // 쉬는 중
+    R('old', 'me', { order: 5, end: key(11, 5) })                             // 그만둔 뒤
+  ] };
+  const checks = { ['a|' + key(11, 12)]: true };
+  const m = M.build({ config, checks, today: day(11, 12), filter: 'all', page: 0, sheetDay: day(11, 12), me: 'me' });
+  assert.deepEqual(m.sheet.rows.map((r) => r.key).sort(), ['a', 'b', 'c']);
+  assert.deepEqual(m.sheet.groups.map((g) => [g.name, g.mine, g.count, g.rows.map((r) => r.key).join(',')]), [['준민', true, '1/2', 'a,c'], ['다진', false, '0/1', 'b']]);
+});

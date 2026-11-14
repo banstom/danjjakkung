@@ -347,6 +347,8 @@ async function tick(page, dateKey, key) {
     console.log('달력 칸 단계:', (await jm.$$eval('.cells .cell:not(.lv-out)', (e) => e.map((x) => (x.className.match(/lv-(\w+)/) || [])[1]))).join(' '));
     await jm.click('.cell.is-today');
     console.log('시트 요약 줄:', await jm.textContent('.day-sum'));
+    console.log('(v42) 시트 묶음:', (await jm.$$eval('.sgroup__head', (e) => e.map((x) => x.textContent.replace(/\s+/g, ' ').trim()))).join(' | '));
+    await jm.screenshot({ path: path.join(OUT, 'web-v42-sheet.png') });
     await jm.click('.close-btn');
     await jm.screenshot({ path: path.join(OUT, 'web-v41-routine.png'), fullPage: true });
     // 언제든으로 되돌리면 when: null

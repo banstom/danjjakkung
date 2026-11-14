@@ -275,7 +275,8 @@
     var active = shown.filter(function (r) { return activeOn(r, day); });
     if (!active.length) return null;
     var cnt = active.filter(function (r) { return isDone(r, day); }).length;
-    var rows = shown.map(function (r) {
+    // v42: 그날 진행 중인 루틴만 (시작 전 · 쉬는 날 · 그만둔 뒤는 빼고), 사람별로 묶는다
+    var rows = active.map(function (r) {
       var mine = !!me && r.owner === me;
       var who = names[r.owner] || r.who;
       if (day < r.start) return { key: r.key, icon: r.icon, name: r.name, who: who, pre: true, mine: mine, locked: true, done: false, meta: D.label(r.start) + '부터 시작', by: '', button: '시작 전' };
@@ -307,7 +308,12 @@
     if (isToday && dayLevel(routines, persons, day, isDone).level === 'full') sub = '모두 완료! 오늘도 해냈어요';
     if (!me) sub += ' · 먼저 누구인지 골라 주세요';
     else if (mineActive.length) sub += isToday ? ' · 내 루틴만 체크할 수 있어요' : ' · 내 루틴은 눌러서 고칠 수 있어요';
-    return { day: day, title: D.full(day), isToday: isToday, sub: sub, summary: summary, full: dayLevel(routines, persons, day, isDone).level === 'full', rows: rows };
+    var groups = owners.map(function (o) {
+      var list = rows.filter(function (x) { return active.some(function (r) { return r.key === x.key && r.owner === o; }); });
+      return { person: o, name: names[o] || (list[0] && list[0].who) || '', mine: !!me && o === me, dot: persons && persons.indexOf(o) === 0 ? 'her' : 'me',
+        count: list.filter(function (x) { return x.done; }).length + '/' + list.length, rows: list };
+    });
+    return { day: day, title: D.full(day), isToday: isToday, sub: sub, summary: summary, full: dayLevel(routines, persons, day, isDone).level === 'full', rows: rows, groups: groups };
   }
 
   /** 「내 루틴」 시트 */

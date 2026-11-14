@@ -114,12 +114,12 @@ test('준민 칩: 테니스 시작 전 칸은 누를 수 없다', () => {
   assert.equal(m.both, null);
 });
 
-test('바텀 시트: 오늘은 체크, 지난날은 고치기, 시작 전 루틴은 잠김', () => {
+test('바텀 시트: 오늘은 체크, 지난날은 고치기, 시작 전 루틴은 안 보임 (v42)', () => {
   const m = M.build({ config, checks, today: day(10, 26), filter: 'all', page: 0, sheetDay: day(10, 26), me: 'her' });
   assert.equal(m.sheet.isToday, true);
   assert.equal(m.sheet.rows[0].button, '체크');
   assert.equal(m.sheet.rows[0].meta, '9일차 · 하면 연속 5일차');
-  assert.equal(m.sheet.rows[1].pre, true);
+  assert.equal(m.sheet.rows.length, 1); // v42: 시작 전(테니스)은 빼고 진행 중인 루틴만
   const past = M.build({ config, checks, today: day(10, 26), filter: 'all', page: 0, sheetDay: day(10, 19), me: 'her' });
   assert.equal(past.sheet.rows[0].button, '안 함');
   assert.equal(past.sheet.rows[0].meta, '2일차');

@@ -384,7 +384,7 @@
 
   function sheet(s, entering) {
     if (!s) return '';
-    var rows = s.rows.map(function (r) {
+    function row(r) {
       return '<div class="row">' +
         '<span class="emoji-tile emoji-tile--lg" aria-hidden="true">' + esc(r.icon) + '</span>' +
         '<div class="row__text"><span class="row__name">' + esc(r.name) + ' <span class="row__who">· ' + esc(r.who) + '</span></span>' +
@@ -395,7 +395,13 @@
         ' aria-label="' + esc(r.name + ' ' + r.button + (r.locked && !r.pre ? ', ' + r.who + ' 님만 체크할 수 있어요' : '')) + '">' +
         (r.done ? CHECK_SVG : '') + '<span>' + esc(r.button) + '</span></button>' +
         '</div>';
-    }).join('');
+    }
+    // v42: 사람별 묶음 (두 사람이면 머리말, 사람 칩 순서)
+    var rows = s.groups && s.groups.length > 1 ? s.groups.map(function (g) {
+      return '<div class="sgroup" role="group" aria-label="' + esc(g.name) + ' 루틴 ' + esc(g.count) + '">' +
+        '<h3 class="sgroup__head"><span class="dot rgroup__dot dot--' + g.dot + '" aria-hidden="true"></span>' + esc(g.name) + (g.mine ? ' <span class="rgroup__me">나</span>' : '') +
+        '<span class="rgroup__count">' + esc(g.count) + '</span></h3>' + g.rows.map(row).join('') + '</div>';
+    }).join('') : s.rows.map(row).join('');
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="close" aria-label="닫기"></button>' +
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +

@@ -70,9 +70,7 @@ test('루틴 탭: 쉬는 중 카드 · 꿍 남은 개수 · 달력 칸 · 시트
   assert.equal(run.canWake, true);
   assert.match(run.streakLabel, /쉬는 동안/);
   assert.equal(run.streakValue, '1일'); // 11/9 했고 10일부터 쉬는 중 → 연속 1일 그대로
-  const row = m.sheet.rows.find((r) => r.key === 'run');
-  assert.equal(row.rest, true);
-  assert.equal(row.button, '쉬어요');
+  assert.equal(m.sheet.rows.find((r) => r.key === 'run'), undefined); // v42: 쉬는 루틴은 시트에 안 보임
   // 다진이 보는 화면: 꿍 대상(준민)이 전부 쉬면 칸 없음
   const her = M.build({ config: cfg(rest), checks, today: day(11, 12), filter: 'all', page: 0, me: 'her' });
   assert.equal(her.kung, null);
