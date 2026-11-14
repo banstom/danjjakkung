@@ -843,3 +843,25 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 /* ── 루틴 아이콘 묶음 (v43) ── 묶음 이름이 한 줄을 차지하고 그 아래 아이콘 */
 .icon-group { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--sub); }
 .icon-group:first-child { margin-top: 0; }
+
+/* ── 루틴 묶어 보기 · 순서 바꾸기 (v44) ── */
+.rview { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 2px; }
+.rview__label { font-size: 13px; font-weight: 700; color: var(--sub); flex: none; }
+.rview .seg { display: flex; flex: 1; max-width: 300px; }
+.rview .seg__btn { flex: 1; white-space: nowrap; }
+.rview__hint { margin: -4px 0 0; padding: 0 4px; font-size: 12px; color: var(--sub); }
+.rsub { display: flex; flex-direction: column; gap: 12px; }
+.rsub + .rsub { margin-top: 6px; }
+.rsub__head { display: flex; align-items: center; gap: 6px; margin: 0; padding: 0 6px; font-size: 13px; font-weight: 700; color: var(--sub); }
+.rsub__head span { font-weight: 600; opacity: .8; }
+.rsub__head span::before { content: '· '; }
+.rsub.is-sorting .routine:not(.is-lifted) { opacity: .7; }
+.routine.is-lifted { position: relative; z-index: 5; box-shadow: var(--toast-shadow); cursor: grabbing; transition: none; }
+.routine { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+.morder { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; padding: 8px 10px 8px 12px; border-radius: 12px; background: var(--raised); font-size: 12px; color: var(--sub); }
+.morder--off { justify-content: flex-end; padding: 0; background: none; }
+.mitem--order .mitem__no { flex: none; width: 18px; font-size: 13px; font-weight: 700; color: var(--sub); text-align: center; }
+.mitem--order .small-btn { min-width: 40px; }
+.kind__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.kind__chips small { font-size: 10px; font-weight: 700; opacity: .7; }
+.kind__hint { display: block; margin-top: 6px; }

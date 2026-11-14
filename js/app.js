@@ -45,6 +45,7 @@
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
     todoNotifyOn: true,  // 함께 할 일 알림 (users/<uid>.todoNotify, 없으면 켬, v38)
+    routineView: 'time', // 루틴 묶어 보기 (users/<uid>.routineView, v44) — time | kind | manual
     missNotifyOn: true,  // 아침 8시 어제 놓친 루틴 알림 (users/<uid>.missNotify, 없으면 켬, v41)
     prefsReady: false,
     push: { busy: false, error: '', info: '' },
@@ -79,7 +80,7 @@
       config: fullConfig(), manage: state.manage,
       checks: RT.store.mergeChecks(state.server, state.pending), meta: state.meta,
       me: state.me, identity: state.me ? 'account' : 'pending',
-      today: state.today, filter: state.filter, page: state.page, sheetDay: state.sheetDay,
+      today: state.today, filter: state.filter, page: state.page, sheetDay: state.sheetDay, routineView: state.routineView,
       kungs: state.kungs, kungOff: state.kungOff
     });
   }
@@ -105,7 +106,7 @@
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
   }
   function render(force) {
-    if (!force && (composing || typing() || (lift && lift.on))) { deferred = true; return; } // 끌고 있는 동안에도 미룬다
+    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on))) { deferred = true; return; } // 끌고 있는 동안에도 미룬다
     deferred = false;
     var sheetEl = appEl.querySelector('.sheet');
     var scrollTop = sheetEl ? sheetEl.scrollTop : 0;
@@ -179,6 +180,7 @@
   var FOCUS_ATTR = { toggle: 'data-key', day: 'data-day', filter: 'data-id', page: 'data-dir', close: null,
     'pick-icon': 'data-icon', 'edit-routine': 'data-key', 'resume-routine': 'data-key', 'save-routine': null, 'cancel-form': null,
     'new-routine': null, 'stop-routine': null, 'delete-routine': null, 'close-manage': null, 'open-manage': null,
+    'routine-view': 'data-v', 'pick-kind': 'data-v', 'rt-order': null, 'rt-order-done': null, 'rt-move': 'data-key',
     'when-mode': 'data-v', 'when-cue': 'data-v', 'when-remind': null, 'when-clear-at': null,
     'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
     'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
@@ -389,6 +391,14 @@
     else if (act === 'open-manage') { state.sheetDay = null; state.manage = { open: true, form: null }; state.sheetEntering = true; render(); }
     else if (act === 'close-manage') closeManage();
     else if (act === 'new-routine') { setForm({ key: null, name: '', icon: '', start: D.toKey(state.today), when: RT.model.whenEdit(null) }); focusName(); }
+    else if (act === 'routine-view') setRoutineView(btn.getAttribute('data-v'));
+    else if (act === 'pick-kind') {
+      var kf = state.manage && state.manage.form;
+      if (kf) { var kv = btn.getAttribute('data-v'); kf.kind = kv === RT.icons.kindOf(kf.icon) ? null : kv; render(true); }
+    }
+    else if (act === 'rt-order') { if (state.manage) { state.manage.reorder = true; state.manage.form = null; render(true); } }
+    else if (act === 'rt-order-done') { if (state.manage) { state.manage.reorder = false; render(true); } }
+    else if (act === 'rt-move') moveRoutine(btn.getAttribute('data-key'), parseInt(btn.getAttribute('data-dir'), 10));
     else if (act === 'when-mode' || act === 'when-cue' || act === 'when-remind' || act === 'when-clear-at') {
       var wf = state.manage && state.manage.form;
       if (wf) {
@@ -1170,6 +1180,65 @@
   appEl.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('[data-uni-pt]')) ev.preventDefault(); });
   appEl.addEventListener('click', function (ev) { if (Date.now() < noClickUntil && ev.target.closest && ev.target.closest('[data-uni-pt]')) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 
+  // 루틴 카드 꾹 눌러 끌어 순서 바꾸기 (v44) — 내 루틴, 「종류」 · 「내 순서」 보기에서, 같은 묶음 안에서만
+  // 꾹 누르면(LIFT_MS) 카드가 들리고, 끄는 대로 같은 묶음 안 자리를 바꿔 보여 준다. 손을 떼면 그 순서로 저장
+  var rlift = null;
+  function cancelRLift() { if (rlift && rlift.timer) clearTimeout(rlift.timer); rlift = null; }
+  function rliftOn() {
+    if (!rlift) return;
+    if (!rlift.el.isConnected) { cancelRLift(); return; }
+    rlift.on = true; rlift.timer = null;
+    var r = rlift.el.getBoundingClientRect();
+    rlift.grab = rlift.y0 - r.top;
+    rlift.el.classList.add('is-lifted');
+    rlift.box.classList.add('is-sorting');
+    try { rlift.el.setPointerCapture(rlift.pid); } catch (e) {}
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+  }
+  function rliftMove(y) {
+    var el = rlift.el, box = rlift.box;
+    var others = Array.prototype.filter.call(box.querySelectorAll(':scope > .routine'), function (c) { return c !== el; });
+    var before = null;
+    for (var i = 0; i < others.length; i++) {
+      var r = others[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) { before = others[i]; break; }
+    }
+    if (before) { if (el.nextElementSibling !== before) box.insertBefore(el, before); }
+    else if (box.lastElementChild !== el) box.appendChild(el);
+    el.style.transform = '';
+    var top = el.getBoundingClientRect().top;
+    el.style.transform = 'translateY(' + Math.round(y - rlift.grab - top) + 'px)';
+  }
+  function rliftEnd(cancelled) {
+    var L = rlift;
+    cancelRLift();
+    if (!L || !L.on) return;
+    noClickUntil = Date.now() + 400;
+    L.el.classList.remove('is-lifted'); L.el.style.transform = ''; L.box.classList.remove('is-sorting');
+    var sub = Array.prototype.map.call(L.box.querySelectorAll(':scope > .routine'), function (c) { return c.getAttribute('data-rkey'); });
+    if (cancelled || sub.join() === L.before.join()) { render(true); return; }
+    saveOrder(RT.model.spliceSub(myOrderKeys(), sub), '순서를 바꿨어요');
+  }
+  appEl.addEventListener('pointerdown', function (ev) {
+    if (state.tab !== 'routine' || state.routineView === 'time' || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
+    var el = ev.target.closest && ev.target.closest('.routine[data-rkey]');
+    var box = el && el.parentElement;
+    if (!el || !box || !box.matches('.rsub[data-mine]') || ev.target.closest('button, a, input')) return;
+    cancelRLift();
+    rlift = { pid: ev.pointerId, x0: ev.clientX, y0: ev.clientY, el: el, box: box, on: false,
+      before: Array.prototype.map.call(box.querySelectorAll(':scope > .routine'), function (c) { return c.getAttribute('data-rkey'); }) };
+    rlift.timer = setTimeout(rliftOn, LIFT_MS);
+  });
+  appEl.addEventListener('pointermove', function (ev) {
+    if (!rlift || ev.pointerId !== rlift.pid) return;
+    if (!rlift.on) { if (Math.abs(ev.clientX - rlift.x0) + Math.abs(ev.clientY - rlift.y0) > LIFT_SLOP) cancelRLift(); return; }
+    ev.preventDefault(); rliftMove(ev.clientY);
+  });
+  appEl.addEventListener('pointerup', function (ev) { if (rlift && ev.pointerId === rlift.pid) rliftEnd(false); });
+  appEl.addEventListener('pointercancel', function (ev) { if (rlift && ev.pointerId === rlift.pid) rliftEnd(true); });
+  appEl.addEventListener('touchmove', function (ev) { if (rlift && rlift.on) ev.preventDefault(); }, { passive: false });
+  appEl.addEventListener('contextmenu', function (ev) { if (rlift && ev.target.closest && ev.target.closest('.routine')) ev.preventDefault(); });
+
   // 「완료한 일 보관함」: 어제까지 완료한 일 — 열 때만 30개씩 불러온다
   var ARCHIVE_PAGE = 30;
   function openArchive() {
@@ -1716,6 +1785,30 @@
     state.weeklyOn = on; render(true);
     store.saveWeekly(state.uid, on).catch(function () { state.weeklyOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
+  // ── 루틴 묶어 보기 · 순서 (v44) ──
+  function setRoutineView(v) {
+    if (v !== 'time' && v !== 'kind' && v !== 'manual') return;
+    state.routineView = v; render(true);
+    if (store && state.uid) store.saveValue(state.uid, 'routineView', v).catch(function () {}); // 저장이 안 돼도 이 기기에서는 바뀐 채로
+  }
+  /** 내 진행 중인 루틴 키 (지금 order 순서) */
+  function myOrderKeys() {
+    var today = state.today;
+    return routines().filter(function (r) { return r.owner === state.me && (r.end === null || r.end >= today); }).map(function (r) { return r.key; });
+  }
+  function saveOrder(newKeys, msg) {
+    if (!store || !state.me) return;
+    var mine = routines().filter(function (r) { return r.owner === state.me; });
+    var changes = RT.model.ordersFor(mine, newKeys);
+    if (!changes.length) { render(true); return; }
+    // 바로 보이게 먼저 화면 값에 넣고 저장 (실패하면 서버 값으로 돌아옴)
+    changes.forEach(function (c) { var raw = rawRoutine(c.key); if (raw) raw.order = c.order; });
+    render(true);
+    Promise.all(changes.map(function (c) { return store.setRoutineOrder(c.key, c.order); }))
+      .then(function () { if (msg) showToast(msg); }, function () { showToast('순서를 저장하지 못했어요. 잠시 뒤 다시 해 주세요.'); });
+  }
+  function moveRoutine(key, dir) { saveOrder(RT.model.moveKey(myOrderKeys(), key, dir)); }
+
   function setMissNotify(on) {
     if (!store || !state.uid || !state.prefsReady) return;
     var before = state.missNotifyOn;
@@ -1790,7 +1883,7 @@
   function editRoutine(key) {
     var r = rawRoutine(key);
     if (!r || r.owner !== state.me) return;
-    setForm({ key: key, name: r.name || '', icon: r.icon || '', start: r.start || D.toKey(state.today), when: RT.model.whenEdit(r.when) });
+    setForm({ key: key, name: r.name || '', icon: r.icon || '', start: r.start || D.toKey(state.today), when: RT.model.whenEdit(r.when), kind: r.kind || null });
     focusName();
   }
   function migrateIfNeeded() { return Promise.resolve(); }
@@ -1833,6 +1926,7 @@
     r.start = f.start;
     r.who = nm[state.me] || r.who || '';
     r.when = RT.model.whenSave(f.when); // v41: null = 언제든 (저장할 때 지움)
+    r.kind = RT.model.kindSave(f.kind, r.icon); // v44: 아이콘이 정한 종류와 같으면 null (자동)
     persist(r, old ? '루틴을 고쳤어요' : '🌱 새 루틴을 추가했어요', true);
   }
   function stopRoutine() {
@@ -2170,6 +2264,7 @@
         state.weeklyOn = !(doc && doc.weekly === false);
         state.todoNotifyOn = !(doc && doc.todoNotify === false);
         state.missNotifyOn = !(doc && doc.missNotify === false);
+        if (doc && (doc.routineView === 'time' || doc.routineView === 'kind' || doc.routineView === 'manual')) state.routineView = doc.routineView;
         var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};
         var colorsChanged = JSON.stringify(colors) !== JSON.stringify(state.colors);
         state.colors = colors;

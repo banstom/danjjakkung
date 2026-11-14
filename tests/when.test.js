@@ -111,3 +111,33 @@ test('(v42) 칸 시트: 진행 중인 루틴만, 사람별로 묶음 (사람 칩
   assert.deepEqual(m.sheet.rows.map((r) => r.key).sort(), ['a', 'b', 'c']);
   assert.deepEqual(m.sheet.groups.map((g) => [g.name, g.mine, g.count, g.rows.map((r) => r.key).join(',')]), [['준민', true, '1/2', 'a,c'], ['다진', false, '0/1', 'b']]);
 });
+
+test('(v44) 묶어 보기: 시간대 · 종류 · 내 순서, 놓친 것은 자기 묶음 안에서 위', () => {
+  const config = { people, routines: [
+    R('read', 'me', { order: 0, icon: '📚', when: { cue: '자기 전에' } }),
+    R('run', 'me', { order: 1, icon: '🏃', when: { at: '07:00' } }),
+    R('water', 'me', { order: 2, icon: '💧' }),
+    R('gym', 'me', { order: 3, icon: '💪', when: { at: '06:30' } }),
+    R('walk', 'me', { order: 4, icon: '🚶', kind: 'life' }),        // 종류를 직접 바꿈 (아이콘은 운동)
+    R('memo', 'me', { order: 5, icon: '📝', when: { cue: '틈틈이' } }) // 시간대를 못 정한 문장 → 언제든
+  ] };
+  // 어제(11/11) run 만 안 함
+  const checks = Object.fromEntries(['read', 'water', 'gym', 'walk', 'memo'].map((k) => [k + '|' + key(11, 11), true]));
+  const at = (view) => M.build({ config, checks, today: day(11, 12), filter: 'me', page: 0, me: 'me', routineView: view }).groups[0].subs.map((s) => s.id + ':' + s.cards.map((c) => c.key).join(','));
+  assert.deepEqual(at('time'), ['morning:run,gym', 'evening:read', 'any:memo,water,walk']); // 문장만 정한 것이 언제든보다 앞 // run 은 놓쳐서 아침 묶음 맨 위
+  assert.deepEqual(at('kind'), ['move:run,gym', 'study:read,memo', 'health:water', 'life:walk']);
+  assert.deepEqual(at('manual'), ['all:run,read,water,gym,walk,memo']);
+  assert.equal(M.build({ config, checks, today: day(11, 12), me: 'me' }).view, 'time');
+  assert.equal(M.slotOf({ at: '13:00' }), 'day');
+  assert.equal(M.slotOf({ cue: '아침 먹고 나서' }), 'morning');
+  assert.equal(M.kindSave('move', '🏃'), null);
+  assert.equal(M.kindSave('mind', '🏃'), 'mind');
+});
+
+test('(v44) 순서: ↑↓ · 묶음 안 끌기 · 원래 order 값을 다시 나눔', () => {
+  const rs = [{ key: 'a', order: 2 }, { key: 'b', order: 5 }, { key: 'c', order: 9 }, { key: 'd', order: 9 }];
+  assert.deepEqual(M.moveKey(['a', 'b', 'c'], 'c', -1), ['a', 'c', 'b']);
+  assert.deepEqual(M.moveKey(['a', 'b', 'c'], 'a', -1), ['a', 'b', 'c']);
+  assert.deepEqual(M.ordersFor(rs, ['b', 'a', 'c', 'd']), [{ key: 'b', order: 2 }, { key: 'a', order: 5 }, { key: 'd', order: 10 }]);
+  assert.deepEqual(M.spliceSub(['a', 'b', 'c', 'd'], ['d', 'b']), ['a', 'd', 'c', 'b']);
+});

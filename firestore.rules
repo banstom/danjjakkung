@@ -43,10 +43,12 @@ service cloud.firestore {
     // 루틴: 만든 사람(owner)만 고치고 지운다
     function validRoutine() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'rest', 'when', 'updatedAt'])
+      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'rest', 'when', 'kind', 'updatedAt'])
         && d.owner == request.auth.uid
         // 쉬기 (v38): [{ from, to|null }] 30개까지 — 기간 하나하나는 규칙에서 반복 검사를 못 해 앱이 정리하고 이상한 값은 화면에서 무시한다
         && (!('rest' in d) || (d.rest is list && d.rest.size() <= 30))
+        // 종류 (v44): 아이콘대로가 아닐 때만 — null 이면 아이콘대로
+        && (!('kind' in d) || d.kind == null || d.kind in ['move', 'study', 'health', 'life', 'mind'])
         // 언제 할지 (v41): { cue?: 20자, at?: 'HH:MM', remind?: bool } 또는 null(언제든)
         && (!('when' in d) || d.when == null || (d.when is map
             && d.when.keys().hasOnly(['cue', 'at', 'remind'])
@@ -259,11 +261,12 @@ service cloud.firestore {
       allow read: if isMember() && request.auth.uid == uid;
       // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'routineView', 'updatedAt'])
         && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
         && (!('weekly' in request.resource.data) || request.resource.data.weekly is bool)
         && (!('todoNotify' in request.resource.data) || request.resource.data.todoNotify is bool)
         && (!('missNotify' in request.resource.data) || request.resource.data.missNotify is bool)
+        && (!('routineView' in request.resource.data) || request.resource.data.routineView in ['time', 'kind', 'manual'])
         && (!('colors' in request.resource.data) || validColors(request.resource.data.colors));
       allow delete: if false;
 

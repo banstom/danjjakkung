@@ -27,14 +27,27 @@
     if (at) { out.at = at; if (w.remind === true) out.remind = true; }
     return out;
   }
+  /** 시간대 (v44 묶음 · v41 아이콘): 시각 → 아침 5~11 · 낮 12~17 · 저녁 18~4시, 문장만 → 낱말, 못 정하면 'cue', 없으면 'any' */
+  function slotOf(w) {
+    if (!w) return 'any';
+    if (w.at) { var h = parseInt(w.at, 10); return h < 5 ? 'evening' : h < 12 ? 'morning' : h < 18 ? 'day' : 'evening'; }
+    var c = w.cue || '';
+    return /일어나|아침|출근|등교/.test(c) ? 'morning' : /자기|잠|밤|씻/.test(c) ? 'evening' : /점심|수업|학교|퇴근|하교|오후/.test(c) ? 'day' : 'cue';
+  }
+  var SLOT_ICON = { morning: '☀️', day: '🌤️', evening: '🌙', cue: '📌' };
   /** 카드에 보일 「언제」 — 아이콘은 시각(없으면 문장)으로 아침 · 낮 · 저녁 */
   function whenText(w) {
     if (!w) return '언제든';
-    var h = w.at ? parseInt(w.at, 10) : null, c = w.cue || '';
-    var icon = h !== null ? (h < 5 ? '🌙' : h < 12 ? '☀️' : h < 18 ? '🌤️' : '🌙')
-      : /일어나|아침|출근|등교/.test(c) ? '☀️' : /자기|잠|밤|씻/.test(c) ? '🌙' : /점심|수업|학교|퇴근|하교/.test(c) ? '🌤️' : '📌';
-    return icon + ' ' + [c, w.at || ''].filter(Boolean).join(' · ');
+    return SLOT_ICON[slotOf(w)] + ' ' + [w.cue || '', w.at || ''].filter(Boolean).join(' · ');
   }
+  // 묶어 보기 (v44): 시간대 · 종류 묶음 이름. 문장만 있고 시간대를 못 정한 루틴은 「언제든」 묶음에 둔다
+  var TIME_SUBS = [{ id: 'morning', label: '☀️ 아침' }, { id: 'day', label: '🌤️ 낮' }, { id: 'evening', label: '🌙 저녁' }, { id: 'any', label: '🕊️ 언제든' }];
+  var VIEWS = [{ v: 'time', label: '시간대' }, { v: 'kind', label: '종류' }, { v: 'manual', label: '내 순서' }];
+  function kindSubs() {
+    return (ICONS.GROUPS || []).map(function (g) { return { id: g.key, label: g.icons[0] + ' ' + g.name }; }).concat([{ id: 'etc', label: '📌 기타' }]);
+  }
+  function kindKey(r) { return (r.kind && ICONS.KIND_KEYS.indexOf(r.kind) >= 0 ? r.kind : null) || ICONS.kindOf(r.icon) || 'etc'; }
+  function subOf(r, view) { if (view === 'kind') return kindKey(r); var s = slotOf(r.when); return s === 'cue' ? 'any' : s; }
 
   /**
    * 쉬기 기간 정리: [{ from, to|null }] (날짜 문자열) → [{ from, to }] (day number, to = null 은 다시 시작할 때까지).
@@ -86,7 +99,8 @@
         who: String(r.who || ''), owner: String(r.owner || r.who || ''),
         start: D.parse(r.start), end: isNaN(end) ? null : end,
         order: typeof r.order === 'number' ? r.order : i,
-        rest: r.rest, when: whenFrom(r.when)
+        rest: r.rest, when: whenFrom(r.when),
+        kind: typeof r.kind === 'string' && ICONS.KIND_KEYS.indexOf(r.kind) >= 0 ? r.kind : null
       };
     }).filter(function (r) {
       return SAFE_ID.test(r.key) && SAFE_ID.test(r.owner) && r.owner !== 'all' && !isNaN(r.start);
@@ -351,14 +365,30 @@
         canDelete: !!editing && !hasChecks(editing),
         canRest: !!editing && (editing.end === null || editing.end > today) && !restInfo(editing, today),
         rest: editing && f.rest ? restForm(f.rest, editing, today, hasCheckOn(editing, today)) : null,
-        when: whenForm(f.when)
+        when: whenForm(f.when),
+        kind: kindForm(f)
       };
     }
+    var cur = mine.filter(function (r) { return r.end === null || r.end >= today; }).map(item);
+    if (manage.reorder) cur.forEach(function (it, i) { it.first = i === 0; it.last = i === cur.length - 1; });
     return {
-      current: mine.filter(function (r) { return r.end === null || r.end >= today; }).map(item),
+      current: cur, reorder: !!manage.reorder && !form, canReorder: cur.length > 1 && !form,
       ended: mine.filter(function (r) { return r.end !== null && r.end < today; }).map(item),
       form: form
     };
+  }
+
+  /** 「종류」 칩 (v44): 아이콘으로 자동, 고르면 그 종류. auto = 아이콘이 정한 종류 */
+  function kindForm(f) {
+    var auto = ICONS.kindOf(f.icon) || 'etc';
+    var cur = f.kind && ICONS.KIND_KEYS.indexOf(f.kind) >= 0 ? f.kind : auto;
+    return { auto: auto, picked: !!f.kind && f.kind !== auto, opts: kindSubs().filter(function (s) { return s.id !== 'etc'; }).map(function (s) {
+      return { v: s.id, label: s.label, on: s.id === cur, auto: s.id === auto };
+    }) };
+  }
+  /** 저장할 kind: 자동과 같거나 없으면 null */
+  function kindSave(kind, icon) {
+    return kind && ICONS.KIND_KEYS.indexOf(kind) >= 0 && kind !== ICONS.kindOf(icon) ? kind : null;
   }
 
   /** 「언제 할까요?」 폼 (v41) */
@@ -459,13 +489,16 @@
    * 카드 순서 (v41): 어제 놓친 것 → 「언제」를 정한 것(시각 순, 시각 없이 문장만 정한 것은 그 뒤) → 언제든 → 시작 전.
    * 같은 자리에선 원래 루틴 순서 그대로 (안정 정렬)
    */
-  function sortCards(cards, routines, today) {
+  function sortCards(cards, routines, today, view) {
     var byKey = {};
     routines.forEach(function (r) { byKey[r.key] = r; });
+    // v44: 시간대 보기는 놓침 → 시각 순 → 문장만 → 언제든 (묶음으로 나뉘므로 놓친 것은 「자기 묶음 안에서」 맨 위)
+    //      종류 · 내 순서 보기는 놓침 → 루틴 순서(order)
     function rank(c) {
       var r = byKey[c.key];
       if (!r || r.start > today) return [4, ''];
       if (c.missed) return [0, ''];
+      if (view === 'kind' || view === 'manual') return [1, ''];
       if (r.when && r.when.at) return [1, r.when.at];
       if (r.when) return [2, ''];
       return [3, ''];
@@ -501,11 +534,18 @@
     var persons = filter === 'all' ? allPersons : [filter];
     var visibleCards = set.filter(function (r) { return r.end === null || r.end >= today; });
     var activeToday = routines.filter(function (r) { return activeOn(r, today); });
-    var cards = sortCards(visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); }), routines, today);
-    // 카드는 사람별로 모은다 (v39) — 순서는 위 사람 칩과 같고, 한 사람 안에서는 루틴 순서 그대로
+    var view = state.routineView === 'kind' || state.routineView === 'manual' ? state.routineView : 'time';
+    var cards = sortCards(visibleCards.map(function (r) { return cardFor(r, names, today, isDone, slots, state.me || null); }), routines, today, view);
+    var byKey = {};
+    routines.forEach(function (r) { byKey[r.key] = r; });
+    var subDefs = view === 'kind' ? kindSubs() : view === 'time' ? TIME_SUBS : [{ id: 'all', label: '' }];
+    // 카드는 사람별로 모은다 (v39) — 순서는 위 사람 칩과 같다. 그 안에서 보기 기준(v44)으로 한 번 더 나눈다
     var groups = persons.map(function (p) {
       var list = cards.filter(function (c) { return c.owner === p; });
-      return { person: p, name: names[p] || (list[0] && list[0].who) || '', dot: slots[p] === 0 ? 'her' : 'me', mine: p === state.me, cards: list };
+      var subs = subDefs.map(function (s) {
+        return { id: s.id, label: s.label, cards: list.filter(function (c) { return view === 'manual' || subOf(byKey[c.key], view) === s.id; }) };
+      }).filter(function (s) { return s.cards.length; });
+      return { person: p, name: names[p] || (list[0] && list[0].who) || '', dot: slots[p] === 0 ? 'her' : 'me', mine: p === state.me, cards: list, subs: subs };
     }).filter(function (g) { return g.cards.length; });
     return {
       kung: kungFor(state, names, routines, today, isDone),
@@ -517,6 +557,8 @@
       grid: gridFor(set, persons, today, state.page || 0, isDone),
       cards: cards,
       groups: groups,
+      view: view,
+      views: VIEWS.map(function (o) { return { v: o.v, label: o.label, on: o.v === view }; }),
       // 어제 놓친 내 루틴 (v41): 「어제 못 한 루틴이 n개 있어요 · 오늘은 꼭!」
       missedMine: state.me ? cards.filter(function (c) { return c.missed && c.owner === state.me; }).length : 0,
       grouped: filter === 'all' && groups.length > 1,
@@ -543,7 +585,35 @@
     return { to: to, toName: names[to], remaining: remaining, total: theirs.length, status: sent ? 'sent' : remaining === 0 ? 'done' : 'ready' };
   }
 
-  var api = { stepOf: stepOf, whenFrom: whenFrom, whenText: whenText, whenSave: whenSave, whenEdit: whenEdit, sortCards: sortCards, WHEN_CUES: WHEN_CUES, build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn, aliveOn: aliveOn, restingOn: restingOn, restOn: restOn, restFrom: restFrom, restInfo: restInfo,
+  /**
+   * 순서 바꾸기 (v44): keys 를 새 순서로 줄 세운 뒤, 이 루틴들이 원래 갖고 있던 order 값들을 작은 것부터 다시 나눠 준다
+   * (사람 칩 순서 = 가장 작은 order 의 주인 → 안 바뀜). 바뀐 것만 [{ key, order }]
+   */
+  function ordersFor(routines, keys) {
+    var byKey = {};
+    routines.forEach(function (r) { byKey[r.key] = r; });
+    var list = keys.filter(function (k) { return byKey[k]; });
+    var vals = list.map(function (k) { return byKey[k].order; }).sort(function (a, b) { return a - b; });
+    // 같은 값이 겹치면 (예전 루틴) 겹치지 않게 조금씩 띄운다
+    for (var i = 1; i < vals.length; i++) if (vals[i] <= vals[i - 1]) vals[i] = vals[i - 1] + 1;
+    var out = [];
+    list.forEach(function (k, i) { if (byKey[k].order !== vals[i]) out.push({ key: k, order: vals[i] }); });
+    return out;
+  }
+  /** keys 에서 key 를 한 칸 위(-1) · 아래(+1)로 */
+  function moveKey(keys, key, dir) {
+    var i = keys.indexOf(key), j = i + dir;
+    if (i < 0 || j < 0 || j >= keys.length) return keys.slice();
+    var out = keys.slice(); out[i] = keys[j]; out[j] = key; return out;
+  }
+  /** 내 전체 순서(all) 안에서, 한 묶음(sub)에 든 루틴들의 자리만 새 순서(subNew)로 바꿔 끼운다 (끌어 옮기기) */
+  function spliceSub(all, subNew) {
+    var set = {}, q = subNew.slice();
+    subNew.forEach(function (k) { set[k] = true; });
+    return all.map(function (k) { return set[k] ? q.shift() : k; });
+  }
+
+  var api = { ordersFor: ordersFor, moveKey: moveKey, spliceSub: spliceSub, slotOf: slotOf, kindKey: kindKey, subOf: subOf, kindSave: kindSave, stepOf: stepOf, whenFrom: whenFrom, whenText: whenText, whenSave: whenSave, whenEdit: whenEdit, sortCards: sortCards, WHEN_CUES: WHEN_CUES, build: build, routinesFrom: routinesFrom, validateRoutine: validateRoutine, activeOn: activeOn, aliveOn: aliveOn, restingOn: restingOn, restOn: restOn, restFrom: restFrom, restInfo: restInfo,
     restPlan: restPlan, restAdd: restAdd, restWake: restWake, dayLevel: dayLevel };
   root.RT = RT;
   RT.model = api;

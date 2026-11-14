@@ -3,15 +3,21 @@
 (function (root) {
   'use strict';
   var GROUPS = [
-    { name: '운동', icons: ['🦵', '🎾', '🏃', '💪', '🧘', '🚴', '🏊', '⚽', '🏀', '🏸', '🥊', '🧗', '🚶', '🤸'] },
-    { name: '공부 · 일', icons: ['📚', '📝', '📖', '💻', '🧠', '🎓', '🌐', '💼', '📈', '🔬'] },
-    { name: '건강 · 식사', icons: ['💧', '🥗', '🍎', '🥛', '💊', '🦷', '🍳', '☕', '😴', '🚭'] },
-    { name: '생활', icons: ['🧹', '🧺', '🛁', '🪴', '🌱', '🐶', '💰', '📵'] },
-    { name: '마음 · 취미', icons: ['🎸', '🎹', '🎨', '📷', '🎧', '🧩', '🙏', '😊', '📓', '🌅'] }
+    { key: 'move', name: '운동', icons: ['🦵', '🎾', '🏃', '💪', '🧘', '🚴', '🏊', '⚽', '🏀', '🏸', '🥊', '🧗', '🚶', '🤸'] },
+    { key: 'study', name: '공부 · 일', icons: ['📚', '📝', '📖', '💻', '🧠', '🎓', '🌐', '💼', '📈', '🔬'] },
+    { key: 'health', name: '건강 · 식사', icons: ['💧', '🥗', '🍎', '🥛', '💊', '🦷', '🍳', '☕', '😴', '🚭'] },
+    { key: 'life', name: '생활', icons: ['🧹', '🧺', '🛁', '🪴', '🌱', '🐶', '💰', '📵'] },
+    { key: 'mind', name: '마음 · 취미', icons: ['🎸', '🎹', '🎨', '📷', '🎧', '🧩', '🙏', '😊', '📓', '🌅'] }
   ];
   var ROUTINE_ICONS = [];
   GROUPS.forEach(function (g) { g.icons.forEach(function (e) { if (ROUTINE_ICONS.indexOf(e) < 0) ROUTINE_ICONS.push(e); }); });
-  var api = { GROUPS: GROUPS, ROUTINE_ICONS: ROUTINE_ICONS, isAllowed: function (e) { return ROUTINE_ICONS.indexOf(e) >= 0; } };
+  /** 아이콘 → 종류 키 (v44 자동 분류). 목록에 없으면 null */
+  function kindOf(e) {
+    for (var i = 0; i < GROUPS.length; i++) if (GROUPS[i].icons.indexOf(e) >= 0) return GROUPS[i].key;
+    return null;
+  }
+  var KIND_KEYS = GROUPS.map(function (g) { return g.key; });
+  var api = { GROUPS: GROUPS, ROUTINE_ICONS: ROUTINE_ICONS, KIND_KEYS: KIND_KEYS, kindOf: kindOf, isAllowed: function (e) { return ROUTINE_ICONS.indexOf(e) >= 0; } };
   root.RT = root.RT || {};
   root.RT.icons = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

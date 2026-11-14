@@ -360,6 +360,48 @@ async function tick(page, dateKey, key) {
     await jm.click('[data-act="close-manage"]');
   }
 
+  // 4-0e) (v44) 묶어 보기 전환 · 종류 칩 · ↑↓ 순서 · 카드 끌기
+  {
+    const jmU = accounts.get('junmin@example.com').uid;
+    const mineDocs = () => [...docs.entries()].filter(([k, v]) => k.startsWith('routines/') && v.owner === jmU).sort((a, b) => a[1].order - b[1].order);
+    const allOrders = () => JSON.stringify([...docs.entries()].filter(([k]) => k.startsWith('routines/')).map(([, v]) => [v.name, v.order]));
+    console.log('순서 처음:', allOrders(), '| 칩:', (await jm.$$eval('[data-act="filter"]', (e) => e.map((x) => x.textContent))).join(','));
+    // 준민 루틴 하나 더 (독서) → 순서 바꿀 거리
+    await jm.click('[data-act="open-manage"]'); await jm.click('[data-act="new-routine"]');
+    await jm.fill('#rt-name', '독서'); await jm.click('[data-act="pick-icon"][data-icon="📚"]');
+    console.log('종류 칩(자동):', await jm.$eval('[data-act="pick-kind"][aria-pressed="true"]', (e) => e.textContent));
+    await jm.click('[data-act="pick-kind"][data-v="mind"]');
+    await jm.click('[data-act="save-routine"]'); await jm.waitForTimeout(300);
+    console.log('독서 저장 kind:', JSON.stringify(mineDocs().map(([, v]) => [v.name, v.kind || null, v.order])));
+    await jm.click('[data-act="rt-order"]');
+    const names = async () => (await jm.$$eval('.mitem--order .mitem__name', (e) => e.map((x) => x.textContent))).join(' → ');
+    console.log('순서 모드:', await names());
+    await jm.click('.mitem--order:last-child [data-act="rt-move"][data-dir="-1"]'); await jm.waitForTimeout(250);
+    console.log('↑ 뒤:', await names(), '| 저장:', JSON.stringify(mineDocs().map(([, v]) => [v.name, v.order])));
+    await jm.click('[data-act="rt-order-done"]'); await jm.click('[data-act="close-manage"]');
+    // 보기 전환
+    for (const v of ['kind', 'manual', 'time']) {
+      await jm.click('[data-act="routine-view"][data-v="' + v + '"]'); await jm.waitForTimeout(150);
+      console.log('보기 ' + v + ':', (await jm.$$eval('.rsub', (e) => e.map((x) => (x.querySelector('.rsub__head') ? x.querySelector('.rsub__head').textContent : '(머리말 없음)') + ' [' + [...x.querySelectorAll('.routine__name')].map((n) => n.textContent.replace('어제 놓침', '')).join(', ') + ']'))).join(' / '));
+    }
+    assert.strictEqual(docs.get('users/' + jmU).routineView, 'time', '보기 기준 저장');
+    // 내 순서 보기에서 카드 꾹 눌러 끌기 (첫 카드 → 맨 아래)
+    await jm.click('[data-act="routine-view"][data-v="manual"]'); await jm.waitForTimeout(150);
+    const box = '.rsub[data-mine]';
+    const first = await jm.$(box + ' > .routine:first-of-type'), last = await jm.$(box + ' > .routine:last-of-type');
+    await first.evaluate((e) => window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - 70));
+    await jm.waitForTimeout(100);
+    const a = await first.boundingBox(), b = await last.boundingBox();
+    await jm.mouse.move(a.x + a.width / 2, a.y + 30); await jm.mouse.down(); await jm.waitForTimeout(500);
+    assert.strictEqual(await jm.$$eval('.routine.is-lifted', (e) => e.length), 1, '꾹 누르면 카드가 들림');
+    await jm.mouse.move(a.x + a.width / 2, b.y + b.height - 5, { steps: 8 }); await jm.mouse.up(); await jm.waitForTimeout(300);
+    console.log('끈 뒤 저장:', JSON.stringify(mineDocs().map(([, v]) => [v.name, v.order])));
+    await jm.screenshot({ path: path.join(OUT, 'web-v44-manual.png'), fullPage: true });
+    await jm.click('[data-act="routine-view"][data-v="kind"]'); await jm.waitForTimeout(150);
+    await jm.screenshot({ path: path.join(OUT, 'web-v44-kind.png'), fullPage: true });
+    await jm.click('[data-act="routine-view"][data-v="time"]');
+  }
+
   // 4-0c) (v40 · v41) 토마토 · 주간 퀘스트: 시작일(11/12)이 테스트 시계(10/27)보다 뒤라 10/26 으로 앞당겨 본다
   {
     for (const p of [jm, dj]) {

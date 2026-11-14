@@ -177,6 +177,15 @@
       saveWeekly: function (uid, on) {
         return db.doc('users/' + uid).set({ weekly: !!on, updatedAt: new Date().toISOString() }, { mergeFields: ['weekly', 'updatedAt'] });
       },
+      /** 값 설정 하나 (v44 routineView) */
+      saveValue: function (uid, field, v) {
+        var body = { updatedAt: new Date().toISOString() }; body[field] = v;
+        return db.doc('users/' + uid).set(body, { mergeFields: [field, 'updatedAt'] });
+      },
+      /** 루틴 순서만 바꾸기 (v44) */
+      setRoutineOrder: function (key, order) {
+        return db.doc('routines/' + key).update({ order: order, updatedAt: new Date().toISOString() });
+      },
       /** 켬 · 끔 설정 하나 (v41 missNotify 등) — notify 밖에 따로 */
       saveFlag: function (uid, field, on) {
         var body = { updatedAt: new Date().toISOString() }; body[field] = !!on;
@@ -225,6 +234,7 @@
         if (Array.isArray(r.rest)) { body.rest = r.rest.map(function (p) { return { from: p.from, to: p.to || null }; }); fields.push('rest'); }
         // 언제 할지 (v41): 고친 때만 넣는다. null = 언제든
         if ('when' in r) { body.when = r.when && root.RT.model ? root.RT.model.whenFrom(r.when) : null; fields.push('when'); }
+        if ('kind' in r) { body.kind = r.kind || null; fields.push('kind'); } // 종류 (v44): null = 아이콘대로
         return db.doc('routines/' + r.key).set(body, { mergeFields: fields });
       },
       deleteRoutine: function (key) { return db.doc('routines/' + key).delete(); },

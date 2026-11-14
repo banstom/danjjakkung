@@ -233,6 +233,15 @@
       '</div></div>';
   }
 
+  // 「종류」 (v44) — 아이콘으로 자동, 바꾸면 그 종류로 묶임
+  function kindField(k) {
+    if (!k) return '';
+    return '<div class="field"><span class="field__label" id="rt-kind-label">종류</span><div class="chips kind__chips" role="group" aria-labelledby="rt-kind-label">' +
+      k.opts.map(function (o) {
+        return '<button type="button" class="chip chip--sm" data-act="pick-kind" data-v="' + esc(o.v) + '" aria-pressed="' + o.on + '">' + esc(o.label) + (o.auto ? ' <small>자동</small>' : '') + '</button>';
+      }).join('') + '</div><span class="when__sub kind__hint">' + (k.picked ? '직접 골랐어요 · 「자동」을 누르면 아이콘대로' : '아이콘대로 골라졌어요 · 바꿀 수 있어요') + '</span></div>';
+  }
+
   // 「언제 할까요?」 (v41) — 무엇 다음에(문장) · 시각 둘 다 가능, 둘 다 비우면 언제든
   function whenField(w) {
     if (!w) return '';
@@ -271,6 +280,7 @@
       '<div class="field"><span class="field__label" id="rt-icon-label">아이콘</span><div class="icon-grid" role="group" aria-labelledby="rt-icon-label">' + icons + '</div></div>' +
       '<label class="field"><span class="field__label">시작일</span>' +
       '<input id="rt-start" class="field__input" type="date" value="' + esc(f.start) + '"' + (f.error ? ' aria-describedby="rt-error"' : '') + '></label>' +
+      kindField(f.kind) +
       whenField(f.when) +
       // 새로 생긴 안내만 소리 내어 읽게 한다 (다시 그릴 때마다 반복하지 않도록)
       (f.error ? '<p id="rt-error" class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
@@ -299,15 +309,24 @@
         '</div>';
     }
     var f = mg.form;
-    var list = mg.current.length ? mg.current.map(function (it) { return item(it, false); }).join('') : '<p class="muted">아직 내 루틴이 없어요</p>';
+    function moveItem(it, i) {
+      return '<div class="mitem mitem--order"><span class="mitem__no">' + (i + 1) + '</span><span class="emoji-tile" aria-hidden="true">' + esc(it.icon) + '</span>' +
+        '<div class="mitem__text"><span class="mitem__name">' + esc(it.name) + '</span></div>' +
+        '<button type="button" class="small-btn" data-act="rt-move" data-key="' + esc(it.key) + '" data-dir="-1" aria-label="' + esc(it.name) + ' 위로"' + (it.first ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="small-btn" data-act="rt-move" data-key="' + esc(it.key) + '" data-dir="1" aria-label="' + esc(it.name) + ' 아래로"' + (it.last ? ' disabled' : '') + '>↓</button></div>';
+    }
+    var list = !mg.current.length ? '<p class="muted">아직 내 루틴이 없어요</p>'
+      : mg.reorder ? mg.current.map(moveItem).join('') : mg.current.map(function (it) { return item(it, false); }).join('');
+    var orderBar = mg.reorder ? '<div class="morder"><span>↑↓ 를 누르면 바로 저장돼요 · 「종류」 · 「내 순서」 보기에 이 순서대로 보여요</span><button type="button" class="small-btn" data-act="rt-order-done">완료</button></div>'
+      : mg.canReorder ? '<div class="morder morder--off"><button type="button" class="text-btn" data-act="rt-order">↕ 순서 바꾸기</button></div>' : '';
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="close-manage" aria-label="닫기"></button>' +
       '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="manage-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="manage-title" class="sheet__title">내 루틴</h2></div>' +
       '<p class="sheet__sub">' + esc(meName) + ' 님 루틴만 여기서 추가하고 바꿀 수 있어요</p>' +
-      '<div class="mlist">' + list + '</div>' +
-      (f ? routineForm(f) : '<button type="button" class="add-btn" data-act="new-routine">＋ 새 루틴</button>') +
+      orderBar + '<div class="mlist">' + list + '</div>' +
+      (mg.reorder ? '' : f ? routineForm(f) : '<button type="button" class="add-btn" data-act="new-routine">＋ 새 루틴</button>') +
       (mg.ended.length ? '<h3 class="mgroup">그만한 루틴</h3><div class="mlist">' + mg.ended.map(function (it) { return item(it, true); }).join('') + '</div>' : '') +
       '<button type="button" class="close-btn" data-act="close-manage">닫기</button>' +
       '</section></div>';
@@ -350,18 +369,35 @@
   }
 
   // 사람별로 모은 루틴 카드 (v39) — 「전체」에서 두 사람이면 이름 머리말, 한 사람만 보일 땐 카드만
+  // v44: 보기 기준 (시간대 · 종류 · 내 순서) — 사람 묶음 안에서 한 번 더 나눈다
+  function viewSwitch(m) {
+    if (!m.views) return '';
+    return '<div class="rview"><span class="rview__label" id="rview-label">묶어 보기</span><div class="seg" role="group" aria-labelledby="rview-label">' + m.views.map(function (o) {
+      return '<button type="button" class="seg__btn" data-act="routine-view" data-v="' + esc(o.v) + '" aria-pressed="' + o.on + '">' + esc(o.label) + '</button>';
+    }).join('') + '</div></div>';
+  }
+  function subBlocks(g, view) {
+    return (g.subs || [{ id: 'all', label: '', cards: g.cards }]).map(function (s) {
+      return '<div class="rsub" data-sub="' + esc(g.person + ':' + s.id) + '"' + (g.mine ? ' data-mine="1"' : '') + '>' +
+        (view !== 'manual' && s.label ? '<h3 class="rsub__head">' + esc(s.label) + '<span>' + esc(s.cards.length) + '</span></h3>' : '') +
+        s.cards.map(routineCard).join('') + '</div>';
+    }).join('');
+  }
   function routineGroups(m) {
-    if (!m.grouped) return m.cards.map(routineCard).join('');
-    return m.groups.map(function (g) {
+    var hint = !m.groups.some(function (g) { return g.mine; }) ? ''
+      : m.view === 'time' ? '<p class="rview__hint">시간대 보기는 정해 둔 시각 순서예요 · 순서를 바꾸려면 「종류」나 「내 순서」</p>'
+      : '<p class="rview__hint">내 루틴 카드를 꾹 눌러 끌면 순서를 바꿀 수 있어요</p>';
+    if (!m.grouped) return viewSwitch(m) + hint + m.groups.map(function (g) { return subBlocks(g, m.view); }).join('');
+    return viewSwitch(m) + hint + m.groups.map(function (g) {
       return '<section class="rgroup" aria-label="' + esc(g.name) + ' 루틴">' +
         '<h2 class="rgroup__head"><span class="dot rgroup__dot dot--' + g.dot + '" aria-hidden="true"></span>' + esc(g.name) + (g.mine ? ' <span class="rgroup__me">나</span>' : '') +
         '<span class="rgroup__count">루틴 ' + g.cards.length + '개</span></h2>' +
-        g.cards.map(routineCard).join('') + '</section>';
+        subBlocks(g, m.view) + '</section>';
     }).join('');
   }
 
   function routineCard(k) {
-    return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + (k.missed ? ' routine--missed' : '') + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + (k.missed ? ', 어제 놓침' : '') + '">' +
+    return '<section class="card routine' + (k.rest ? ' routine--rest' : '') + (k.missed ? ' routine--missed' : '') + '" data-rkey="' + esc(k.key) + '" aria-label="' + esc(k.name) + ' 기록' + (k.rest ? ', 쉬는 중' : '') + (k.missed ? ', 어제 놓침' : '') + '">' +
       '<div class="routine__head">' +
       '<span class="emoji-tile" aria-hidden="true">' + esc(k.icon) + '</span>' +
       '<div class="routine__names"><span class="routine__name">' + esc(k.name) + (k.missed ? '<span class="miss-tag">어제 놓침</span>' : '') + '</span>' +
