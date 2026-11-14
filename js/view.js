@@ -256,9 +256,13 @@
 
   function routineForm(f) {
     if (f.rest) return restPanel(f);
-    var icons = f.icons.map(function (ic) {
+    function pick(ic) {
       return '<button type="button" class="icon-pick" data-act="pick-icon" data-icon="' + esc(ic.e) + '" aria-pressed="' + ic.on + '" aria-label="아이콘 ' + esc(ic.e) + '">' + esc(ic.e) + '</button>';
-    }).join('');
+    }
+    // v43: 묶음별 (운동 · 공부 · 일 · 건강 · 식사 · 생활 · 마음 · 취미)
+    var icons = f.iconGroups && f.iconGroups.length ? f.iconGroups.map(function (g) {
+      return '<span class="icon-group">' + esc(g.name) + '</span>' + g.icons.map(pick).join('');
+    }).join('') : f.icons.map(pick).join('');
     return '<div class="rform" role="group" aria-labelledby="rform-title">' +
       '<span id="rform-title" class="rform__title">' + (f.mode === 'edit' ? '루틴 고치기' : '새 루틴') + '</span>' +
       '<label class="field"><span class="field__label">이름</span>' +

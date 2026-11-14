@@ -351,7 +351,8 @@ test('「내 루틴」 시트: 내 것만, 진행 중 · 그만한 것 나눠서
   assert.equal(m.manage.form.mode, 'edit');
   assert.equal(m.manage.form.canDelete, true);   // 독서는 기록이 없다
   assert.equal(m.manage.form.canStop, false);    // 아직 시작 전
-  assert.equal(m.manage.form.icons.length, 16);
+  assert.equal(m.manage.form.icons.length, 52); // v43: 16 → 52 (묶음 5개)
+  assert.deepEqual(m.manage.form.iconGroups.map((g) => g.icons.length), [14, 10, 10, 8, 10]);
   const t = M.build({ config: cfg3(extra), checks: c, today: day(10, 27), me: 'me', manage: { open: true, form: { key: 'tennis', name: '테니스 연습', icon: '🎾', start: '2026-10-27' } } });
   assert.equal(t.manage.form.canStop, true);
   const her = M.build({ config: cfg3(extra), checks: c, today: day(10, 27), me: 'her', manage: { open: true, form: null } });

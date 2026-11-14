@@ -333,6 +333,8 @@ async function tick(page, dateKey, key) {
     const jmU = accounts.get('junmin@example.com').uid;
     await jm.click('[data-act="open-manage"]');
     await jm.click('[data-act="edit-routine"]');
+    console.log('(v43) 아이콘 묶음:', (await jm.$$eval('.icon-group', (e) => e.map((x) => x.textContent))).join(' · '), '| 아이콘', await jm.$$eval('.icon-pick', (e) => e.length) + '개');
+    await jm.screenshot({ path: path.join(OUT, 'web-v43-icons.png') });
     await jm.click('[data-act="when-mode"][data-v="set"]');
     await jm.click('[data-act="when-cue"][data-v="수업 끝나고"]');
     await jm.fill('#rt-at', '18:30'); await jm.dispatchEvent('#rt-at', 'change');

@@ -1,8 +1,17 @@
-/* 루틴 아이콘 — 토스페이스로 보이는 16개만 고를 수 있다 (fonts/의 잘라 둔 글꼴과 같은 목록). */
+/* 루틴 아이콘 (v43: 16개 → 묶음 5개 · 52개) — 토스페이스로 보이는 것만 고를 수 있다 (fonts/의 잘라 둔 글꼴과 같은 목록).
+   예전 16개는 모두 그대로 들어 있다 (이미 고른 루틴이 깨지지 않게). 새로 넣으면 scripts/tossface-subset.py USED 에도 더하고 다시 돌린다. */
 (function (root) {
   'use strict';
-  var ROUTINE_ICONS = ['🦵', '🎾', '🏃', '💪', '🧘', '🚴', '🏊', '⚽', '📚', '📝', '💧', '🥗', '😴', '🧹', '🎸', '🌱'];
-  var api = { ROUTINE_ICONS: ROUTINE_ICONS, isAllowed: function (e) { return ROUTINE_ICONS.indexOf(e) >= 0; } };
+  var GROUPS = [
+    { name: '운동', icons: ['🦵', '🎾', '🏃', '💪', '🧘', '🚴', '🏊', '⚽', '🏀', '🏸', '🥊', '🧗', '🚶', '🤸'] },
+    { name: '공부 · 일', icons: ['📚', '📝', '📖', '💻', '🧠', '🎓', '🌐', '💼', '📈', '🔬'] },
+    { name: '건강 · 식사', icons: ['💧', '🥗', '🍎', '🥛', '💊', '🦷', '🍳', '☕', '😴', '🚭'] },
+    { name: '생활', icons: ['🧹', '🧺', '🛁', '🪴', '🌱', '🐶', '💰', '📵'] },
+    { name: '마음 · 취미', icons: ['🎸', '🎹', '🎨', '📷', '🎧', '🧩', '🙏', '😊', '📓', '🌅'] }
+  ];
+  var ROUTINE_ICONS = [];
+  GROUPS.forEach(function (g) { g.icons.forEach(function (e) { if (ROUTINE_ICONS.indexOf(e) < 0) ROUTINE_ICONS.push(e); }); });
+  var api = { GROUPS: GROUPS, ROUTINE_ICONS: ROUTINE_ICONS, isAllowed: function (e) { return ROUTINE_ICONS.indexOf(e) >= 0; } };
   root.RT = root.RT || {};
   root.RT.icons = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

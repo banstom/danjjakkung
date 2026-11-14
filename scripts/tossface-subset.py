@@ -18,7 +18,7 @@ from fontTools.ttLib import TTFont
 
 USED = {
     # 루틴 아이콘 (js/icons.js ROUTINE_ICONS) + 계절 (js/seasons.js)
-    'routine': '🦵🎾🏃💪🧘🚴🏊⚽📚📝💧🥗😴🧹🎸🌱🌸🌻🍁⛄',
+    'routine': '🦵🎾🏃💪🧘🚴🏊⚽🏀🏸🥊🧗🚶🤸📚📝📖💻🧠🎓🌐💼📈🔬💧🥗🍎🥛💊🦷🍳☕😴🚭🧹🧺🛁🪴🌱🐶💰📵🎸🎹🎨📷🎧🧩🙏😊📓🌅🌸🌻🍁⛄',
     # 시간표 카테고리 아이콘 (js/cats.js ICONS)
     'cats': '📚📝📖🎓💻🧪🩺🧠🏃🎾⚽💪🧘🚴🏊⛳💼💰🍚🍜☕🍻🎬🎮🎵🎸🛒🏠🧹😴🚌🏥💊🐶🎂🎉💞📌📅⭐',
     # 그 밖에 화면 · 알림 글에 쓰는 것

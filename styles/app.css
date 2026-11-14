@@ -839,3 +839,7 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .sgroup + .sgroup { margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
 .sgroup__head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
 .sgroup .row__who { display: none; }
+
+/* ── 루틴 아이콘 묶음 (v43) ── 묶음 이름이 한 줄을 차지하고 그 아래 아이콘 */
+.icon-group { grid-column: 1 / -1; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--sub); }
+.icon-group:first-child { margin-top: 0; }

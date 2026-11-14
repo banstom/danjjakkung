@@ -346,6 +346,7 @@
         mode: editing ? 'edit' : 'add', key: editing ? editing.key : null,
         name: f.name, icon: f.icon, start: f.start, error: f.error || '', errorFresh: !!f.errorFresh, saving: !!f.saving, confirmDelete: !!f.confirmDelete, confirmStart: !!f.confirmStart,
         icons: ICONS.ROUTINE_ICONS.map(function (e) { return { e: e, on: e === f.icon }; }),
+        iconGroups: (ICONS.GROUPS || []).map(function (g) { return { name: g.name, icons: g.icons.map(function (e) { return { e: e, on: e === f.icon }; }) }; }),
         canStop: !!editing && (editing.end === null || editing.end > today) && editing.start <= today,
         canDelete: !!editing && !hasChecks(editing),
         canRest: !!editing && (editing.end === null || editing.end > today) && !restInfo(editing, today),
