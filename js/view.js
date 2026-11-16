@@ -444,7 +444,7 @@
     }).join('') : s.rows.map(row).join('');
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="close" aria-label="닫기"></button>' +
-      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
+      '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="sheet-title" class="sheet__title">' + esc(s.title) + '</h2>' + (s.isToday ? '<span class="tag">오늘</span>' : '') + '</div>' +
       '<p class="day-sum' + (s.full ? ' day-sum--full' : '') + '">' + esc(s.summary) + (s.full ? ' ✓' : '') + '</p>' +
