@@ -156,6 +156,13 @@
       deleteCat: function (id, isDefault, uid) {
         return isDefault ? db.doc('cats/' + id).set({ deleted: true, updatedBy: uid, updatedAt: new Date().toISOString() }) : db.doc('cats/' + id).delete();
       },
+      // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
+      watchCouple: function (next, fail) {
+        return db.doc('couple/main').onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
+      },
+      saveCouple: function (c, uid) {
+        return db.doc('couple/main').set({ start: c.start, label: c.label, updatedBy: uid, updatedAt: new Date().toISOString() });
+      },
       // ── 알림 ──
       // users/<uid>                 : { notify: { partner, remindAt, hide }, weekly, todoNotify, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용 (weekly: 일요일 돌아보기, 없으면 켬)
       //   colors: { '<테마 id>': { self, partner } } — 테마마다 내 화면의 나 · 상대 색 (없으면 그 테마 기본색)

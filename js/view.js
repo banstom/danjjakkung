@@ -20,7 +20,11 @@
     return '<header class="top">' +
       '<div class="top__text"><p class="caption">' + esc(h.date) + (h.meName ? ' · ' + esc(h.meName) + ' 님으로 접속' : '') +
       (h.canRepick ? ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') +
-      (h.canSignOut ? ' · <button type="button" class="link-btn" data-act="sign-out">로그아웃</button>' : '') + '</p><h1 class="title">' + esc(TITLE) + '</h1></div>' +
+      (h.canSignOut ? ' · <button type="button" class="link-btn" data-act="sign-out">로그아웃</button>' : '') + '</p><div class="top__row"><h1 class="title">' + esc(TITLE) + '</h1>' +
+      // 우리 기념일 (v46) — 「사귄 지 412일」, 누르면 기념일 시트
+      (h.dday ? '<button type="button" class="dday" data-act="open-anniv" aria-label="' + esc(h.dday.text + (h.dday.today ? ' · 오늘은 ' + h.dday.today : '') + ' · 기념일 보기') + '">' +
+        '<span aria-hidden="true">' + (h.dday.today ? '🎉' : '💞') + '</span>' + esc(h.dday.text) + '</button>' : '') +
+      '</div></div>' +
       '<div class="top__side">' +
       (h.bell ? '<button type="button" class="bell-btn" data-act="open-notify" aria-label="알림 설정' + (h.bell === 'on' ? ' (켜짐)' : ' (꺼짐)') + '">' + (h.bell === 'on' ? '🔔' : '🔕') + '</button>' : '') +
       (h.palette ? '<button type="button" class="bell-btn" data-act="open-theme" aria-label="테마 바꾸기 (지금: ' + esc(h.palette) + ')">🎨</button>' : '') +

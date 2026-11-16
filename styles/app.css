@@ -865,3 +865,35 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .kind__chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .kind__chips small { font-size: 10px; font-weight: 700; opacity: .7; }
 .kind__hint { display: block; margin-top: 6px; }
+
+/* ── 우리 기념일 (v46) ── */
+.top__row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; min-width: 0; }
+.dday { display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--tint); color: var(--tint-text); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card.anniv { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; padding-block: 14px; }
+.anniv__icon { font-size: 26px; line-height: 1; flex-shrink: 0; }
+.anniv__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.anniv__title { font-size: 15px; font-weight: 700; }
+.anniv__title b { font-size: 20px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--strong); }
+.anniv__hint { font-size: 12px; color: var(--sub); }
+.anniv__since { font-size: 12px; color: var(--sub); white-space: nowrap; flex-shrink: 0; }
+.card.anniv--empty { border: 1.5px dashed var(--line); }
+.anniv__by { margin: 12px 0 0; font-size: 12px; color: var(--sub); text-align: center; }
+.abig { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 4px; text-align: center; }
+.abig__label { margin: 0; font-size: 14px; font-weight: 600; color: var(--sub); }
+.abig__count { margin: 0; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--strong); line-height: 1.1; }
+.abig__count span { font-size: 20px; font-weight: 700; margin-left: 2px; color: var(--text); }
+.abig__since { margin: 2px 0 0; font-size: 13px; color: var(--sub); }
+.abig__today { margin: 8px 0 0; padding: 6px 12px; border-radius: 999px; background: var(--tint); color: var(--tint-text); font-size: 13px; font-weight: 700; }
+.alist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.alist li { display: grid; grid-template-columns: 64px 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--raised); font-size: 13px; }
+.alist li.is-year { background: var(--tint); color: var(--tint-text); }
+.alist__name { font-weight: 700; font-variant-numeric: tabular-nums; }
+.alist__date { color: var(--sub); }
+.alist li.is-year .alist__date { color: inherit; }
+.alist__d { font-weight: 700; font-variant-numeric: tabular-nums; }
+.alist--past li { background: none; color: var(--sub); padding-block: 5px; }
+.anniv-form .chips { flex-wrap: wrap; }
+.anniv-form__note { margin: 10px 0 0; font-size: 12px; color: var(--sub); }
+.anniv__title { white-space: nowrap; }
+@media (max-width: 359px) { .anniv__since { display: none; } }

@@ -226,6 +226,18 @@ service cloud.firestore {
       allow delete: if isMember();
     }
 
+    // 우리 기념일 (v46): couple/main 하나 — 둘 다 읽고 고친다 (지우기는 없음)
+    match /couple/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && id == 'main'
+        && request.resource.data.keys().hasOnly(['start', 'label', 'updatedBy', 'updatedAt'])
+        && request.resource.data.start is string && request.resource.data.start.matches('^(19[5-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
+        && request.resource.data.label is string && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 8
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40;
+      allow delete: if false;
+    }
+
     // ── 알림 ──
     // users/<uid>: 내 알림 설정. 나만 읽고 쓴다.
     function validNotify(n) {

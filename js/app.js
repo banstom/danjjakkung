@@ -41,6 +41,9 @@
     sched: null,         // { mode: 'week' | 'day', weekStart, day }
     notifyOpen: false,   // 「알림」 시트
     themeOpen: false,    // 「테마」 시트
+    couple: null,        // 우리 기념일 couple/main (v46) — 없으면 null
+    coupleOff: false,    // 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
+    anniv: null,         // 기념일 시트 { edit: null | { label, custom, start, saving, error } }
     colors: null,        // 내 계정의 나 · 상대 색 (users 문서의 colors, 테마마다) — null = 아직 모름
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
@@ -87,7 +90,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -136,6 +139,8 @@
     if (ex && !other && !m.empty) { m.grow = ex.grow; m.quest = ex.quest; }
     if (state.growOpen && !(ex && ex.grow)) state.growOpen = false;
     var plan = state.status === 'ready' ? planHtml(other) : {};
+    if (state.status === 'ready' && state.anniv) plan.sheet = RT.viewReview.annivSheet(annivSheetModel(), state.sheetEntering);
+    else if (state.anniv) state.anniv = null;
     var flipBefore = flipMeasure();
     var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || state.growOpen || plan.sheet) && state.status === 'ready');
     var entering = state.sheetEntering;
@@ -143,6 +148,7 @@
     m.header.bell = state.status === 'ready' && RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? 'on' : 'off') : null;
     m.header.palette = state.status === 'ready' && RT.themes ? RT.themes.byId(RT.themes.current()).name : null;
     if (state.status !== 'ready') m.header.meName = '';
+    m.header.dday = state.status === 'ready' ? annivHeader() : null;
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
@@ -193,7 +199,8 @@
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
-    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null };
+    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
+    'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -527,6 +534,12 @@
     else if (act === 'open-grow') { state.growOpen = true; state.sheetEntering = true; focusAfter = ['[data-act="close-grow"]']; focusInSheet = true; render(true); }
     else if (act === 'close-grow') closeGrow();
     else if (act === 'open-quest') { resetReview(); setTab('look'); }
+    else if (act === 'open-anniv') openAnniv();
+    else if (act === 'close-anniv') closeAnniv();
+    else if (act === 'anniv-edit') annivEdit();
+    else if (act === 'anniv-cancel') { if (state.anniv) { state.anniv.edit = null; focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true; render(true); } }
+    else if (act === 'anniv-label') annivLabel(btn.getAttribute('data-v'));
+    else if (act === 'anniv-save') saveAnniv();
   });
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
@@ -536,7 +549,7 @@
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
-    state.place = null; state.uniSheet = null; state.archive = null;
+    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -630,6 +643,7 @@
     var m = RT.review.build({ mode: rv.mode, page: rv.page, today: state.today, config: fullConfig(), checks: RT.store.mergeChecks(state.server, state.pending),
       persons: planPeople(), todos: RT.review.mergeTodos(state.todoDocs, rv.todos), kungs: kungs, events: eventList(), nowMin: now.getHours() * 60 + now.getMinutes() });
     m.loading = rv.loading; m.error = rv.error;
+    m.anniv = annivView(true);
     m.quest = rv.mode === 'week' && state.extras && state.extras.quests ? state.extras.quests[RT.review.rangeOf('week', state.today, rv.page).from] || null : null;
     return m;
   }
@@ -1678,6 +1692,94 @@
       prefs: currentPrefs(), prefsReady: state.prefsReady, times: REMIND_TIMES
     };
   }
+  // ── 우리 기념일 (v46): couple/main 하나를 둘이 같이 쓴다 (js/anniv.js) ──
+  /** 화면 값: anniv.build 결과 | { unset: true }(아직 안 정함 — withUnset 일 때만) | null(규칙 없음 · 계산 못 함) */
+  function annivView(withUnset) {
+    if (!RT.anniv || state.coupleOff || !store) return null;
+    var a = RT.anniv.fromDoc(state.couple);
+    if (!a) return withUnset ? { unset: true } : null;
+    return RT.anniv.build(a, state.today);
+  }
+  function annivHeader() {
+    var v = annivView(false);
+    return v && !v.future ? { text: v.line, today: v.today } : null;
+  }
+  function annivSheetModel() {
+    var A = RT.anniv, f = state.anniv.edit, a = A.fromDoc(state.couple), by = '';
+    if (a && a.updatedBy) {
+      var t = a.updatedAt ? D.dayOfIso(a.updatedAt) : NaN;
+      by = (a.updatedBy === state.me ? '내가' : nameOf(a.updatedBy) + ' 님이') + (isNaN(t) ? '' : ' ' + D.label(t)) + ' 정했어요';
+    }
+    return { view: a ? A.build(a, state.today) : null, by: by,
+      edit: f ? Object.assign({}, f, { presets: A.PRESETS, max: A.LABEL_MAX, maxDate: D.toKey(state.today), sample: sampleCount(f.start) }) : null };
+  }
+  function sampleCount(key) {
+    var n = D.parse(key);
+    return !isNaN(n) && n <= state.today ? String(RT.anniv.dayCount(n, state.today)).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '100';
+  }
+  function annivForm() {
+    var A = RT.anniv, a = A.fromDoc(state.couple);
+    var label = a ? a.label : A.DEFAULT_LABEL;
+    return { label: label, custom: A.PRESETS.indexOf(label) < 0, start: a ? a.startKey : '', saving: false, error: '', errorFresh: false };
+  }
+  function openAnniv() {
+    if (!RT.anniv || state.coupleOff) return;
+    state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.themeOpen = false; state.growOpen = false;
+    state.todoForm = null; state.eventForm = null; state.catSheet = null; state.uniSheet = null; state.archive = null;
+    state.anniv = { edit: RT.anniv.fromDoc(state.couple) ? null : annivForm() };
+    state.sheetEntering = true;
+    focusAfter = state.anniv.edit ? ['[data-act="anniv-label"][aria-pressed="true"]'] : ['[data-act="anniv-edit"]']; focusInSheet = true;
+    render(true);
+  }
+  function closeAnniv() {
+    state.anniv = null;
+    focusAfter = ['[data-act="open-anniv"]'];
+    render(true);
+  }
+  function annivEdit() {
+    if (!state.anniv) return;
+    state.anniv.edit = annivForm();
+    focusAfter = ['#an-start']; focusInSheet = true;
+    render(true);
+  }
+  /** 입력칸 값을 폼에 옮겨 둔다 (다시 그려도 적던 것이 남게) */
+  function annivRead(f) {
+    var li = document.getElementById('an-label'), si = document.getElementById('an-start');
+    if (li && f.custom) f.label = li.value;
+    if (si) f.start = si.value;
+  }
+  function annivLabel(v) {
+    var f = state.anniv && state.anniv.edit;
+    if (!f || f.saving) return;
+    annivRead(f);
+    if (v) { f.label = v; f.custom = false; }
+    else { if (!f.custom) f.label = ''; f.custom = true; focusAfter = ['#an-label']; focusInSheet = true; }
+    f.error = '';
+    render(true);
+  }
+  function saveAnniv() {
+    var A = RT.anniv, f = state.anniv && state.anniv.edit;
+    if (!store || !f || f.saving || !state.me) return;
+    annivRead(f);
+    var err = A.validate(f, state.today);
+    if (err) { f.error = err; f.errorFresh = true; render(true); return; }
+    var c = { start: f.start, label: A.cleanLabel(f.label) };
+    var before = state.couple;
+    f.saving = true; f.error = '';
+    state.couple = { start: c.start, label: c.label, updatedBy: state.me, updatedAt: new Date().toISOString() }; // 화면에는 먼저
+    state.anniv.edit = null;
+    focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true;
+    render(true);
+    store.saveCouple(c, state.me).then(function () {
+      var v = A.build(A.fromDoc(state.couple), state.today);
+      showToast(v && !v.future ? '오늘은 ' + v.line + '째예요 💞' : '기념일을 저장했어요');
+    }, function () {
+      state.couple = before;
+      if (state.anniv) { state.anniv.edit = Object.assign(annivForm(), { label: c.label, custom: A.PRESETS.indexOf(c.label) < 0, start: c.start, error: '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요', errorFresh: true }); }
+      render(true);
+    });
+  }
+
   // ── 테마 ── (테마는 이 기기에, 나 · 상대 색은 내 계정에 테마마다 저장: js/themes.js)
   function themeModel() {
     var T = RT.themes, id = T.current(), slot = mySlot(), ps = planPeople();
@@ -1721,6 +1823,7 @@
   }
   function openTheme() {
     if (!RT.themes) return;
+    state.anniv = null;
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     state.themeOpen = true; state.sheetEntering = true; render(true);
   }
@@ -1735,6 +1838,7 @@
     RT.themes.apply(id, { smooth: true });    // 그려진 화면 위에서 색을 바꿔야 스르륵 바뀐다
   }
   function openNotify() {
+    state.anniv = null;
     state.sheetDay = null; state.manage = null; state.themeOpen = false; state.catSheet = null;
     state.push = { busy: false, error: '', info: '' };
     state.notifyOpen = true; state.sheetEntering = true; render(true);
@@ -2030,11 +2134,12 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.anniv || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
+    if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }
     if (state.growOpen) { closeGrow(); return; }
     if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
     if (state.todoForm || state.eventForm || state.catSheet) { /* 아래로 */ }
@@ -2112,7 +2217,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -2276,6 +2381,9 @@
       store.watchEvents(function (list) { state.eventDocs = list; state.eventErr = ''; if (state.status === 'ready') render(); },
         function () { state.eventErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
       // 카테고리 — 아직 규칙이 없거나 막혀도 기본 6개로 보이게 둔다 (lost로 보내지 않음)
+      // 우리 기념일 (v46) — 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
+      store.watchCouple(function (doc) { state.couple = doc; state.coupleOff = false; if (state.status === 'ready') render(); },
+        function () { state.coupleOff = true; state.couple = null; if (state.status === 'ready') render(); }),
       store.watchCats(function (list) { state.catDocs = list; state.catErr = false; if (state.status === 'ready') render(); },
         function () { state.catErr = true; if (state.catSheet) render(); }),
       store.watchChecks(function (map, meta, changes, first, fromCache) {
@@ -2322,6 +2430,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
+    state.couple = null; state.coupleOff = false; state.anniv = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

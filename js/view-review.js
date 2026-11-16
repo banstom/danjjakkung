@@ -94,9 +94,70 @@
       '<span class="both__value">' + k.n + '번</span></section>';
   }
 
-  /** m: review.build 결과 + { loading, error } */
+  // ── 우리 기념일 (v46) ──
+  /** 돌아보기 맨 위 카드. a = anniv.build 결과 | { unset: true } | null(규칙이 아직 없는 등 → 숨김) */
+  function annivCard(a) {
+    if (!a) return '';
+    if (a.unset) return '<button type="button" class="card anniv anniv--empty" data-act="open-anniv">' +
+      '<span class="anniv__icon" aria-hidden="true">💞</span><span class="anniv__text"><span class="anniv__title">우리가 시작한 날을 정해 볼까요?</span>' +
+      '<span class="anniv__hint">사귄 지 며칠째인지 · 다가오는 100일 · 주년을 둘이 같이 봐요</span></span></button>';
+    if (a.future) return '<button type="button" class="card anniv" data-act="open-anniv"><span class="anniv__icon" aria-hidden="true">💞</span><span class="anniv__text">' +
+      '<span class="anniv__title">' + esc(a.startText) + '부터 시작해요</span><span class="anniv__hint">' + esc(a.dText) + '</span></span></button>';
+    var nx = a.next[0];
+    return '<button type="button" class="card anniv" data-act="open-anniv" aria-label="' + esc(a.line + (a.today ? ' · 오늘은 ' + a.today : nx ? ' · 다음 ' + nx.name + ' ' + nx.d : '') + ' · 기념일 보기') + '">' +
+      '<span class="anniv__icon" aria-hidden="true">' + (a.today ? '🎉' : '💞') + '</span><span class="anniv__text">' +
+      '<span class="anniv__title">' + esc(a.label) + ' <b>' + esc(a.countText) + '</b>일</span>' +
+      '<span class="anniv__hint">' + (a.today ? '오늘은 ' + esc(a.today) + '이에요 🎉' : nx ? '다음 ' + esc(nx.name) + ' · ' + esc(nx.d) : '') + '</span></span>' +
+      '<span class="anniv__since">' + esc(a.startText) + '부터</span></button>';
+  }
+
+  /** 기념일 시트. s = { view: anniv.build 결과 | null, edit: null | { label, custom, start, presets, max, saving, error, errorFresh }, by, entering } */
+  function annivSheet(s, entering) {
+    var v = s.view, f = s.edit, body;
+    if (f) {
+      var chips = f.presets.map(function (p) {
+        return '<button type="button" class="chip" data-act="anniv-label" data-v="' + esc(p) + '" aria-pressed="' + (!f.custom && f.label === p) + '">' + esc(p) + '</button>';
+      }).join('') + '<button type="button" class="chip" data-act="anniv-label" data-v="" aria-pressed="' + !!f.custom + '">✎ 직접</button>';
+      body = '<div class="rform anniv-form" role="group" aria-labelledby="anniv-form-title">' +
+        '<span id="anniv-form-title" class="rform__title">' + (v ? '기념일 고치기' : '우리가 시작한 날') + '</span>' +
+        '<div class="field"><span class="field__label" id="an-label-title">관계 이름 · 「' + esc(f.custom ? (f.label || '…') : f.label) + ' ' + esc(f.sample) + '일」처럼 보여요</span>' +
+        '<div class="chips" role="group" aria-labelledby="an-label-title">' + chips + '</div>' +
+        (f.custom ? '<input id="an-label" class="field__input" type="text" maxlength="' + f.max + '" autocomplete="off" enterkeyhint="done" placeholder="예: 연애한 지" value="' + esc(f.label) + '" aria-label="관계 이름 (' + f.max + '자까지)">' : '') + '</div>' +
+        '<label class="field"><span class="field__label">시작한 날 · 이 날이 1일이에요</span><input id="an-start" class="field__input" type="date" max="' + esc(f.maxDate) + '" value="' + esc(f.start) + '"></label>' +
+        '<p class="anniv-form__note">둘이 같이 보는 값이에요 · 누가 바꿔도 두 폰 모두 바뀌어요</p>' +
+        (f.error ? '<p class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
+        '<div class="rform__actions">' +
+        '<button type="button" class="ghost-btn" data-act="' + (v ? 'anniv-cancel' : 'close-anniv') + '">' + (v ? '돌아가기' : '닫기') + '</button>' +
+        '<button type="button" class="solid-btn" data-act="anniv-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div></div>';
+    } else if (v && v.future) {
+      body = '<div class="abig"><p class="abig__count">' + esc(v.dText) + '</p><p class="abig__since">' + esc(v.startText) + '부터 시작해요</p></div>';
+    } else if (v) {
+      body = '<div class="abig"><p class="abig__label">' + esc(v.label) + '</p><p class="abig__count">' + esc(v.countText) + '<span>일</span></p>' +
+        '<p class="abig__since">' + esc(v.startText) + '부터' + (v.years ? ' · ' + v.years + '년 넘게' : '') + '</p>' +
+        (v.today ? '<p class="abig__today" role="status">🎉 오늘은 ' + esc(v.today) + '이에요</p>' : '') + '</div>' +
+        '<h3 class="gsub">다가오는 기념일</h3><ul class="alist">' + v.next.map(function (m) {
+          return '<li class="' + (m.kind === 'year' ? 'is-year' : '') + '"><span class="alist__name">' + esc(m.name) + '</span><span class="alist__date">' + esc(m.date) + '</span><span class="alist__d">' + esc(m.d) + '</span></li>';
+        }).join('') + '</ul>' +
+        (v.past.length ? '<h3 class="gsub">지나온 기념일</h3><ul class="alist alist--past">' + v.past.map(function (m) {
+          return '<li><span class="alist__name">' + esc(m.name) + '</span><span class="alist__date">' + esc(m.date) + '</span><span class="alist__d"></span></li>';
+        }).join('') + '</ul>' : '') +
+        '<p class="anniv-form__note">시작한 날이 1일 · 100일 단위와 해마다 같은 날을 챙겨요</p>';
+    }
+    return '<div class="sheet-layer">' +
+      '<button type="button" class="scrim" data-act="close-anniv" aria-label="닫기"></button>' +
+      '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="anniv-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<div class="sheet__head"><h2 id="anniv-title" class="sheet__title">우리 기념일</h2>' +
+      (v && !f ? '<button type="button" class="mini-btn" data-act="anniv-edit">고치기</button>' : '') + '</div>' +
+      body +
+      (v && !f && s.by ? '<p class="anniv__by">' + esc(s.by) + '</p>' : '') +
+      (!f ? '<button type="button" class="close-btn" data-act="close-anniv">닫기</button>' : '') +
+      '</section></div>';
+  }
+
+  /** m: review.build 결과 + { loading, error, anniv } */
   function tab(m) {
-    var out = head(m);
+    var out = annivCard(m.anniv) + head(m);
     if (m.error) return out + '<section class="card notice" role="status"><p class="notice__body">' + esc(m.error) + '</p>' +
       '<button type="button" class="small-btn" data-act="rv-retry">다시 불러오기</button></section>';
     if (m.empty && !m.loading) return out + '<section class="card notice" role="status"><h2 class="notice__title">아직 돌아볼 기록이 없어요</h2>' +
@@ -107,7 +168,7 @@
     return out + quest + routineCard(m.routine) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
   }
 
-  var api = { tab: tab };
+  var api = { tab: tab, annivCard: annivCard, annivSheet: annivSheet };
   root.RT = root.RT || {};
   root.RT.viewReview = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

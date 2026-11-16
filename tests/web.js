@@ -685,6 +685,41 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'review-320.png') });
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('돌아보기 확인 끝 (주 · 지난주 · 달 · 두 사람 · 실시간 · 320px)');
+
+  // 4-1a2) (v46) 우리 기념일: 처음엔 돌아보기에 「정해 볼까요?」 → 저장하면 두 폰 머리말에 「사귄 지 N일」, 짝꿍도 고칠 수 있다
+  assert.ok(await jm.$('.anniv--empty'), '정하기 전엔 빈 카드');
+  assert.ok(!(await jm.$('.dday')), '정하기 전엔 머리말에 없음');
+  await jm.click('.anniv--empty'); await jm.waitForSelector('#an-start');
+  assert.strictEqual(await jm.getAttribute('[data-act="anniv-label"][aria-pressed="true"]', 'data-v'), '사귄 지', '기본 이름');
+  await jm.fill('#an-start', '2026-11-01'); await jm.click('[data-act="anniv-save"]'); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.anniv-form .rform__error'), /지난 날/, '미래 날짜는 막힘');
+  await jm.fill('#an-start', '2025-07-20'); await jm.click('[data-act="anniv-save"]'); await jm.waitForTimeout(300);
+  const cp = docs.get('couple/main');
+  assert.strictEqual(cp.start, '2025-07-20'); assert.strictEqual(cp.label, '사귄 지'); assert.ok(cp.updatedBy, '누가 바꿨는지');
+  const annivN = Math.round((Date.UTC(2026, 9, 27) - Date.UTC(2025, 6, 20)) / 86400000) + 1; // 시작한 날 = 1일
+  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞사귄 지 ' + annivN + '일');
+  assert.strictEqual(await jm.textContent('.abig__count'), annivN + '일');
+  assert.ok((await jm.$$('.alist:not(.alist--past) li')).length === 3, '다가오는 기념일 3개');
+  await jm.screenshot({ path: path.join(OUT, 'anniv-sheet.png'), fullPage: true });
+  await jm.click('.close-btn[data-act="close-anniv"]'); await jm.waitForTimeout(150);
+  assert.ok(await jm.$('.card.anniv:not(.anniv--empty)'), '돌아보기 카드');
+  await jm.screenshot({ path: path.join(OUT, 'anniv-review.png') });
+  await dj.waitForTimeout(200);
+  assert.strictEqual((await dj.textContent('.dday')).trim(), '💞사귄 지 ' + annivN + '일', '짝꿍 머리말도 같음');
+  await dj.click('.dday'); await dj.waitForSelector('.abig');
+  assert.match(await dj.textContent('.anniv__by'), /준민 님이 10월 27일 정했어요/);
+  await dj.click('[data-act="anniv-edit"]'); await dj.click('[data-act="anniv-label"][data-v=""]'); await dj.waitForSelector('#an-label');
+  await dj.fill('#an-label', '연애한 지'); await dj.click('[data-act="anniv-save"]'); await dj.waitForTimeout(300);
+  assert.strictEqual(docs.get('couple/main').label, '연애한 지');
+  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞연애한 지 ' + annivN + '일', '짝꿍이 고치면 내 머리말도');
+  await dj.keyboard.press('Escape'); await dj.waitForTimeout(150);
+  assert.ok(!(await dj.$('.sheet')), 'Esc 로 닫힘');
+  await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(150);
+  const ddFit = await jm.$eval('.dday', (b) => b.getBoundingClientRect().right <= 320);
+  assert.ok(ddFit, '320px 머리말에 들어감');
+  await jm.screenshot({ path: path.join(OUT, 'anniv-320.png') });
+  await jm.setViewportSize({ width: 390, height: 844 });
+  console.log('기념일 확인 끝 (' + annivN + '일 · 두 폰 · 짝꿍이 고침 · 320px)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
