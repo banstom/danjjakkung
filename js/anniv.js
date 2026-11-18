@@ -1,5 +1,5 @@
 /* 우리 기념일 (v46) — 두 사람이 어떤 관계를 시작한 지 며칠째인지, 다가오는 · 지난 기념일.
-   저장 couple/main = { start: 'YYYY-MM-DD', label: '사귄 지', updatedBy, updatedAt } — 둘이 같은 값, 둘 다 고칠 수 있다.
+   저장 couple/main = { start: 'YYYY-MM-DD', label: '단짝이 된 지', updatedBy, updatedAt } — 둘이 같은 값, 둘 다 고칠 수 있다.
    세는 법: 시작한 날 = 1일 (한국 커플식). 100일 = 시작일 + 99일.
    기념일: 100일 단위(100 · 200 · … · 1000 · …) + 해마다 같은 날(1주년 · 2주년 …). 2월 29일에 시작했으면 평년엔 2월 28일. */
 (function (root) {
@@ -7,8 +7,10 @@
   var D = root.RT && root.RT.dates ? root.RT.dates : (typeof require === 'function' ? require('./dates.js') : null);
 
   var LABEL_MAX = 8;
-  var PRESETS = ['사귄 지', '만난 지', '함께한 지', '결혼한 지'];
-  var DEFAULT_LABEL = '사귄 지';
+  // v47: 앱 전체 용어 「사귄 지」 → 「단짝이 된 지」. 예전에 저장된 「사귄 지」도 화면에는 새 말로 보인다(OLD_LABELS)
+  var PRESETS = ['단짝이 된 지', '만난 지', '함께한 지', '결혼한 지'];
+  var DEFAULT_LABEL = '단짝이 된 지';
+  var OLD_LABELS = { '사귄 지': true };
   var MIN_YEAR = 1950;
 
   function cleanLabel(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
@@ -19,7 +21,7 @@
     var n = D.parse(doc.start);
     if (isNaN(n)) return null;
     var label = cleanLabel(doc.label);
-    if (!label || label.length > LABEL_MAX) label = DEFAULT_LABEL;
+    if (!label || label.length > LABEL_MAX || OLD_LABELS[label]) label = DEFAULT_LABEL;
     return { start: n, startKey: doc.start, label: label, updatedBy: typeof doc.updatedBy === 'string' ? doc.updatedBy : null, updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : null };
   }
 

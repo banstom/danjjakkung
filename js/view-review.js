@@ -100,7 +100,7 @@
     if (!a) return '';
     if (a.unset) return '<button type="button" class="card anniv anniv--empty" data-act="open-anniv">' +
       '<span class="anniv__icon" aria-hidden="true">💞</span><span class="anniv__text"><span class="anniv__title">우리가 시작한 날을 정해 볼까요?</span>' +
-      '<span class="anniv__hint">사귄 지 며칠째인지 · 다가오는 100일 · 주년을 둘이 같이 봐요</span></span></button>';
+      '<span class="anniv__hint">단짝이 된 지 며칠째인지 · 다가오는 100일 · 주년을 둘이 같이 봐요</span></span></button>';
     if (a.future) return '<button type="button" class="card anniv" data-act="open-anniv"><span class="anniv__icon" aria-hidden="true">💞</span><span class="anniv__text">' +
       '<span class="anniv__title">' + esc(a.startText) + '부터 시작해요</span><span class="anniv__hint">' + esc(a.dText) + '</span></span></button>';
     var nx = a.next[0];

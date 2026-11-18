@@ -10,10 +10,10 @@ test('며칠째: 시작한 날 = 1일, 100일 = 시작일 + 99일', () => {
   const s = d(2025, 1, 1);
   assert.equal(A.dayCount(s, s), 1);
   assert.equal(A.dayCount(s, s + 99), 100);
-  const m = A.build(A.fromDoc({ start: '2025-01-01', label: '사귄 지' }), s + 99);
+  const m = A.build(A.fromDoc({ start: '2025-01-01', label: '단짝이 된 지' }), s + 99);
   assert.equal(m.count, 100);
   assert.equal(m.today, '100일');
-  assert.equal(m.line, '사귄 지 100일');
+  assert.equal(m.line, '단짝이 된 지 100일');
 });
 
 test('기념일 목록: 100일 단위 + 주년, 날짜 순, 콤마', () => {
@@ -56,14 +56,14 @@ test('오래된 관계도 다가오는 기념일을 찾는다 · 같은 날이�
 test('저장 값 읽기 · 폼 검사', () => {
   assert.equal(A.fromDoc(null), null);
   assert.equal(A.fromDoc({ start: '2025-02-30' }), null);
-  assert.equal(A.fromDoc({ start: '2025-01-01' }).label, '사귄 지');
+  assert.equal(A.fromDoc({ start: '2025-01-01' }).label, '단짝이 된 지');
   assert.equal(A.fromDoc({ start: '2025-01-01', label: '  함께한   지 ' }).label, '함께한 지');
   const today = d(2026, 11, 16);
-  assert.equal(A.validate({ label: '사귄 지', start: '2026-11-16' }, today), '');
+  assert.equal(A.validate({ label: '단짝이 된 지', start: '2026-11-16' }, today), '');
   assert.match(A.validate({ label: '', start: '2026-11-16' }, today), /관계 이름/);
   assert.match(A.validate({ label: '아주아주아주긴이름', start: '2026-11-16' }, today), /8자/);
-  assert.match(A.validate({ label: '사귄 지', start: '2026-11-17' }, today), /지난 날/);
-  assert.match(A.validate({ label: '사귄 지', start: '' }, today), /골라/);
+  assert.match(A.validate({ label: '단짝이 된 지', start: '2026-11-17' }, today), /지난 날/);
+  assert.match(A.validate({ label: '단짝이 된 지', start: '' }, today), /골라/);
 });
 
 test('시작일이 미래면 future 표시', () => {
@@ -77,4 +77,13 @@ test('규칙: couple/main — 관계 이름 글자 수가 앱과 같음', () => 
   assert.ok(rules.includes('match /couple/{id}'));
   assert.ok(rules.includes("request.resource.data.label.size() <= " + A.LABEL_MAX));
   assert.ok(rules.includes("hasOnly(['start', 'label', 'updatedBy', 'updatedAt'])"));
+});
+
+test('v47 용어: 예전에 저장된 「사귄 지」는 「단짝이 된 지」로 보이고, 고를 거리에도 「사귄」이 없다', () => {
+  assert.equal(A.fromDoc({ start: '2025-01-01', label: '사귄 지' }).label, '단짝이 된 지');
+  assert.equal(A.build(A.fromDoc({ start: '2025-01-01', label: '사귄 지' }), d(2025, 1, 1) + 99).line, '단짝이 된 지 100일');
+  assert.equal(A.DEFAULT_LABEL, '단짝이 된 지');
+  assert.ok(A.PRESETS.every((p) => !/사귄/.test(p)));
+  assert.ok(A.PRESETS.every((p) => p.length <= A.LABEL_MAX), '규칙 8자 안');
+  assert.equal(A.fromDoc({ start: '2025-01-01', label: '만난 지' }).label, '만난 지', '직접 고른 다른 이름은 그대로');
 });

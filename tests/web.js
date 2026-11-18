@@ -141,6 +141,14 @@ const FAKE_SW = `Object.defineProperty(navigator, 'serviceWorker', { value: { re
   (function () { var perm = 'default'; function N() {} Object.defineProperty(N, 'permission', { get: function () { return perm; } });
     N.requestPermission = function () { window.__asked = (window.__asked || 0) + 1; perm = 'granted'; return Promise.resolve('granted'); }; window.Notification = N; })();`;
 
+// v47: 알림 · 테마 · 계정은 「전체」 탭 설정 줄에 있다
+async function toAll(p) {
+  await p.waitForSelector('.tabbar');
+  await p.click('[data-act="tab"][data-tab="all"]');
+  await p.waitForSelector('.all');
+}
+async function openSet(p, act) { await toAll(p); await p.click(`[data-act="${act}"]`); }
+
 async function open(browser, name, opts = {}) {
   const ctx = opts.ctx || await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Asia/Seoul', serviceWorkers: opts.sw ? 'allow' : 'block', userAgent: opts.ua });
   if (opts.push) await ctx.grantPermissions(['notifications']);
@@ -643,7 +651,7 @@ async function tick(page, dateKey, key) {
   const rvDone = (p) => p.textContent('.card[aria-label="끝낸 일 돌아보기"] .rv-sub');
   await jm.evaluate(() => { window.__reads = 0; });
   await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForSelector('.rv-us'); await jm.waitForTimeout(250);
-  assert.strictEqual((await jm.$$eval('.tabbar__btn span', (e) => e.map((x) => x.textContent))).join(' · '), '루틴 · 시간표 · 할 일 · 돌아보기');
+  assert.strictEqual((await jm.$$eval('.tabbar__btn span', (e) => e.map((x) => x.textContent))).join(' · '), '루틴 · 시간표 · 할 일 · 돌아보기 · 전체');
   assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '이번 주 우리');
   assert.strictEqual(await jm.textContent('.rv-us .grid-range'), '10월 26일 – 11월 1일');
   assert.ok(await jm.$eval('[data-act="rv-page"][data-dir="-1"]', (e) => e.disabled), '이번 주는 다음이 막힘');
@@ -678,7 +686,7 @@ async function tick(page, dateKey, key) {
   await dj.click(`[data-act="todo-toggle"][data-id="${tid}"]`); await dj.waitForTimeout(300);
   assert.strictEqual(docs.get('todos/' + tid).done, false, '짝꿍이 되돌림');
   assert.strictEqual(await rvDone(jm), n0, '되돌리면 바로 빠진다');
-  // 좁은 화면(320px)에서도 아래 탭 넷이 넘치지 않는다
+  // 좁은 화면(320px)에서도 아래 탭 다섯이 넘치지 않는다
   await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(150);
   const tabFit = await jm.$$eval('.tabbar__btn', (bs) => bs.every((b) => { const r = b.getBoundingClientRect(), t = b.querySelector('span').getBoundingClientRect(); return r.right <= 320.5 && t.left >= r.left - 0.5 && t.right <= r.right + 0.5; }));
   assert.ok(tabFit, '320px 아래 탭');
@@ -686,18 +694,18 @@ async function tick(page, dateKey, key) {
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('돌아보기 확인 끝 (주 · 지난주 · 달 · 두 사람 · 실시간 · 320px)');
 
-  // 4-1a2) (v46) 우리 기념일: 처음엔 돌아보기에 「정해 볼까요?」 → 저장하면 두 폰 머리말에 「사귄 지 N일」, 짝꿍도 고칠 수 있다
+  // 4-1a2) (v46) 우리 기념일: 처음엔 돌아보기에 「정해 볼까요?」 → 저장하면 두 폰 머리말에 「단짝이 된 지 N일」, 짝꿍도 고칠 수 있다
   assert.ok(await jm.$('.anniv--empty'), '정하기 전엔 빈 카드');
   assert.ok(!(await jm.$('.dday')), '정하기 전엔 머리말에 없음');
   await jm.click('.anniv--empty'); await jm.waitForSelector('#an-start');
-  assert.strictEqual(await jm.getAttribute('[data-act="anniv-label"][aria-pressed="true"]', 'data-v'), '사귄 지', '기본 이름');
+  assert.strictEqual(await jm.getAttribute('[data-act="anniv-label"][aria-pressed="true"]', 'data-v'), '단짝이 된 지', '기본 이름');
   await jm.fill('#an-start', '2026-11-01'); await jm.click('[data-act="anniv-save"]'); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('.anniv-form .rform__error'), /지난 날/, '미래 날짜는 막힘');
   await jm.fill('#an-start', '2025-07-20'); await jm.click('[data-act="anniv-save"]'); await jm.waitForTimeout(300);
   const cp = docs.get('couple/main');
-  assert.strictEqual(cp.start, '2025-07-20'); assert.strictEqual(cp.label, '사귄 지'); assert.ok(cp.updatedBy, '누가 바꿨는지');
+  assert.strictEqual(cp.start, '2025-07-20'); assert.strictEqual(cp.label, '단짝이 된 지'); assert.ok(cp.updatedBy, '누가 바꿨는지');
   const annivN = Math.round((Date.UTC(2026, 9, 27) - Date.UTC(2025, 6, 20)) / 86400000) + 1; // 시작한 날 = 1일
-  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞사귄 지 ' + annivN + '일');
+  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞단짝이 된 지 ' + annivN + '일');
   assert.strictEqual(await jm.textContent('.abig__count'), annivN + '일');
   assert.ok((await jm.$$('.alist:not(.alist--past) li')).length === 3, '다가오는 기념일 3개');
   await jm.screenshot({ path: path.join(OUT, 'anniv-sheet.png'), fullPage: true });
@@ -705,7 +713,7 @@ async function tick(page, dateKey, key) {
   assert.ok(await jm.$('.card.anniv:not(.anniv--empty)'), '돌아보기 카드');
   await jm.screenshot({ path: path.join(OUT, 'anniv-review.png') });
   await dj.waitForTimeout(200);
-  assert.strictEqual((await dj.textContent('.dday')).trim(), '💞사귄 지 ' + annivN + '일', '짝꿍 머리말도 같음');
+  assert.strictEqual((await dj.textContent('.dday')).trim(), '💞단짝이 된 지 ' + annivN + '일', '짝꿍 머리말도 같음');
   await dj.click('.dday'); await dj.waitForSelector('.abig');
   assert.match(await dj.textContent('.anniv__by'), /준민 님이 10월 27일 정했어요/);
   await dj.click('[data-act="anniv-edit"]'); await dj.click('[data-act="anniv-label"][data-v=""]'); await dj.waitForSelector('#an-label');
@@ -720,6 +728,72 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'anniv-320.png') });
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('기념일 확인 끝 (' + annivN + '일 · 두 폰 · 짝꿍이 고침 · 320px)');
+
+  // 4-1a3) (v47) 「전체」 탭: 머리말엔 칩만, 설정 줄이 각 시트를 연다, 「사귄」이 어디에도 없다
+  const topTxt = (p) => p.$eval('header.top', (h) => h.innerHTML);
+  for (const t of ['routine', 'schedule', 'todo', 'look']) {
+    await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
+    const top = await topTxt(jm);
+    assert.ok(!/sign-out|로그아웃|님으로 접속|open-notify|open-theme/.test(top), t + ' 머리말에 접속 · 로그아웃 · 🔔 · 🎨 없음');
+    assert.ok(/class="dday"/.test(top), t + ' 머리말 칩');
+  }
+  await toAll(jm);
+  assert.strictEqual(await jm.textContent('h1.title'), '전체');
+  assert.ok(!(await jm.$('.dday')), '「전체」는 머리말 칩 없음');
+  assert.strictEqual(await jm.textContent('.aus__ds'), '연애한 지 ' + annivN + '일', '우리 둘 카드 = 기념일 문구');
+  // 예전에 저장된 「사귄 지」는 「단짝이 된 지」로 보인다
+  docs.set('couple/main', Object.assign({}, docs.get('couple/main'), { label: '사귄 지' })); await pushAll(['couple/main']); await jm.waitForTimeout(150);
+  assert.strictEqual(await jm.textContent('.aus__ds'), '단짝이 된 지 ' + annivN + '일');
+  for (const t of ['routine', 'look', 'all']) {
+    await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
+    assert.ok(!(await jm.evaluate(() => document.body.innerText)).includes('사귄'), t + ' 화면에 「사귄」 없음');
+  }
+  await jm.click('.aus__btn'); await jm.waitForSelector('.abig');
+  assert.ok(!(await jm.evaluate(() => document.body.innerText)).includes('사귄'), '기념일 시트에 「사귄」 없음');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'open-anniv', '닫으면 기념일 버튼으로');
+  await jm.screenshot({ path: path.join(OUT, 'all-tab.png'), fullPage: true });
+  // 설정 줄 → 시트
+  await jm.click('[data-act="open-notify"]'); await jm.waitForSelector('#notify-title');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('#notify-title')), '알림 시트 Esc');
+  await jm.click('[data-act="open-theme"]'); await jm.waitForSelector('#theme-title');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'open-theme', '테마 시트 닫으면 그 줄로');
+  assert.match(await jm.textContent('[data-act="open-theme"] .arow__vl'), /Soft Pastel|.+/);
+  assert.match(await jm.textContent('[data-act="open-account"]'), /준민 님으로 접속/);
+  await jm.click('[data-act="open-account"]'); await jm.waitForSelector('#account-title');
+  assert.match(await jm.textContent('.sheet__sub'), /준민 님으로 접속 · junmin@example\.com/);
+  assert.ok(await jm.$('.sheet [data-act="sign-out"]'), '계정 시트에 로그아웃');
+  await jm.screenshot({ path: path.join(OUT, 'all-account.png') });
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100); // 회귀: Esc 로도 닫힘
+  assert.ok(!(await jm.$('#account-title')), '계정 시트 Esc');
+  await jm.click('[data-act="open-account"]'); await jm.waitForSelector('#account-title');
+  await jm.click('.close-btn[data-act="close-account"]'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('#account-title')), '계정 시트 닫힘');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'open-account');
+  await jm.click('[data-act="open-account"]'); await jm.waitForSelector('#account-title');
+  await jm.goBack(); await jm.waitForTimeout(150); // 뒤로가기 = 시트만 닫기
+  assert.ok(!(await jm.$('#account-title')) && !(await jm.$('.exit-box')), '뒤로가기는 계정 시트만 닫음');
+  await jm.click('[data-act="all-map"]'); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent('.toast'), /곧 열려요/);
+  // 좁은 화면: 아래 탭 다섯 · 「전체」 화면이 넘치지 않음
+  for (const w of [320, 375]) {
+    await jm.setViewportSize({ width: w, height: 700 }); await jm.waitForTimeout(120);
+    const fit = await jm.evaluate((W) => {
+      const tabs = [...document.querySelectorAll('.tabbar__btn')].every((b) => { const r = b.getBoundingClientRect(), t = b.querySelector('span').getBoundingClientRect(); return r.right <= W + 0.5 && t.left >= r.left - 0.5 && t.right <= r.right + 0.5; });
+      return { tabs, page: document.documentElement.scrollWidth <= W };
+    }, w);
+    assert.ok(fit.tabs && fit.page, w + 'px 「전체」 · 아래 탭 ' + JSON.stringify(fit));
+    await jm.screenshot({ path: path.join(OUT, `all-${w}.png`), fullPage: true });
+    await jm.click('[data-act="tab"][data-tab="routine"]'); await jm.waitForTimeout(80);
+    const dd = await jm.$eval('.dday', (b) => b.getBoundingClientRect().right <= innerWidth + 0.5);
+    assert.ok(dd, w + 'px 머리말 칩 들어감');
+    await jm.screenshot({ path: path.join(OUT, `header-${w}.png`) });
+    await toAll(jm);
+  }
+  await jm.setViewportSize({ width: 390, height: 844 });
+  console.log('「전체」 탭 확인 끝 (머리말 · 설정 시트 · 계정 · 뒤로가기 · 320/375px · 「사귄」 없음)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
@@ -1165,7 +1239,7 @@ async function tick(page, dateKey, key) {
   // 4-2) 알림: 켜기 → 기기 저장 · 기본 설정(밤 9시) → 설정 바꾸기 → 테스트 → 끄기
   const jmUid = accounts.get('junmin@example.com').uid;
   const jp = await open(browser, '준민(알림)', { push: true, user: { uid: jmUid, email: 'junmin@example.com', emailVerified: true } });
-  await jp.waitForSelector('[data-act="open-notify"]');
+  await toAll(jp);
   console.log('종 버튼(켜기 전):', await jp.getAttribute('[data-act="open-notify"]', 'aria-label'));
   await jp.click('[data-act="open-notify"]');
   await jp.waitForSelector('#notify-title');
@@ -1220,15 +1294,14 @@ async function tick(page, dateKey, key) {
 
   // 4-3) 아이폰 사파리 탭에서는 홈 화면 앱으로 열라고 안내
   const ip = await open(browser, '아이폰 사파리', { ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', user: { uid: accounts.get('dajin@example.com').uid, email: 'dajin@example.com', emailVerified: true } });
-  await ip.waitForSelector('[data-act="open-notify"]');
-  await ip.click('[data-act="open-notify"]');
+  await openSet(ip, 'open-notify');
   console.log('아이폰 사파리 탭:', await ip.textContent('.nbox__title'));
   await ip.close();
 
   // 4-4) 테마: 처음엔 기본(밝은 화면 → Soft Pastel), 🎨에서 고르면 바로 바뀌고 새로 열어도 그대로. 짝꿍 기기는 그대로.
   const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'];
   const themeOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-theme'));
-  await jm.click('[data-act="tab"][data-tab="routine"]');
+  await toAll(jm);
   console.log('테마 처음:', await themeOf(jm), '| 계절 칩 없음:', (await jm.$$('.season-chip')).length === 0, '| 🎨:', await jm.getAttribute('[data-act="open-theme"]', 'aria-label'));
   await jm.click('[data-act="open-theme"]');
   console.log('테마 시트:', await jm.textContent('#theme-title'), '| 카드:', (await jm.$$('.tpick')).length, '| 포커스:', await jm.evaluate(() => document.activeElement.getAttribute('data-v')),
@@ -1252,7 +1325,7 @@ async function tick(page, dateKey, key) {
   // 화면마다 14개 테마로 찍어 둔다 (하드코딩 색 · 대비 눈으로 점검)
   for (const id of THEME_IDS) {
     await jm.evaluate((v) => { localStorage.setItem('danjjakkung.theme', v); RT.themes.apply(v); }, id);
-    for (const tab of ['routine', 'todo', 'look', 'schedule']) {
+    for (const tab of ['routine', 'todo', 'look', 'all', 'schedule']) {
       await jm.click(`[data-act="tab"][data-tab="${tab}"]`);
       await jm.waitForTimeout(120);
       await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });
@@ -1274,7 +1347,7 @@ async function tick(page, dateKey, key) {
   }
   // 파스텔에서 켜진 스위치 · 지금 선 · 채운 버튼이 보이는지 (눈으로 확인용 사진)
   await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'soft-pastel'); RT.themes.apply('soft-pastel'); });
-  await jm.click('[data-act="open-notify"]');
+  await openSet(jm, 'open-notify');
   await jm.waitForTimeout(150);
   await jm.screenshot({ path: path.join(OUT, 'theme-soft-pastel-notify.png') });
   await jm.keyboard.press('Escape');
@@ -1284,7 +1357,7 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'theme-soft-pastel-day.png'), fullPage: true });
   await jm.click('[data-act="tab"][data-tab="routine"]');
   // 바꿀 때 실제로 스르륵 전환되는지 (선택 표시를 먼저 그린 뒤 색을 바꾼다)
-  await jm.click('[data-act="open-theme"]');
+  await openSet(jm, 'open-theme');
   await jm.click('.tpick[data-v="cosmic-dream"]');
   const mid = await jm.evaluate(() => ({ cls: document.documentElement.classList.contains('is-theming'), tr: getComputedStyle(document.querySelector('.sheet')).transitionDuration }));
   await jm.waitForTimeout(400);
@@ -1293,15 +1366,15 @@ async function tick(page, dateKey, key) {
   await jm.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'midnight-noir'); });
   await jm.reload();
   const early = await jm.evaluate(() => document.documentElement.getAttribute('data-theme'));
-  await jm.waitForSelector('[data-act="open-theme"]');
-  console.log('새로 열어도:', early, '| 로그인 그대로:', !!(await jm.$('[data-act="sign-out"]')), '| 다진 기기:', await themeOf(dj));
+  await toAll(jm);
+  console.log('새로 열어도:', early, '| 로그인 그대로:', !!(await jm.$('[data-act="open-account"]')), '| 다진 기기:', await themeOf(dj));
   await jm.evaluate(() => localStorage.setItem('danjjakkung.theme', 'no-such-theme'));
   await jm.reload(); await jm.waitForSelector('.title');
   console.log('모르는 테마 값이면 기본:', await themeOf(jm));
   // 4-5) 나 · 상대 색: 테마마다 따로, 내 계정에 저장(다른 기기도 같게), 상대 화면은 그대로
   const vars = (p) => p.evaluate(() => { const s = getComputedStyle(document.documentElement); return ['--her', '--her-ink', '--me', '--me-ink'].map((k) => s.getPropertyValue(k).trim()).join(' '); });
   const notifyBefore = JSON.stringify((docs.get('users/' + jmUid) || {}).notify);
-  await jm.click('[data-act="open-theme"]');
+  await openSet(jm, 'open-theme');
   await jm.waitForSelector('.tcolors');
   console.log('사람 색 줄:', await jm.$$eval('.tcolors__who', (a) => a.map((x) => x.textContent)), '| 후보:', (await jm.$$('.cpick')).length, '| 기본 값:', await vars(jm));
   console.log('함께 색 후보는 못 고름:', await jm.$$eval('.cpick.is-both', (a) => a.map((x) => x.dataset.who + x.dataset.v + (x.disabled ? ' 잠김' : ' 열림')).join(' ')));
@@ -1328,7 +1401,7 @@ async function tick(page, dateKey, key) {
   console.log('Soft로 돌아오면 고른 색 그대로:', await vars(jm));
   // 내 다른 기기: 같은 계정이면 같은 색 (테마는 기기마다)
   const jm2 = await open(browser, '준민 노트북', { user: { uid: jmUid, email: 'junmin@example.com', emailVerified: true } });
-  await jm2.waitForSelector('[data-act="open-theme"]');
+  await toAll(jm2);
   await jm2.evaluate(() => { localStorage.setItem('danjjakkung.theme', 'ocean-breeze'); RT.themes.apply('ocean-breeze'); });
   console.log('다른 기기(Ocean):', await vars(jm2));
   // 다른 기기에서 바꾸면 이 기기도 바로 바뀐다
@@ -1346,7 +1419,7 @@ async function tick(page, dateKey, key) {
   console.log('새로 열자마자:', await vars(jm));
   await jm2.close();
   // 다진도 자기 화면에서 따로 고른다 (준민 화면에는 영향 없음)
-  await dj.click('[data-act="open-theme"]');
+  await openSet(dj, 'open-theme');
   await dj.waitForSelector('.tcolors');
   console.log('다진 사람 색 줄:', await dj.$$eval('.tcolors__who', (a) => a.map((x) => x.textContent)));
   await dj.click('.cpick[data-who="self"][data-v="#8EC5E8"]');
@@ -1355,7 +1428,7 @@ async function tick(page, dateKey, key) {
   await dj.keyboard.press('Escape');
   // 저장이 막힌 브라우저: 고른 테마가 표시 · 머리말 · 다크 모드 변화에 흔들리지 않는다
   const bl = await open(browser, '저장 막힘', { user: { uid: accounts.get('dajin@example.com').uid, email: 'dajin@example.com', emailVerified: true } });
-  await bl.waitForSelector('[data-act="open-theme"]');
+  await toAll(bl);
   await bl.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('blocked'); }; });
   await bl.click('[data-act="open-theme"]');
   await bl.click('.tpick[data-v="vintage-film"]');
@@ -1387,13 +1460,16 @@ async function tick(page, dateKey, key) {
   console.log('모르는 계정(인증 후):', await x.textContent('.notice__title').catch(() => '(없음)'));
 
   // 6) 로그아웃 → 다시 로그인하면 이름 그대로
-  await Promise.all([jm.waitForNavigation(), jm.click('[data-act="sign-out"]')]);
+  await openSet(jm, 'open-account'); await jm.waitForSelector('#account-title');
+  await Promise.all([jm.waitForNavigation(), jm.click('.sheet [data-act="sign-out"]')]);
   await jm.waitForSelector('#auth-title');
   await jm.fill('#au-email', 'junmin@example.com');
   await jm.fill('#au-pass', 'pass1234');
   await jm.click('form[data-form="auth"] button[type="submit"]');
+  await toAll(jm); // 마지막에 본 탭(「전체」)으로 열림
+  console.log('다시 로그인:', await jm.textContent('[data-act="open-account"] .arow__ds'));
+  await jm.click('[data-act="tab"][data-tab="routine"]');
   await jm.waitForSelector('[data-act="open-manage"]');
-  console.log('다시 로그인:', await jm.textContent('.caption'));
 
   // 7) 앱처럼: 서비스 워커가 파일을 저장해서 인터넷이 끊겨도 열린다
   const swCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'allow' });

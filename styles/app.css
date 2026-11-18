@@ -897,3 +897,36 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .anniv-form__note { margin: 10px 0 0; font-size: 12px; color: var(--sub); }
 .anniv__title { white-space: nowrap; }
 @media (max-width: 359px) { .anniv__since { display: none; } }
+
+/* ── 「전체」 탭 (v47) — 목업 design/mockups/chosen/01-전체-탭 ── */
+.all { display: flex; flex-direction: column; margin-top: 18px; }
+.aus { display: flex; align-items: center; gap: 12px; }
+.aus__dots { display: flex; flex-shrink: 0; }
+.aus__dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--surface); box-sizing: border-box; }
+.aus__dot--me { background: var(--me); }
+.aus__dot--her { background: var(--her); margin-left: -10px; }
+.aus__tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.aus__nm { font-size: 16px; font-weight: 700; }
+.aus__ds { font-size: 13px; color: var(--sub); }
+.aus__btn { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; }
+.asec { margin: 22px 4px 8px; font-size: 13px; font-weight: 700; color: var(--sub); }
+.afeat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.afeat__card { border: 0; text-align: left; font: inherit; color: inherit; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; min-height: 150px; cursor: pointer; }
+.afeat__nm { font-size: 16px; font-weight: 700; }
+.afeat__ds { font-size: 13px; color: var(--sub); }
+.afeat__ico { height: 102px; display: flex; /* 지도 미리보기와 같은 높이 → 두 카드 줄이 맞음 */ align-items: center; justify-content: center; color: var(--faint); }
+.abadge { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--raised); color: var(--sub); }
+.amap { position: relative; display: block; width: 78px; height: 102px; margin: 0 auto; }
+.amap__tile { position: absolute; width: 6px; height: 6px; border-radius: 6px; background: var(--empty); }
+.amap__tile.is-on { background: var(--both); }
+.alist { background: var(--surface); border-radius: 20px; padding: 4px 16px; }
+.arow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; border-bottom: 1px solid var(--divider); cursor: pointer; }
+.arow:last-child { border-bottom: 0; }
+.arow__ic { width: 36px; height: 36px; border-radius: 12px; background: var(--raised); display: flex; align-items: center; justify-content: center; color: var(--icon); flex-shrink: 0; }
+.arow__tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.arow__nm { font-size: 16px; font-weight: 600; }
+.arow__ds { font-size: 13px; color: var(--sub); }
+.arow__vl { font-size: 13px; color: var(--sub); font-weight: 500; white-space: nowrap; }
+.arow__chev { color: var(--faint); display: flex; }
+.aus__btn:focus-visible, .afeat__card:focus-visible, .arow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.acct__out { color: var(--text); }

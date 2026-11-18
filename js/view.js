@@ -16,19 +16,16 @@
     next: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>'
   };
 
+  // 머리말 (v47, 1안 「칩만 남기기」): 날짜 · 제목 · 「단짝이 된 지 N일」 칩.
+  //  접속 · 로그아웃 · 🔔 · 🎨 은 「전체」 탭 설정으로 옮겼다. 「전체」 탭은 제목 「전체」, 칩 없음(우리 둘 카드에 있음)
   function header(h) {
     return '<header class="top">' +
-      '<div class="top__text"><p class="caption">' + esc(h.date) + (h.meName ? ' · ' + esc(h.meName) + ' 님으로 접속' : '') +
-      (h.canRepick ? ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') +
-      (h.canSignOut ? ' · <button type="button" class="link-btn" data-act="sign-out">로그아웃</button>' : '') + '</p><div class="top__row"><h1 class="title">' + esc(TITLE) + '</h1>' +
-      // 우리 기념일 (v46) — 「사귄 지 412일」, 누르면 기념일 시트
+      '<div class="top__text"><p class="caption">' + esc(h.date) +
+      (h.canRepick ? ' · ' + esc(h.meName) + ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') + '</p>' +
+      '<div class="top__row"><h1 class="title">' + esc(h.title || TITLE) + '</h1>' +
       (h.dday ? '<button type="button" class="dday" data-act="open-anniv" aria-label="' + esc(h.dday.text + (h.dday.today ? ' · 오늘은 ' + h.dday.today : '') + ' · 기념일 보기') + '">' +
         '<span aria-hidden="true">' + (h.dday.today ? '🎉' : '💞') + '</span>' + esc(h.dday.text) + '</button>' : '') +
       '</div></div>' +
-      '<div class="top__side">' +
-      (h.bell ? '<button type="button" class="bell-btn" data-act="open-notify" aria-label="알림 설정' + (h.bell === 'on' ? ' (켜짐)' : ' (꺼짐)') + '">' + (h.bell === 'on' ? '🔔' : '🔕') + '</button>' : '') +
-      (h.palette ? '<button type="button" class="bell-btn" data-act="open-theme" aria-label="테마 바꾸기 (지금: ' + esc(h.palette) + ')">🎨</button>' : '') +
-      '</div>' +
       '</header>';
   }
 

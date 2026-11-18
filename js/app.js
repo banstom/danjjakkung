@@ -94,13 +94,14 @@
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
+  var TAB_IDS = ['routine', 'schedule', 'todo', 'look', 'all']; // v47: 「전체」
   var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
-    var q = /[?&]tab=(routine|schedule|todo|look)/.exec(root.location.search || '');
+    var q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(root.location.search || '');
     var t = q ? q[1] : lsGet(LS_TAB);
-    if (t === 'schedule' || t === 'todo' || t === 'routine' || t === 'look') state.tab = t;
+    if (TAB_IDS.indexOf(t) >= 0) state.tab = t;
     // 돌아보기는 언제나 이번 주부터 (주소로 열어도 · 다시 열어도)
     if (q) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
   })();
@@ -128,7 +129,7 @@
     }
     var focus = focusOf(document.activeElement);
     if (state.manage && !m.manage) state.manage = null;
-    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.place = null; state.uniSheet = null; state.archive = null; }
+    if (state.status !== 'ready') { state.notifyOpen = false; state.themeOpen = false; state.account = false; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.place = null; state.uniSheet = null; state.archive = null; }
     if (state.todoForm && state.todoForm.id && !findTodo(state.todoForm.id) && !state.todoForm.saving) { state.todoForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 할 일이에요'); }, 0); }
     if (state.eventForm && state.eventForm.id && !findEvent(state.eventForm.id) && !state.eventForm.saving) { state.eventForm = null; setTimeout(function () { showToast('다른 기기에서 지워진 일정이에요'); }, 0); }
     if (state.place && !state.place.fresh && !findTodo(state.place.id)) { state.place = null; setTimeout(function () { showToast('다른 기기에서 지워졌거나 완료된 할 일이에요'); }, 0); }
@@ -142,13 +143,13 @@
     if (state.status === 'ready' && state.anniv) plan.sheet = RT.viewReview.annivSheet(annivSheetModel(), state.sheetEntering);
     else if (state.anniv) state.anniv = null;
     var flipBefore = flipMeasure();
+    if (state.status === 'ready' && state.account && !plan.sheet) plan.sheet = RT.viewAll.accountSheet({ meName: m.header.meName, email: state.email }, state.sheetEntering);
     var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || state.growOpen || plan.sheet) && state.status === 'ready');
     var entering = state.sheetEntering;
-    m.header.canSignOut = state.status === 'ready';
-    m.header.bell = state.status === 'ready' && RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? 'on' : 'off') : null;
-    m.header.palette = state.status === 'ready' && RT.themes ? RT.themes.byId(RT.themes.current()).name : null;
     if (state.status !== 'ready') m.header.meName = '';
-    m.header.dday = state.status === 'ready' ? annivHeader() : null;
+    var onAll = state.status === 'ready' && state.tab === 'all';
+    m.header.title = onAll ? '전체' : '';
+    m.header.dday = state.status === 'ready' && !onAll ? annivHeader() : null;
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
@@ -200,6 +201,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
+    'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -535,6 +537,10 @@
     else if (act === 'close-grow') closeGrow();
     else if (act === 'open-quest') { resetReview(); setTab('look'); }
     else if (act === 'open-anniv') openAnniv();
+    else if (act === 'open-account') openAccount();
+    else if (act === 'close-account') closeAccount();
+    else if (act === 'all-map') showToast('우리 지도는 곧 열려요');
+    else if (act === 'all-diet') showToast('운동·식단은 준비 중이에요');
     else if (act === 'close-anniv') closeAnniv();
     else if (act === 'anniv-edit') annivEdit();
     else if (act === 'anniv-cancel') { if (state.anniv) { state.anniv.edit = null; focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true; render(true); } }
@@ -544,12 +550,12 @@
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
   function setTab(t) {
-    if (['routine', 'schedule', 'todo', 'look'].indexOf(t) < 0 || t === state.tab) return;
+    if (TAB_IDS.indexOf(t) < 0 || t === state.tab) return;
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
-    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null;
+    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -622,6 +628,7 @@
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
+    if (state.tab === 'all' && other) out.tab = RT.viewAll.tab(allModel());
     var dm = state.uniSheet && state.uniSheet.kind === 'detail' ? uniDetailModel() : null;
     if (state.place) out.sheet = V.placeScreen(placeModel());
     else if (state.todoForm) out.sheet = V.todoSheet(todoFormView(state.todoForm), state.sheetEntering);
@@ -1700,6 +1707,29 @@
     if (!a) return withUnset ? { unset: true } : null;
     return RT.anniv.build(a, state.today);
   }
+  // ── 「전체」 탭 (v47) ──
+  function allModel() {
+    var v = state.couple && !state.coupleOff ? annivView(false) : null;
+    return {
+      dday: v && !v.future ? v.line : '',
+      annivOff: !!state.coupleOff || !RT.anniv,
+      map: { ready: false, count: 0, tiles: [] }, // 우리 지도는 M2 에서
+      notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
+      theme: RT.themes ? RT.themes.byId(RT.themes.current()).name : '',
+      meName: state.me ? nameOf(state.me) : ''
+    };
+  }
+  function openAccount() {
+    state.anniv = null; state.notifyOpen = false; state.themeOpen = false;
+    state.account = true; state.sheetEntering = true;
+    focusAfter = ['[data-act="sign-out"]']; focusInSheet = true;
+    render(true);
+  }
+  function closeAccount() {
+    state.account = false;
+    focusAfter = ['[data-act="open-account"]'];
+    render(true);
+  }
   function annivHeader() {
     var v = annivView(false);
     return v && !v.future ? { text: v.line, today: v.today } : null;
@@ -1823,7 +1853,7 @@
   }
   function openTheme() {
     if (!RT.themes) return;
-    state.anniv = null;
+    state.anniv = null; state.account = false;
     state.sheetDay = null; state.manage = null; state.notifyOpen = false; state.todoForm = null; state.eventForm = null; state.catSheet = null;
     state.themeOpen = true; state.sheetEntering = true; render(true);
   }
@@ -1838,7 +1868,7 @@
     RT.themes.apply(id, { smooth: true });    // 그려진 화면 위에서 색을 바꿔야 스르륵 바뀐다
   }
   function openNotify() {
-    state.anniv = null;
+    state.anniv = null; state.account = false;
     state.sheetDay = null; state.manage = null; state.themeOpen = false; state.catSheet = null;
     state.push = { busy: false, error: '', info: '' };
     state.notifyOpen = true; state.sheetEntering = true; render(true);
@@ -2134,11 +2164,12 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.anniv || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.anniv || !!state.account || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
+    if (state.account) { closeAccount(); return; }
     if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }
     if (state.growOpen) { closeGrow(); return; }
     if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
@@ -2217,7 +2248,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -2257,7 +2288,7 @@
   root.addEventListener('focus', checkToday);
   if (root.navigator.serviceWorker && root.navigator.serviceWorker.addEventListener) {
     root.navigator.serviceWorker.addEventListener('message', function (ev) {
-      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look)/.exec(String(d.link || ''));
+      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(String(d.link || ''));
       if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
     });
   }
