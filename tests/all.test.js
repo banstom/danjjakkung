@@ -38,6 +38,7 @@ test('v51 「우리 둘」 박스: 내 동그라미만 사진 버튼 · 단짝�
   assert.doesNotMatch(html, /다진 사진/, '단짝 동그라미는 버튼 아님');
   assert.match(html, /ubox__ph--me"><span class="ubox__ini"[^>]*>준</, '사진 없으면 사람 색 + 첫 글자');
   assert.match(html, /ubox__ph--her" style="background-image:url\(data:image\/jpeg;base64,AAAA\)"/, '단짝이 올린 사진');
+  assert.doesNotMatch(AV.box(Object.assign({}, us, { right: Object.assign({}, us.right, { img: 'data:image/jpeg;base64,AA) ;background:url(http://x' }) })), /http:\/\/x/, '회귀(점검 AI): 이상한 글자는 사진으로 안 씀');
   assert.match(AV.box(Object.assign({}, us, { line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/);
   assert.doesNotMatch(AV.box(Object.assign({}, us, { off: true })), /data-act="open-anniv"/);
 });
@@ -116,7 +117,8 @@ test('점검 AI 회귀: 규칙이 막히면 「정해 볼까요?」 없음 · �
   assert.doesNotMatch(sh, /class="close-btn[^"]*" data-act="sign-out"/);
 });
 
-test('점검 AI 회귀: 시작일이 미래면 「○○부터 시작해요 · D-n」 (app.js allModel)', () => {
+test('점검 AI 회귀: 시작일이 미래면 박스에 「○○부터 · 시작까지 D-n」 · 불러오는 중엔 「정해 볼까요?」를 안 보임', () => {
   const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
-  assert.match(app, /v\.future \? v\.startText \+ '부터 시작해요 · ' \+ v\.dText/);
+  assert.match(app, /v && v\.future\) \{ line1 = v\.startText \+ '부터'; line2 = '시작까지 ' \+ v\.dText;/);
+  assert.match(app, /else if \(!state\.coupleLoaded\)/);
 });

@@ -115,7 +115,7 @@
   function render(force) {
     // 한글 조합 중인 입력칸이 조합 끝 신호 없이 사라지면(찾기 결과 누르기 · 저장) composing 이 남아 화면 갱신이 계속 미뤄졌다 → 입력칸이 없으면 풀기
     if (composing && !typing()) composing = false;
-    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on) || (kmZoom && kmZoom.busy()) || mdrag)) {
+    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on) || (kmZoom && kmZoom.busy()) || mdrag || avaTouching())) {
       deferred = true;
       // 손가락 · 끌기 때문에 미뤘으면 잠시 뒤 다시 (입력칸은 focusout 에서 다시 그림)
       if (!typing() && !deferTimer) deferTimer = setTimeout(function () { deferTimer = null; if (deferred) render(); }, 400);
@@ -620,7 +620,7 @@
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
-    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaCrop = null;
+    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; dropCrop();
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -1782,9 +1782,11 @@
   function mapReady() { return mapDataState === 'ready' && !!mapData; }
   function placeList() { return RT.places.fromDocs(state.placeDocs || {}); }
   /** places 문서 하나 저장 + 저장된 값을 화면에 바로 반영 (실시간 반영을 기다리지 않음 — 고치거나 지운 뒤 지도 · 목록이 바로 바뀌게) */
+  /** 화면에 있는 값이 방금 저장한 값보다 새것이면(짝꿍이 바로 뒤에 고침) 덮지 않는다 */
+  function newerThan(cur, next) { return !!(cur && next && cur.updatedAt && next.updatedAt && cur.updatedAt > next.updatedAt); }
   function savePlace(code, uid, change) {
     return store.updatePlace(code, uid, change).then(function (next) {
-      if (next && state.placeDocs) { state.placeDocs = Object.assign({}, state.placeDocs); state.placeDocs[code] = next; }
+      if (next && state.placeDocs && !newerThan(state.placeDocs[code], next)) { state.placeDocs = Object.assign({}, state.placeDocs); state.placeDocs[code] = next; }
       return next;
     });
   }
@@ -2035,7 +2037,7 @@
       writes[code] = w;
       return writes;
     }).then(function (done) { // 저장된 값을 화면에 바로
-      if (done && state.placeDocs) { state.placeDocs = Object.assign({}, state.placeDocs, done); }
+      if (done && state.placeDocs) { var pd = Object.assign({}, state.placeDocs); Object.keys(done).forEach(function (c) { if (!newerThan(pd[c], done[c])) pd[c] = done[c]; }); state.placeDocs = pd; }
       return done;
     });
   }
@@ -2303,6 +2305,7 @@
     var order = ps.slice().sort(function (x, y) { return (y.mine ? 1 : 0) - (x.mine ? 1 : 0); }).map(function (p) { return { uid: p.key, name: p.name, slot: p.slot, mine: p.mine, img: av[p.key] && av[p.key].img ? av[p.key].img : '' }; });
     var line1, line2 = '';
     if (state.coupleOff || !A) { line1 = ''; }
+    else if (!state.coupleLoaded) { line1 = ' '; } // 불러오는 중엔 「정해 볼까요?」를 잠깐 보이지 않게
     else if (!a) { line1 = '우리가 시작한 날을'; line2 = '정해 볼까요?'; }
     else if (v && v.future) { line1 = v.startText + '부터'; line2 = '시작까지 ' + v.dText; }
     else if (v) { line1 = v.line; line2 = v.today ? '오늘은 ' + v.today + '이에요 🎉' : v.next[0] ? v.next[0].name + '까지 ' + v.next[0].d : ''; }
@@ -2314,7 +2317,8 @@
     focusAfter = ['#ava-file']; focusInSheet = true;
     render(true);
   }
-  function closeAva() { state.ava = null; state.avaCrop = null; focusAfter = ['[data-act="ava-open"]']; render(true); }
+  function dropCrop() { var c = state.avaCrop; if (c && c.src) URL.revokeObjectURL(c.src); state.avaCrop = null; acp = {}; }
+  function closeAva() { dropCrop(); state.ava = null; focusAfter = ['[data-act="ava-open"]']; render(true); }
   function avaPicked(file) {
     if (!file || !state.ava) return;
     if (!/^image\//.test(file.type || 'image/')) { state.ava.error = '사진 파일을 골라 주세요'; render(true); return; }
@@ -2337,18 +2341,21 @@
     el.style.transform = 'translate(' + c.st.x + 'px,' + c.st.y + 'px)';
     var z = document.getElementById('ava-zoom'); if (z && document.activeElement !== z) z.value = String(c.st.scale / c.st.min);
   }
-  function avaCancel() { var c = state.avaCrop; if (c) URL.revokeObjectURL(c.src); state.avaCrop = null; focusAfter = ['#ava-file']; focusInSheet = true; render(true); }
+  function avaCancel() { dropCrop(); focusAfter = ['#ava-file']; focusInSheet = true; render(true); }
   function avaSave() {
     var c = state.avaCrop, C = RT.avatarCrop, uid = state.uid || state.me; if (!c || c.saving || !store) return;
     var s = C.source(c.st, c.view), cv = document.createElement('canvas'); cv.width = C.OUT; cv.height = C.OUT;
-    var g = cv.getContext('2d'); g.drawImage(c.img, s.sx, s.sy, s.size, s.size, 0, 0, C.OUT, C.OUT);
+    var g = cv.getContext('2d');
+    g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff'; // 투명 PNG 가 JPEG 에서 검게 나오지 않게
+    g.fillRect(0, 0, C.OUT, C.OUT);
+    g.drawImage(c.img, s.sx, s.sy, s.size, s.size, 0, 0, C.OUT, C.OUT);
     var q = C.QUALITY, data = cv.toDataURL('image/jpeg', q);
     while (data.length > C.MAX_LEN && q > 0.4) { q -= 0.1; data = cv.toDataURL('image/jpeg', q); } // 저장 규칙의 크기 안으로
     if (data.length > C.MAX_LEN) { c.error = '사진이 너무 커요. 다른 사진을 골라 주세요'; render(true); return; }
     c.saving = true; c.error = ''; render(true); avaApply();
     store.saveAvatar(uid, data).then(function () {
       state.avaDocs = Object.assign({}, state.avaDocs); state.avaDocs[uid] = { img: data };
-      URL.revokeObjectURL(c.src); state.avaCrop = null; state.ava = null;
+      if (state.avaCrop === c) dropCrop(); else URL.revokeObjectURL(c.src); state.ava = null;
       focusAfter = ['[data-act="ava-open"]']; showToast('사진을 바꿨어요'); render(true);
     }, function () { if (state.avaCrop) { state.avaCrop.saving = false; state.avaCrop.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; render(true); avaApply(); } });
   }
@@ -2382,15 +2389,14 @@
     }
     avaApply();
   });
-  ['pointerup', 'pointercancel'].forEach(function (t) { appEl.addEventListener(t, function (ev) { delete acp[ev.pointerId]; }); });
+  // 앱 밖에서 손을 떼도 지난 손가락이 남지 않게 (남으면 다음 한 손가락 끌기가 확대로 처리됨 — 점검 AI)
+  ['pointerup', 'pointercancel'].forEach(function (t) { root.addEventListener(t, function (ev) { delete acp[ev.pointerId]; }, true); });
+  function avaTouching() { for (var k in acp) return true; return false; }
 
   // ── 「전체」 탭 (v47) ──
   function allModel() {
-    var v = state.couple && !state.coupleOff ? annivView(false) : null;
     return {
-      dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
-      annivOff: !!state.coupleOff || !RT.anniv,
-      us: usModel(),
+      us: usModel(), // 「우리 둘」 박스 (디데이 · 다음 기념일 · 사진)
       map: allMapModel(),
       diet: allDietModel(),
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
@@ -2408,10 +2414,6 @@
     state.account = false;
     focusAfter = ['[data-act="open-account"]'];
     render(true);
-  }
-  function annivHeader() {
-    var v = annivView(false);
-    return v && !v.future ? { text: v.line, today: v.today } : null;
   }
   function annivSheetModel() {
     var A = RT.anniv, f = state.anniv.edit, a = A.fromDoc(state.couple), by = '';
@@ -2970,7 +2972,8 @@
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
     if (ev.key === 'Tab') {
       // 시트가 열려 있으면 포커스를 시트 안에서만 돈다
-      var items = Array.prototype.slice.call(appEl.querySelectorAll('.sheet button:not([disabled]), .sheet input, .sheet select:not([disabled])'));
+      var layers = appEl.querySelectorAll('.sheet-layer'), top = layers.length ? layers[layers.length - 1] : appEl; // 겹친 시트는 맨 위 것만 (점검 AI)
+      var items = Array.prototype.slice.call(top.querySelectorAll('.sheet button:not([disabled]), .sheet input, .sheet select:not([disabled])'));
       if (!items.length) return;
       var first = items[0], last = items[items.length - 1];
       var inside = items.indexOf(document.activeElement) >= 0;
@@ -3130,7 +3133,7 @@
       // 우리 기념일 (v46) — 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
       // 프로필 사진 (v51) — 둘 다 읽음. 규칙이 아직 없으면 테마 색 동그라미 그대로
       store.watchAvatars(function (d) { state.avaDocs = d; if (state.status === 'ready') render(); }, function () { state.avaDocs = {}; }),
-      store.watchCouple(function (doc) { state.couple = doc; state.coupleOff = false; if (state.status === 'ready') render(); },
+      store.watchCouple(function (doc) { state.couple = doc; state.coupleOff = false; state.coupleLoaded = true; if (state.status === 'ready') render(); },
         function () { state.coupleOff = true; state.couple = null; if (state.status === 'ready') render(); }),
       store.watchCats(function (list) { state.catDocs = list; state.catErr = false; if (state.status === 'ready') render(); },
         function () { state.catErr = true; if (state.catSheet) render(); }),
@@ -3178,7 +3181,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
-    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false; stopDiet(); state.ava = null; state.avaCrop = null; state.avaDocs = {}; state.goalDocs = null; state.goalsOff = false; state.goalsLoading = false; state.privDoc = null;
+    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false; stopDiet(); state.ava = null; dropCrop(); state.avaDocs = {}; state.goalDocs = null; state.goalsOff = false; state.goalsLoading = false; state.privDoc = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

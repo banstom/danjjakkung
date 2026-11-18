@@ -10,7 +10,9 @@
   var CAM = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 
   /** p = { name, slot: 'me' | 'her', img, mine } */
+  var IMG_RE = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/; // 단짝이 올린 글자가 CSS url( ) 밖으로 새지 않게 (점검 AI)
   function face(p) {
+    if (p.img && !IMG_RE.test(p.img)) p = Object.assign({}, p, { img: '' });
     var inner = '<span class="ubox__ph ubox__ph--' + p.slot + '"' + (p.img ? ' style="background-image:url(' + esc(p.img) + ')"' : '') + '>' +
       (p.img ? '' : '<span class="ubox__ini" aria-hidden="true">' + esc((p.name || '').slice(0, 1)) + '</span>') + '</span>' +
       (p.mine ? '<span class="ubox__cam" aria-hidden="true">' + CAM + '</span>' : '');

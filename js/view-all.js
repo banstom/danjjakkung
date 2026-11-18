@@ -48,7 +48,7 @@
       '<span class="arow__chev">' + svg(18, ICON.chev) + '</span></button>';
   }
 
-  /** m = { dday: '단짝이 된 지 412일' | '', annivOff, map: { count, ready, tiles }, notify: '켜짐' | '꺼짐' | '', theme, meName } */
+  /** m = { us(우리 둘 박스 — view-avatar.js), map: { count, ready, tiles }, diet, notify: '켜짐' | '꺼짐' | '', theme, meName } */
   function tab(m) {
     // v51: 「우리 둘」 박스 — 왼쪽 · 오른쪽 사진(또는 사람 색) + 가운데 디데이 · 다음 기념일 (view-avatar.js)
     var us = m.us && root.RT && root.RT.viewAvatar ? root.RT.viewAvatar.box(m.us) : '';

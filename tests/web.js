@@ -1138,6 +1138,7 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(gc.kind, 'cut');
   assert.ok(Math.abs(gc.kcal - 2209.31) < 0.1 && Math.abs(gc.protein - 110.47) < 0.1, '회귀(점검 AI): 목표를 바꾸면 추천 숫자도 바뀜 (벌크업 숫자가 굳지 않음)');
   assert.ok(docs.get('private/' + jmUid0).body.weightKg === 70 && docs.get('private/' + jmUid0).ackAt === pv.ackAt, 'merge: 몸 정보 · 확인한 때 그대로');
+  assert.deepStrictEqual(docs.get('private/' + jmUid0).edits, {}, '회귀(점검 AI): 고친 값 목록은 안쪽까지 새 것으로 (옛 protein 150 이 남지 않음)');
   // 단짝: 건너뛰고 직접 입력 → 몸 정보 없이 목표만, 내 목표가 보임
   await toAll(dj); await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('#dg-title');
   await dj.click('[data-act="dg-skip"]'); await dj.waitForSelector('#dg-e-kcal');

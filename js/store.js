@@ -211,7 +211,8 @@
       /** 몸 정보와 목표를 한 번에 (둘 중 하나만 저장되지 않게) */
       saveDietGoal: function (uid, priv, goal) {
         var b = db.batch();
-        b.set(db.doc('private/' + uid), priv, { merge: true }); // 몸 정보 · 확인한 때를 지우지 않게 (점검 AI)
+        // 적은 칸만 통째로 바꾼다(mergeFields) — 몸 정보 · 확인한 때는 지우지 않고, 고친 값 목록(edits)은 안쪽까지 새 것으로 (merge 는 안쪽 map 을 합쳐 옛 값이 남았다 — 점검 AI)
+        b.set(db.doc('private/' + uid), priv, { mergeFields: Object.keys(priv) });
         b.set(db.doc('goals/' + uid), goal);
         return b.commit();
       },
