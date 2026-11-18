@@ -758,8 +758,11 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(await boxLine(jm), '연애한 지 ' + annivN + '일', '짝꿍이 고치면 내 박스도');
   // (v52) 박스 모양 고르기: 기념일 시트에서 누르면 바로 저장 · 두 폰 모두 바뀜 · 글자는 그대로
   assert.strictEqual(await dj.getAttribute('[data-act="anniv-box"][aria-pressed="true"]', 'data-v'), 'heart');
+  const cpBefore = docs.get('couple/main');
   await dj.click('[data-act="anniv-box"][data-v="ticket"]'); await dj.waitForTimeout(300);
   assert.strictEqual(docs.get('couple/main').box, 'ticket'); assert.strictEqual(docs.get('couple/main').label, '연애한 지', '모양만 바뀜');
+  assert.strictEqual(docs.get('couple/main').updatedAt, cpBefore.updatedAt, '회귀(점검 AI): 모양만 바꾸면 정한 날짜 · 사람은 그대로');
+  assert.match(await dj.textContent('.anniv__by'), /^내가/, '회귀(점검 AI): 모양만 바꾸면 「누가 정했어요」는 그대로 (다진이 이름을 정함)');
   assert.strictEqual(await dj.getAttribute('[data-act="anniv-box"][aria-pressed="true"]', 'data-v'), 'ticket');
   assert.strictEqual(await dj.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-v')), 'ticket', '누른 버튼에 포커스');
   await dj.screenshot({ path: path.join(OUT, 'box-picker.png') });
@@ -775,12 +778,13 @@ async function tick(page, dateKey, key) {
   await dj.click('[data-act="anniv-box"][data-v="ticket"]'); await dj.waitForTimeout(300);
   await dj.click('[data-act="anniv-edit"]'); await dj.click('[data-act="anniv-save"]'); await dj.waitForTimeout(300);
   assert.strictEqual(docs.get('couple/main').box, 'ticket', '회귀: 기념일을 저장해도 모양 유지');
-  for (const st of ['ticket', 'polaroid', 'heart']) {
+  for (const st of ['overlap', 'badge', 'ticket', 'polaroid', 'heart']) {
     await dj.click('[data-act="anniv-box"][data-v="' + st + '"]'); await dj.waitForTimeout(250);
     await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(120);
     assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), st + ' 320px 넘치지 않음');
     await jm.screenshot({ path: path.join(OUT, 'box-' + st + '-320.png') });
-    await jm.setViewportSize({ width: 390, height: 844 });
+    await jm.setViewportSize({ width: 390, height: 844 }); await jm.waitForTimeout(120);
+    assert.ok(await jm.$('.ubox--' + st), st + ' 모양으로 바뀜'); await jm.screenshot({ path: path.join(OUT, 'box-' + st + '.png') });
   }
   await dj.keyboard.press('Escape'); await dj.waitForTimeout(150);
   assert.ok(!(await dj.$('.sheet')), 'Esc 로 닫힘');

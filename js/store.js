@@ -230,8 +230,8 @@
         // merge: 박스 모양(box)은 그대로 둔다 (v52)
         return db.doc('couple/main').set({ start: c.start, label: c.label, updatedBy: uid, updatedAt: new Date().toISOString() }, { merge: true });
       },
-      saveBox: function (box, uid) { // v52 「우리 둘」 박스 모양 — 시작한 날이 정해진 뒤에만 (update)
-        return db.doc('couple/main').update({ box: box, updatedBy: uid, updatedAt: new Date().toISOString() });
+      saveBox: function (box) { // v52 「우리 둘」 박스 모양 — 시작한 날이 정해진 뒤에만 (update). 누가 · 언제 정했는지는 그대로
+        return db.doc('couple/main').update({ box: box });
       },
       // ── 알림 ──
       // users/<uid>                 : { notify: { partner, remindAt, hide }, weekly, todoNotify, tz, colors, updatedAt }  — 내 모든 기기에 같이 적용 (weekly: 일요일 돌아보기, 없으면 켬)

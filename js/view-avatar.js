@@ -48,11 +48,11 @@
   /** 단짝 티켓: 왼쪽 표(관계 이름 · 큰 숫자) + 오른쪽(두 사람 · 다음 기념일) */
   function ticket(b) {
     var stub = b.count
-      ? '<span class="ubox__lab">' + esc(b.label) + '</span><span class="ubox__big">' + esc(b.countText) + '</span><span class="ubox__unit">일째</span>'
+      ? '<span class="ubox__lab">' + esc(b.label) + '</span><span class="ubox__big' + (String(b.countText).length >= 6 ? ' ubox__big--long' : '') + '">' + esc(b.countText) + '</span><span class="ubox__unit">일째</span>'
       : '<span class="ubox__l1">' + esc(b.line1 || '우리 둘') + '</span>';
     var names = [b.left, b.right].filter(Boolean).map(function (p) { return esc(p.name); }).join(' &amp; ');
-    var nextLine = b.count && b.next ? '<span class="ubox__nl">다음 기념일</span><span class="ubox__nx"><b>' + esc(b.next.name) + '</b><span class="ubox__d">' + esc(b.next.d) + '</span></span>'
-      : b.count && b.todayName ? '<span class="ubox__nl">오늘은</span><span class="ubox__nx"><b>' + esc(b.todayName) + '</b><span class="ubox__d">🎉</span></span>'
+    var nextLine = b.count && b.todayName ? '<span class="ubox__nl">오늘은</span><span class="ubox__nx"><b>' + esc(b.todayName) + '</b><span class="ubox__d">🎉</span></span>'
+      : b.count && b.next ? '<span class="ubox__nl">다음 기념일</span><span class="ubox__nx"><b>' + esc(b.next.name) + '</b><span class="ubox__d">' + esc(b.next.d) + '</span></span>'
       : (b.line2 ? '<span class="ubox__nx"><span class="ubox__d">' + esc(b.line2) + '</span></span>' : '');
     return '<section class="ubox ubox--ticket" aria-label="우리 둘">' +
       mid(b, 'ubox__stub', stub) +
@@ -68,16 +68,51 @@
       mid(b, 'ubox__mid--pol', lines(b)) + '</section>';
   }
 
-  /** b = { style, left, right, line1, line2, off, count, label, countText, next, todayName, prog } */
+  /** 지나온 기념일(오래된 것부터) + 오늘 + 다가오는 기념일 — 최대 n개 */
+  function miles(b, nPast, n) {
+    var out = (b.past || []).slice(0, nPast).reverse().map(function (m) { return { name: m.name, done: true }; });
+    if (b.todayName) out.push({ name: b.todayName, done: true, now: true });
+    (b.nexts || []).forEach(function (m) { if (out.length < n) out.push({ name: m.name, d: m.d, done: false }); });
+    return out.slice(0, n);
+  }
+
+  /** 겹친 동그라미: 두 동그라미가 겹친 곳에 하트 + 옆에 글자 + 아래 기념일 길 */
+  function overlap(b) {
+    var ms = b.count ? miles(b, 3, 6) : [];
+    var path = ms.length ? '<ol class="ubox__path" aria-label="기념일 길">' + ms.map(function (m) {
+      return '<li class="' + (m.done ? 'is-done' : '') + (m.now ? ' is-now' : '') + '"><span class="ubox__dot" aria-hidden="true"></span><span class="ubox__mn">' + esc(m.name) + '</span><span class="sr-only">' + (m.done ? ' 지남' : ' ' + esc(m.d || '')) + '</span></li>';
+    }).join('') + '</ol>' : '';
+    var names = [b.left, b.right].filter(Boolean).map(function (p) { return esc(p.name); }).join(' · ');
+    return '<section class="card ubox ubox--overlap" aria-label="우리 둘">' +
+      '<div class="ubox__top"><div class="ubox__venn">' + (b.left ? face(b.left) : '') + (b.right ? face(b.right) : '') + '<span class="ubox__vheart" aria-hidden="true">' + HEART + '</span></div>' +
+      mid(b, 'ubox__mid--ov', '<span class="ubox__who">' + names + '</span>' + lines(b)) + '</div>' + path + '</section>';
+  }
+
+  /** 단짝 배지: 두 동그라미 사이 「&」 + 반짝이 + 지난 기념일은 채운 배지, 다음 것은 점선 배지 */
+  var SPARK = '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" fill="currentColor"/></svg>';
+  var TICK = '<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function badge(b) {
+    var ms = b.count ? miles(b, 2, 3) : [];
+    var row = ms.length ? '<ul class="ubox__badges" aria-label="기념일 배지">' + ms.map(function (m) {
+      return '<li class="ubox__bdg' + (m.done ? ' is-done' : '') + '"><span class="ubox__bic" aria-hidden="true">' + (m.done ? TICK : '') + '</span><span class="ubox__bnm">' + esc(m.name) + '</span><span class="ubox__bst">' + (m.now ? '오늘' : m.done ? '달성' : esc(m.d || '')) + '</span></li>';
+    }).join('') + '</ul>' : '';
+    var title = b.count ? '<span class="ubox__btitle"><span class="ubox__spark">' + SPARK + '</span><span class="ubox__l1">' + esc(b.line1) + '</span><span class="ubox__spark">' + SPARK + '</span></span>' : lines(b);
+    return '<section class="card ubox ubox--badge" aria-label="우리 둘">' +
+      '<span class="ubox__confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>' +
+      '<div class="ubox__row ubox__row--badge">' + (b.left ? face(b.left) : '') + '<span class="ubox__amp" aria-hidden="true">&amp;</span>' + (b.right ? face(b.right) : '') + '</div>' +
+      mid(b, 'ubox__mid--badge', title) + row + '</section>';
+  }
+
+  /** b = { style, left, right, line1, line2, off, count, label, countText, next, nexts, past, todayName, prog } */
   function box(b) {
-    var st = b.style === 'ticket' ? ticket : b.style === 'polaroid' ? polaroid : heart;
+    var st = { ticket: ticket, polaroid: polaroid, overlap: overlap, badge: badge }[b.style] || heart;
     return st(b);
   }
 
-  /** 기념일 시트의 「박스 모양」 고르기 (v52). o = { current, boxes: [{ id, name }], busy } */
+  /** 기념일 시트의 「박스 모양」 고르기 (v52). o = { current, boxes: [{ id, name }] } — 저장 중에도 막지 않음 */
   function picker(o) {
     return '<h3 class="gsub" id="abox-title">박스 모양</h3><div class="abox" role="group" aria-labelledby="abox-title">' + o.boxes.map(function (x) {
-      return '<button type="button" class="abox__opt" data-act="anniv-box" data-v="' + esc(x.id) + '" aria-pressed="' + (o.current === x.id) + '"' + (o.busy ? ' disabled' : '') + '>' +
+      return '<button type="button" class="abox__opt" data-act="anniv-box" data-v="' + esc(x.id) + '" aria-pressed="' + (o.current === x.id) + '">' +
         '<span class="abox__mini abox__mini--' + esc(x.id) + '" aria-hidden="true"><i></i><i></i></span><span class="abox__nm">' + esc(x.name) + '</span></button>';
     }).join('') + '</div><p class="anniv-form__note">둘이 같이 보는 모양이에요 · 글자는 「고치기」에서 바꿔요</p>';
   }

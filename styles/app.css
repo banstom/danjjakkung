@@ -1154,8 +1154,9 @@ span.ubox__mid { cursor: default; }
 .ubox__pn { color: var(--tint-text); }
 /* 단짝 티켓 */
 .ubox--ticket { gap: 0; padding: 0; align-items: stretch; min-height: 150px; filter: drop-shadow(var(--lift)); }
-.ubox__stub { flex: 0 0 108px; border-radius: 20px 6px 6px 20px; background: var(--secondary); color: var(--text); gap: 0; justify-content: center; padding: 10px 6px; }
-.ubox__stub .ubox__lab { color: var(--text); opacity: 0.8; font-size: 11px; letter-spacing: 0.02em; }
+.ubox__stub { flex: 0 0 108px; min-width: 0; border-radius: 20px 6px 6px 20px; background: var(--tint); color: var(--text); gap: 0; justify-content: center; padding: 10px 6px; }
+.ubox__stub .ubox__lab { color: var(--tint-text); font-size: 11px; letter-spacing: 0.02em; } /* 바탕은 --tint: 모든 테마에서 글자 대비가 맞는 짝 (점검 AI: --secondary 는 chocolate-noir 에서 2.2:1) */
+.ubox__stub .ubox__big--long { font-size: 26px; }
 .ubox__stub .ubox__big { font-size: 34px; }
 .ubox__unit { font-size: 12px; font-weight: 700; }
 .ubox__perf { flex: 0 0 0; margin: 10px 0; border-left: 3px dotted var(--faint); }
@@ -1188,12 +1189,60 @@ span.ubox__mid { cursor: default; }
 .ubox--polaroid .ubox__cam { right: 4px; bottom: 4px; }
 .ubox__mid--pol { padding: 0; }
 .ubox__mid--pol .ubox__l1 { font-size: 19px; font-weight: 900; }
+/* 겹친 동그라미 */
+.ubox--overlap { flex-direction: column; align-items: stretch; gap: 14px; padding: 16px; }
+.ubox__top { display: flex; align-items: center; gap: 14px; }
+.ubox__venn { position: relative; display: flex; flex-shrink: 0; }
+.ubox--overlap .ubox__face { width: 78px; }
+.ubox--overlap .ubox__face + .ubox__face { margin-left: -32px; }
+.ubox--overlap .ubox__ring, .ubox--overlap .ubox__ph { width: 78px; height: 78px; }
+.ubox--overlap .ubox__ph { box-shadow: none; }
+.ubox--overlap .ubox__face + .ubox__face .ubox__ph { opacity: 0.9; }
+.ubox--overlap .ubox__nm { display: none; }
+.ubox--overlap .ubox__cam { right: auto; left: -2px; }
+.ubox__vheart { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--surface); pointer-events: none; animation: ubeat2 1.6s ease-in-out infinite; filter: drop-shadow(var(--lift)); }
+@keyframes ubeat2 { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.14); } }
+.ubox__mid--ov { align-items: flex-start; text-align: left; padding: 0; gap: 4px; }
+.ubox__who { font-size: 13px; font-weight: 700; color: var(--sub); }
+.ubox__mid--ov .ubox__l1 { font-size: 20px; font-weight: 900; }
+.ubox__path { position: relative; display: flex; margin: 0; padding: 0; list-style: none; }
+.ubox__path::before { content: ''; position: absolute; left: 8%; right: 8%; top: 5px; height: 2px; background: var(--tint); }
+.ubox__path li { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ubox__dot { width: 12px; height: 12px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--accent); background: var(--surface); }
+.ubox__path li.is-done .ubox__dot { background: var(--lv-full); border-color: var(--lv-full); }
+.ubox__path li.is-now .ubox__dot { box-shadow: 0 0 0 3px var(--tint); }
+.ubox__mn { font-size: 10px; font-weight: 700; color: var(--tint-text); white-space: nowrap; }
+.ubox__path li.is-done .ubox__mn { color: var(--sub); }
+/* 단짝 배지 */
+.ubox--badge { position: relative; overflow: hidden; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
+.ubox__confetti i { position: absolute; display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--secondary); }
+.ubox__confetti i:nth-child(1) { left: 8%; top: 14px; }
+.ubox__confetti i:nth-child(2) { left: 32%; top: 9px; width: 5px; height: 5px; background: var(--primary); }
+.ubox__confetti i:nth-child(3) { left: 70%; top: 10px; border-radius: 1px; transform: rotate(20deg); }
+.ubox__confetti i:nth-child(4) { left: 91%; top: 22px; background: var(--primary); }
+.ubox__confetti i:nth-child(5) { left: 54%; top: 56px; border-radius: 1px; transform: rotate(-15deg); background: var(--primary); }
+.ubox__row--badge { position: relative; justify-content: center; align-items: center; gap: 10px; }
+.ubox--badge .ubox__nm { display: none; }
+.ubox--badge .ubox__face { width: 60px; }
+.ubox--badge .ubox__ring, .ubox--badge .ubox__ph { width: 58px; height: 58px; }
+.ubox__amp { width: 34px; height: 34px; border-radius: 50%; background: var(--tint); color: var(--tint-text); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; }
+.ubox__mid--badge { padding: 0; }
+.ubox__btitle { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.ubox__btitle .ubox__l1 { font-size: 19px; font-weight: 900; }
+.ubox__spark { display: flex; color: var(--me); }
+.ubox__badges { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ubox__bdg { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px; border: 2px dashed var(--me); box-sizing: border-box; }
+.ubox__bdg.is-done { border: 2px solid transparent; background: var(--raised); }
+.ubox__bic { width: 22px; height: 22px; border-radius: 50%; box-sizing: border-box; border: 2px solid var(--me); display: flex; align-items: center; justify-content: center; color: var(--me-ink); }
+.ubox__bdg.is-done .ubox__bic { background: var(--me); }
+.ubox__bnm { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.ubox__bst { font-size: 11px; font-weight: 700; color: var(--tint-text); }
+.ubox__bdg.is-done .ubox__bst { color: var(--sub); }
 /* 기념일 시트의 박스 모양 고르기 */
 .abox { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
 .abox__opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); font: inherit; color: var(--text); cursor: pointer; min-height: 44px; }
 .abox__opt[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); }
 .abox__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.abox__opt:disabled { cursor: default; opacity: 0.7; }
 .abox__nm { font-size: 12px; font-weight: 700; }
 .abox__mini { position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 36px; }
 .abox__mini i { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--me); }
@@ -1201,12 +1250,17 @@ span.ubox__mid { cursor: default; }
 .abox__mini--heart i + i { margin-left: 22px; }
 .abox__mini--heart::after { content: ''; position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; background: var(--strong); transform: translate(-50%, -50%) rotate(45deg); border-radius: 2px; }
 .abox__mini--ticket { border-radius: 8px; background: var(--raised); justify-content: flex-start; padding-left: 26px; box-sizing: border-box; }
-.abox__mini--ticket::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 20px; border-radius: 8px 2px 2px 8px; background: var(--secondary); }
+.abox__mini--ticket::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 20px; border-radius: 8px 2px 2px 8px; background: var(--tint); border: 1px solid var(--line); box-sizing: border-box; }
 .abox__mini--ticket i { width: 14px; height: 14px; }
 .abox__mini--ticket i + i { margin-left: -4px; }
+.abox__mini--overlap i { width: 24px; height: 24px; }
+.abox__mini--overlap i + i { margin-left: -10px; opacity: 0.9; }
+.abox__mini--badge i { width: 16px; height: 16px; }
+.abox__mini--badge i + i { margin-left: 16px; }
+.abox__mini--badge::after { content: '&'; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 900; color: var(--text); }
 .abox__mini--polaroid i { width: 22px; height: 26px; border-radius: 2px; border: 3px solid var(--surface); border-bottom-width: 7px; box-shadow: var(--lift); transform: rotate(-6deg); }
 .abox__mini--polaroid i + i { margin-left: -4px; transform: rotate(5deg); }
-@media (prefers-reduced-motion: reduce) { .ubox__heart { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ubox__heart, .ubox__vheart { animation: none; } }
 @media (max-width: 360px) {
   .ubox { gap: 4px; padding: 12px 8px; }
   .ubox__face { width: 60px; }
@@ -1217,10 +1271,18 @@ span.ubox__mid { cursor: default; }
   .ubox--heart { padding: 16px 12px 14px; }
   .ubox__stub { flex-basis: 92px; }
   .ubox__stub .ubox__big { font-size: 28px; }
+  .ubox__stub .ubox__big--long { font-size: 21px; }
   .ubox--ticket .ubox__ring, .ubox--ticket .ubox__ph { width: 38px; height: 38px; }
   .ubox--ticket .ubox__face { width: 38px; }
   .ubox__names { font-size: 14px; }
   .ubox--polaroid .ubox__face { width: 104px; }
+  .ubox--overlap .ubox__face, .ubox--overlap .ubox__ring, .ubox--overlap .ubox__ph { width: 64px; height: 64px; }
+  .ubox--overlap .ubox__face + .ubox__face { margin-left: -26px; }
+  .ubox--overlap .ubox__mid--ov .ubox__l1 { font-size: 17px; }
+  .ubox--badge .ubox__face { width: 52px; }
+  .ubox--badge .ubox__ring, .ubox--badge .ubox__ph { width: 52px; height: 52px; }
+  .ubox__btitle .ubox__l1 { font-size: 16px; }
+  .ubox__mn { font-size: 9px; }
   .ubox--polaroid .ubox__ring, .ubox--polaroid .ubox__ph { width: 88px; height: 88px; }
 }
 

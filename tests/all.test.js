@@ -53,14 +53,28 @@ test('v52 박스 모양 3가지: 글자는 관계 이름 그대로 · 사진 버
   assert.match(t, /ubox--ticket[^]*data-act="open-anniv"[^]*연애한 지[^]*465[^]*일째[^]*준민 &amp; 다진[^]*다음 기념일[^]*500일[^]*D-35/);
   const p = AV.box(Object.assign({}, v, { style: 'polaroid' }));
   assert.match(p, /ubox--polaroid[^]*ubox__pics[^]*준민[^]*다진[^]*연애한 지 465일[^]*500일까지 D-35/);
-  for (const html of [h, t, p]) { assert.match(html, /data-act="ava-open"/); assert.match(html, /data-act="ava-view" data-v="d"/); }
+  const v2 = Object.assign({}, v, { past: [{ name: '400일' }, { name: '1주년' }, { name: '300일' }], nexts: [{ name: '500일', d: 'D-35' }, { name: '600일', d: 'D-135' }, { name: '2주년', d: 'D-246' }] });
+  const o = AV.box(Object.assign({}, v2, { style: 'overlap' }));
+  assert.match(o, /ubox--overlap[^]*ubox__venn[^]*ubox__vheart[^]*준민 · 다진[^]*연애한 지 465일/);
+  assert.deepEqual([...o.matchAll(/<li class="([^"]*)"><span class="ubox__dot"[^>]*><\/span><span class="ubox__mn">([^<]+)/g)].map((m) => [m[2], m[1].includes('is-done')]),
+    [['300일', true], ['1주년', true], ['400일', true], ['500일', false], ['600일', false], ['2주년', false]], '기념일 길: 지난 것(오래된 것부터) → 다음 것, 6개');
+  const bd = AV.box(Object.assign({}, v2, { style: 'badge' }));
+  assert.match(bd, /ubox--badge[^]*ubox__amp[^]*연애한 지 465일[^]*1주년[^]*달성[^]*400일[^]*달성[^]*500일[^]*D-35/, '단짝 배지: 지난 2개 + 다음 1개');
+  assert.match(AV.box(Object.assign({}, v2, { style: 'badge', todayName: '500일', nexts: [{ name: '600일', d: 'D-100' }] })), /500일<\/span><span class="ubox__bst">오늘/);
+  assert.match(AV.box(Object.assign({}, us, { style: 'overlap', line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/);
+  assert.doesNotMatch(AV.box(Object.assign({}, us, { style: 'badge', line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /ubox__badges/, '날짜 없으면 배지 없음');
+  for (const html of [h, t, p, o, bd]) { assert.match(html, /data-act="ava-open"/); assert.match(html, /data-act="ava-view" data-v="d"/); }
   assert.match(AV.box(Object.assign({}, v, { style: 'nope' })), /ubox--heart/, '모르는 모양은 하트 잇기');
   assert.match(AV.box(Object.assign({}, us, { style: 'ticket', line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/, '날짜 없을 때도 티켓에 안내');
   assert.match(AV.box(Object.assign({}, v, { style: 'ticket', next: null, todayName: '1주년' })), /오늘은[^]*1주년/);
   assert.doesNotMatch(AV.box(Object.assign({}, v, { style: 'heart', prog: { from: 'a', to: 'b', pct: '5%;x' } })), /5%;x/, '막대 값은 숫자만');
   const pk = AV.picker({ current: 'ticket', boxes: [{ id: 'heart', name: '하트 잇기' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }], busy: false });
   assert.match(pk, /data-act="anniv-box" data-v="ticket" aria-pressed="true"/); assert.match(pk, /data-v="heart" aria-pressed="false"/);
-  assert.match(AV.picker({ current: 'heart', boxes: [{ id: 'heart', name: '하트 잇기' }], busy: true }), / disabled/);
+  assert.doesNotMatch(AV.picker({ current: 'heart', boxes: [{ id: 'heart', name: '하트 잇기' }] }), / disabled/, '회귀(점검 AI): 저장 중에도 안 막음 (오프라인이면 계속 막힘)');
+  assert.match(AV.box(Object.assign({}, v, { style: 'ticket', todayName: '500일', next: { name: '600일', d: 'D-100' } })), /오늘은[^]*500일[^]*🎉/, '회귀(점검 AI): 기념일 당일엔 다음 것이 있어도 오늘 축하');
+  assert.match(AV.box(Object.assign({}, v, { style: 'ticket', countText: '27,456' })), /ubox__big ubox__big--long">27,456/, '긴 숫자는 작게');
+  const css = fs.readFileSync(path.join(ROOT, 'styles', 'app.css'), 'utf8');
+  assert.doesNotMatch(css, /\.ubox__(stub|amp) \{[^}]*--secondary/, '회귀(점검 AI): 글자 바탕에 --secondary 쓰지 않음 (chocolate-noir 대비)');
 });
 
 test('v52 사진 크게 보기: 사진 있는 동그라미는 누구 것이든 ava-view · 단짝 사진엔 바꾸기 없음 · 이상한 글자는 안 씀 · 512px 부터', () => {

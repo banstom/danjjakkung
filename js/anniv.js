@@ -13,7 +13,7 @@
   var OLD_LABELS = { '사귄 지': true };
   var MIN_YEAR = 1950;
   // v52: 「우리 둘」 박스 모양 — 둘이 같이 보는 값 (couple/main.box). 글자(관계 이름)는 그대로 label
-  var BOXES = [{ id: 'heart', name: '하트 잇기' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }];
+  var BOXES = [{ id: 'heart', name: '하트 잇기' }, { id: 'overlap', name: '겹친 동그라미' }, { id: 'badge', name: '단짝 배지' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }];
   var DEFAULT_BOX = 'heart';
   function cleanBox(v) { for (var i = 0; i < BOXES.length; i++) if (BOXES[i].id === v) return v; return DEFAULT_BOX; }
 
@@ -101,8 +101,9 @@
     var todayOne = next.filter(function (m) { return m.today; })[0] || null;
     var yrs = 0; while (yearsAfter(a.start, yrs + 1) <= today) yrs++;
     // v52 박스 막대: 지난 기념일(없으면 시작한 날) → 다음 기념일 사이 어디쯤인지
-    var nx = upcoming(a.start, today + 1, 1)[0], pv = past(a.start, today + 1, 1)[0];
-    var from = pv ? pv.day : a.start, prog = nx ? { from: pv ? pv.name : '시작', to: nx.name, pct: Math.max(0, Math.min(100, Math.round((today - from) / (nx.day - from) * 100))) } : null;
+    var nx = upcoming(a.start, today + 1, 1)[0], ps = past(a.start, today + 1, 2), pv = ps[0];
+    if (ps[1] && ps[1].day === pv.day && ps[1].kind === 'year') pv = ps[1]; // 주년과 100일 단위가 같은 날이면 주년 이름 (오늘 이름과 같게)
+    var from = pv ? pv.day : a.start, prog = nx ? { from: pv ? pv.name : '시작', to: nx.name, pct: Math.max(0, Math.min(99, Math.floor((today - from) / (nx.day - from) * 100))) } : null;
     return {
       label: a.label, count: count, countText: comma(count),
       line: a.label + ' ' + comma(count) + '일',

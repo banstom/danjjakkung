@@ -88,6 +88,9 @@ test('v52 박스 모양: 저장값이 이상하면 하트 잇기 · 막대는 �
   assert.deepEqual(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 49).prog, { from: '시작', to: '100일', pct: 49 }, '첫 기념일 전엔 시작한 날부터');
   assert.deepEqual(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 99).prog, { from: '100일', to: '200일', pct: 0 }, '기념일 당일은 다음 기념일까지 0%');
   assert.equal(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 149).prog.pct, 50);
+  assert.equal(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 98).prog.pct, 98, '회귀(점검 AI): 전날이 100% 로 반올림되지 않음');
+  const rules = require('fs').readFileSync(require('path').join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.match(rules, /affectedKeys\(\)\.hasOnly\(\['box'\]\)/, '모양만 바꿀 땐 「누가 정했는지」 그대로 둘 수 있게');
 });
 
 test('v47 용어: 예전에 저장된 「사귄 지」는 「단짝이 된 지」로 보이고, 고를 거리에도 「사귄」이 없다', () => {

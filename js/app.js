@@ -98,7 +98,7 @@
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
   var TAB_IDS = ['routine', 'schedule', 'todo', 'look', 'all']; // v47: 「전체」
-  var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
+  var LS_BOX = 'danjjakkung.box', LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
@@ -2317,8 +2317,10 @@
     else if (!a) { line1 = '우리가 시작한 날을'; line2 = '정해 볼까요?'; }
     else if (v && v.future) { line1 = v.startText + '부터'; line2 = '시작까지 ' + v.dText; }
     else if (v) { line1 = v.line; line2 = v.today ? '오늘은 ' + v.today + '이에요 🎉' : v.next[0] ? v.next[0].name + '까지 ' + v.next[0].d : ''; }
-    return { style: a ? a.box : (A ? A.DEFAULT_BOX : 'heart'), left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A,
-      count: v && !v.future ? v.count : 0, label: v ? v.label : '', countText: v && !v.future ? v.countText : '', next: v && !v.future && v.next[0] ? v.next[0] : null, todayName: v && !v.future ? v.today : null, prog: v && !v.future ? v.prog : null };
+    if (a && state.coupleLoaded && lsGet(LS_BOX) !== a.box) lsSet(LS_BOX, a.box); // 다음에 열 때 불러오는 동안에도 같은 모양 (깜빡임 없게)
+    return { style: a ? a.box : A ? A.cleanBox(lsGet(LS_BOX)) : 'heart', left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A,
+      count: v && !v.future ? v.count : 0, label: v ? v.label : '', countText: v && !v.future ? v.countText : '', next: v && !v.future && v.next[0] ? v.next[0] : null, todayName: v && !v.future ? v.today : null, prog: v && !v.future ? v.prog : null,
+      nexts: v && !v.future ? v.next : [], past: v && !v.future ? v.past : [] };
   }
   function avaViewModel() {
     var uid = state.avaView && state.avaView.uid, d = uid && (state.avaDocs || {})[uid];
@@ -2454,7 +2456,7 @@
       var t = a.updatedAt ? D.dayOfIso(a.updatedAt) : NaN;
       by = (a.updatedBy === state.me ? '내가' : nameOf(a.updatedBy) + ' 님이') + (isNaN(t) ? '' : ' ' + D.label(t)) + ' 정했어요';
     }
-    return { view: a ? A.build(a, state.today) : null, by: by, box: a ? { current: a.box, boxes: A.BOXES, busy: !!state.anniv.boxBusy } : null,
+    return { view: a ? A.build(a, state.today) : null, by: by, box: a ? { current: a.box, boxes: A.BOXES } : null,
       edit: f ? Object.assign({}, f, { presets: A.PRESETS, max: A.LABEL_MAX, maxDate: D.toKey(state.today), sample: sampleCount(f.start) }) : null };
   }
   function sampleCount(key) {
@@ -2501,23 +2503,24 @@
     f.error = '';
     render(true);
   }
-  /** v52 「우리 둘」 박스 모양 — 누르면 바로 저장 (화면엔 먼저, 못 하면 되돌림) */
+  /** v52 「우리 둘」 박스 모양 — 누르면 바로 저장 (화면엔 먼저, 못 하면 되돌림).
+      버튼을 막지 않는다: 오프라인이면 저장 약속이 서버에 닿을 때까지 안 끝나서 막으면 계속 못 누름 · 포커스도 잃음 (점검 AI)
+      모양만 바꾸면 「누가 정했어요」(updatedBy · updatedAt)는 그대로 — 기념일을 정한 기록이 덮이지 않게 */
+  var boxSeq = 0;
   function annivBox(id) {
     var A = RT.anniv, a = A.fromDoc(state.couple);
-    if (!store || !state.me || !state.anniv || state.anniv.boxBusy || !a) return;
+    if (!store || !state.me || !state.anniv || !a) return;
     id = A.cleanBox(id); if (id === a.box) return;
-    var before = state.couple;
-    state.couple = Object.assign({}, state.couple, { box: id, updatedBy: state.me, updatedAt: new Date().toISOString() });
-    state.anniv.boxBusy = true;
+    var prev = state.couple.box, seq = ++boxSeq;
+    state.couple = Object.assign({}, state.couple, { box: id });
+    lsSet(LS_BOX, id);
     focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true;
     render(true);
-    store.saveBox(id, state.me).then(function () {
-      if (state.anniv) state.anniv.boxBusy = false;
-      focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true; render(true);
-    }, function () {
-      if (state.couple && state.couple.box === id) state.couple = before;
-      if (state.anniv) state.anniv.boxBusy = false;
-      showToast('바꾸지 못했어요. 인터넷 연결을 확인해 주세요'); render(true);
+    store.saveBox(id).catch(function () {
+      if (seq !== boxSeq) return; // 그 뒤에 또 눌렀으면 그 값이 맞음
+      if (state.couple && state.couple.box === id) { state.couple = Object.assign({}, state.couple, { box: prev }); lsSet(LS_BOX, A.cleanBox(prev)); }
+      if (state.anniv) { focusAfter = ['[data-act="anniv-box"][aria-pressed="true"]']; focusInSheet = true; }
+      showToast('모양을 바꾸지 못했어요. 잠시 뒤 다시 해 주세요'); render(true);
     });
   }
   function saveAnniv() {
