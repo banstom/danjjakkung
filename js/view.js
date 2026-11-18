@@ -19,6 +19,7 @@
   // 머리말 (v47, 1안 「칩만 남기기」): 날짜 · 제목 · 「단짝이 된 지 N일」 칩.
   //  접속 · 로그아웃 · 🔔 · 🎨 은 「전체」 탭 설정으로 옮겼다. 「전체」 탭은 제목 「전체」, 칩 없음(우리 둘 카드에 있음)
   function header(h) {
+    if (h.hidden) return '';
     return '<header class="top">' +
       '<div class="top__text"><p class="caption">' + esc(h.date) +
       (h.canRepick ? ' · ' + esc(h.meName) + ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') + '</p>' +

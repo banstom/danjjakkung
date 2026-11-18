@@ -238,6 +238,40 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 단짝 지도 (v48): places/<시군구코드> — 둘이 함께 다녀온 곳 · 가고 싶은 곳. 둘 다 읽고 고친다 (지우기는 없음)
+    //  visits 는 앱이 날짜 순으로 저장 → 맨 앞(가장 이른 날)이 단짝이 된 날보다 이르면 막는다
+    //  stars 는 각자 자기 칸만 (단짝 별점은 못 고침)
+    function coupleStart() {
+      return exists(/databases/$(database)/documents/couple/main)
+        ? get(/databases/$(database)/documents/couple/main).data.start : '1950-01-01';
+    }
+    function validVisit(v) {
+      return v is map && v.keys().hasOnly(['id', 'date', 'note', 'createdAt', 'createdBy'])
+        && isDate(v.date) && v.id is string && v.id.size() <= 24
+        && v.get('note', '') is string && v.get('note', '').size() <= 100;
+    }
+    function validStars(n, o) {
+      return n is map && n.size() <= 2 && n.diff(o).affectedKeys().hasOnly([request.auth.uid])
+        && (!(request.auth.uid in n) || (n[request.auth.uid] is int && n[request.auth.uid] >= 1 && n[request.auth.uid] <= 5));
+    }
+    function validPlace(code, d, o) {
+      let vs = d.get('visits', []);
+      return d.keys().hasOnly(['code', 'wishRank', 'wishNote', 'wishedAt', 'wishedBy', 'stars', 'visits', 'updatedAt', 'updatedBy'])
+        && d.code == code
+        && d.updatedBy == request.auth.uid && d.updatedAt is string && d.updatedAt.size() <= 40
+        && (d.get('wishRank', null) == null || d.wishRank is number)
+        && d.get('wishNote', '') is string && d.get('wishNote', '').size() <= 100
+        && vs is list && vs.size() <= 100
+        && (vs.size() == 0 || (validVisit(vs[0]) && vs[0].date >= coupleStart() && validVisit(vs[vs.size() - 1])))
+        && validStars(d.get('stars', {}), o.get('stars', {}));
+    }
+    match /places/{code} {
+      allow read: if isMember();
+      allow create: if isMember() && code.matches('^[0-9]{5}$') && validPlace(code, request.resource.data, {});
+      allow update: if isMember() && validPlace(code, request.resource.data, resource.data);
+      allow delete: if false;
+    }
+
     // ── 알림 ──
     // users/<uid>: 내 알림 설정. 나만 읽고 쓴다.
     function validNotify(n) {

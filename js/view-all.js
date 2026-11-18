@@ -23,7 +23,16 @@
     [3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
     [3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[3,10],[4,10],[4,12]];
 
-  /** on: 칠할 칸 번호 목록 (M2 에서 함께 다녀온 시·도로 채움). 지금은 빈 목록 */
+  // 칸마다 가까운 시·도 (scripts/map-simplify.py 로 만든 지도의 지역 가운데 점에서 계산, 세종 한 칸은 손으로)
+  var TILE_SIDO = ['51','51','41','41','51','51','28','11','41','41','51','51','44','41','41','43','43','51','44','36','43','47','47','47','44','30','43','47','47','47',
+    '44','52','52','52','47','47','47','52','52','52','52','48','27','47','31','12','12','12','12','48','48','48','26','12','12','12','48','48','48','12','12','50'];
+  /** 함께 다녀온 시·도 → 칠할 칸 번호 */
+  function tilesFor(sidos) {
+    var set = {}; (sidos || []).forEach(function (s) { set[s] = true; });
+    var out = []; TILE_SIDO.forEach(function (s, i) { if (set[s]) out.push(i); });
+    return out;
+  }
+  /** on: 칠할 칸 번호 목록 */
   function mapPreview(on) {
     var set = {}; (on || []).forEach(function (i) { set[i] = true; });
     return '<span class="amap" aria-hidden="true">' + TILES.map(function (t, i) {
@@ -77,7 +86,7 @@
       '</section></div>';
   }
 
-  var api = { tab: tab, accountSheet: accountSheet, mapPreview: mapPreview, TILES: TILES };
+  var api = { tab: tab, accountSheet: accountSheet, mapPreview: mapPreview, tilesFor: tilesFor, TILES: TILES, TILE_SIDO: TILE_SIDO };
   root.RT = root.RT || {};
   root.RT.viewAll = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

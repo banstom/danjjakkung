@@ -156,6 +156,28 @@
       deleteCat: function (id, isDefault, uid) {
         return isDefault ? db.doc('cats/' + id).set({ deleted: true, updatedBy: uid, updatedAt: new Date().toISOString() }) : db.doc('cats/' + id).delete();
       },
+      // places/<시군구코드> — 단짝 지도 (v48). 지도 화면이 열려 있는 동안만 듣고, 「전체」 카드는 한 번만 읽는다
+      watchPlaces: function (next, fail) {
+        return db.collection('places').onSnapshot(function (q) {
+          var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); next(out);
+        }, fail);
+      },
+      loadPlaces: function () {
+        return db.collection('places').get().then(function (q) {
+          var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); return out;
+        });
+      },
+      /** 문서 하나를 읽어 change(지금 값 | null) → 새 값으로 바꾼다 (둘이 동시에 고쳐도 꼬이지 않게 트랜잭션) */
+      updatePlace: function (code, uid, change) {
+        var ref = db.doc('places/' + code);
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (snap) {
+            var next = change(snap.exists ? snap.data() : null);
+            next.code = code; next.updatedBy = uid; next.updatedAt = new Date().toISOString();
+            tx.set(ref, next);
+          });
+        });
+      },
       // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
       watchCouple: function (next, fail) {
         return db.doc('couple/main').onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);

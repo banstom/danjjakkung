@@ -44,6 +44,9 @@
     couple: null,        // 우리 기념일 couple/main (v46) — 없으면 null
     coupleOff: false,    // 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
     anniv: null,         // 기념일 시트 { edit: null | { label, custom, start, saving, error } }
+    map: null,           // 단짝 지도 화면 (v48) { seg, sel, vb, sheet: null | { mode: 'view' | 'visit', form }, find: null | { q } }
+    placeDocs: null,     // places 문서들 { code: doc } — null = 아직 안 읽음
+    placesOff: false,    // 규칙이 아직 없거나 막히면 true
     colors: null,        // 내 계정의 나 · 상대 색 (users 문서의 colors, 테마마다) — null = 아직 모름
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
@@ -90,7 +93,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['mp-date', 'mp-note', 'mp-q', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -149,11 +152,13 @@
     if (state.status !== 'ready') m.header.meName = '';
     var onAll = state.status === 'ready' && state.tab === 'all';
     m.header.title = onAll ? '전체' : '';
+    m.header.hidden = onAll && !!state.map; // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
     m.header.dday = state.status === 'ready' && !onAll ? annivHeader() : null;
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
+    if (state.map) attachZoom();
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
     if (state.eventForm) state.eventForm.errorFresh = false;
@@ -202,6 +207,7 @@
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
     'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null,
+    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-wish': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -381,6 +387,11 @@
     });
   }
 
+  // 단짝 지도: 지역(path)을 누르면 그 지역 시트 (끌거나 확대한 직후의 click 은 map-zoom.js 가 막음)
+  appEl.addEventListener('click', function (ev) {
+    var rg = state.map && ev.target.closest && ev.target.closest('#km [data-code]');
+    if (rg) mapSel(rg.getAttribute('data-code'));
+  });
   appEl.addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-act]');
     if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || !appEl.contains(btn)) return;
@@ -539,7 +550,19 @@
     else if (act === 'open-anniv') openAnniv();
     else if (act === 'open-account') openAccount();
     else if (act === 'close-account') closeAccount();
-    else if (act === 'all-map') showToast('단짝 지도는 곧 열려요');
+    else if (act === 'all-map') openMap();
+    else if (act === 'map-close') closeMap();
+    else if (act === 'map-retry') { mapDataState = null; loadMapData(); render(true); }
+    else if (act === 'map-seg') { if (state.map) { state.map.seg = btn.getAttribute('data-v'); state.map.sel = null; state.map.sheet = null; render(true); attachZoom(); } }
+    else if (act === 'map-zoom') mapZoom(Number(btn.getAttribute('data-v')));
+    else if (act === 'map-unsel') mapUnsel();
+    else if (act === 'map-visit') mapVisitForm();
+    else if (act === 'map-visit-cancel') { if (state.map && state.map.sheet) { if (state.map.sheet.back) { state.map.sheet = { mode: 'view' }; render(true); } else mapUnsel(); } }
+    else if (act === 'map-visit-save') saveVisit();
+    else if (act === 'map-wish') showToast('가고 싶은 곳 담기는 곧 열려요');
+    else if (act === 'map-find') openFind();
+    else if (act === 'map-find-close') closeFind();
+    else if (act === 'map-pick') mapPick(btn.getAttribute('data-v'));
     else if (act === 'all-diet') showToast('단짝 식탁은 준비 중이에요');
     else if (act === 'close-anniv') closeAnniv();
     else if (act === 'anniv-edit') annivEdit();
@@ -550,7 +573,9 @@
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
   function setTab(t) {
+    if (t === 'all' && state.tab === 'all' && state.map) { closeMap(); return; } // 지도에서 「전체」를 누르면 「전체」로
     if (TAB_IDS.indexOf(t) < 0 || t === state.tab) return;
+    if (state.map) stopMap();
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
@@ -628,7 +653,9 @@
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
-    if (state.tab === 'all' && other) out.tab = RT.viewAll.tab(allModel());
+    if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : RT.viewAll.tab(allModel());
+    if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
+    else if (state.tab === 'all' && state.map && state.map.sel && state.map.sheet && mapReady()) out.sheet = RT.viewMap.sheet(mapSheetModel(), state.sheetEntering);
     var dm = state.uniSheet && state.uniSheet.kind === 'detail' ? uniDetailModel() : null;
     if (state.place) out.sheet = V.placeScreen(placeModel());
     else if (state.todoForm) out.sheet = V.todoSheet(todoFormView(state.todoForm), state.sheetEntering);
@@ -1707,13 +1734,146 @@
     if (!a) return withUnset ? { unset: true } : null;
     return RT.anniv.build(a, state.today);
   }
+  // ── 단짝 지도 (v48) ──
+  var mapDataState = null, mapData = null, unPlaces = null; // mapDataState: null | 'loading' | 'error' | 'ready'
+  function mapReady() { return mapDataState === 'ready' && !!mapData; }
+  function placeList() { return RT.places.fromDocs(state.placeDocs || {}); }
+  function loadMapData() {
+    if (mapDataState === 'loading' || mapDataState === 'ready') return;
+    mapDataState = 'loading';
+    // 지도를 처음 열 때만 받는다 (약 140KB). 받은 뒤엔 서비스 워커가 저장해 둬서 오프라인에서도 열림
+    fetch('data/kr-map.json').then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (d) { mapData = d; mapDataState = 'ready'; render(true); })
+      .catch(function () { mapDataState = 'error'; render(true); });
+  }
+  function loadPlacesOnce() {
+    if (!store || state.placeDocs !== null || state.placesLoading) return;
+    state.placesLoading = true;
+    store.loadPlaces().then(function (d) { state.placesLoading = false; if (state.placeDocs === null) state.placeDocs = d; state.placesOff = false; render(); },
+      function () { state.placesLoading = false; state.placesOff = true; render(); });
+  }
+  function allMapModel() {
+    if (state.placeDocs === null && !state.placesOff && !state.placesLoading) setTimeout(loadPlacesOnce, 0);
+    if (state.placeDocs === null) return { ready: false, count: 0, tiles: [] };
+    var pl = placeList();
+    return { ready: true, count: RT.places.counts(pl).visited, tiles: RT.viewAll.tilesFor(RT.places.visitedSidos(pl)) };
+  }
+  function openMap() {
+    if (!RT.viewMap || !store) return;
+    state.account = false; state.anniv = null; state.notifyOpen = false; state.themeOpen = false;
+    state.map = { seg: 'map', sel: null, vb: Object.assign({}, RT.viewMap.HOME), sheet: null, find: null };
+    loadMapData();
+    if (unPlaces) unPlaces();
+    unPlaces = store.watchPlaces(function (d) { state.placeDocs = d; state.placesOff = false; render(); },
+      function () { state.placesOff = true; render(); });
+    focusAfter = ['[data-act="map-close"]'];
+    render(true);
+    try { root.scrollTo(0, 0); } catch (e) {}
+  }
+  /** 지도 화면을 닫는다 (구독도 끊는다) */
+  function stopMap() { if (unPlaces) { unPlaces(); unPlaces = null; } state.map = null; }
+  function closeMap() { stopMap(); focusAfter = ['[data-act="all-map"]']; render(true); }
+  function mapModel() {
+    var m = state.map, pl = placeList(), paint = {};
+    Object.keys(pl).forEach(function (c) { var p = RT.places.paint(pl[c]); if (p) paint[c] = p; });
+    return { status: mapDataState === 'ready' ? 'ready' : mapDataState === 'error' ? 'error' : 'loading', off: state.placesOff, seg: m.seg, sel: m.sel, vb: m.vb, map: mapData, paint: paint, counts: RT.places.counts(pl) };
+  }
+  // 다시 그릴 때마다 새 <svg> 가 생기므로 확대 · 끌기를 다시 붙인다 (render 끝에서 부름)
+  function attachZoom() {
+    var el = state.map && document.getElementById('km');
+    if (!el || el.__zoom) return;
+    el.__zoom = true;
+    RT.mapZoom.attach(el, { home: RT.viewMap.HOME, get: function () { return state.map ? state.map.vb : RT.viewMap.HOME; }, set: function (vb) { if (state.map) state.map.vb = vb; } });
+  }
+  function mapZoom(dir) {
+    if (!state.map) return;
+    state.map.vb = RT.mapZoom.zoomAt(state.map.vb, dir > 0 ? 1.6 : 1 / 1.6, 0.5, 0.5, RT.viewMap.HOME);
+    var el = document.getElementById('km'); if (el) RT.mapZoom.setBox(el, state.map.vb);
+  }
+  function mapSel(code) {
+    if (!state.map || !mapReady() || !RT.places.regionOf(mapData, code)) return;
+    state.map.sel = code; state.map.sheet = { mode: 'view' }; state.sheetEntering = true;
+    focusAfter = ['[data-act="map-visit"]']; focusInSheet = true;
+    render(true);
+  }
+  function mapUnsel() {
+    if (!state.map) return;
+    state.map.sel = null; state.map.sheet = null;
+    focusAfter = ['[data-act="map-zoom"][data-v="1"]'];
+    render(true);
+  }
+  function todayKey() { return D.toKey(state.today); }
+  function coupleStartKey() { var a = RT.anniv && RT.anniv.fromDoc(state.couple); return a ? a.startKey : null; }
+  function mapVisitForm() {
+    if (!state.map || !state.map.sel) return;
+    var back = !!(state.map.sheet && state.map.sheet.mode === 'view');
+    state.map.sheet = { mode: 'visit', back: back, form: { date: todayKey(), note: '', saving: false, error: '', errorFresh: false } };
+    focusAfter = ['#mp-date']; focusInSheet = true;
+    render(true);
+  }
+  function mapSheetModel() {
+    var m = state.map, P = RT.places, code = m.sel, p = placeList()[code] || null, start = coupleStartKey(), tk = todayKey();
+    var vv = p ? p.visits.slice().reverse().map(function (v, i, arr) {
+      var n = arr.length - i;
+      return { nth: n === 1 ? '처음' : n + '번째', date: P.dateText(v.date, tk), note: v.note };
+    }) : [];
+    return { code: code, name: P.fullName(mapData, code), place: p, mode: m.sheet.mode, form: m.sheet.form, noteMax: P.NOTE_MAX,
+      startKey: start, startText: start ? RT.anniv.fullDate(D.parse(start)) : '', todayKey: tk,
+      visitsView: vv, lastText: p && p.visits.length ? P.dateText(p.visits[p.visits.length - 1].date, tk) : '' };
+  }
+  function saveVisit() {
+    var m = state.map, f = m && m.sheet && m.sheet.form;
+    if (!f || f.saving || !store) return;
+    var di = document.getElementById('mp-date'), ni = document.getElementById('mp-note');
+    if (di) f.date = di.value;
+    if (ni) f.note = ni.value;
+    var err = RT.places.validateVisit(f.date, coupleStartKey(), todayKey());
+    if (err) { f.error = err; f.errorFresh = true; render(true); return; }
+    var code = m.sel, uid = state.uid || state.me, now = new Date().toISOString();
+    var visit = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: f.date, note: RT.places.cleanNote(f.note), createdAt: now, createdBy: uid };
+    f.saving = true; render(true);
+    store.updatePlace(code, uid, function (cur) {
+      var next = Object.assign({}, cur || {});
+      next.visits = RT.places.withVisit(cur && cur.visits, visit);
+      next.wishRank = null; // 함께 다녀왔으면 가고 싶은 곳에서 빠진다
+      if (!next.stars) next.stars = {};
+      return next;
+    }).then(function () {
+      if (state.map && state.map.sel === code) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; } // 포커스가 시트에 남아야 Esc 가 먹는다
+      showToast('함께 다녀온 곳에 칠했어요');
+      render(true);
+    }, function () {
+      if (!state.map || !state.map.sheet || !state.map.sheet.form) return;
+      var ff = state.map.sheet.form; ff.saving = false; ff.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; ff.errorFresh = true;
+      render(true);
+    });
+  }
+  function openFind() {
+    if (!state.map || !mapReady()) return;
+    state.map.find = { q: '' }; state.sheetEntering = true;
+    focusAfter = ['#mp-q']; focusInSheet = true;
+    render(true);
+  }
+  function closeFind() { if (!state.map) return; state.map.find = null; focusAfter = ['[data-act="map-find"]']; render(true); }
+  function mapFindModel() {
+    var pl = placeList();
+    return { q: state.map.find.q, results: RT.places.search(mapData, state.map.find.q, 20).map(function (r) { return { code: r.code, name: r.name, been: !!(pl[r.code] && pl[r.code].visits.length) }; }) };
+  }
+  function mapPick(code) {
+    if (!state.map) return;
+    state.map.find = null;
+    var r = RT.places.regionOf(mapData, code);
+    if (r) state.map.vb = RT.mapZoom.focusOn(state.map.vb, r.x, r.y, 360, RT.viewMap.HOME);
+    mapSel(code);
+  }
+
   // ── 「전체」 탭 (v47) ──
   function allModel() {
     var v = state.couple && !state.coupleOff ? annivView(false) : null;
     return {
       dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
       annivOff: !!state.coupleOff || !RT.anniv,
-      map: { ready: false, count: 0, tiles: [] }, // 단짝 지도는 M2 에서
+      map: allMapModel(),
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
       theme: RT.themes ? RT.themes.byId(RT.themes.current()).name : '',
       meName: state.me ? nameOf(state.me) : ''
@@ -2121,6 +2281,10 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
+    if (state.map && state.map.find && id === 'mp-q') { state.map.find.q = ev.target.value; render(true); return; }
+    if (state.map && state.map.sheet && state.map.sheet.form && (id === 'mp-date' || id === 'mp-note')) {
+      state.map.sheet.form[id === 'mp-date' ? 'date' : 'note'] = ev.target.value; state.map.sheet.form.error = ''; return;
+    }
     if (id === 'au-email') { state.auth.email = ev.target.value; return; }
     if (id === 'au-pass') { state.auth.password = ev.target.value; return; }
     if (id === 'me-name') { state.setup.name = ev.target.value; return; }
@@ -2170,6 +2334,13 @@
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
     if (state.account) { closeAccount(); return; }
+    if (state.map) {
+      if (state.map.find) closeFind();
+      else if (state.map.sheet && state.map.sheet.mode === 'visit' && state.map.sheet.back) { state.map.sheet = { mode: 'view' }; render(true); }
+      else if (state.map.sel) mapUnsel();
+      else closeMap();
+      return;
+    }
     if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }
     if (state.growOpen) { closeGrow(); return; }
     if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
@@ -2243,12 +2414,12 @@
     guardOn = false;
     clearTimeout(exitTimer);
     if (exitEl) return;
-    if (sheetIsOpen()) { closeTopSheet(); pushGuard(); return; }
+    if (sheetIsOpen() || state.map) { closeTopSheet(); pushGuard(); return; } // 지도 화면도 뒤로 = 「전체」로
     askExit();
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -2461,7 +2632,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
-    state.couple = null; state.coupleOff = false; state.anniv = null;
+    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

@@ -114,8 +114,16 @@ const FAKE_FIREBASE = `
           Object.keys(patch).forEach(function (k) { var parts = k.split('.'), o = base; for (var i = 0; i < parts.length - 1; i++) { if (typeof o[parts[i]] !== 'object' || !o[parts[i]]) o[parts[i]] = {}; o = o[parts[i]]; } o[parts[parts.length - 1]] = patch[k]; });
           return window.__set(p, JSON.stringify(base), user.uid); },
         onSnapshot: function (x, y, z) { var next = typeof x === 'function' ? x : y, err = typeof x === 'function' ? y : z; if (!allowed()) { setTimeout(function () { err && err(denied()); }, 10); return function () {}; }
-          var f = function () { next(snapDoc(p)); }; docL.add(f); window.__hello(); return function () { docL.delete(f); }; }
+          var f = function () { next(snapDoc(p)); }; docL.add(f); window.__hello(); return function () { docL.delete(f); }; },
+        get: function () { if (!allowed()) return Promise.reject(denied()); return Promise.resolve(snapDoc(p)); },
+        path: p
       };
+    },
+    // 트랜잭션 흉내: 읽고 → set 한 번 (실제처럼 다시 시도는 하지 않음)
+    runTransaction: function (fn) {
+      var writes = [];
+      var tx = { get: function (ref) { return ref.get(); }, set: function (ref, v) { writes.push([ref, v]); } };
+      return Promise.resolve(fn(tx)).then(function (r) { return Promise.all(writes.map(function (w) { return w[0].set(w[1]); })).then(function () { return r; }); });
     },
     collection: function (c) { return query(c, [], null, 0); }
   };
@@ -173,6 +181,11 @@ async function open(browser, name, opts = {}) {
       if (d) { const nu = d.ui || {}, ou = (old && old.ui) || {}; for (const k of new Set([...Object.keys(nu), ...Object.keys(ou)])) if (k !== uid && JSON.stringify(nu[k]) !== JSON.stringify(ou[k])) throw new Error('permission-denied'); } }
     if (p.startsWith('uiLog/')) { if (!d || d.by !== uid || docs.has(p)) throw new Error('permission-denied'); }
     if (p.startsWith('kungs/')) { if (!d || d.from !== uid || docs.has(p) || p !== 'kungs/' + d.date + '_' + uid) throw new Error('permission-denied'); }
+    // 단짝 지도 (v48): 지우기 없음, 별점은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
+    if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
+      const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
+      const cs = (docs.get('couple/main') || {}).start || '1950-01-01'; if ((d.visits || []).length && d.visits[0].date < cs) throw new Error('permission-denied');
+      if (d.updatedBy !== uid || d.code !== p.split('/')[1]) throw new Error('permission-denied'); }
     if (p.startsWith('events/')) { const old = docs.get(p); for (const x of [old, d]) if (x && x.owner !== 'both' && x.owner !== uid) throw new Error('permission-denied'); }
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
     if (d === null) docs.delete(p); else docs.set(p, d);
@@ -775,8 +788,8 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="open-account"]'); await jm.waitForSelector('#account-title');
   await jm.goBack(); await jm.waitForTimeout(150); // 뒤로가기 = 시트만 닫기
   assert.ok(!(await jm.$('#account-title')) && !(await jm.$('.exit-box')), '뒤로가기는 계정 시트만 닫음');
-  await jm.click('[data-act="all-map"]'); await jm.waitForTimeout(80);
-  assert.match(await jm.textContent('.toast'), /곧 열려요/);
+  await jm.click('[data-act="all-diet"]'); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent('.toast'), /준비 중/);
   // 좁은 화면: 아래 탭 다섯 · 「전체」 화면이 넘치지 않음
   for (const w of [320, 375]) {
     await jm.setViewportSize({ width: w, height: 700 }); await jm.waitForTimeout(120);
@@ -794,6 +807,88 @@ async function tick(page, dateKey, key) {
   }
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('「전체」 탭 확인 끝 (머리말 · 설정 시트 · 계정 · 뒤로가기 · 320/375px · 「사귄」 없음)');
+
+  // 4-1a4) (v48) 단짝 지도 M2: 지도 열기 · 칠하기 규칙 · 함께 다녀왔어요(단짝이 된 날부터) · 지역 찾기 · 확대 · 짝꿍 화면 실시간
+  await toAll(jm); await jm.waitForSelector('.afeat__ds');
+  assert.strictEqual(await jm.textContent('.afeat__ds'), '함께 0곳', '「전체」 카드 개수');
+  await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg');
+  assert.strictEqual(await jm.$$eval('#km .rg', (e) => e.length), 230, '시·군·구 230곳');
+  assert.ok(!(await jm.$('header.top')), '지도 화면은 머리말 대신 자기 머리줄');
+  assert.strictEqual(await jm.textContent('.mbar__title'), '단짝 지도');
+  assert.ok(await jm.$('.tabbar'), '아래 탭은 그대로');
+  assert.strictEqual(await jm.textContent('.mchip--both'), '함께 다녀온 곳 0');
+  await jm.screenshot({ path: path.join(OUT, 'map.png') });
+  const tapRegion = (p, code) => p.$eval(`#km [data-code="${code}"]`, (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+  await tapRegion(jm, '52190'); await jm.waitForSelector('#mapsheet-title');
+  assert.strictEqual(await jm.textContent('#mapsheet-title'), '전북 남원시');
+  assert.match(await jm.textContent('.sheet__sub'), /아직 함께 가 보지 않은 곳/);
+  assert.match(await jm.textContent('.mnote'), /단짝이 된 날\(2025년 7월 20일\)부터/);
+  assert.ok(await jm.$('#km .sel'), '고른 지역 테두리');
+  await jm.screenshot({ path: path.join(OUT, 'map-sheet-new.png') });
+  await jm.click('[data-act="map-visit"]'); await jm.waitForSelector('#mp-date');
+  assert.strictEqual(await jm.getAttribute('#mp-date', 'min'), '2025-07-20', '날짜 고르기도 단짝이 된 날부터');
+  await jm.fill('#mp-date', '2025-07-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.rform__error'), /단짝이 된 날/, '단짝이 된 날보다 이르면 저장 안 됨');
+  assert.ok(!docs.get('places/52190'), '저장 안 됨');
+  await jm.fill('#mp-date', '2025-08-15'); await jm.fill('#mp-note', '광한루 산책'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  const nw = docs.get('places/52190');
+  assert.strictEqual(nw.visits.length, 1); assert.strictEqual(nw.visits[0].date, '2025-08-15'); assert.strictEqual(nw.visits[0].note, '광한루 산책'); assert.strictEqual(nw.wishRank, null);
+  assert.match(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다녀온 곳 = --both 칠함');
+  assert.strictEqual(await jm.textContent('.mchip--both'), '함께 다녀온 곳 1');
+  assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
+  assert.match(await jm.textContent('.mvisits'), /처음 · 2025년 8월 15일광한루 산책/);
+  // 회귀: 규칙 흉내 — 단짝이 된 날보다 이른 방문은 저장소가 막는다
+  await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2026-10-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15', '2026-10-01'], '또 다녀왔어요 = 날짜 순');
+  assert.match(await jm.textContent('.mvisits li'), /2번째 · 10월 1일/, '최근 것이 위');
+  await jm.screenshot({ path: path.join(OUT, 'map-sheet-visited.png') });
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
+  assert.ok(!(await jm.$('#mapsheet-title')), 'Esc 로 시트 닫힘');
+  // 짝꿍 화면도 바로 칠해짐
+  await toAll(dj); await dj.click('[data-act="all-map"]'); await dj.waitForSelector('#km .rg');
+  assert.match(await dj.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '짝꿍 지도도 칠함');
+  // 가고 싶은 곳(빗금) · 다녀온 곳을 또 가고 싶은 곳으로(색 위 빗금) — 순위 숫자는 지도에 없음
+  docs.set('places/50110', { code: '50110', wishRank: 1000, wishNote: '', stars: {}, visits: [], updatedBy: 'x', updatedAt: 'x' });
+  docs.set('places/52190', Object.assign({}, docs.get('places/52190'), { wishRank: 2000 }));
+  await pushAll(['places/50110', 'places/52190']); await jm.waitForTimeout(150);
+  assert.match(await jm.getAttribute('#km [data-code="50110"]', 'class'), /\bw\b/, '가고 싶은 곳 = 빗금');
+  assert.match(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bvw\b/, '둘 다 = 색 위 빗금');
+  assert.match(await jm.textContent('.mlegend'), /가고 싶은 곳 2/, '또 가기도 가고 싶은 곳에 셈');
+  assert.ok(!(await jm.$$eval('#km text', (t) => t.some((x) => /\d/.test(x.textContent)))), '지도 안에 순위 숫자 없음');
+  assert.strictEqual(await jm.$eval('#km [data-code="50110"]', (e) => getComputedStyle(e).fill), 'url("#kmhatch")');
+  await jm.screenshot({ path: path.join(OUT, 'map-hatch.png') });
+  // 지역 찾기 → 고르면 그 지역으로 확대 + 시트
+  const vb0 = await jm.getAttribute('#km', 'viewBox');
+  await jm.click('[data-act="map-find"]'); await jm.waitForSelector('#mp-q');
+  await jm.type('#mp-q', '해운대'); await jm.waitForTimeout(100);
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'mp-q', '찾는 동안 입력칸 포커스 유지');
+  assert.match(await jm.textContent('.mfind__row'), /부산 해운대구/);
+  await jm.click('.mfind__row'); await jm.waitForSelector('#mapsheet-title');
+  assert.strictEqual(await jm.textContent('#mapsheet-title'), '부산 해운대구');
+  assert.notStrictEqual(await jm.getAttribute('#km', 'viewBox'), vb0, '찾은 지역으로 확대');
+  await jm.click('.scrim[data-act="map-unsel"]'); await jm.waitForTimeout(100);
+  // 확대 버튼
+  const vb1 = await jm.getAttribute('#km', 'viewBox');
+  await jm.click('[data-act="map-zoom"][data-v="-1"]'); await jm.click('[data-act="map-zoom"][data-v="-1"]'); await jm.click('[data-act="map-zoom"][data-v="-1"]');
+  assert.strictEqual(await jm.getAttribute('#km', 'viewBox'), '20 140 840 910', '가장 작게 = 처음 자리');
+  await jm.click('[data-act="map-zoom"][data-v="1"]');
+  assert.notStrictEqual(await jm.getAttribute('#km', 'viewBox'), '20 140 840 910', '크게');
+  // 뒤로가기 = 「전체」로, 카드 개수 · 미리보기 칸
+  await jm.goBack(); await jm.waitForTimeout(150);
+  assert.ok(await jm.$('.all') && !(await jm.$('.exit-box')), '뒤로가기는 지도만 닫음');
+  assert.strictEqual(await jm.textContent('.afeat__ds'), '함께 1곳');
+  assert.ok((await jm.$$('.amap__tile.is-on')).length > 0, '미리보기에 전북 칸 칠함');
+  await jm.screenshot({ path: path.join(OUT, 'all-map-card.png') });
+  // 다크 테마 · 320px 지도
+  await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg');
+  await jm.evaluate(() => RT.themes.apply('cosmic-dream'));
+  await jm.setViewportSize({ width: 320, height: 640 }); await jm.waitForTimeout(120);
+  assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 지도 화면 넘치지 않음');
+  await jm.screenshot({ path: path.join(OUT, 'map-dark-320.png') });
+  await jm.setViewportSize({ width: 390, height: 844 }); await jm.evaluate(() => RT.themes.apply(localStorage.getItem('danjjakkung.theme') || 'soft-pastel'));
+  await jm.click('[data-act="tab"][data-tab="all"]'); await jm.waitForSelector('.all'); // 지도에서 「전체」 탭 = 「전체」로
+  await dj.click('[data-act="map-close"]');
+  console.log('단짝 지도 확인 끝 (230곳 · 칠하기 · 단짝이 된 날 · 찾기 · 확대 · 뒤로 · 짝꿍 실시간)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
