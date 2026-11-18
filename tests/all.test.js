@@ -169,3 +169,11 @@ test('점검 AI 회귀: 시작일이 미래면 박스에 「○○부터 · 시�
   assert.match(app, /v && v\.future\) \{ line1 = v\.startText \+ '부터'; line2 = '시작까지 ' \+ v\.dText;/);
   assert.match(app, /else if \(!state\.coupleLoaded\)/);
 });
+
+test('v53 설정 줄 이름은 「테마」 · 박스 모양은 서버에 저장 안 함', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'js', 'view-all.js'), 'utf8');
+  assert.ok(src.includes("row('open-theme', 'palette', '테마', ''"));
+  assert.ok(!src.includes('테마·사람 색'));
+  const store = fs.readFileSync(path.join(ROOT, 'js', 'store.js'), 'utf8');
+  assert.ok(!/saveBox/.test(store), '박스 모양은 각자 기기에');
+});

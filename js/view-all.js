@@ -67,7 +67,7 @@
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
       // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)
       (m.notify ? row('open-notify', 'bell', '알림', '', m.notify, '알림 설정 (' + m.notify + ')') : '') +
-      (m.theme ? row('open-theme', 'palette', '테마·사람 색', '', m.theme, '테마·사람 색 (지금: ' + m.theme + ')') : '') +
+      (m.theme ? row('open-theme', 'palette', '테마', '', m.theme, '테마 (지금: ' + m.theme + ')') : '') +
       row('open-account', 'user', '계정', m.meName ? m.meName + ' 님으로 접속' : '', '', '계정' + (m.meName ? ' · ' + m.meName + ' 님으로 접속' : '')) +
       '</div>';
     return '<div class="all">' + us + feats + set + '</div>';

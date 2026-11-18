@@ -231,7 +231,7 @@ service cloud.firestore {
       allow read: if isMember();
       allow create, update: if isMember() && id == 'main'
         && request.resource.data.keys().hasOnly(['start', 'label', 'box', 'updatedBy', 'updatedAt'])
-        && (!('box' in request.resource.data) || request.resource.data.box in ['heart', 'overlap', 'badge', 'ticket', 'polaroid']) // v52 박스 모양
+        && (!('box' in request.resource.data) || request.resource.data.box in ['heart', 'overlap', 'badge', 'ticket', 'polaroid']) // v52 박스 모양 (v53부터 앱은 안 씀 — 예전 값 읽기용으로 남김)
         && request.resource.data.start is string && request.resource.data.start.matches('^(19[5-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$')
         && request.resource.data.label is string && request.resource.data.label.size() > 0 && request.resource.data.label.size() <= 8
         && (request.resource.data.updatedBy == request.auth.uid

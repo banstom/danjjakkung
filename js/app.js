@@ -2317,8 +2317,7 @@
     else if (!a) { line1 = '우리가 시작한 날을'; line2 = '정해 볼까요?'; }
     else if (v && v.future) { line1 = v.startText + '부터'; line2 = '시작까지 ' + v.dText; }
     else if (v) { line1 = v.line; line2 = v.today ? '오늘은 ' + v.today + '이에요 🎉' : v.next[0] ? v.next[0].name + '까지 ' + v.next[0].d : ''; }
-    if (a && state.coupleLoaded && lsGet(LS_BOX) !== a.box) lsSet(LS_BOX, a.box); // 다음에 열 때 불러오는 동안에도 같은 모양 (깜빡임 없게)
-    return { style: a ? a.box : A ? A.cleanBox(lsGet(LS_BOX)) : 'heart', left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A,
+    return { style: A ? boxChoice() : 'heart', left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A,
       count: v && !v.future ? v.count : 0, label: v ? v.label : '', countText: v && !v.future ? v.countText : '', next: v && !v.future && v.next[0] ? v.next[0] : null, todayName: v && !v.future ? v.today : null, prog: v && !v.future ? v.prog : null,
       nexts: v && !v.future ? v.next : [], past: v && !v.future ? v.past : [] };
   }
@@ -2456,7 +2455,7 @@
       var t = a.updatedAt ? D.dayOfIso(a.updatedAt) : NaN;
       by = (a.updatedBy === state.me ? '내가' : nameOf(a.updatedBy) + ' 님이') + (isNaN(t) ? '' : ' ' + D.label(t)) + ' 정했어요';
     }
-    return { view: a ? A.build(a, state.today) : null, by: by, box: a ? { current: a.box, boxes: A.BOXES } : null,
+    return { view: a ? A.build(a, state.today) : null, by: by, box: a ? { current: boxChoice(), boxes: A.BOXES } : null,
       edit: f ? Object.assign({}, f, { presets: A.PRESETS, max: A.LABEL_MAX, maxDate: D.toKey(state.today), sample: sampleCount(f.start) }) : null };
   }
   function sampleCount(key) {
@@ -2503,25 +2502,20 @@
     f.error = '';
     render(true);
   }
-  /** v52 「우리 둘」 박스 모양 — 누르면 바로 저장 (화면엔 먼저, 못 하면 되돌림).
-      버튼을 막지 않는다: 오프라인이면 저장 약속이 서버에 닿을 때까지 안 끝나서 막으면 계속 못 누름 · 포커스도 잃음 (점검 AI)
-      모양만 바꾸면 「누가 정했어요」(updatedBy · updatedAt)는 그대로 — 기념일을 정한 기록이 덮이지 않게 */
-  var boxSeq = 0;
+  /** v53 「우리 둘」 박스 모양 — 각자 고르고 각자 화면에서만 (테마처럼 이 기기에 저장).
+      아직 안 골랐으면 v52 때 둘이 같이 고른 모양(couple/main.box)을 처음 값으로 */
+  function boxChoice() {
+    var A = RT.anniv, v = lsGet(LS_BOX);
+    if (v && A.cleanBox(v) === v) return v;
+    return A.cleanBox(state.couple && state.couple.box);
+  }
   function annivBox(id) {
-    var A = RT.anniv, a = A.fromDoc(state.couple);
-    if (!store || !state.me || !state.anniv || !a) return;
-    id = A.cleanBox(id); if (id === a.box) return;
-    var prev = state.couple.box, seq = ++boxSeq;
-    state.couple = Object.assign({}, state.couple, { box: id });
+    var A = RT.anniv;
+    if (!state.anniv) return;
+    id = A.cleanBox(id); if (id === boxChoice()) return;
     lsSet(LS_BOX, id);
     focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true;
     render(true);
-    store.saveBox(id).catch(function () {
-      if (seq !== boxSeq) return; // 그 뒤에 또 눌렀으면 그 값이 맞음
-      if (state.couple && state.couple.box === id) { state.couple = Object.assign({}, state.couple, { box: prev }); lsSet(LS_BOX, A.cleanBox(prev)); }
-      if (state.anniv) { focusAfter = ['[data-act="anniv-box"][aria-pressed="true"]']; focusInSheet = true; }
-      showToast('모양을 바꾸지 못했어요. 잠시 뒤 다시 해 주세요'); render(true);
-    });
   }
   function saveAnniv() {
     var A = RT.anniv, f = state.anniv && state.anniv.edit;

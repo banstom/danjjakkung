@@ -114,7 +114,7 @@
     return '<h3 class="gsub" id="abox-title">박스 모양</h3><div class="abox" role="group" aria-labelledby="abox-title">' + o.boxes.map(function (x) {
       return '<button type="button" class="abox__opt" data-act="anniv-box" data-v="' + esc(x.id) + '" aria-pressed="' + (o.current === x.id) + '">' +
         '<span class="abox__mini abox__mini--' + esc(x.id) + '" aria-hidden="true"><i></i><i></i></span><span class="abox__nm">' + esc(x.name) + '</span></button>';
-    }).join('') + '</div><p class="anniv-form__note">둘이 같이 보는 모양이에요 · 글자는 「고치기」에서 바꿔요</p>';
+    }).join('') + '</div><p class="anniv-form__note">내 화면에서만 바뀌어요 · 글자는 「고치기」에서 바꿔요</p>';
   }
 
   /** 내 사진 시트. a = { name, img, error, busy } */

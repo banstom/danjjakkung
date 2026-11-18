@@ -12,7 +12,7 @@
   var DEFAULT_LABEL = '단짝이 된 지';
   var OLD_LABELS = { '사귄 지': true };
   var MIN_YEAR = 1950;
-  // v52: 「우리 둘」 박스 모양 — 둘이 같이 보는 값 (couple/main.box). 글자(관계 이름)는 그대로 label
+  // 「우리 둘」 박스 모양. v52 는 둘이 같이(couple/main.box), v53 부터 각자 이 기기에 (app.js boxChoice) — box 는 처음 값으로만 읽음
   var BOXES = [{ id: 'heart', name: '하트 잇기' }, { id: 'overlap', name: '겹친 동그라미' }, { id: 'badge', name: '단짝 배지' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }];
   var DEFAULT_BOX = 'heart';
   function cleanBox(v) { for (var i = 0; i < BOXES.length; i++) if (BOXES[i].id === v) return v; return DEFAULT_BOX; }
