@@ -93,7 +93,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -152,7 +152,7 @@
     if (state.status !== 'ready') m.header.meName = '';
     var onAll = state.status === 'ready' && state.tab === 'all';
     m.header.title = onAll ? '전체' : '';
-    m.header.hidden = onAll && !!state.map; // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
+    m.header.hidden = onAll && (!!state.map || !!state.diet); // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
     m.header.dday = state.status === 'ready' && !onAll ? annivHeader() : null;
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
@@ -207,7 +207,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
-    'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null,
+    'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-star': 'data-v', 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -575,7 +575,18 @@
     else if (act === 'map-find') openFind();
     else if (act === 'map-find-close') closeFind();
     else if (act === 'map-pick') mapPick(btn.getAttribute('data-v'));
-    else if (act === 'all-diet') showToast('단짝 식탁은 준비 중이에요');
+    else if (act === 'all-diet') openDiet();
+    else if (act === 'diet-close') closeDiet();
+    else if (act === 'dg-open') { if (state.diet) { dietGoalForm(false); focusAfter = ['[data-act="dg-close"]']; focusInSheet = true; render(true); } }
+    else if (act === 'dg-close') { if (state.diet) { if (myGoal()) { state.diet.view = 'home'; state.diet.form = null; focusAfter = ['[data-act="dg-open"]']; render(true); } else closeDiet(); } }
+    else if (act === 'dg-goal' || act === 'dg-sex' || act === 'dg-act') { var df = state.diet && state.diet.form; if (df) { df[act === 'dg-goal' ? 'goal' : act === 'dg-sex' ? 'sex' : 'activity'] = btn.getAttribute('data-v'); df.error = ''; focusInSheet = true; render(true); } }
+    else if (act === 'dg-edit') { var de = state.diet && state.diet.form; if (de) { var k = btn.getAttribute('data-v'); var cur = document.getElementById('dg-e-' + k); if (cur) de.edits[k] = cur.value; if (de.editing && de.editing !== k) { var ce = document.getElementById('dg-e-' + de.editing); if (ce) de.edits[de.editing] = ce.value; } de.editing = de.editing === k ? null : k; focusAfter = de.editing ? ['#dg-e-' + k] : ['[data-act="dg-edit"][data-v="' + k + '"]']; focusInSheet = true; render(true); } }
+    else if (act === 'dg-skip') { var dk = state.diet && state.diet.form; if (dk) { dk.skip = !dk.skip; dk.editing = null; dk.error = ''; focusInSheet = true; render(true); } }
+    else if (act === 'dg-retune') { var dr = state.diet && state.diet.form; if (dr) { dr.retune = !dr.retune; focusInSheet = true; render(true); } }
+    else if (act === 'dg-basis') { if (state.diet) { state.diet.basis = { needAck: false }; state.sheetEntering = true; focusAfter = ['[data-act="dg-basis-ok"]']; focusInSheet = true; render(true); } }
+    else if (act === 'dg-basis-close') { if (state.diet) { state.diet.basis = null; focusAfter = ['[data-act="dg-basis"]']; focusInSheet = true; render(true); } }
+    else if (act === 'dg-basis-ok') { if (state.diet && state.diet.basis) { var need = state.diet.basis.needAck; state.diet.basis = null; if (need) dietStart(true); else { focusAfter = ['[data-act="dg-start"]']; focusInSheet = true; render(true); } } }
+    else if (act === 'dg-start') dietStart(false);
     else if (act === 'close-anniv') closeAnniv();
     else if (act === 'anniv-edit') annivEdit();
     else if (act === 'anniv-cancel') { if (state.anniv) { state.anniv.edit = null; focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true; render(true); } }
@@ -585,9 +596,11 @@
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
   function setTab(t) {
+    if (t === 'all' && state.tab === 'all' && state.diet) { closeDiet(); return; }
     if (t === 'all' && state.tab === 'all' && state.map) { closeMap(); return; } // 지도에서 「전체」를 누르면 「전체」로
     if (TAB_IDS.indexOf(t) < 0 || t === state.tab) return;
     if (state.map) stopMap();
+    if (state.diet) stopDiet();
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
@@ -665,7 +678,8 @@
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
-    if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : RT.viewAll.tab(allModel());
+    if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietHomeModel()) : RT.viewAll.tab(allModel());
+    if (state.tab === 'all' && state.diet && state.diet.view === 'goal' && state.diet.form) out.sheet = RT.viewDiet.goalScreen(dietGoalModel(), state.sheetEntering && !state.diet.basis) + (state.diet.basis ? RT.viewDiet.basisSheet({ needAck: state.diet.basis.needAck, notice: RT.dietGoal.NOTICE }, state.sheetEntering) : '');
     if (state.tab === 'all' && state.map && state.map.rank && mapReady()) out.sheet = RT.viewMap.rankScreen(rankModel(), state.sheetEntering);
     else if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
     else if (state.tab === 'all' && state.map && state.map.sel && state.map.sheet && mapReady()) out.sheet = RT.viewMap.sheet(mapSheetModel(), state.sheetEntering);
@@ -2134,6 +2148,106 @@
     mapSel(code);
   }
 
+  // ── 단짝 식탁 (D2): 목표 고르기 · 계산 근거 · 임시 첫 화면 ──
+  var unGoals = null, unPriv = null;
+  function myGoal() { var d = state.goalDocs && state.goalDocs[state.uid || state.me]; return d && d.kind ? d : null; }
+  function loadGoalsOnce() {
+    if (!store || state.goalDocs || state.goalsLoading || state.goalsOff) return;
+    state.goalsLoading = true;
+    store.loadGoals().then(function (d) { state.goalsLoading = false; if (!state.goalDocs) state.goalDocs = d; render(); },
+      function () { state.goalsLoading = false; state.goalsOff = true; render(); });
+  }
+  function allDietModel() {
+    if (!state.goalDocs && !state.goalsOff) setTimeout(loadGoalsOnce, 0);
+    var g = myGoal();
+    return { ready: !!state.goalDocs, kcal: g ? g.kcal : null, kind: g ? g.kind : null };
+  }
+  function openDiet() {
+    if (!store || !RT.viewDiet) return;
+    var uid = state.uid || state.me;
+    state.account = false; state.anniv = null;
+    state.diet = { view: 'home', form: null, basis: null };
+    if (unGoals) unGoals(); if (unPriv) unPriv();
+    unGoals = store.watchGoals(function (d) { state.goalDocs = d; state.goalsOff = false; if (state.diet && state.diet.view === 'home' && !myGoal() && !state.diet.form) dietGoalForm(true); render(); },
+      function () { state.goalsOff = true; render(); });
+    unPriv = store.watchPrivate(uid, function (d) { state.privDoc = d || {}; render(); }, function () { state.privDoc = {}; render(); });
+    if (state.goalDocs && !myGoal()) dietGoalForm(true);
+    focusAfter = ['[data-act="diet-close"]', '[data-act="dg-close"]'];
+    render(true);
+    try { root.scrollTo(0, 0); } catch (e) {}
+  }
+  function stopDiet() { if (unGoals) { unGoals(); unGoals = null; } if (unPriv) { unPriv(); unPriv = null; } state.diet = null; }
+  function closeDiet() { stopDiet(); focusAfter = ['[data-act="all-diet"]']; render(true); }
+  /** 목표 고르기 열기 — 저장된 몸 정보 · 목표로 채움 (처음이면 비움) */
+  function dietGoalForm(first) {
+    var b = (state.privDoc && state.privDoc.body) || {}, g = myGoal();
+    var edits = {}; if (g && g.edited) ['kcal', 'protein', 'fat', 'carb'].forEach(function (k) { edits[k] = g[k]; });
+    state.diet.form = { first: !!first && !g, goal: g ? g.kind : 'keep', sex: b.sex || '', age: b.age || '', height: b.heightCm || '', weight: b.weightKg || '', activity: b.activity || '',
+      skip: !!(g && g.edited && !b.weightKg), retune: !!(g && g.retune), edits: edits, editing: null, saving: false, error: '' };
+    state.diet.view = 'goal'; state.sheetEntering = true;
+  }
+  function dietBody(f) {
+    var n = function (v) { var x = parseFloat(v); return isFinite(x) ? x : NaN; };
+    var b = { sex: f.sex, age: n(f.age), heightCm: n(f.height), weightKg: n(f.weight), activity: f.activity, goal: f.goal };
+    var ok = (b.sex === 'm' || b.sex === 'f') && b.age >= 1 && b.age <= 120 && b.heightCm >= 50 && b.heightCm <= 260 && b.weightKg >= 10 && b.weightKg <= 400 && !!RT.dietGoal.ACTIVITY[b.activity];
+    return ok ? b : null;
+  }
+  function dietReco(f) {
+    var G = RT.dietGoal, body = f.skip ? null : dietBody(f), t = body ? G.targets(body) : null, vals = {}, subs = {}, edited = {};
+    ['kcal', 'protein', 'fat', 'carb'].forEach(function (k) {
+      var e = f.edits[k]; edited[k] = e != null && e !== '';
+      vals[k] = edited[k] ? parseFloat(e) : t ? t[k] : null;
+    });
+    if (t) {
+      var pct = function (g, m) { return t.kcal ? Math.round(g * m / t.kcal * 100) : 0; };
+      subs.kcal = f.goal === 'keep' ? '하루 소비 약 ' + Math.round(t.tdee).toLocaleString('ko-KR') : f.goal === 'bulk' ? '하루 소비 약 ' + Math.round(t.tdee).toLocaleString('ko-KR') + ' + 10%' : '하루 소비 약 ' + Math.round(t.tdee).toLocaleString('ko-KR') + ' − 주 0.5%';
+      subs.protein = t.proteinCapped ? '칼로리의 20%까지' : '체중 × ' + (f.goal === 'keep' ? '1.6' : '2.0') + 'g · ' + pct(t.protein, 4) + '%';
+      subs.fat = pct(t.fat, 9) + '%'; subs.carb = '나머지 · ' + pct(t.carb, 4) + '%';
+    }
+    var full = vals.kcal > 0 && vals.protein >= 0 && vals.fat >= 0 && vals.carb >= 0 && [vals.kcal, vals.protein, vals.fat, vals.carb].every(function (v) { return v != null && isFinite(v); });
+    var notes = full ? G.notesFor(vals) : [];
+    if (t && t.kcalRaised && !edited.kcal) notes.unshift('감량 속도를 늦췄어요 (기초대사량보다 낮게 먹지 않게)');
+    if (full && body && f.edits.kcal != null && f.edits.kcal !== '' && G.clampKcal(vals.kcal, body, f.goal) > vals.kcal) notes.push('기초대사량이나 주 1% 감량보다 낮은 칼로리예요 — 저장은 되지만 권하지 않아요');
+    return { ready: !!t, skip: f.skip, values: vals, subs: subs, editing: f.editing, edited: edited, notes: notes, full: full, targets: t, body: body };
+  }
+  function dietGoalModel() {
+    var f = state.diet.form;
+    return Object.assign({}, f, { reco: dietReco(f), notice: RT.dietGoal.NOTICE });
+  }
+  function dietHomeModel() {
+    var pi = partnerInfo(), pg = pi.partner && state.goalDocs ? state.goalDocs[pi.partner] : null;
+    return { mine: myGoal(), partner: pi.partner ? { name: pi.partnerName, goal: pg && pg.kind ? pg : null } : null };
+  }
+  function dietRefreshReco() {
+    var box = document.getElementById('dg-reco'); if (!box || !state.diet || !state.diet.form) return;
+    box.innerHTML = RT.viewDiet.reco(dietReco(state.diet.form));
+  }
+  function dietStart(acked) {
+    var d = state.diet, f = d && d.form, uid = state.uid || state.me; if (!f || f.saving || !store) return;
+    ['kcal', 'protein', 'fat', 'carb'].forEach(function (k) { var el = document.getElementById('dg-e-' + k); if (el) f.edits[k] = el.value; });
+    var r = dietReco(f);
+    if (!r.full) { f.error = f.skip ? '칼로리 · 단백질 · 지방 · 탄수를 모두 적어 주세요' : '몸 정보를 다 적거나, 「건너뛰고 직접 입력」으로 목표를 적어 주세요'; render(true); return; }
+    var ack = acked || (state.privDoc && state.privDoc.ackAt);
+    if (!ack) { d.basis = { needAck: true }; state.sheetEntering = true; focusAfter = ['[data-act="dg-basis-ok"]']; focusInSheet = true; render(true); return; } // 처음 한 번은 계산 근거를 확인해야 시작
+    var now = new Date().toISOString(), edited = f.skip || Object.keys(r.edited).some(function (k) { return r.edited[k]; });
+    var priv = { updatedAt: now, ackAt: (state.privDoc && state.privDoc.ackAt) || now };
+    if (r.body) { priv.body = { sex: r.body.sex, age: r.body.age, heightCm: r.body.heightCm, weightKg: r.body.weightKg, activity: r.body.activity }; priv.suggested = { kind: f.goal, kcal: r.targets.kcal, protein: r.targets.protein, fat: r.targets.fat, carb: r.targets.carb }; }
+    else if (state.privDoc && state.privDoc.body) { priv.body = state.privDoc.body; } // 직접 입력이어도 예전 몸 정보는 지우지 않음
+    var goal = { kind: f.goal, kcal: r.values.kcal, protein: r.values.protein, fat: r.values.fat, carb: r.values.carb, edited: edited, retune: !!f.retune, updatedAt: now };
+    f.saving = true; f.error = ''; render(true);
+    store.saveDietGoal(uid, priv, goal).then(function () {
+      if (!state.diet) return;
+      state.privDoc = Object.assign({}, state.privDoc, priv);
+      state.goalDocs = Object.assign({}, state.goalDocs || {}); state.goalDocs[uid] = goal;
+      state.diet.view = 'home'; state.diet.form = null; state.diet.basis = null;
+      focusAfter = ['[data-act="dg-open"]'];
+      showToast('목표를 정했어요'); render(true);
+    }, function () {
+      if (!state.diet || !state.diet.form) return;
+      state.diet.form.saving = false; state.diet.form.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; render(true);
+    });
+  }
+
   // ── 「전체」 탭 (v47) ──
   function allModel() {
     var v = state.couple && !state.coupleOff ? annivView(false) : null;
@@ -2141,6 +2255,7 @@
       dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
       annivOff: !!state.coupleOff || !RT.anniv,
       map: allMapModel(),
+      diet: allDietModel(),
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
       theme: RT.themes ? RT.themes.byId(RT.themes.current()).name : '',
       meName: state.me ? nameOf(state.me) : ''
@@ -2548,6 +2663,13 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
+    if (state.diet && state.diet.form && /^dg-(age|height|weight|e-(kcal|protein|fat|carb))$/.test(id)) {
+      var dfm = state.diet.form, key = id.slice(3);
+      if (key.indexOf('e-') === 0) dfm.edits[key.slice(2)] = ev.target.value; else dfm[key] = ev.target.value;
+      dfm.error = '';
+      if (key.indexOf('e-') !== 0) dietRefreshReco(); // 추천 칸만 다시 (입력칸은 그대로 — 숫자 입력이 끊기지 않게)
+      return;
+    }
     if (state.map && state.map.rank && id === 'mp-wnote') { state.map.rank.note = ev.target.value; return; }
     if (state.map && state.map.find && id === 'mp-q') {
       // 결과 목록만 바꾼다 (입력칸을 다시 그리면 한글 조합이 「나ㅁ」처럼 깨진다 — 점검 AI)
@@ -2607,6 +2729,12 @@
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
     if (state.account) { closeAccount(); return; }
+    if (state.diet) {
+      if (state.diet.basis) { state.diet.basis = null; focusAfter = ['[data-act="dg-basis"]']; focusInSheet = true; render(true); }
+      else if (state.diet.view === 'goal' && myGoal()) { state.diet.view = 'home'; state.diet.form = null; render(true); }
+      else closeDiet();
+      return;
+    }
     if (state.map) {
       if (state.map.rank) closeRank();
       else if (state.map.find) closeFind();
@@ -2688,12 +2816,12 @@
     guardOn = false;
     clearTimeout(exitTimer);
     if (exitEl) return;
-    if (sheetIsOpen() || state.map) { closeTopSheet(); pushGuard(); return; } // 지도 화면도 뒤로 = 「전체」로
+    if (sheetIsOpen() || state.map || state.diet) { closeTopSheet(); pushGuard(); return; } // 지도 화면도 뒤로 = 「전체」로
     askExit();
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -2906,7 +3034,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
-    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false;
+    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false; stopDiet(); state.goalDocs = null; state.goalsOff = false; state.goalsLoading = false; state.privDoc = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

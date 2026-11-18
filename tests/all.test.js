@@ -21,7 +21,8 @@ test('「전체」: 우리 둘 카드 · 단짝 기능 2칸 · 설정 3줄이 �
   const html = ALL.tab(base);
   assert.match(html, /우리 둘[^]*단짝이 된 지 412일[^]*data-act="open-anniv"/);
   assert.match(html, /data-act="all-map"[^]*단짝 지도/);
-  assert.match(html, /data-act="all-diet"[^]*단짝 식탁[^]*준비 중/);
+  assert.match(html, /data-act="all-diet"[^]*단짝 식탁[^]*목표 정하기/, 'D2: 준비 중 대신 목표 정하기');
+  assert.match(ALL.tab(Object.assign({}, base, { diet: { ready: true, kcal: 2853.7, kind: 'bulk' } })), /하루 2,854kcal/);
   for (const act of ['open-notify', 'open-theme', 'open-account']) assert.match(html, new RegExp('data-act="' + act + '"'));
   assert.match(html, /알림<\/span><\/span><span class="arow__vl">켜짐/);
   assert.match(html, /Soft Pastel/);

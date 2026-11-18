@@ -195,6 +195,23 @@
           });
         });
       },
+      // 단짝 식탁 (D2): goals/<uid> = 목표 숫자(둘 다 읽음) · private/<uid> = 몸 정보(본인만)
+      watchGoals: function (next, fail) {
+        return db.collection('goals').onSnapshot(function (q) { var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); next(out); }, fail);
+      },
+      loadGoals: function () {
+        return db.collection('goals').get().then(function (q) { var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); return out; });
+      },
+      watchPrivate: function (uid, next, fail) {
+        return db.doc('private/' + uid).onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
+      },
+      /** 몸 정보와 목표를 한 번에 (둘 중 하나만 저장되지 않게) */
+      saveDietGoal: function (uid, priv, goal) {
+        var b = db.batch();
+        b.set(db.doc('private/' + uid), priv);
+        b.set(db.doc('goals/' + uid), goal);
+        return b.commit();
+      },
       // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
       watchCouple: function (next, fail) {
         return db.doc('couple/main').onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);

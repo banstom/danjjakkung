@@ -61,9 +61,13 @@
       '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('단짝 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +
       '<span class="afeat__nm">단짝 지도</span>' + mapPreview(map.tiles) +
       (map.ready ? '<span class="afeat__ds">함께 ' + esc(map.count || 0) + '곳</span>' : '<span class="abadge">준비 중</span>') + '</button>' +
-      '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="단짝 식탁 · 준비 중">' +
-      '<span class="afeat__nm">단짝 식탁</span><span class="afeat__ico">' + svg(36, ICON.bowl) + '</span>' +
-      '<span class="abadge">준비 중</span></button></div>';
+      (function (d) {
+        d = d || {};
+        var line = d.kcal ? '하루 ' + Math.round(d.kcal).toLocaleString('ko-KR') + 'kcal' : '목표 정하기';
+        return '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="' + esc('단짝 식탁 · ' + line) + '">' +
+          '<span class="afeat__nm">단짝 식탁</span><span class="afeat__ico">' + svg(36, ICON.bowl) + '</span>' +
+          '<span class="afeat__ds">' + esc(line) + '</span></button></div>';
+      })(m.diet);
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
       // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)
       (m.notify ? row('open-notify', 'bell', '알림', '', m.notify, '알림 설정 (' + m.notify + ')') : '') +

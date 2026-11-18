@@ -187,6 +187,8 @@ async function open(browser, name, opts = {}) {
     if (p.startsWith('uiLog/')) { if (!d || d.by !== uid || docs.has(p)) throw new Error('permission-denied'); }
     if (p.startsWith('kungs/')) { if (!d || d.from !== uid || docs.has(p) || p !== 'kungs/' + d.date + '_' + uid) throw new Error('permission-denied'); }
     // 단짝 지도 (v48): 지우기 없음, 별점은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
+    // 단짝 식탁: 몸 정보 · 목표는 자기 것만 쓸 수 있다
+    if ((p.startsWith('private/') || p.startsWith('goals/')) && p.split('/')[1] !== uid) throw new Error('permission-denied');
     if (p.startsWith('places/') && failPlaces) { failPlaces = false; throw new Error('unavailable'); } // 저장 실패 흉내 (한 번)
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
       const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
@@ -795,8 +797,6 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="open-account"]'); await jm.waitForSelector('#account-title');
   await jm.goBack(); await jm.waitForTimeout(150); // 뒤로가기 = 시트만 닫기
   assert.ok(!(await jm.$('#account-title')) && !(await jm.$('.exit-box')), '뒤로가기는 계정 시트만 닫음');
-  await jm.click('[data-act="all-diet"]'); await jm.waitForTimeout(80);
-  assert.match(await jm.textContent('.toast'), /준비 중/);
   // 좁은 화면: 아래 탭 다섯 · 「전체」 화면이 넘치지 않음
   for (const w of [320, 375]) {
     await jm.setViewportSize({ width: w, height: 700 }); await jm.waitForTimeout(120);
@@ -1048,6 +1048,68 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'map-been.png'), fullPage: true });
   await jm.click('[data-act="map-close"]'); await jm.waitForSelector('.all');
   console.log('단짝 지도 M3 확인 끝 (끼워 넣기 · 중간 키 · 다시 매기기 · 끌기 · 다녀오면 빠짐 · 빼기 · 별점 · 정렬)');
+
+  // 4-1a6) (D2) 단짝 식탁: 처음엔 목표 고르기 → 추천(G1 값) → 고치기 → 계산 근거 확인해야 시작 → 몸 정보는 private, 목표는 goals → 단짝 화면에 내 목표
+  await toAll(jm); await jm.waitForSelector('[data-act="all-diet"] .afeat__ds');
+  assert.strictEqual(await jm.textContent('[data-act="all-diet"] .afeat__ds'), '목표 정하기');
+  await jm.click('[data-act="all-diet"]'); await jm.waitForSelector('#dg-title');
+  assert.match(await jm.textContent('.dscreen .caption'), /처음 한 번만/);
+  assert.match(await jm.textContent('#dg-reco'), /입력하면 목표를 추천/);
+  assert.ok(await jm.$('.dlock'), '「나만 보기」 표시');
+  await jm.click('[data-act="dg-goal"][data-v="bulk"]'); await jm.click('[data-act="dg-sex"][data-v="m"]');
+  await jm.fill('#dg-age', '25'); await jm.fill('#dg-height', '175'); await jm.evaluate(() => window.__ageEl = document.getElementById('dg-age'));
+  await jm.type('#dg-weight', '70');
+  assert.ok(await jm.evaluate(() => window.__ageEl === document.getElementById('dg-age')), '입력하는 동안 입력칸을 새로 만들지 않음');
+  await jm.click('[data-act="dg-act"][data-v="w3_5"]');
+  const recoVals = () => jm.$$eval('#dg-reco .drow__vl', (e) => e.map((x) => x.textContent));
+  assert.deepStrictEqual(await recoVals(), ['2,854kcal', '140g', '79g', '395g'], 'G1 추천값');
+  assert.strictEqual(await jm.$eval('.ddisc', (e) => e.textContent), '참고용 추천이에요' + '의학적 진단·처방이 아니어서 효력이 없어요. 정확한 목표는 의사나 임상영양사 같은 전문가와 상의해 주세요. 질환이 있거나 임신 중이거나 성장기라면 꼭 전문가와 상의해 주세요. 숫자는 언제든 직접 고칠 수 있어요.', '안내 문구 그대로');
+  await jm.screenshot({ path: path.join(OUT, 'diet-goal.png'), fullPage: true });
+  await jm.click('[data-act="dg-edit"][data-v="protein"]'); await jm.waitForSelector('#dg-e-protein');
+  await jm.fill('#dg-e-protein', '150'); await jm.click('[data-act="dg-edit"][data-v="protein"]'); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent('#dg-reco'), /150g/); assert.match(await jm.textContent('#dg-reco'), /고친 값/);
+  // 처음엔 계산 근거를 확인해야 시작
+  await jm.click('[data-act="dg-start"]'); await jm.waitForSelector('#dbasis-title');
+  assert.match(await jm.textContent('[data-act="dg-basis-ok"]'), /이 목표로 시작/);
+  assert.ok(!docs.get('goals/' + jmUid0), '확인 전엔 저장 안 함');
+  await jm.screenshot({ path: path.join(OUT, 'diet-basis.png') });
+  await jm.click('[data-act="dg-basis-ok"]'); await jm.waitForTimeout(300);
+  const pv = docs.get('private/' + jmUid0), gl = docs.get('goals/' + jmUid0);
+  assert.deepStrictEqual(pv.body, { sex: 'm', age: 25, heightCm: 175, weightKg: 70, activity: 'w3_5' }, '몸 정보 = private');
+  assert.ok(pv.ackAt, '확인한 때');
+  assert.strictEqual(gl.kind, 'bulk'); assert.ok(Math.abs(gl.kcal - 2853.74) < 0.1, '목표 칼로리 소수 그대로'); assert.strictEqual(gl.protein, 150); assert.strictEqual(gl.edited, true);
+  assert.ok(!('weightKg' in gl) && !('body' in gl), '목표 문서엔 몸 정보 없음');
+  assert.match(await jm.textContent('.dgc'), /2,854kcal[^]*단 150g/);
+  await jm.screenshot({ path: path.join(OUT, 'diet-home.png'), fullPage: true });
+  // 다시 열면 고치기 화면은 저장된 값으로 · 근거 확인은 다시 안 물음
+  await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
+  assert.strictEqual(await jm.inputValue('#dg-weight'), '70'); assert.match(await jm.textContent('.dscreen .caption'), /내 목표 고치기/);
+  await jm.click('[data-act="dg-goal"][data-v="cut"]'); await jm.click('[data-act="dg-start"]'); await jm.waitForTimeout(300);
+  assert.ok(!(await jm.$('#dbasis-title')), '두 번째부턴 근거 확인 없이 저장');
+  assert.strictEqual(docs.get('goals/' + jmUid0).kind, 'cut');
+  // 단짝: 건너뛰고 직접 입력 → 몸 정보 없이 목표만, 내 목표가 보임
+  await toAll(dj); await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('#dg-title');
+  await dj.click('[data-act="dg-skip"]'); await dj.waitForSelector('#dg-e-kcal');
+  assert.ok(!(await dj.$('#dg-weight')), '직접 입력은 몸 정보 칸 없음');
+  await dj.fill('#dg-e-kcal', '1800'); await dj.fill('#dg-e-protein', '80'); await dj.fill('#dg-e-fat', '50'); await dj.fill('#dg-e-carb', '240');
+  await dj.click('[data-act="dg-start"]'); await dj.waitForSelector('#dbasis-title'); await dj.click('[data-act="dg-basis-ok"]'); await dj.waitForTimeout(300);
+  assert.ok(!(docs.get('private/' + djUid0) || {}).body, '직접 입력이면 몸 정보 저장 안 함');
+  assert.strictEqual(docs.get('goals/' + djUid0).kcal, 1800);
+  assert.match(await dj.textContent('.mscreen'), /준민 님 목표[^]*감량/, '단짝 화면에 내 목표(숫자만)');
+  assert.ok(!/70kg|175cm|25세/.test(await dj.textContent('.mscreen')), '단짝 화면에 몸 정보 없음');
+  await dj.click('[data-act="diet-close"]');
+  // 뒤로가기 = 「전체」로, 카드에 내 목표 칼로리
+  await jm.goBack(); await jm.waitForTimeout(150);
+  assert.ok(await jm.$('.all'), '뒤로가기는 단짝 식탁만 닫음');
+  assert.match(await jm.textContent('[data-act="all-diet"] .afeat__ds'), /하루 [\d,]+kcal/);
+  // 320px · 어두운 테마
+  await jm.click('[data-act="all-diet"]'); await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
+  await jm.setViewportSize({ width: 320, height: 640 }); await jm.evaluate(() => RT.themes.apply('cosmic-dream')); await jm.waitForTimeout(120);
+  assert.ok(await jm.evaluate(() => { const s = document.querySelector('.dscreen'); return s.scrollWidth <= s.clientWidth + 1; }), '320px 목표 화면 넘치지 않음');
+  await jm.screenshot({ path: path.join(OUT, 'diet-goal-dark-320.png') });
+  await jm.setViewportSize({ width: 390, height: 844 }); await jm.evaluate(() => RT.themes.apply(localStorage.getItem('danjjakkung.theme') || 'soft-pastel'));
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(80); await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
+  console.log('단짝 식탁 D2 확인 끝 (추천 · 고치기 · 근거 확인 · private/goals · 직접 입력 · 단짝 화면 · 뒤로 · 320px)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
