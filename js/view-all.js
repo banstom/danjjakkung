@@ -50,12 +50,8 @@
 
   /** m = { dday: '단짝이 된 지 412일' | '', annivOff, map: { count, ready, tiles }, notify: '켜짐' | '꺼짐' | '', theme, meName } */
   function tab(m) {
-    var us = '<section class="card aus" aria-label="우리 둘">' +
-      '<span class="aus__dots" aria-hidden="true"><span class="aus__dot aus__dot--me"></span><span class="aus__dot aus__dot--her"></span></span>' +
-      '<span class="aus__tx"><span class="aus__nm">우리 둘</span>' +
-      // 기념일 규칙이 막혀 정할 수 없으면 안내 문구도 없음 (점검 AI)
-      (m.dday || !m.annivOff ? '<span class="aus__ds">' + esc(m.dday || '우리가 시작한 날을 정해 볼까요?') + '</span>' : '') + '</span>' +
-      (m.annivOff ? '' : '<button type="button" class="aus__btn" data-act="open-anniv">기념일</button>') + '</section>';
+    // v51: 「우리 둘」 박스 — 왼쪽 · 오른쪽 사진(또는 사람 색) + 가운데 디데이 · 다음 기념일 (view-avatar.js)
+    var us = m.us && root.RT && root.RT.viewAvatar ? root.RT.viewAvatar.box(m.us) : '';
     var map = m.map || {};
     var feats = '<h2 class="asec">단짝 기능</h2><div class="afeat">' +
       '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('단짝 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +

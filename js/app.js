@@ -154,18 +154,21 @@
     else if (state.anniv) state.anniv = null;
     var flipBefore = flipMeasure();
     if (state.status === 'ready' && state.account && !plan.sheet) plan.sheet = RT.viewAll.accountSheet({ meName: m.header.meName, email: state.email }, state.sheetEntering);
+    if (state.status === 'ready' && state.ava && !plan.sheet) plan.sheet = RT.viewAvatar.sheet({ img: (state.avaDocs || {})[state.uid || state.me] ? state.avaDocs[state.uid || state.me].img : '', partnerName: partnerInfo().partnerName, error: state.ava.error, busy: state.ava.busy }, state.sheetEntering && !state.avaCrop) +
+      (state.avaCrop ? RT.viewAvatar.crop(state.avaCrop, state.sheetEntering) : '');
     var sheetOpen = !!(((!other && (m.sheet || m.manage)) || state.notifyOpen || state.themeOpen || state.growOpen || plan.sheet) && state.status === 'ready');
     var entering = state.sheetEntering;
     if (state.status !== 'ready') m.header.meName = '';
     var onAll = state.status === 'ready' && state.tab === 'all';
     m.header.title = onAll ? '전체' : '';
     m.header.hidden = onAll && (!!state.map || !!state.diet); // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
-    m.header.dday = state.status === 'ready' && !onAll ? annivHeader() : null;
+    m.header.dday = null; // v51: 디데이는 「전체」의 「우리 둘」 박스에서만 (사용자 결정)
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
     if (state.map) mountMap();
+    if (state.avaCrop) avaApply();
     if (mdrag && !mdrag.li.isConnected) mdrag = null; // 강제로 다시 그려 줄이 사라졌으면 끌기 끝
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
@@ -214,7 +217,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
-    'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null,
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-star': 'data-v', 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -557,6 +560,11 @@
     else if (act === 'open-quest') { resetReview(); setTab('look'); }
     else if (act === 'open-anniv') openAnniv();
     else if (act === 'open-account') openAccount();
+    else if (act === 'ava-open') openAva();
+    else if (act === 'ava-close') closeAva();
+    else if (act === 'ava-delete') avaDelete();
+    else if (act === 'ava-crop-cancel') avaCancel();
+    else if (act === 'ava-crop-save') avaSave();
     else if (act === 'close-account') closeAccount();
     else if (act === 'all-map') openMap();
     else if (act === 'map-close') closeMap();
@@ -612,7 +620,7 @@
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
-    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false;
+    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaCrop = null;
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
@@ -2287,12 +2295,102 @@
     });
   }
 
+  // ── 「우리 둘」 박스 · 프로필 사진 (v51) ──
+  function usModel() {
+    var A = RT.anniv, v = state.couple && !state.coupleOff ? annivView(false) : null, a = A && A.fromDoc(state.couple);
+    var ps = planPeople(), av = state.avaDocs || {};
+    // 왼쪽 = 나, 오른쪽 = 단짝 (각자 폰에서. 별점 카드 「나 · 단짝」과 같은 순서)
+    var order = ps.slice().sort(function (x, y) { return (y.mine ? 1 : 0) - (x.mine ? 1 : 0); }).map(function (p) { return { uid: p.key, name: p.name, slot: p.slot, mine: p.mine, img: av[p.key] && av[p.key].img ? av[p.key].img : '' }; });
+    var line1, line2 = '';
+    if (state.coupleOff || !A) { line1 = ''; }
+    else if (!a) { line1 = '우리가 시작한 날을'; line2 = '정해 볼까요?'; }
+    else if (v && v.future) { line1 = v.startText + '부터'; line2 = '시작까지 ' + v.dText; }
+    else if (v) { line1 = v.line; line2 = v.today ? '오늘은 ' + v.today + '이에요 🎉' : v.next[0] ? v.next[0].name + '까지 ' + v.next[0].d : ''; }
+    return { left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A };
+  }
+  function openAva() {
+    state.anniv = null; state.account = false;
+    state.ava = { error: '', busy: false }; state.sheetEntering = true;
+    focusAfter = ['#ava-file']; focusInSheet = true;
+    render(true);
+  }
+  function closeAva() { state.ava = null; state.avaCrop = null; focusAfter = ['[data-act="ava-open"]']; render(true); }
+  function avaPicked(file) {
+    if (!file || !state.ava) return;
+    if (!/^image\//.test(file.type || 'image/')) { state.ava.error = '사진 파일을 골라 주세요'; render(true); return; }
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      if (!state.ava) { URL.revokeObjectURL(url); return; }
+      var view = Math.min(300, Math.max(220, (root.innerWidth || 360) - 80));
+      var st = RT.avatarCrop.cover(img.naturalWidth, img.naturalHeight, view);
+      state.avaCrop = { src: url, view: view, iw: img.naturalWidth, ih: img.naturalHeight, st: st, img: img, saving: false, error: '' };
+      state.sheetEntering = true; focusAfter = ['[data-act="ava-crop-save"]']; focusInSheet = true;
+      render(true); avaApply();
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); if (state.ava) { state.ava.error = '사진을 열 수 없어요. 다른 사진을 골라 주세요'; render(true); } };
+    img.src = url;
+  }
+  /** 사진 위치를 화면에 (다시 그리지 않고 transform 만) */
+  function avaApply() {
+    var c = state.avaCrop, el = c && document.getElementById('acrop-img'); if (!el) return;
+    el.style.width = (c.iw * c.st.scale) + 'px'; el.style.height = (c.ih * c.st.scale) + 'px';
+    el.style.transform = 'translate(' + c.st.x + 'px,' + c.st.y + 'px)';
+    var z = document.getElementById('ava-zoom'); if (z && document.activeElement !== z) z.value = String(c.st.scale / c.st.min);
+  }
+  function avaCancel() { var c = state.avaCrop; if (c) URL.revokeObjectURL(c.src); state.avaCrop = null; focusAfter = ['#ava-file']; focusInSheet = true; render(true); }
+  function avaSave() {
+    var c = state.avaCrop, C = RT.avatarCrop, uid = state.uid || state.me; if (!c || c.saving || !store) return;
+    var s = C.source(c.st, c.view), cv = document.createElement('canvas'); cv.width = C.OUT; cv.height = C.OUT;
+    var g = cv.getContext('2d'); g.drawImage(c.img, s.sx, s.sy, s.size, s.size, 0, 0, C.OUT, C.OUT);
+    var q = C.QUALITY, data = cv.toDataURL('image/jpeg', q);
+    while (data.length > C.MAX_LEN && q > 0.4) { q -= 0.1; data = cv.toDataURL('image/jpeg', q); } // 저장 규칙의 크기 안으로
+    if (data.length > C.MAX_LEN) { c.error = '사진이 너무 커요. 다른 사진을 골라 주세요'; render(true); return; }
+    c.saving = true; c.error = ''; render(true); avaApply();
+    store.saveAvatar(uid, data).then(function () {
+      state.avaDocs = Object.assign({}, state.avaDocs); state.avaDocs[uid] = { img: data };
+      URL.revokeObjectURL(c.src); state.avaCrop = null; state.ava = null;
+      focusAfter = ['[data-act="ava-open"]']; showToast('사진을 바꿨어요'); render(true);
+    }, function () { if (state.avaCrop) { state.avaCrop.saving = false; state.avaCrop.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; render(true); avaApply(); } });
+  }
+  function avaDelete() {
+    var uid = state.uid || state.me; if (!state.ava || state.ava.busy || !store) return;
+    state.ava.busy = true; render(true);
+    store.deleteAvatar(uid).then(function () {
+      state.avaDocs = Object.assign({}, state.avaDocs); delete state.avaDocs[uid];
+      state.ava = null; focusAfter = ['[data-act="ava-open"]']; showToast('사진을 지웠어요'); render(true);
+    }, function () { if (state.ava) { state.ava.busy = false; state.ava.error = '지우지 못했어요. 잠시 뒤 다시 해 주세요'; render(true); } });
+  }
+  // 사진 자리 고르기: 한 손가락 = 옮기기, 두 손가락 = 크기
+  var acp = {};
+  appEl.addEventListener('pointerdown', function (ev) {
+    var v = state.avaCrop && ev.target.closest && ev.target.closest('#acrop-view'); if (!v) return;
+    ev.preventDefault(); acp[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    try { v.setPointerCapture(ev.pointerId); } catch (e) {}
+  });
+  appEl.addEventListener('pointermove', function (ev) {
+    var c = state.avaCrop; if (!c || !acp[ev.pointerId]) return;
+    var ids = Object.keys(acp), prev = acp[ev.pointerId], C = RT.avatarCrop;
+    if (ids.length === 1) {
+      c.st = C.clamp({ scale: c.st.scale, min: c.st.min, x: c.st.x + ev.clientX - prev.x, y: c.st.y + ev.clientY - prev.y }, c.iw, c.ih, c.view);
+      acp[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    } else {
+      var other = acp[ids[0] == ev.pointerId ? ids[1] : ids[0]];
+      var d0 = Math.hypot(prev.x - other.x, prev.y - other.y) || 1, d1 = Math.hypot(ev.clientX - other.x, ev.clientY - other.y) || 1;
+      var r = document.getElementById('acrop-view').getBoundingClientRect();
+      c.st = C.zoomAt(c.st, d1 / d0, (ev.clientX + other.x) / 2 - r.left, (ev.clientY + other.y) / 2 - r.top, c.iw, c.ih, c.view);
+      acp[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    }
+    avaApply();
+  });
+  ['pointerup', 'pointercancel'].forEach(function (t) { appEl.addEventListener(t, function (ev) { delete acp[ev.pointerId]; }); });
+
   // ── 「전체」 탭 (v47) ──
   function allModel() {
     var v = state.couple && !state.coupleOff ? annivView(false) : null;
     return {
       dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
       annivOff: !!state.coupleOff || !RT.anniv,
+      us: usModel(),
       map: allMapModel(),
       diet: allDietModel(),
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
@@ -2541,6 +2639,7 @@
     savePrefs(Object.assign(currentPrefs(), patch));
   }
   appEl.addEventListener('change', function (ev) {
+    if (ev.target.id === 'ava-file') { avaPicked(ev.target.files && ev.target.files[0]); ev.target.value = ''; return; }
     // 언제 할지 시각: 고르면 「알려 주기」 스위치가 나오도록 다시 그린다 (v41)
     if (ev.target.id === 'rt-at' && state.manage && state.manage.form) {
       var af = state.manage.form; af.when = af.when || RT.model.whenEdit(null); af.when.at = ev.target.value; if (!af.when.at) af.when.remind = false; render(true); return;
@@ -2702,6 +2801,7 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
+    if (id === 'ava-zoom' && state.avaCrop) { var ac = state.avaCrop, vw = ac.view / 2; ac.st = RT.avatarCrop.zoomAt(ac.st, (ac.st.min * parseFloat(ev.target.value)) / ac.st.scale, vw, vw, ac.iw, ac.ih, ac.view); avaApply(); return; }
     if (state.diet && state.diet.form && /^dg-(age|height|weight|e-(kcal|protein|fat|carb))$/.test(id)) {
       var dfm = state.diet.form, key = id.slice(3);
       if (key.indexOf('e-') === 0) dfm.edits[key.slice(2)] = ev.target.value; else dfm[key] = ev.target.value;
@@ -2763,11 +2863,13 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.anniv || !!state.account || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.anniv || !!state.account || !!state.ava || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
   function closeTopSheet() {
+    if (state.avaCrop) { avaCancel(); return; }
+    if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
     if (state.diet) {
       if (state.diet.basis) { state.diet.basis = null; focusAfter = ['[data-act="dg-basis"]']; focusInSheet = true; render(true); }
@@ -2861,7 +2963,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !state.ava && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -3026,6 +3128,8 @@
         function () { state.eventErr = '잠시 뒤 다시 열어 주세요. 계속되면 저장 규칙을 확인해야 해요.'; render(); }),
       // 카테고리 — 아직 규칙이 없거나 막혀도 기본 6개로 보이게 둔다 (lost로 보내지 않음)
       // 우리 기념일 (v46) — 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
+      // 프로필 사진 (v51) — 둘 다 읽음. 규칙이 아직 없으면 테마 색 동그라미 그대로
+      store.watchAvatars(function (d) { state.avaDocs = d; if (state.status === 'ready') render(); }, function () { state.avaDocs = {}; }),
       store.watchCouple(function (doc) { state.couple = doc; state.coupleOff = false; if (state.status === 'ready') render(); },
         function () { state.coupleOff = true; state.couple = null; if (state.status === 'ready') render(); }),
       store.watchCats(function (list) { state.catDocs = list; state.catErr = false; if (state.status === 'ready') render(); },
@@ -3074,7 +3178,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
-    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false; stopDiet(); state.goalDocs = null; state.goalsOff = false; state.goalsLoading = false; state.privDoc = null;
+    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false; stopDiet(); state.ava = null; state.avaCrop = null; state.avaDocs = {}; state.goalDocs = null; state.goalsOff = false; state.goalsLoading = false; state.privDoc = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

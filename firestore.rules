@@ -313,6 +313,17 @@ service cloud.firestore {
       allow delete: if isMember() && request.auth.uid == uid;
     }
 
+    // 프로필 사진 (v51): avatars/<uid> — 256px JPEG 를 data URL 글자로 (Storage 없이). 둘 다 읽고 본인만 올리고 지움
+    match /avatars/{uid} {
+      allow read: if isMember();
+      allow create, update: if isMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['img', 'updatedAt'])
+        && request.resource.data.img is string && request.resource.data.img.size() <= 120000
+        && request.resource.data.img.split(',')[0] == 'data:image/jpeg;base64'
+        && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40;
+      allow delete: if isMember() && request.auth.uid == uid;
+    }
+
     // ── 알림 ──
     // users/<uid>: 내 알림 설정. 나만 읽고 쓴다.
     function validNotify(n) {

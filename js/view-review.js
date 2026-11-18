@@ -157,7 +157,7 @@
 
   /** m: review.build 결과 + { loading, error, anniv } */
   function tab(m) {
-    var out = annivCard(m.anniv) + head(m);
+    var out = head(m); // v51: 기념일은 「전체」의 「우리 둘」 박스로 (돌아보기 카드 뺌)
     if (m.error) return out + '<section class="card notice" role="status"><p class="notice__body">' + esc(m.error) + '</p>' +
       '<button type="button" class="small-btn" data-act="rv-retry">다시 불러오기</button></section>';
     if (m.empty && !m.loading) return out + '<section class="card notice" role="status"><h2 class="notice__title">아직 돌아볼 기록이 없어요</h2>' +

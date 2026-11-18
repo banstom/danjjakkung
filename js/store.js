@@ -215,6 +215,12 @@
         b.set(db.doc('goals/' + uid), goal);
         return b.commit();
       },
+      // avatars/<uid> = { img: 'data:image/jpeg;base64,…'(256px), updatedAt } — 프로필 사진 (v51). 둘 다 읽고 본인만 고침
+      watchAvatars: function (next, fail) {
+        return db.collection('avatars').onSnapshot(function (q) { var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); next(out); }, fail);
+      },
+      saveAvatar: function (uid, img) { return db.doc('avatars/' + uid).set({ img: img, updatedAt: new Date().toISOString() }); },
+      deleteAvatar: function (uid) { return db.doc('avatars/' + uid).delete(); },
       // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
       watchCouple: function (next, fail) {
         return db.doc('couple/main').onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);

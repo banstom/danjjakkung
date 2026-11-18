@@ -724,10 +724,11 @@ async function tick(page, dateKey, key) {
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('돌아보기 확인 끝 (주 · 지난주 · 달 · 두 사람 · 실시간 · 320px)');
 
-  // 4-1a2) (v46) 우리 기념일: 처음엔 돌아보기에 「정해 볼까요?」 → 저장하면 두 폰 머리말에 「단짝이 된 지 N일」, 짝꿍도 고칠 수 있다
-  assert.ok(await jm.$('.anniv--empty'), '정하기 전엔 빈 카드');
-  assert.ok(!(await jm.$('.dday')), '정하기 전엔 머리말에 없음');
-  await jm.click('.anniv--empty'); await jm.waitForSelector('#an-start');
+  // 4-1a2) (v46 → v51) 우리 기념일: 「전체」의 「우리 둘」 박스에서 정하고 본다 (머리말 칩 · 돌아보기 카드는 v51에서 뺌)
+  await toAll(jm);
+  assert.match(await jm.textContent('.ubox__mid'), /우리가 시작한 날을정해 볼까요\?/, '정하기 전');
+  assert.ok(!(await jm.$('.dday')), '머리말 칩 없음');
+  await jm.click('.ubox__mid'); await jm.waitForSelector('#an-start');
   assert.strictEqual(await jm.getAttribute('[data-act="anniv-label"][aria-pressed="true"]', 'data-v'), '단짝이 된 지', '기본 이름');
   await jm.fill('#an-start', '2026-11-01'); await jm.click('[data-act="anniv-save"]'); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('.anniv-form .rform__error'), /지난 날/, '미래 날짜는 막힘');
@@ -735,29 +736,53 @@ async function tick(page, dateKey, key) {
   const cp = docs.get('couple/main');
   assert.strictEqual(cp.start, '2025-07-20'); assert.strictEqual(cp.label, '단짝이 된 지'); assert.ok(cp.updatedBy, '누가 바꿨는지');
   const annivN = Math.round((Date.UTC(2026, 9, 27) - Date.UTC(2025, 6, 20)) / 86400000) + 1; // 시작한 날 = 1일
-  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞단짝이 된 지 ' + annivN + '일');
   assert.strictEqual(await jm.textContent('.abig__count'), annivN + '일');
   assert.ok((await jm.$$('.alist:not(.alist--past) li')).length === 3, '다가오는 기념일 3개');
   await jm.screenshot({ path: path.join(OUT, 'anniv-sheet.png'), fullPage: true });
   await jm.click('.close-btn[data-act="close-anniv"]'); await jm.waitForTimeout(150);
-  assert.ok(await jm.$('.card.anniv:not(.anniv--empty)'), '돌아보기 카드');
-  await jm.screenshot({ path: path.join(OUT, 'anniv-review.png') });
-  await dj.waitForTimeout(200);
-  assert.strictEqual((await dj.textContent('.dday')).trim(), '💞단짝이 된 지 ' + annivN + '일', '짝꿍 머리말도 같음');
-  await dj.click('.dday'); await dj.waitForSelector('.abig');
+  assert.strictEqual(await jm.textContent('.ubox__l1'), '단짝이 된 지 ' + annivN + '일', '박스 가운데 위');
+  assert.match(await jm.textContent('.ubox__l2'), /^\d[\d,]*일까지 D-\d+$|주년까지 D-\d+$/, '박스 가운데 아래: 다음 기념일까지 D-n');
+  await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('.card.anniv')), '돌아보기엔 기념일 카드 없음 (v51)');
+  await toAll(jm);
+  await dj.waitForTimeout(200); await toAll(dj);
+  assert.strictEqual(await dj.textContent('.ubox__l1'), '단짝이 된 지 ' + annivN + '일', '짝꿍 박스도 같음');
+  await dj.click('.ubox__mid'); await dj.waitForSelector('.abig');
   assert.match(await dj.textContent('.anniv__by'), /준민 님이 10월 27일 정했어요/);
   await dj.click('[data-act="anniv-edit"]'); await dj.click('[data-act="anniv-label"][data-v=""]'); await dj.waitForSelector('#an-label');
   await dj.fill('#an-label', '연애한 지'); await dj.click('[data-act="anniv-save"]'); await dj.waitForTimeout(300);
   assert.strictEqual(docs.get('couple/main').label, '연애한 지');
-  assert.strictEqual((await jm.textContent('.dday')).trim(), '💞연애한 지 ' + annivN + '일', '짝꿍이 고치면 내 머리말도');
+  assert.strictEqual(await jm.textContent('.ubox__l1'), '연애한 지 ' + annivN + '일', '짝꿍이 고치면 내 박스도');
   await dj.keyboard.press('Escape'); await dj.waitForTimeout(150);
   assert.ok(!(await dj.$('.sheet')), 'Esc 로 닫힘');
+  // (v51) 내 사진: 올리기 → 동그라미 자리 고르기 → 저장하면 짝꿍 박스에도 · 단짝 동그라미는 못 누름 · 지우면 사람 색
+  assert.strictEqual(await jm.$$eval('.ubox [data-act="ava-open"]', (e) => e.length), 1, '내 동그라미만 버튼');
+  assert.strictEqual(await jm.$eval('.ubox .ubox__face', (e) => e.getAttribute('data-act')), 'ava-open', '왼쪽 = 나');
+  assert.strictEqual(await jm.textContent('.ubox .ubox__face .ubox__nm'), '준민'); assert.strictEqual(await dj.textContent('.ubox .ubox__face .ubox__nm'), '다진', '단짝 폰에선 단짝이 왼쪽');
+  await jm.click('[data-act="ava-open"]'); await jm.waitForSelector('#ava-title');
+  await jm.setInputFiles('#ava-file', path.join(ROOT, 'icons', 'icon-512.png')); await jm.waitForSelector('#acrop-img');
+  const vb = await (await jm.$('#acrop-view')).boundingBox();
+  await jm.fill('#ava-zoom', '2'); await jm.dispatchEvent('#ava-zoom', 'input');
+  await jm.mouse.move(vb.x + vb.width / 2, vb.y + vb.height / 2); await jm.mouse.down(); await jm.mouse.move(vb.x + vb.width / 2 + 40, vb.y + vb.height / 2 + 20, { steps: 4 }); await jm.mouse.up();
+  const tf = await jm.$eval('#acrop-img', (e) => e.style.transform);
+  assert.ok(/translate\(/.test(tf), '끌면 사진이 움직임');
+  await jm.screenshot({ path: path.join(OUT, 'avatar-crop.png') });
+  await jm.click('[data-act="ava-crop-save"]'); await jm.waitForTimeout(400);
+  const av = docs.get('avatars/' + jmUid0);
+  assert.ok(av && /^data:image\/jpeg;base64,/.test(av.img) && av.img.length <= 120000, '256px JPEG 저장 ' + (av && av.img.length));
+  assert.match(await jm.getAttribute('[data-act="ava-open"] .ubox__ph', 'style'), /background-image:url\(data:image\/jpeg/);
+  await dj.waitForTimeout(200);
+  assert.ok((await dj.$$eval('.ubox .ubox__ph', (e) => e.map((x) => x.getAttribute('style') || ''))).some((x) => /data:image\/jpeg/.test(x)), '짝꿍 박스에도 내 사진');
+  assert.ok(!(await dj.$('.ubox [data-act="ava-open"] .ubox__ph[style]')), '짝꿍 자기 동그라미는 아직 색');
+  await jm.screenshot({ path: path.join(OUT, 'avatar-box.png') });
+  await jm.click('[data-act="ava-open"]'); await jm.click('[data-act="ava-delete"]'); await jm.waitForTimeout(300);
+  assert.ok(!docs.get('avatars/' + jmUid0), '사진 지우기');
+  assert.ok(!(await jm.$('[data-act="ava-open"] .ubox__ph[style]')), '지우면 사람 색');
   await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(150);
-  const ddFit = await jm.$eval('.dday', (b) => b.getBoundingClientRect().right <= 320);
-  assert.ok(ddFit, '320px 머리말에 들어감');
+  assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 박스 넘치지 않음');
   await jm.screenshot({ path: path.join(OUT, 'anniv-320.png') });
   await jm.setViewportSize({ width: 390, height: 844 });
-  console.log('기념일 확인 끝 (' + annivN + '일 · 두 폰 · 짝꿍이 고침 · 320px)');
+  console.log('기념일 · 우리 둘 박스 · 사진 확인 끝 (' + annivN + '일 · 두 폰 · 짝꿍이 고침 · 사진 올리기/지우기 · 320px)');
 
   // 4-1a3) (v47) 「전체」 탭: 머리말엔 칩만, 설정 줄이 각 시트를 연다, 「사귄」이 어디에도 없다
   const topTxt = (p) => p.$eval('header.top', (h) => h.innerHTML);
@@ -765,20 +790,20 @@ async function tick(page, dateKey, key) {
     await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
     const top = await topTxt(jm);
     assert.ok(!/sign-out|로그아웃|님으로 접속|open-notify|open-theme/.test(top), t + ' 머리말에 접속 · 로그아웃 · 🔔 · 🎨 없음');
-    assert.ok(/class="dday"/.test(top), t + ' 머리말 칩');
+    assert.ok(!/class="dday"/.test(top), t + ' 머리말 칩 없음 (v51)');
   }
   await toAll(jm);
   assert.strictEqual(await jm.textContent('h1.title'), '전체');
   assert.ok(!(await jm.$('.dday')), '「전체」는 머리말 칩 없음');
-  assert.strictEqual(await jm.textContent('.aus__ds'), '연애한 지 ' + annivN + '일', '우리 둘 카드 = 기념일 문구');
+  assert.strictEqual(await jm.textContent('.ubox__l1'), '연애한 지 ' + annivN + '일', '우리 둘 박스 = 기념일 문구');
   // 예전에 저장된 「사귄 지」는 「단짝이 된 지」로 보인다
   docs.set('couple/main', Object.assign({}, docs.get('couple/main'), { label: '사귄 지' })); await pushAll(['couple/main']); await jm.waitForTimeout(150);
-  assert.strictEqual(await jm.textContent('.aus__ds'), '단짝이 된 지 ' + annivN + '일');
+  assert.strictEqual(await jm.textContent('.ubox__l1'), '단짝이 된 지 ' + annivN + '일');
   for (const t of ['routine', 'look', 'all']) {
     await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
     assert.ok(!(await jm.evaluate(() => document.body.innerText)).includes('사귄'), t + ' 화면에 「사귄」 없음');
   }
-  await jm.click('.aus__btn'); await jm.waitForSelector('.abig');
+  await jm.click('.ubox__mid'); await jm.waitForSelector('.abig');
   assert.ok(!(await jm.evaluate(() => document.body.innerText)).includes('사귄'), '기념일 시트에 「사귄」 없음');
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
   assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'open-anniv', '닫으면 기념일 버튼으로');
@@ -815,8 +840,7 @@ async function tick(page, dateKey, key) {
     assert.ok(fit.tabs && fit.page, w + 'px 「전체」 · 아래 탭 ' + JSON.stringify(fit));
     await jm.screenshot({ path: path.join(OUT, `all-${w}.png`), fullPage: true });
     await jm.click('[data-act="tab"][data-tab="routine"]'); await jm.waitForTimeout(80);
-    const dd = await jm.$eval('.dday', (b) => b.getBoundingClientRect().right <= innerWidth + 0.5);
-    assert.ok(dd, w + 'px 머리말 칩 들어감');
+    assert.ok(!(await jm.$('.dday')), w + 'px 머리말 칩 없음 (v51)');
     await jm.screenshot({ path: path.join(OUT, `header-${w}.png`) });
     await toAll(jm);
   }
@@ -894,6 +918,7 @@ async function tick(page, dateKey, key) {
   assert.ok(!(await jm.$('#mapsheet-title')), 'Esc 로 시트 닫힘');
   // 짝꿍 화면도 바로 칠해짐
   await toAll(dj); await dj.click('[data-act="all-map"]'); await dj.waitForSelector('#km .rg');
+  await dj.waitForFunction(() => /\bv\b/.test((document.querySelector('#km [data-code="52190"]') || {}).getAttribute ? document.querySelector('#km [data-code="52190"]').getAttribute('class') : ''), null, { timeout: 3000 }).catch(() => {});
   assert.match(await dj.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '짝꿍 지도도 칠함');
   // 가고 싶은 곳(빗금) · 다녀온 곳을 또 가고 싶은 곳으로(색 위 빗금) — 순위 숫자는 지도에 없음
   docs.set('places/50110', { code: '50110', wishRank: 1000, wishNote: '', stars: {}, visits: [], updatedBy: 'x', updatedAt: 'x' });
