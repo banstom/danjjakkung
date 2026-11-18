@@ -254,7 +254,9 @@ service cloud.firestore {
       return n is map && n.size() <= 2 && n.diff(o).affectedKeys().hasOnly([request.auth.uid])
         && (!(request.auth.uid in n) || (n[request.auth.uid] is int && n[request.auth.uid] >= 1 && n[request.auth.uid] <= 5));
     }
-    function validPlace(code, d, o) {
+    // 맨 앞(가장 이른 방문)이 그대로면 통과 — 단짝이 된 날을 나중에 정해도 그 전 기록이 있는 문서가 얼어붙지 않게
+    // (이름 주의: validPlace 는 할 일 평면 ui 칸에서 이미 씀 — 같은 이름이면 규칙 컴파일이 실패한다)
+    function validMapPlace(code, d, o) {
       let vs = d.get('visits', []);
       return d.keys().hasOnly(['code', 'wishRank', 'wishNote', 'wishedAt', 'wishedBy', 'stars', 'visits', 'updatedAt', 'updatedBy'])
         && d.code == code
@@ -262,15 +264,14 @@ service cloud.firestore {
         && (d.get('wishRank', null) == null || d.wishRank is number)
         && d.get('wishNote', '') is string && d.get('wishNote', '').size() <= 100
         && vs is list && vs.size() <= 100
-        // 맨 앞(가장 이른 방문)이 그대로면 통과 — 단짝이 된 날을 나중에 정해도 그 전 기록이 있는 문서가 얼어붙지 않게
         && (vs.size() == 0 || (validVisit(vs[0]) && validVisit(vs[vs.size() - 1])
             && (vs[0].date >= coupleStart() || (o.get('visits', []).size() > 0 && vs[0] == o.visits[0]))))
         && validStars(d.get('stars', {}), o.get('stars', {}));
     }
     match /places/{code} {
       allow read: if isMember();
-      allow create: if isMember() && code.matches('^[0-9]{5}$') && validPlace(code, request.resource.data, {});
-      allow update: if isMember() && validPlace(code, request.resource.data, resource.data);
+      allow create: if isMember() && code.matches('^[0-9]{5}$') && validMapPlace(code, request.resource.data, {});
+      allow update: if isMember() && validMapPlace(code, request.resource.data, resource.data);
       allow delete: if false;
     }
 

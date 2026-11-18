@@ -136,3 +136,13 @@ test('점검 AI 회귀: 찾기 결과만 따로 그림 · 단짝이 된 날을 �
   assert.match(rules, /vs\[0\] == o\.visits\[0\]/);
   assert.match(VM.screen({ status: 'ready', seg: 'map', counts: { visited: 0, wished: 0 }, paint: {}, map: MAP }), /id="km-slot"/, '지도는 자리만, app.js 가 한 번 만든 svg 를 붙임');
 });
+
+test('회귀(v48 배포 실패): 규칙 함수 이름이 겹치지 않음 · 식 안에 // 줄 주석 없음', () => {
+  const r = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+  const names = [...r.matchAll(/function ([A-Za-z0-9_]+)\s*\(/g)].map((m) => m[1]);
+  const dup = names.filter((n, i) => names.indexOf(n) !== i);
+  assert.deepEqual(dup, [], '겹치는 함수 이름: ' + dup.join(', '));
+  // 한 줄이 && · || 로 이어지는 식 한가운데에 주석 줄이 끼지 않게 (컴파일러마다 다르게 볼 수 있어서)
+  const lines = r.split('\n');
+  lines.forEach((l, i) => { if (/^\s*\/\//.test(l) && i > 0 && /(&&|\|\||\()\s*$/.test(lines[i - 1])) assert.fail('식 안 주석: ' + (i + 1) + '번째 줄'); });
+});
