@@ -93,7 +93,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false;
-  var INPUT_IDS = ['mp-date', 'mp-note', 'mp-q', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -113,7 +113,7 @@
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
   }
   function render(force) {
-    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on) || (kmZoom && kmZoom.busy()))) { deferred = true; return; } // 끌고 있는 동안에도 미룬다 (지도 확대 · 끌기 포함)
+    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on) || (kmZoom && kmZoom.busy()) || mdrag)) { deferred = true; return; } // 끌고 있는 동안에도 미룬다 (지도 확대 · 끌기 포함)
     deferred = false;
     var sheetEl = appEl.querySelector('.sheet');
     var scrollTop = sheetEl ? sheetEl.scrollTop : 0;
@@ -207,7 +207,7 @@
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
     'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null,
-    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
+    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-star': 'data-v', 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -561,7 +561,16 @@
     else if (act === 'map-visit-save') { if (state.map && state.map.sheet && state.map.sheet.mode === 'edit') saveVisitEdit(); else saveVisit(); }
     else if (act === 'map-visit-edit') mapEditForm(btn.getAttribute('data-v'));
     else if (act === 'map-visit-delete') deleteVisit();
-    else if (act === 'map-wish') showToast('가고 싶은 곳 담기는 곧 열려요');
+    else if (act === 'map-wish') { if (state.map && state.map.sel) openRank(state.map.sel, false); }
+    else if (act === 'map-rank') { if (state.map && state.map.sel) openRank(state.map.sel, true); }
+    else if (act === 'map-rank-close') closeRank();
+    else if (act === 'map-rank-move') rankMove(Number(btn.getAttribute('data-v')));
+    else if (act === 'map-rank-save') saveRank();
+    else if (act === 'map-unwish') unwish();
+    else if (act === 'map-star') setStar(Number(btn.getAttribute('data-v')));
+    else if (act === 'map-sort') { if (state.map) { state.map.sort = btn.getAttribute('data-v'); render(true); } }
+    else if (act === 'map-open') { if (Date.now() >= noClickUntil) mapSel(btn.getAttribute('data-v')); }
+    else if (act === 'map-wish-add') { if (state.map && mapReady()) { state.map.find = { q: '', mode: 'wish' }; state.sheetEntering = true; focusAfter = ['#mp-q']; focusInSheet = true; render(true); } }
     else if (act === 'map-find') openFind();
     else if (act === 'map-find-close') closeFind();
     else if (act === 'map-pick') mapPick(btn.getAttribute('data-v'));
@@ -656,7 +665,8 @@
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : RT.viewAll.tab(allModel());
-    if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
+    if (state.tab === 'all' && state.map && state.map.rank && mapReady()) out.sheet = RT.viewMap.rankScreen(rankModel(), state.sheetEntering);
+    else if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
     else if (state.tab === 'all' && state.map && state.map.sel && state.map.sheet && mapReady()) out.sheet = RT.viewMap.sheet(mapSheetModel(), state.sheetEntering);
     var dm = state.uniSheet && state.uniSheet.kind === 'detail' ? uniDetailModel() : null;
     if (state.place) out.sheet = V.placeScreen(placeModel());
@@ -1779,7 +1789,9 @@
   function mapModel() {
     var m = state.map, pl = placeList(), paint = {};
     Object.keys(pl).forEach(function (c) { var p = RT.places.paint(pl[c]); if (p) paint[c] = p; });
-    return { status: mapDataState === 'ready' ? 'ready' : mapDataState === 'error' ? 'error' : 'loading', off: state.placesOff, seg: m.seg, sel: m.sel, vb: m.vb, map: mapData, paint: paint, counts: RT.places.counts(pl) };
+    var ready = mapDataState === 'ready';
+    return { status: ready ? 'ready' : mapDataState === 'error' ? 'error' : 'loading', off: state.placesOff, seg: m.seg, sel: m.sel, vb: m.vb, map: mapData, paint: paint, counts: RT.places.counts(pl),
+      wish: ready && m.seg === 'wish' ? { rows: wishRows(pl) } : null, been: ready && m.seg === 'been' ? { sort: m.sort || 'stars', rows: beenRows(pl, m.sort || 'stars') } : null };
   }
   /** render 끝에서: 지도 자리(#km-slot)에 만들어 둔 <svg> 를 붙이고 칠하기 · 고른 곳 · 보는 자리만 바꾼다.
       (230곳 140KB 를 다시 그릴 때마다 새로 만들지 않고, 확대 · 끌기 손잡이도 한 번만 붙인다 — 점검 AI) */
@@ -1840,7 +1852,10 @@
     }) : [];
     return { code: code, name: P.fullName(mapData, code), place: p, mode: m.sheet.mode, form: m.sheet.form, noteMax: P.NOTE_MAX,
       startKey: start, startText: start ? RT.anniv.fullDate(D.parse(start)) : '', todayKey: tk,
-      visitsView: vv, lastText: p && p.visits.length ? P.dateText(p.visits[p.visits.length - 1].date, tk) : '' };
+      visitsView: vv, lastText: p && p.visits.length ? P.dateText(p.visits[p.visits.length - 1].date, tk) : '',
+      wishNo: p && p.wishRank !== null ? P.wishList(placeList()).map(function (x) { return x.code; }).indexOf(code) + 1 : null,
+      stars: p ? (function () { var pi = partnerInfo(), uid = state.uid || state.me, avg = P.avgStars(p);
+        return { me: p.stars[uid] || 0, partner: pi.partner ? p.stars[pi.partner] || 0 : 0, meSlot: pi.meSlot, partnerSlot: pi.partnerSlot, partnerName: pi.partnerName, avgText: P.avgText(avg), rankNo: P.starRank(placeList(), code) }; })() : null };
   }
   function saveVisit() {
     var m = state.map, f = m && m.sheet && m.sheet.form;
@@ -1922,6 +1937,146 @@
     writeVisits(function (vs) { return RT.places.withoutVisit(vs, id); }, '기록을 지웠어요', '지우지 못했어요. 잠시 뒤 다시 해 주세요');
   }
 
+  // ── 단짝 지도 M3 (v50): 가고 싶은 곳 순위 · 다녀온 곳 · 별점 ──
+  function partnerInfo() {
+    var ps = planPeople(), me = ps.filter(function (p) { return p.mine; })[0], pt = ps.filter(function (p) { return !p.mine; })[0];
+    return { meSlot: me ? me.slot : 'me', partner: pt ? pt.key : null, partnerSlot: pt ? pt.slot : 'her', partnerName: pt ? pt.name : '단짝' };
+  }
+  function wishRows(pl) {
+    return RT.places.wishList(pl).map(function (p, i) { return { code: p.code, no: i + 1, name: RT.places.fullName(mapData, p.code), note: p.wishNote, again: p.visits.length > 0 }; });
+  }
+  function beenRows(pl, sort) {
+    var tk = todayKey();
+    return RT.places.visitedList(pl, sort).map(function (x) { return { code: x.code, name: RT.places.fullName(mapData, x.code), count: x.count, lastText: RT.places.dateText(x.last, tk), fill: RT.places.starFill(x.avg) }; });
+  }
+  function openRank(code, change) {
+    var pl = placeList(), p = pl[code] || null, list = RT.places.wishList(pl).filter(function (x) { return x.code !== code; });
+    var cur = p && p.wishRank !== null ? RT.places.wishList(pl).map(function (x) { return x.code; }).indexOf(code) : -1;
+    state.map.rank = { code: code, idx: cur >= 0 ? cur : list.length, note: p ? p.wishNote : '', saving: false, error: '', change: cur >= 0 };
+    state.map.find = null; state.sheetEntering = true;
+    focusAfter = ['[data-act="map-rank-move"]:not([disabled])', '[data-act="map-rank-save"]']; focusInSheet = true;
+    render(true);
+  }
+  function closeRank() { if (!state.map) return; state.map.rank = null; focusAfter = state.map.sel ? ['[data-act="map-rank"]', '[data-act="map-wish"]'] : ['[data-act="map-wish-add"]']; focusInSheet = !!state.map.sel; render(true); }
+  function rankModel() {
+    var r = state.map.rank, pl = placeList();
+    var rows = RT.places.wishList(pl).filter(function (x) { return x.code !== r.code; }).map(function (x) { return { code: x.code, name: RT.places.fullName(mapData, x.code) }; });
+    rows.splice(Math.max(0, Math.min(rows.length, r.idx)), 0, { code: r.code, name: RT.places.fullName(mapData, r.code), isNew: true });
+    r.idx = Math.max(0, Math.min(rows.length - 1, r.idx));
+    return { name: RT.places.fullName(mapData, r.code), rows: rows, idx: r.idx, note: r.note, saving: r.saving, error: r.error, change: r.change };
+  }
+  function rankMove(d) {
+    var r = state.map && state.map.rank; if (!r) return;
+    var n = RT.places.wishList(placeList()).filter(function (x) { return x.code !== r.code; }).length + 1;
+    r.idx = Math.max(0, Math.min(n - 1, r.idx + d));
+    focusAfter = ['[data-act="map-rank-move"][data-v="' + d + '"]:not([disabled])', '[data-act="map-rank-move"]:not([disabled])']; focusInSheet = true;
+    render(true);
+  }
+  /** code 를 가고 싶은 곳 idx 자리에 둔다 (opts.note: 메모를 같이 바꿀 때). 간격이 좁으면 다른 곳 키를 한 번에 다시 매긴 뒤 */
+  function placeWish(code, idx, opts) {
+    var uid = state.uid || state.me, P = RT.places, pl = placeList();
+    var list = P.wishList(pl).filter(function (x) { return x.code !== code; });
+    var k = P.keyAt(list, idx), first = Promise.resolve(), key = k.key;
+    if (k.rebalance) {
+      var order = list.map(function (x) { return x.code; }); order.splice(idx, 0, code);
+      var keys = P.rebalance(order); key = keys[code]; delete keys[code];
+      first = store.setWishKeys(keys, uid);
+    }
+    return first.then(function () {
+      return store.updatePlace(code, uid, function (cur) {
+        var next = Object.assign({}, cur || {}), was = cur && typeof cur.wishRank === 'number';
+        next.wishRank = key;
+        if (opts && typeof opts.note === 'string') next.wishNote = P.cleanNote(opts.note);
+        if (!was) { next.wishedAt = new Date().toISOString(); next.wishedBy = uid; }
+        if (!next.visits) next.visits = [];
+        if (!next.stars) next.stars = {};
+        return next;
+      });
+    });
+  }
+  function saveRank() {
+    var r = state.map && state.map.rank; if (!r || r.saving || !store) return;
+    var ni = document.getElementById('mp-wnote'); if (ni) r.note = ni.value;
+    r.saving = true; r.error = ''; render(true);
+    var no = r.idx + 1, change = r.change;
+    placeWish(r.code, r.idx, { note: r.note }).then(function () {
+      if (!state.map) return;
+      state.map.rank = null;
+      if (state.map.sel) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-rank"]']; focusInSheet = true; }
+      else focusAfter = ['[data-act="map-wish-add"]'];
+      showToast(change ? no + '위로 옮겼어요' : '가고 싶은 곳 ' + no + '위로 담았어요');
+      render(true);
+    }, function () {
+      if (!state.map || !state.map.rank) return;
+      state.map.rank.saving = false; state.map.rank.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; render(true);
+    });
+  }
+  function unwish() {
+    var code = state.map && state.map.sel; if (!code || !store) return;
+    store.updatePlace(code, state.uid || state.me, function (cur) {
+      var next = Object.assign({}, cur || {}); next.wishRank = null; next.wishNote = '';
+      if (!next.visits) next.visits = []; if (!next.stars) next.stars = {};
+      return next;
+    }).then(function () { focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; showToast('가고 싶은 곳에서 뺐어요'); render(true); },
+      function () { showToast('빼지 못했어요. 잠시 뒤 다시 해 주세요'); });
+  }
+  /** 내 별점 (같은 별을 다시 누르면 지움) — 단짝 별점은 못 고침(규칙) */
+  function setStar(n) {
+    var code = state.map && state.map.sel, uid = state.uid || state.me; if (!code || !store) return;
+    var p = placeList()[code], mine = p && p.stars[uid];
+    var nv = mine === n ? null : n;
+    // 화면에 먼저
+    var d = state.placeDocs && state.placeDocs[code];
+    if (d) { d.stars = Object.assign({}, d.stars || {}); if (nv) d.stars[uid] = nv; else delete d.stars[uid]; }
+    focusAfter = ['[data-act="map-star"][data-v="' + n + '"]']; focusInSheet = true;
+    render(true);
+    store.updatePlace(code, uid, function (cur) {
+      var next = Object.assign({}, cur || {}); next.stars = Object.assign({}, (cur && cur.stars) || {});
+      if (nv) next.stars[uid] = nv; else delete next.stars[uid];
+      if (!next.visits) next.visits = [];
+      return next;
+    }).then(null, function () { showToast('별점을 저장하지 못했어요'); });
+  }
+  // 끌어서 순위 바꾸기: 가고 싶은 곳 목록(#mwish)의 손잡이 · 순위 고르기 화면(#mrank)의 강조 줄
+  var mdrag = null;
+  appEl.addEventListener('pointerdown', function (ev) {
+    if (!state.map || (ev.pointerType === 'mouse' && ev.button !== 0)) return;
+    var g = ev.target.closest && ev.target.closest('[data-grip]');
+    var box = g && g.closest('#mwish, #mrank');
+    if (!g || !box) return;
+    var li = g.closest('li');
+    ev.preventDefault();
+    var r = li.getBoundingClientRect();
+    mdrag = { pid: ev.pointerId, li: li, box: box, grab: ev.clientY - r.top, moved: false, before: Array.prototype.map.call(box.children, function (c) { return c.getAttribute('data-code') || ''; }).join() };
+    li.classList.add('is-lifted');
+    try { li.setPointerCapture(ev.pointerId); } catch (e) {}
+  });
+  appEl.addEventListener('pointermove', function (ev) {
+    if (!mdrag || ev.pointerId !== mdrag.pid) return;
+    ev.preventDefault();
+    var li = mdrag.li, box = mdrag.box, y = ev.clientY, before = null;
+    var others = Array.prototype.filter.call(box.children, function (c) { return c !== li; });
+    for (var i = 0; i < others.length; i++) { var rr = others[i].getBoundingClientRect(); if (y < rr.top + rr.height / 2) { before = others[i]; break; } }
+    if (before) { if (li.nextElementSibling !== before) box.insertBefore(li, before); } else if (box.lastElementChild !== li) box.appendChild(li);
+    li.style.transform = ''; var top = li.getBoundingClientRect().top;
+    li.style.transform = 'translateY(' + Math.round(y - mdrag.grab - top) + 'px)';
+    mdrag.moved = true;
+  });
+  function mdragEnd(cancelled) {
+    var D0 = mdrag; mdrag = null; if (!D0) return;
+    D0.li.classList.remove('is-lifted'); D0.li.style.transform = '';
+    var order = Array.prototype.map.call(D0.box.children, function (c) { return c.getAttribute('data-code') || ''; });
+    if (cancelled || order.join() === D0.before) { render(true); return; }
+    noClickUntil = Date.now() + 400;
+    var code = D0.li.getAttribute('data-code'), idx = order.indexOf(code);
+    if (D0.box.id === 'mrank') { if (state.map && state.map.rank) state.map.rank.idx = idx; render(true); return; }
+    render(true);
+    placeWish(code, idx).then(function () { showToast((idx + 1) + '위로 옮겼어요'); }, function () { showToast('순위를 바꾸지 못했어요'); render(true); });
+  }
+  appEl.addEventListener('pointerup', function (ev) { if (mdrag && ev.pointerId === mdrag.pid) mdragEnd(false); });
+  appEl.addEventListener('pointercancel', function (ev) { if (mdrag && ev.pointerId === mdrag.pid) mdragEnd(true); });
+  appEl.addEventListener('touchmove', function (ev) { if (mdrag) ev.preventDefault(); }, { passive: false });
+
   function openFind() {
     if (!state.map || !mapReady()) return;
     state.map.find = { q: '' }; state.sheetEntering = true;
@@ -1935,6 +2090,7 @@
   }
   function mapPick(code) {
     if (!state.map) return;
+    if (state.map.find && state.map.find.mode === 'wish') { openRank(code, false); return; } // 가고 싶은 곳 더하기 → 순위 고르기
     state.map.find = null;
     var r = RT.places.regionOf(mapData, code);
     if (r) state.map.vb = RT.mapZoom.focusOn(state.map.vb, r.x, r.y, 360, RT.viewMap.HOME);
@@ -2355,6 +2511,7 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
+    if (state.map && state.map.rank && id === 'mp-wnote') { state.map.rank.note = ev.target.value; return; }
     if (state.map && state.map.find && id === 'mp-q') {
       // 결과 목록만 바꾼다 (입력칸을 다시 그리면 한글 조합이 「나ㅁ」처럼 깨진다 — 점검 AI)
       state.map.find.q = ev.target.value;
@@ -2414,7 +2571,8 @@
   function closeTopSheet() {
     if (state.account) { closeAccount(); return; }
     if (state.map) {
-      if (state.map.find) closeFind();
+      if (state.map.rank) closeRank();
+      else if (state.map.find) closeFind();
       else if (state.map.sheet && ((state.map.sheet.mode === 'visit' && state.map.sheet.back) || state.map.sheet.mode === 'edit')) { state.map.sheet = { mode: 'view' }; render(true); }
       else if (state.map.sel) mapUnsel();
       else closeMap();
@@ -2498,7 +2656,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }

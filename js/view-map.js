@@ -46,8 +46,8 @@
     else if (m.status === 'error') body = '<section class="card notice" role="status"><h2 class="notice__title">지도를 불러오지 못했어요</h2><p class="notice__body">인터넷 연결을 확인한 뒤 다시 시도해 주세요.</p>' +
       '<button type="button" class="small-btn" data-act="map-retry">다시 불러오기</button></section>';
     else if (m.status !== 'ready') body = '<section class="card" aria-busy="true"><p class="muted">지도를 불러오는 중…</p></section>';
-    else if (m.seg !== 'map') body = '<section class="card notice" role="status"><h2 class="notice__title">' + (m.seg === 'wish' ? '가고 싶은 곳' : '다녀온 곳') + ' 목록은 곧 열려요</h2>' +
-      '<p class="notice__body">지금은 지도에서 지역을 눌러 기록할 수 있어요.</p></section>';
+    else if (m.seg === 'wish') body = wishTab(m.wish);
+    else if (m.seg === 'been') body = beenTab(m.been);
     else {
       var c = m.counts;
       body = '<div class="mlegend"><span class="mchip mchip--both">함께 다녀온 곳 ' + c.visited + '</span>' +
@@ -86,12 +86,24 @@
         (editing ? '<div class="mdel"><button type="button" class="text-btn' + (f.confirmDelete ? ' text-btn--warn' : '') + '" data-act="map-visit-delete"' + (f.saving ? ' disabled' : '') + '>' +
           (f.confirmDelete ? '한 번 더 누르면 이 기록을 지워요' : '이 기록 지우기') + '</button></div>' : '') + '</div>';
     } else if (visited) {
-      body = head + '<p class="sheet__sub">마지막 ' + esc(s.lastText) + '</p>' +
-        '<div class="mbtns"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button></div>' +
+      var st = s.stars || {};
+      body = head + '<p class="sheet__sub">' + (st.rankNo ? '다녀온 곳 별점 ' + st.rankNo + '위 · ' : '') + '마지막 ' + esc(s.lastText) +
+        (s.wishNo ? ' · 또 가고 싶은 곳 ' + s.wishNo + '위' : '') + '</p>' +
+        starCard(st) +
+        '<div class="mbtns mbtns--stack"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button>' +
+        (s.wishNo ? '<button type="button" class="mbtn" data-act="map-rank">순위 바꾸기</button>' : '<button type="button" class="mbtn" data-act="map-wish">또 가고 싶은 곳에 담기</button>') + '</div>' +
+        (s.wishNo ? '<div class="mdel"><button type="button" class="text-btn" data-act="map-unwish">가고 싶은 곳에서 빼기</button></div>' : '') +
         '<ul class="mvisits">' + s.visitsView.map(function (v) {
           return '<li><button type="button" class="mvisits__row" data-act="map-visit-edit" data-v="' + esc(v.id) + '" aria-label="' + esc(v.nth + ' · ' + v.date + ' 고치기') + '">' +
             '<span class="mvisits__when">' + esc(v.nth) + ' · ' + esc(v.date) + '</span><span class="mvisits__note">' + esc(v.note || '메모 없음') + '</span></button></li>';
         }).join('') + '</ul><p class="mnote">기록을 누르면 날짜 · 메모를 고치거나 지울 수 있어요</p>';
+    } else if (s.wishNo) {
+      body = '<div class="mwhead"><span class="mrankno mrankno--big" aria-hidden="true">' + s.wishNo + '</span><div class="mwhead__tx">' +
+        '<h2 id="mapsheet-title" class="sheet__title">' + esc(s.name) + '</h2>' +
+        '<p class="sheet__sub mwhead__sub">가고 싶은 곳 ' + s.wishNo + '위' + (p.wishNote ? ' · ' + esc(p.wishNote) : '') + '</p></div></div>' +
+        '<div class="mbtns"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">함께 다녀왔어요</button>' +
+        '<button type="button" class="mbtn" data-act="map-rank">순위 바꾸기</button></div>' +
+        '<div class="mdel"><button type="button" class="text-btn" data-act="map-unwish">가고 싶은 곳에서 빼기</button></div>';
     } else {
       body = head + '<p class="sheet__sub">아직 함께 가 보지 않은 곳</p>' +
         '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">함께 다녀왔어요</button>' +
@@ -102,6 +114,71 @@
       '<button type="button" class="scrim" data-act="map-unsel" aria-label="닫기"></button>' +
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="mapsheet-title">' +
       '<span class="grabber" aria-hidden="true"></span>' + body + '</section></div>';
+  }
+
+  var STAR = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="currentColor"/></svg>';
+  function stars(n, size) {
+    var out = ''; for (var i = 1; i <= 5; i++) out += '<span class="mstar' + (i <= n ? ' is-on' : '') + (size ? ' mstar--' + size : '') + '">' + STAR + '</span>';
+    return out;
+  }
+  /** 별점 카드: 나는 눌러서 매기고(바로 저장), 단짝 줄은 보기만. st = { me, partner, meSlot, partnerSlot, partnerName, avgText, rankNo } */
+  function starCard(st) {
+    var mine = '';
+    for (var i = 1; i <= 5; i++) mine += '<button type="button" class="mstar-btn' + (i <= (st.me || 0) ? ' is-on' : '') + '" data-act="map-star" data-v="' + i + '" aria-label="별 ' + i + '개" aria-pressed="' + (st.me === i) + '">' + STAR + '</button>';
+    return '<div class="mstars">' +
+      '<div class="mstars__row"><span class="mstars__who"><span class="mdot mdot--' + (st.meSlot || 'me') + '" aria-hidden="true"></span>나</span><span class="mstars__set" role="group" aria-label="내 별점">' + mine + '</span></div>' +
+      '<div class="mstars__row"><span class="mstars__who"><span class="mdot mdot--' + (st.partnerSlot || 'her') + '" aria-hidden="true"></span>' + esc(st.partnerName || '단짝') + '</span>' +
+      '<span class="mstars__set" role="img" aria-label="' + esc((st.partnerName || '단짝') + ' 별점 ' + (st.partner ? st.partner + '개' : '아직 없음')) + '">' + stars(st.partner || 0) + '</span></div>' +
+      '<p class="mstars__avg">' + (st.avgText ? '우리 평균 ' + esc(st.avgText) + ' · 다녀온 곳 순위는 평균으로 매겨요' : '별을 눌러 이곳이 어땠는지 남겨요 · 순위는 둘의 평균으로 매겨요') + '</p></div>';
+  }
+
+  /** 가고 싶은 곳 칸. w = { rows: [{ code, no, name, note, again }] } */
+  function wishTab(w) {
+    var rows = w.rows;
+    return '<div class="mlisthead"><h2 class="mlisthead__t">다음에 함께 갈 곳 ' + rows.length + '</h2>' + (rows.length > 1 ? '<span class="mlisthead__hint">끌어서 순위 바꾸기</span>' : '') + '</div>' +
+      (rows.length ? '<ol class="mlist mlist--wish" id="mwish">' + rows.map(function (r) {
+        return '<li class="mrow" data-code="' + esc(r.code) + '"><button type="button" class="mrow__main" data-act="map-open" data-v="' + esc(r.code) + '">' +
+          '<span class="mrankno" aria-hidden="true">' + r.no + '</span><span class="mrow__tx"><span class="mrow__nm">' + esc(r.name) +
+          (r.again ? '<span class="mchip mchip--both mchip--xs">또 가기</span>' : '') + '</span>' + (r.note ? '<span class="mrow__ds">' + esc(r.note) + '</span>' : '') + '</span>' +
+          '<span class="sr-only">' + r.no + '위</span></button>' +
+          '<span class="mrow__grip" data-grip="' + esc(r.code) + '" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 9h14M5 15h14"/></svg></span></li>';
+      }).join('') + '</ol>' : '<section class="card notice"><p class="notice__body">아직 가고 싶은 곳이 없어요. 지도에서 지역을 누르거나 아래 버튼으로 담아 보세요.</p></section>') +
+      '<button type="button" class="madd" data-act="map-wish-add">＋ 가고 싶은 곳 더하기</button>' +
+      '<p class="mnote">함께 다녀오면 이 목록에서 빠지고 지도에 색이 칠해져요</p>';
+  }
+
+  var SORTS = [['stars', '별점 순'], ['recent', '최근 순'], ['many', '많이 간 순']];
+  /** 다녀온 곳 칸. b = { sort, rows: [{ code, name, count, lastText, fill }] } */
+  function beenTab(b) {
+    return '<div class="msort" role="group" aria-label="정렬">' + SORTS.map(function (x) {
+      return '<button type="button" class="msort__btn" data-act="map-sort" data-v="' + x[0] + '" aria-pressed="' + (b.sort === x[0]) + '">' + x[1] + '</button>';
+    }).join('') + '</div>' +
+      (b.rows.length ? '<ul class="mlist">' + b.rows.map(function (r) {
+        return '<li class="mrow"><button type="button" class="mrow__main" data-act="map-open" data-v="' + esc(r.code) + '" aria-label="' + esc(r.name + ' · ' + r.count + '번 · 별 ' + (r.fill || '없음')) + '">' +
+          '<span class="mrow__tx"><span class="mrow__nm">' + esc(r.name) + '</span><span class="mrow__ds">' + r.count + '번 · 마지막 ' + esc(r.lastText) + '</span></span>' +
+          '<span class="mrow__stars">' + stars(r.fill, 'sm') + '</span></button></li>';
+      }).join('') + '</ul><p class="mnote">함께 다녀온 곳 ' + b.rows.length + '곳</p>' : '<section class="card notice"><p class="notice__body">아직 함께 다녀온 곳이 없어요. 지도에서 지역을 눌러 기록해 보세요.</p></section>');
+  }
+
+  /** 순위 고르기 화면 (A · 목록에 끼워 넣기). r = { name, rows: [{ code, name, isNew }], idx, note, saving, change } */
+  function rankScreen(r, entering) {
+    var n = r.rows.length;
+    return '<div class="sheet-layer sheet-layer--full">' +
+      '<section class="sheet mrank' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="mrank-title">' +
+      '<div class="mbar"><button type="button" class="mbar__btn" data-act="map-rank-close" aria-label="돌아가기"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + BACK + '</svg></button>' +
+      '<h2 id="mrank-title" class="mbar__title">' + (r.change ? '몇 위로 옮길까요' : '몇 위로 담을까요') + '</h2></div>' +
+      '<p class="mrank__sub"><b>' + esc(r.name) + '</b>을(를) 원하는 자리로 옮겨 주세요</p>' +
+      '<ol class="mlist mlist--rank" id="mrank">' + r.rows.map(function (x, i) {
+        if (x.isNew) return '<li class="mrow mrow--new" data-code="' + esc(x.code) + '"><span class="mrankno mrankno--on" aria-hidden="true">' + (i + 1) + '</span>' +
+          '<span class="mrow__tx" data-grip="' + esc(x.code) + '"><span class="mrow__nm">' + esc(x.name) + '</span><span class="mrow__ds">' + (r.change ? '지금 고르는 곳' : '새로 담는 곳') + '</span></span>' +
+          '<button type="button" class="mrow__mv" data-act="map-rank-move" data-v="-1" aria-label="한 칸 위로"' + (i === 0 ? ' disabled' : '') + '><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>' +
+          '<button type="button" class="mrow__mv" data-act="map-rank-move" data-v="1" aria-label="한 칸 아래로"' + (i === n - 1 ? ' disabled' : '') + '><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></li>';
+        return '<li class="mrow mrow--ro"><span class="mrankno" aria-hidden="true">' + (i + 1) + '</span><span class="mrow__tx"><span class="mrow__nm">' + esc(x.name) + '</span></span></li>';
+      }).join('') + '</ol>' +
+      '<label class="field mrank__note"><span class="field__label">메모 (선택)</span><input id="mp-wnote" class="field__input" type="text" maxlength="100" autocomplete="off" enterkeyhint="done" placeholder="예: 벚꽃 필 때, 1박 2일" value="' + esc(r.note) + '"></label>' +
+      (r.error ? '<p class="rform__error" role="alert">' + esc(r.error) + '</p>' : '') +
+      '<button type="button" class="mbtn mbtn--solid mrank__go" data-act="map-rank-save"' + (r.saving ? ' disabled' : '') + '>' + (r.saving ? '저장 중…' : (r.idx + 1) + '위로 ' + (r.change ? '옮기기' : '담기')) + '</button>' +
+      '</section></div>';
   }
 
   /** 찾기 결과만 (입력칸은 그대로 두고 이 부분만 바꿔야 한글 조합 입력이 안 깨진다) */
@@ -121,7 +198,7 @@
       '<button type="button" class="close-btn" data-act="map-find-close">닫기</button></section></div>';
   }
 
-  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet, findResults: findResults };
+  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet, findResults: findResults, wishTab: wishTab, beenTab: beenTab, rankScreen: rankScreen, starCard: starCard };
   root.RT = root.RT || {};
   root.RT.viewMap = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

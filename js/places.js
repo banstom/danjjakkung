@@ -72,6 +72,57 @@
     return (visits || []).map(function (v) { return v.id === id ? Object.assign({}, v, { date: date, note: note }) : v; }).sort(byDate);
   }
 
+  // ── M3 (v50): 가고 싶은 곳 순위 · 다녀온 곳 별점 ──
+  var GAP = 1000, MIN_GAP = 1e-6;
+
+  /** 가고 싶은 곳 목록 (순위 키 → 같은 키면 코드 순 — 두 기기가 같은 키를 넣어도 번호가 겹치지 않게) */
+  function wishList(places) {
+    return Object.keys(places).map(function (c) { return places[c]; }).filter(function (p) { return p.wishRank !== null; })
+      .sort(function (a, b) { return a.wishRank - b.wishRank || (a.code < b.code ? -1 : 1); });
+  }
+
+  /** list(키 순, 옮길 곳은 뺀 목록)의 idx 자리(0 = 맨 앞)에 넣을 키. { key, rebalance } — 간격이 너무 좁으면 rebalance */
+  function keyAt(list, idx) {
+    var prev = idx > 0 ? list[idx - 1].wishRank : null, next = idx < list.length ? list[idx].wishRank : null;
+    var key = prev === null && next === null ? GAP : prev === null ? next - GAP : next === null ? prev + GAP : (prev + next) / 2;
+    return { key: key, rebalance: prev !== null && next !== null && (next - prev < MIN_GAP * 2 || key <= prev || key >= next) };
+  }
+
+  /** 코드 순서대로 1000, 2000, … 다시 매기기 → { code: key } */
+  function rebalance(codes) {
+    var out = {}; codes.forEach(function (c, i) { out[c] = (i + 1) * GAP; }); return out;
+  }
+
+  /** 별점 평균 (둘이 각자, 한 사람만 매겼으면 그 점수) → number | null */
+  function avgStars(p) {
+    var vs = Object.keys(p.stars || {}).map(function (u) { return p.stars[u]; });
+    return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null;
+  }
+
+  /** 다녀온 곳 목록. sort: 'stars'(평균 → 횟수 → 최근, 안 매긴 곳은 뒤) | 'recent' | 'many' */
+  function visitedList(places, sort) {
+    var list = Object.keys(places).map(function (c) { return places[c]; }).filter(function (p) { return p.visits.length > 0; }).map(function (p) {
+      return { code: p.code, place: p, count: p.visits.length, last: p.visits[p.visits.length - 1].date, avg: avgStars(p) };
+    });
+    function recent(a, b) { return a.last < b.last ? 1 : a.last > b.last ? -1 : (a.code < b.code ? -1 : 1); }
+    function many(a, b) { return b.count - a.count || recent(a, b); }
+    list.sort(sort === 'recent' ? recent : sort === 'many' ? many : function (a, b) {
+      if (a.avg === null || b.avg === null) return a.avg === null && b.avg === null ? many(a, b) : a.avg === null ? 1 : -1;
+      return b.avg - a.avg || many(a, b);
+    });
+    return list;
+  }
+
+  /** 다녀온 곳 별점 순위 (1부터) | null (별점 없음) */
+  function starRank(places, code) {
+    var l = visitedList(places, 'stars'), i = l.map(function (x) { return x.code; }).indexOf(code);
+    return i >= 0 && l[i].avg !== null ? i + 1 : null;
+  }
+
+  /** 반올림한 별 개수 (평균 4.5 → 5) */
+  function starFill(avg) { return avg === null ? 0 : Math.min(5, Math.max(0, Math.round(avg))); }
+  function avgText(avg) { return avg === null ? '' : (Math.round(avg * 10) / 10).toString(); }
+
   /** 지역 이름: 「전북 남원시」 (시·도 짧은 이름 + 시군구). map = 지도 데이터 */
   function fullName(map, code) {
     var r = regionOf(map, code);
@@ -107,7 +158,7 @@
   }
 
   var api = { NOTE_MAX: NOTE_MAX, VISITS_MAX: VISITS_MAX, cleanNote: cleanNote, fromDoc: fromDoc, fromDocs: fromDocs, paint: paint, counts: counts,
-    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, withoutVisit: withoutVisit, withEdited: withEdited, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
+    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, withoutVisit: withoutVisit, withEdited: withEdited, GAP: GAP, wishList: wishList, keyAt: keyAt, rebalance: rebalance, avgStars: avgStars, visitedList: visitedList, starRank: starRank, starFill: starFill, avgText: avgText, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
   root.RT = root.RT || {};
   root.RT.places = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

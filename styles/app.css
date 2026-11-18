@@ -983,3 +983,66 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .mvisits__row { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 10px 0; border: 0; background: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
 .mvisits__row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 .mdel { display: flex; justify-content: center; }
+
+/* ── 단짝 지도 M3 (v50) — 목업 04 · 05 · 07 · 08 · 09 ── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.mlisthead { display: flex; align-items: baseline; justify-content: space-between; margin: 16px 4px 8px; }
+.mlisthead__t { margin: 0; font-size: 15px; font-weight: 700; }
+.mlisthead__hint { font-size: 12px; color: var(--sub); }
+.mlist { list-style: none; margin: 0; padding: 4px 16px; background: var(--surface); border-radius: 20px; }
+.msort + .mlist { margin-top: 10px; }
+.mrow { display: flex; align-items: center; gap: 8px; min-height: 56px; border-bottom: 1px solid var(--divider); background: var(--surface); }
+.mrow:last-child { border-bottom: 0; }
+.mrow__main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.mrow__tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mrow__nm { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; }
+.mrow__ds { font-size: 13px; color: var(--sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mrow__grip { width: 40px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--faint); cursor: grab; touch-action: none; flex-shrink: 0; }
+.mrow__stars { display: flex; gap: 1px; flex-shrink: 0; }
+.mrow.is-lifted { position: relative; z-index: 2; box-shadow: var(--lift); border-radius: 12px; }
+.mrankno { width: 32px; height: 32px; border-radius: 10px; background: var(--tint); color: var(--tint-text); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; flex-shrink: 0; }
+.mrankno--on { background: var(--strong); color: var(--surface); }
+.mrankno--big { width: 40px; height: 40px; font-size: 18px; }
+.mchip--xs { min-height: 22px; padding: 0 8px; font-size: 11px; }
+.madd { margin-top: 12px; width: 100%; min-height: 48px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; }
+.msort { display: flex; gap: 6px; margin-top: 14px; }
+.msort__btn { min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; }
+.msort__btn[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--surface); }
+.mstar { display: inline-flex; color: var(--faint); }
+.mstar.is-on { color: var(--strong); }
+.mstar--sm svg { width: 15px; height: 15px; }
+.mstars { margin-top: 10px; padding: 12px 16px; border-radius: 16px; background: var(--raised); display: flex; flex-direction: column; gap: 6px; }
+.mstars__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mstars__who { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.mstars__set { display: flex; gap: 4px; }
+.mstars__set .mstar { width: 36px; height: 36px; align-items: center; justify-content: center; } /* 내 줄(버튼)과 같은 간격 */
+.mstars__set .mstar svg { width: 28px; height: 28px; }
+.mstar-btn { width: 36px; height: 36px; border: 0; background: none; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--faint); }
+.mstar-btn svg { width: 28px; height: 28px; }
+.mstar-btn.is-on { color: var(--strong); }
+.mstars__avg { margin: 4px 0 0; font-size: 12px; color: var(--sub); }
+.mdot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.mdot--me { background: var(--me); }
+.mdot--her { background: var(--her); }
+.mbtns--stack { flex-wrap: wrap; }
+.mbtns--stack .mbtn { flex: 1 1 140px; }
+.mwhead { display: flex; align-items: center; gap: 12px; }
+.mwhead__tx { min-width: 0; }
+.mwhead__sub { margin: 2px 0 0; }
+.sheet-layer--full { z-index: 25; }
+.sheet.mrank { top: 0; height: 100%; max-height: none; border-radius: 0; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg);
+  padding-top: calc(8px + env(safe-area-inset-top, 0px)); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.mrank__sub { margin: 4px 0 10px; font-size: 14px; color: var(--sub); }
+.mrank__sub b { color: var(--text); }
+.mrow--ro { padding: 0 0; }
+.mrow--ro .mrankno { background: var(--raised); color: var(--sub); }
+.mrow--new { background: var(--tint); margin: 0 -10px; padding: 0 10px; border-radius: 14px; border-bottom-color: transparent; }
+.mrow--new .mrow__nm { color: var(--tint-text); }
+.mrow--new .mrow__tx { cursor: grab; touch-action: none; }
+.mrow--ro, .mrow--new { gap: 12px; }
+.mrow__mv { width: 44px; height: 44px; border: 0; background: none; border-radius: 12px; color: var(--tint-text); display: inline-flex; align-items: center; justify-content: center; }
+.mrow__mv:disabled { color: var(--faint); }
+.mrank__note { margin-top: 14px; }
+.mrank__go { flex: none; margin-top: auto; min-height: 52px; } /* .mbtn 의 flex: 1 이 세로로 늘리지 않게 */
+.mrank .mlist { margin-top: 2px; }
+.mrow__main:focus-visible, .madd:focus-visible, .msort__btn:focus-visible, .mstar-btn:focus-visible, .mrow__mv:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

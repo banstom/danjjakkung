@@ -178,6 +178,12 @@
           });
         });
       },
+      /** 가고 싶은 곳 순위 키를 한 번에 다시 매긴다 (간격이 너무 좁아졌을 때). keys = { code: key } */
+      setWishKeys: function (keys, uid) {
+        var b = db.batch(), at = new Date().toISOString();
+        Object.keys(keys).forEach(function (c) { b.update(db.doc('places/' + c), { wishRank: keys[c], updatedBy: uid, updatedAt: at }); });
+        return b.commit();
+      },
       // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
       watchCouple: function (next, fail) {
         return db.doc('couple/main').onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);

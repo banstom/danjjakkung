@@ -159,3 +159,48 @@ test('v49 기록 고치기 · 지우기: 고친 뒤 날짜 순 · 지우면 그�
   assert.match(ed(false), /2번째 기록 고치기[^]*이 기록 지우기/);
   assert.match(ed(true), /text-btn--warn[^]*한 번 더 누르면 이 기록을 지워요/);
 });
+
+test('M3 순위 키: 끼워 넣기 = 앞뒤 중간값 · 맨 앞/끝 = ±1000 · 좁으면 다시 매기기 · 같은 키면 코드 순', () => {
+  const pl = P.fromDocs({ 11110: { wishRank: 1000 }, 11140: { wishRank: 2000 }, 11170: { wishRank: 3000 }, 11200: { wishRank: null } });
+  const l = P.wishList(pl);
+  assert.deepEqual(l.map((x) => x.code), ['11110', '11140', '11170'], '빼 둔 곳은 없음');
+  assert.deepEqual(P.keyAt(l, 2), { key: 2500, rebalance: false }, '3위에 넣기');
+  assert.equal(P.keyAt(l, 0).key, 0); assert.equal(P.keyAt(l, 3).key, 4000); assert.equal(P.keyAt([], 0).key, 1000);
+  const tight = [{ code: 'a', wishRank: 1000 }, { code: 'b', wishRank: 1000 + 1e-9 }];
+  assert.equal(P.keyAt(tight, 1).rebalance, true, '간격이 너무 좁으면 다시 매김');
+  assert.deepEqual(P.rebalance(['x', 'y', 'z']), { x: 1000, y: 2000, z: 3000 });
+  const tie = P.wishList(P.fromDocs({ 22222: { wishRank: 1500 }, 11111: { wishRank: 1500 } }));
+  assert.deepEqual(tie.map((x) => x.code), ['11111', '22222'], '두 기기가 같은 키를 넣어도 번호가 겹치지 않음');
+});
+
+test('M3 별점 · 다녀온 곳 정렬: 평균 → 횟수 → 최근, 한 사람만 매겨도 그 점수, 안 매긴 곳은 뒤', () => {
+  const pl = P.fromDocs({
+    11110: { visits: [v('2026-01-01')], stars: { a: 4, b: 5 } },
+    11140: { visits: [v('2025-09-01'), v('2026-02-01')], stars: { a: 4, b: 5 } },
+    11170: { visits: [v('2026-03-01')], stars: { a: 5 } },
+    11200: { visits: [v('2026-10-01')] },
+    11230: { visits: [v('2026-05-01')], stars: { a: 4, b: 5 } }
+  });
+  assert.equal(P.avgStars(pl['11110']), 4.5); assert.equal(P.avgStars(pl['11170']), 5); assert.equal(P.avgStars(pl['11200']), null);
+  assert.deepEqual(P.visitedList(pl, 'stars').map((x) => x.code), ['11170', '11140', '11230', '11110', '11200'], '5 > 4.5(2번) > 4.5(최근) > 4.5 > 없음');
+  assert.deepEqual(P.visitedList(pl, 'recent').map((x) => x.code), ['11200', '11230', '11170', '11140', '11110']);
+  assert.equal(P.visitedList(pl, 'many')[0].code, '11140');
+  assert.equal(P.starRank(pl, '11170'), 1); assert.equal(P.starRank(pl, '11200'), null);
+  assert.equal(P.starFill(4.5), 5); assert.equal(P.starFill(4.4), 4); assert.equal(P.starFill(null), 0);
+  assert.equal(P.avgText(4.5), '4.5'); assert.equal(P.avgText(4), '4');
+});
+
+test('M3 화면: 가고 싶은 곳(또 가기 · 손잡이) · 다녀온 곳(정렬 · 별) · 순위 고르기(↑↓ · N위로 담기) · 별점 카드(단짝 줄은 보기만)', () => {
+  const w = VM.wishTab({ rows: [{ code: '50110', no: 1, name: '제주 제주시', note: '바다', again: false }, { code: '12130', no: 2, name: '전남광주 여수시', note: '', again: true }] });
+  assert.match(w, /다음에 함께 갈 곳 2[^]*끌어서 순위 바꾸기/);
+  assert.match(w, /data-code="12130"[^]*또 가기[^]*data-grip="12130"/);
+  const b = VM.beenTab({ sort: 'stars', rows: [{ code: '52110', name: '전북 전주시', count: 3, lastText: '11월 9일', fill: 5 }] });
+  assert.match(b, /data-v="stars" aria-pressed="true"/); assert.match(b, /3번 · 마지막 11월 9일/);
+  assert.equal((b.match(/mstar is-on/g) || []).length, 5);
+  const r = VM.rankScreen({ name: '전북 남원시', rows: [{ code: 'a', name: 'A' }, { code: 'n', name: '전북 남원시', isNew: true }, { code: 'b', name: 'B' }], idx: 1, note: '', saving: false, change: false });
+  assert.match(r, /몇 위로 담을까요/); assert.match(r, /2위로 담기/);
+  assert.match(r, /mrow--new[^]*data-v="-1"[^]*data-v="1"/);
+  const c = VM.starCard({ me: 4, partner: 5, partnerName: '다진', avgText: '4.5' });
+  assert.equal((c.match(/data-act="map-star"/g) || []).length, 5, '내 별만 버튼');
+  assert.match(c, /우리 평균 4\.5 · 다녀온 곳 순위는 평균으로 매겨요/);
+});

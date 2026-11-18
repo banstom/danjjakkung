@@ -120,6 +120,9 @@ const FAKE_FIREBASE = `
         path: p
       };
     },
+    // 일괄 쓰기 흉내 (가고 싶은 곳 순위 다시 매기기)
+    batch: function () { var ops = []; return { update: function (ref, patch) { ops.push(function () { return ref.update(patch); }); }, set: function (ref, v, o) { ops.push(function () { return ref.set(v, o); }); },
+      commit: function () { window.__batches = (window.__batches || 0) + 1; return ops.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); } }; },
     // 트랜잭션 흉내: 읽고 → set 한 번 (실제처럼 다시 시도는 하지 않음)
     runTransaction: function (fn) {
       var writes = [];
@@ -937,6 +940,95 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="tab"][data-tab="all"]'); await jm.waitForSelector('.all'); // 지도에서 「전체」 탭 = 「전체」로
   await dj.click('[data-act="map-close"]');
   console.log('단짝 지도 확인 끝 (230곳 · 칠하기 · 단짝이 된 날 · 찾기 · 확대 · 뒤로 · 짝꿍 실시간)');
+
+  // 4-1a5) (v50) 단짝 지도 M3: 가고 싶은 곳 순위(끼워 넣기 · 끌기 · 다시 매기기) · 다녀온 곳 정렬 · 둘이 각자 별점
+  const wishNames = (p) => p.$$eval('#mwish .mrow', (rs) => rs.map((r) => r.querySelector('.mrankno').textContent + ' ' + r.querySelector('.mrow__nm').firstChild.textContent));
+  const keyOf = (c) => (docs.get('places/' + c) || {}).wishRank;
+  await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg');
+  await jm.click('[data-act="map-seg"][data-v="wish"]'); await jm.waitForSelector('#mwish');
+  assert.deepStrictEqual(await wishNames(jm), ['1 제주 제주시', '2 전북 남원시']);
+  assert.ok(await jm.$('#mwish .mrow[data-code="52190"] .mchip'), '다녀온 곳을 또 담으면 「또 가기」');
+  // 더하기 → 찾기 → 순위 고르기: 맨 끝에서 시작, ↑ 두 번 → 1위
+  await jm.click('[data-act="map-wish-add"]'); await jm.waitForSelector('#mp-q'); await jm.type('#mp-q', '강릉'); await jm.click('.mfind__row'); await jm.waitForSelector('#mrank-title');
+  assert.strictEqual(await jm.textContent('#mrank-title'), '몇 위로 담을까요');
+  assert.strictEqual(await jm.textContent('[data-act="map-rank-save"]'), '3위로 담기', '처음엔 맨 끝');
+  await jm.click('[data-act="map-rank-move"][data-v="-1"]'); await jm.click('[data-act="map-rank-move"][data-v="-1"]');
+  assert.strictEqual(await jm.textContent('[data-act="map-rank-save"]'), '1위로 담기');
+  assert.strictEqual(await jm.textContent('.mrow--new .mrankno'), '1');
+  assert.deepStrictEqual(await jm.$$eval('#mrank .mrow--ro .mrankno', (e) => e.map((x) => x.textContent)), ['2', '3'], '다른 줄 번호가 바로 다시 매겨짐');
+  await jm.fill('#mp-wnote', '커피거리'); await jm.screenshot({ path: path.join(OUT, 'map-rank.png') });
+  await jm.click('[data-act="map-rank-save"]'); await jm.waitForTimeout(300);
+  assert.ok(keyOf('51150') < keyOf('50110'), '1위 = 가장 작은 키'); assert.strictEqual(docs.get('places/51150').wishNote, '커피거리');
+  assert.deepStrictEqual(await wishNames(jm), ['1 강원 강릉시', '2 제주 제주시', '3 전북 남원시']);
+  // 3위에 끼워 넣으면 원래 3위부터 한 칸씩 밀림 · 문서 하나만 고침(중간 키)
+  const k3 = keyOf('52190');
+  await jm.click('[data-act="map-wish-add"]'); await jm.waitForSelector('#mp-q'); await jm.type('#mp-q', '해운대'); await jm.click('.mfind__row'); await jm.waitForSelector('#mrank-title');
+  await jm.click('[data-act="map-rank-move"][data-v="-1"]'); await jm.click('[data-act="map-rank-save"]'); await jm.waitForTimeout(300);
+  assert.deepStrictEqual(await wishNames(jm), ['1 강원 강릉시', '2 제주 제주시', '3 부산 해운대구', '4 전북 남원시']);
+  assert.strictEqual(keyOf('52190'), k3, '밀린 곳의 키는 그대로');
+  assert.strictEqual(keyOf('26350'), (keyOf('50110') + k3) / 2, '사이 중간값');
+  // 키 간격이 너무 좁으면 한 번에 다시 매김
+  docs.set('places/50110', Object.assign({}, docs.get('places/50110'), { wishRank: 1000 })); docs.set('places/26350', Object.assign({}, docs.get('places/26350'), { wishRank: 1000 + 1e-9 }));
+  await pushAll(['places/50110', 'places/26350']); await jm.waitForTimeout(120);
+  const b0 = await jm.evaluate(() => window.__batches || 0);
+  await jm.click('[data-act="map-wish-add"]'); await jm.waitForSelector('#mp-q'); await jm.type('#mp-q', '속초'); await jm.click('.mfind__row'); await jm.waitForSelector('#mrank-title');
+  await jm.click('[data-act="map-rank-move"][data-v="-1"]'); await jm.click('[data-act="map-rank-move"][data-v="-1"]'); await jm.click('[data-act="map-rank-save"]'); await jm.waitForTimeout(400);
+  assert.strictEqual(await jm.evaluate(() => window.__batches || 0), b0 + 1, '간격이 좁으면 일괄로 다시 매김');
+  assert.deepStrictEqual(await wishNames(jm), ['1 강원 강릉시', '2 제주 제주시', '3 강원 속초시', '4 부산 해운대구', '5 전북 남원시']);
+  const ks = ['51150', '50110', '51210', '26350', '52190'].map(keyOf);
+  assert.ok(ks.every((k, i) => i === 0 || k > ks[i - 1]) && new Set(ks).size === 5, '다시 매긴 키가 순서대로 · 겹치지 않음 ' + ks.join(','));
+  // 끌어서 순위 바꾸기: 1위 손잡이를 3위 아래로
+  const grip = await (await jm.$('#mwish .mrow[data-code="51150"] .mrow__grip')).boundingBox();
+  const row3 = await (await jm.$('#mwish .mrow[data-code="51210"]')).boundingBox();
+  await jm.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2); await jm.mouse.down();
+  await jm.mouse.move(grip.x + grip.width / 2, row3.y + row3.height * 0.8, { steps: 8 }); await jm.mouse.up(); await jm.waitForTimeout(400);
+  assert.deepStrictEqual(await wishNames(jm), ['1 제주 제주시', '2 강원 속초시', '3 강원 강릉시', '4 부산 해운대구', '5 전북 남원시'], '끌어서 3위로');
+  await jm.screenshot({ path: path.join(OUT, 'map-wish-list.png'), fullPage: true });
+  // 가고 싶은 곳 시트: 함께 다녀왔어요 → 목록에서 빠지고 뒤 순위가 당겨짐
+  await jm.click('#mwish .mrow[data-code="51210"] .mrow__main'); await jm.waitForSelector('#mapsheet-title');
+  assert.strictEqual(await jm.textContent('.mrankno--big'), '2');
+  assert.match(await jm.textContent('.mwhead__sub'), /가고 싶은 곳 2위/);
+  await jm.screenshot({ path: path.join(OUT, 'map-sheet-wish.png') });
+  await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2026-10-10'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(keyOf('51210'), null, '다녀오면 가고 싶은 곳에서 빠짐');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.deepStrictEqual(await wishNames(jm), ['1 제주 제주시', '2 강원 강릉시', '3 부산 해운대구', '4 전북 남원시'], '뒤 순위가 당겨짐');
+  // 순위 바꾸기(지금 자리에서 시작) · 빼기
+  await jm.click('#mwish .mrow[data-code="26350"] .mrow__main'); await jm.waitForSelector('[data-act="map-rank"]');
+  await jm.click('[data-act="map-rank"]'); await jm.waitForSelector('#mrank-title');
+  assert.strictEqual(await jm.textContent('#mrank-title'), '몇 위로 옮길까요');
+  assert.strictEqual(await jm.textContent('[data-act="map-rank-save"]'), '3위로 옮기기', '지금 자리에서 시작');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('#mrank-title')) && await jm.$('#mapsheet-title'), 'Esc = 순위 화면만 닫힘');
+  await jm.click('[data-act="map-unwish"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(keyOf('26350'), null, '가고 싶은 곳에서 빼기');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  // 다녀온 곳: 둘이 각자 별점 · 평균 · 정렬
+  await jm.click('[data-act="map-seg"][data-v="been"]'); await jm.waitForSelector('.msort');
+  await jm.click('.mrow__main[data-v="52190"]'); await jm.waitForSelector('.mstars');
+  await jm.click('[data-act="map-star"][data-v="4"]'); await jm.waitForTimeout(250);
+  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4, '내 별점 저장');
+  assert.match(await jm.textContent('.mstars__avg'), /우리 평균 4 /);
+  assert.strictEqual(await jm.$$eval('.mstars__row:nth-child(2) button', (e) => e.length), 0, '단짝 줄은 버튼이 없음(못 고침)');
+  await toAll(dj); await dj.click('[data-act="all-map"]'); await dj.waitForSelector('#km .rg');
+  await dj.click('[data-act="map-seg"][data-v="been"]'); await dj.click('.mrow__main[data-v="52190"]'); await dj.waitForSelector('.mstars');
+  await dj.click('[data-act="map-star"][data-v="5"]'); await dj.waitForTimeout(300);
+  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4, '짝꿍이 매겨도 내 별점은 그대로');
+  assert.match(await jm.textContent('.mstars__avg'), /우리 평균 4\.5/);
+  assert.strictEqual(await jm.$$eval('.mstars__row:nth-child(2) .mstar.is-on', (e) => e.length), 5, '단짝 줄 별 5개');
+  await jm.screenshot({ path: path.join(OUT, 'map-sheet-stars.png') });
+  await dj.keyboard.press('Escape'); await dj.click('[data-act="map-close"]');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  // 정렬: 별점 순(평균 → 횟수 → 최근, 안 매긴 곳은 뒤) · 최근 순 · 많이 간 순
+  const beenNames = () => jm.$$eval('.mlist .mrow__nm', (e) => e.map((x) => x.textContent));
+  assert.deepStrictEqual(await beenNames(), ['전북 남원시', '강원 속초시'], '별점 있는 곳이 먼저');
+  await jm.click('[data-act="map-sort"][data-v="recent"]'); await jm.waitForTimeout(80);
+  assert.deepStrictEqual(await beenNames(), ['강원 속초시', '전북 남원시'], '최근 순');
+  await jm.click('[data-act="map-sort"][data-v="many"]'); await jm.waitForTimeout(80);
+  assert.strictEqual((await beenNames()).length, 2);
+  await jm.screenshot({ path: path.join(OUT, 'map-been.png'), fullPage: true });
+  await jm.click('[data-act="map-close"]'); await jm.waitForSelector('.all');
+  console.log('단짝 지도 M3 확인 끝 (끼워 넣기 · 중간 키 · 다시 매기기 · 끌기 · 다녀오면 빠짐 · 빼기 · 별점 · 정렬)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만
