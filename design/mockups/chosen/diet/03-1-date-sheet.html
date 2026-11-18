@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<meta charset="utf-8">
+<title>③-1 날짜 달력 시트 · 짝꿍 식탁 목업</title>
+</head>
+<body>
+<style>
+body{margin:0}
+[data-theme]{--divider:var(--line);--input-bg:var(--surface);--icon:var(--sub);--switch-knob:#FFFFFF;--strong:var(--primary);--primary-edge:var(--primary);--scrim:rgba(30,28,40,0.4);--shadow:0 -8px 24px rgba(30,28,40,0.08);--lift:0 1px 3px rgba(30,28,40,0.12);--font:'Pretendard','Tossface',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif}
+[data-theme="soft-pastel"]{color-scheme:light;--bg:#FFF8E7;--surface:#FFFFFF;--raised:#FCF4EE;--line:#EEE8E7;--text:#34313A;--sub:#6D6973;--faint:#C9C2CB;--primary:#F6DDE8;--on-primary:#34313A;--secondary:#DCD9FA;--accent:#BC7897;--strong:#B4587F;--primary-edge:var(--accent);--tint:#FBEDF3;--tint-text:#8E4467;--both:#D98E94;--both-ink:#2A2730;--her:#D78EAD;--her-ink:#2A2730;--me:#B0A5E8;--me-ink:#2A2730;--empty:#F1EAE8;--empty-text:#5F5A66;--warn:#C62F3A}
+[data-theme="cosmic-dream"]{color-scheme:dark;--bg:#101426;--surface:#191D33;--raised:#232842;--line:#30334B;--text:#F4F2FF;--sub:#B5B5D0;--faint:#4C506E;--primary:#7557C8;--on-primary:#FFFFFF;--secondary:#292650;--accent:#8F74E0;--tint:#292650;--tint-text:#CFC3FF;--both:#A84F88;--both-ink:#FFFFFF;--her:#267C91;--her-ink:#FFFFFF;--me:#7052B8;--me-ink:#FFFFFF;--empty:#2B3050;--empty-text:#C9C9E0;--warn:#FF7B86;--scrim:rgba(5,7,18,0.62);--shadow:0 -8px 24px rgba(0,0,0,0.45);--lift:0 1px 3px rgba(0,0,0,0.4)}
+.scr{width:390px;height:844px;box-sizing:border-box;background:var(--bg);color:var(--text);font-family:var(--font);position:relative;overflow:hidden;padding:12px 20px 0}
+.scr button,.scr textarea,.scr input{font:inherit;color:inherit}
+.caption{margin:0;font-size:13px;font-weight:500;color:var(--sub)}
+.title{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.sec{margin:20px 4px 8px;font-size:13px;font-weight:700;color:var(--sub)}
+.card{background:var(--surface);border-radius:20px;padding:14px 16px}
+.list{background:var(--surface);border-radius:20px;padding:4px 16px}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;background:none;padding:0;text-align:left;border-bottom:1px solid var(--divider)}
+.row:last-child{border-bottom:0}
+.row .ic{width:36px;height:36px;border-radius:12px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--icon);flex-shrink:0}
+.row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .nm{font-size:16px;font-weight:600}
+.row .ds{font-size:13px;color:var(--sub)}
+.row .vl{font-size:14px;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700}
+.c-me{background:var(--me);color:var(--me-ink)}.c-her{background:var(--her);color:var(--her-ink)}.c-both{background:var(--both);color:var(--both-ink)}
+.btn{min-height:52px;border-radius:14px;border:1.5px solid var(--primary-edge);background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:700;padding:0 16px}
+.btn2{min-height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:16px;font-weight:700;padding:0 16px}
+.bar{display:flex;align-items:center;gap:4px;min-height:44px;margin:0 -12px}
+.iconbtn{width:44px;height:44px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--text)}
+.seg{display:flex;background:var(--raised);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;border:0;border-radius:10px;background:none;font-size:14px;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:var(--lift)}
+.ta{display:block;width:100%;box-sizing:border-box;min-height:132px;border:1.5px solid var(--line);border-radius:16px;background:var(--input-bg);padding:14px;font-size:16px;line-height:1.55;resize:none}
+.pick{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-size:14px;font-weight:600}
+.pick[aria-pressed="true"]{border-color:var(--primary-edge);background:var(--primary);color:var(--on-primary)}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:12px 20px 28px;background:var(--bg)}
+.ml{margin:0;font-size:12px;font-weight:600;color:var(--sub)}
+.mv{margin:2px 0 0;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.mu{font-size:13px;font-weight:600;color:var(--sub);margin-left:3px}
+.ms{margin:2px 0 0;font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.lane{display:flex;align-items:center;gap:6px;margin:0 0 6px;font-size:13px;font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.track{position:relative;width:318px;height:28px;border-radius:8px;background:var(--raised)}
+.slp{position:absolute;top:4px;height:20px;border-radius:6px;background:var(--secondary)}
+.m{position:absolute;top:9px;width:10px;height:10px;border-radius:50%;background:var(--me)}
+.m.sn{background:var(--surface);box-shadow:inset 0 0 0 2px var(--me)}
+.ticks{position:relative;height:18px;margin-top:4px;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+.ticks span{position:absolute;top:0;transform:translateX(-50%)}
+.ticks span:first-child{transform:none}
+.ticks span:last-child{transform:translateX(-100%)}
+.gap{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border-radius:999px;background:var(--surface);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.tm{width:46px;font-size:14px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}.tl{position:relative;width:318px}
+.pin{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.pin .lb{font-size:11px;line-height:1.25;text-align:center;font-variant-numeric:tabular-nums;color:var(--sub);white-space:nowrap}
+.pin .lb b{display:block;font-size:12px;color:var(--text)}
+.pin .st{flex:1;width:1.5px;background:var(--me);margin-top:2px}
+.tk2{position:relative;width:318px;height:36px;border-radius:10px;background:var(--raised);overflow:hidden}
+.gl{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.slp2{position:absolute;top:5px;bottom:5px;border-radius:7px;background:var(--secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text)}
+.mk{position:absolute;top:11px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--me);box-shadow:0 0 0 2px var(--raised)}
+.mk.sn{background:var(--surface);box-shadow:inset 0 0 0 2.5px var(--me),0 0 0 2px var(--raised)}
+.gb{position:absolute;top:2px;height:5px;border:1.5px solid var(--faint);border-top:0;border-radius:0 0 4px 4px;box-sizing:border-box}
+.gtx{position:absolute;top:10px;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.col{position:absolute;bottom:24px;width:12px;margin-left:-6px;border-radius:4px 4px 0 0;background:var(--me)}
+.col.sn{background:var(--surface);box-shadow:inset 0 0 0 2px var(--me)}
+.cv{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.base{position:absolute;left:0;right:0;bottom:23px;height:1px;background:var(--faint)}
+.seg2{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
+.sch{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:999px;background:var(--secondary);font-size:12px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.empty{width:318px;height:28px;border-radius:8px;background:var(--raised);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--sub)}.tsub{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:14px}
+.stem{position:absolute;width:1px;margin-left:-0.5px;background:var(--faint)}
+.axl{position:absolute;font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}.mv2{margin:2px 0 0;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;white-space:nowrap}
+.c-carb{background:var(--me)}
+.c-pro{background:color-mix(in srgb,var(--me) 58%,var(--surface))}
+.c-fat{background:color-mix(in srgb,var(--me) 28%,var(--surface))}
+.stk{position:absolute;width:16px;margin-left:-8px;display:flex;flex-direction:column;gap:1px;border-radius:4px 4px 0 0;overflow:hidden}
+.stk i{display:block;min-height:2px}
+.tsub2{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--faint);white-space:nowrap;line-height:14px}
+[data-theme="cosmic-dream"] .tsub2{color:var(--sub)}
+.lg{display:inline-flex;align-items:center;gap:4px}
+.lg i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.fl{position:absolute;height:0;border-top:1.5px dotted var(--sub)}
+.ft{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:700;line-height:12px;text-align:center;color:var(--sub);white-space:nowrap;font-variant-numeric:tabular-nums}
+.frow{display:flex;align-items:center;gap:12px;min-height:26px;font-size:12px;font-weight:600;color:var(--sub);border-bottom:1px solid var(--divider);font-variant-numeric:tabular-nums}
+.fdot{width:2px;height:16px;border-left:2px dotted var(--faint);margin-left:-8px}
+.lead{position:absolute;width:0;border-left:1px dotted var(--sub)}.c-me{background:var(--me);color:var(--me-ink)}.c-her{background:var(--her);color:var(--her-ink)}
+.me-carb{background:var(--me)}.me-pro{background:color-mix(in srgb,var(--me) 58%,var(--surface))}.me-fat{background:color-mix(in srgb,var(--me) 28%,var(--surface))}
+.her-carb{background:var(--her)}.her-pro{background:color-mix(in srgb,var(--her) 58%,var(--surface))}.her-fat{background:color-mix(in srgb,var(--her) 28%,var(--surface))}
+.lg i{width:8px;height:10px;border-radius:2px;display:inline-block;margin-right:-2px}
+.lg{gap:4px}
+.goal{padding:12px 14px}
+.grow{display:grid;grid-template-columns:40px minmax(0,1fr) 92px 78px;align-items:center;gap:8px;min-height:26px;font-size:12px;font-variant-numeric:tabular-nums}
+.gl2{font-weight:700}
+.gmeter{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}
+.gmeter i{display:block;height:100%;border-radius:4px}
+.gmeter i.me{background:var(--me)}.gmeter i.her{background:var(--her)}
+.gv{text-align:right;font-weight:700;white-space:nowrap}
+.gt2{font-weight:500;color:var(--sub)}
+.gs{text-align:right;font-weight:700;white-space:nowrap}
+.gs.ok{color:var(--text)}.gs.left{color:var(--sub)}.gs.over{color:var(--strong)}
+.band{position:absolute;left:0;right:0;background:var(--raised);border-radius:8px}
+.tog{position:absolute;width:4px;margin-left:-2px;border-radius:2px;background:var(--both)}
+.lane2{position:absolute;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700}
+.pc{border-top:0}
+.gopt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:68px;border:1.5px solid var(--line);border-radius:16px;background:var(--surface);padding:12px}
+.gopt .gn{font-size:16px;font-weight:700}
+.gopt .gd{font-size:12px;color:var(--sub)}
+.gopt.on{border-color:var(--primary-edge);background:var(--tint)}
+.gopt.on .gd{color:var(--tint-text)}
+.in2{width:64px;min-height:40px;border:1.5px solid var(--line);border-radius:12px;background:var(--input-bg);text-align:right;padding:0 10px;font-size:16px;font-weight:600}
+.ed2{font-size:12px;font-weight:700;color:var(--tint-text);padding:4px 8px;border-radius:999px;background:var(--tint)}[data-theme="soft-pastel"]{--carb:#5FAFA6;--pro:#EE9A5C;--fat:#F3D36E}
+[data-theme="cosmic-dream"]{--carb:#3E9A92;--pro:#D9874A;--fat:#CDB04F}
+.mc-carb{background:var(--carb)}.mc-pro{background:var(--pro)}.mc-fat{background:var(--fat)}
+.stk i{position:relative;display:flex;align-items:center;justify-content:center}
+.sl2{font-size:11px;font-weight:700;line-height:1;color:var(--me-ink)}
+[data-theme="cosmic-dream"] .sl2{color:#FFFFFF}
+.tgo{position:absolute;border-radius:8px;box-shadow:inset 0 0 0 2px var(--both)}
+.tgt{position:absolute;border-radius:8px;background:color-mix(in srgb,var(--both) 30%,var(--surface))}
+.tchip{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:700;line-height:18px;padding:0 6px;border-radius:999px;background:var(--both);color:var(--both-ink);font-variant-numeric:tabular-nums;white-space:nowrap}.who-me{--P:var(--me)}.who-her{--P:var(--her)}
+.stk.pt{gap:0;outline:1.5px solid var(--P);outline-offset:-1.5px}
+.stk.pt i+i{box-shadow:inset 0 1px 0 var(--surface)}
+.p-carb{background:var(--P)}
+.p-pro{background:repeating-linear-gradient(135deg,var(--P) 0 2px,color-mix(in srgb,var(--P) 22%,var(--surface)) 2px 5px)}
+.p-fat{background-color:color-mix(in srgb,var(--P) 14%,var(--surface));background-image:radial-gradient(circle,var(--P) 1.1px,transparent 1.5px);background-size:5px 5px}
+.lg i.sw{width:14px;height:12px;border-radius:3px;margin:0;outline:1.5px solid var(--P);outline-offset:-1.5px}
+.stk.hl{outline:2px solid var(--text);outline-offset:1px}
+.call{position:absolute;transform:translateX(-50%);padding:6px 10px;border-radius:12px;background:var(--surface);box-shadow:var(--lift),0 0 0 1px var(--line);font-size:11px;line-height:1.4;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.call b{font-weight:700}.s-carb{background:var(--P)}
+.s-pro{background:color-mix(in srgb,var(--P) 58%,var(--surface))}
+.s-fat{background:color-mix(in srgb,var(--P) 28%,var(--surface))}
+.lg i.sw2{width:12px;height:12px;border-radius:3px;margin:0}.datebtn{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;border:0;background:none;padding:4px 0;font-size:14px;font-weight:700;color:var(--text)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.cw{font-size:12px;font-weight:600;color:var(--sub);padding:4px 0}
+.cd{position:relative;min-height:40px;border:0;border-radius:12px;background:none;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.cd i{position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--me)}
+.cd.sel{background:var(--primary);color:var(--on-primary)}
+.cd.today{box-shadow:inset 0 0 0 1.5px var(--primary-edge)}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:60px;border:0;border-radius:14px;background:var(--surface);padding:6px 0;font-variant-numeric:tabular-nums}
+.wd span{font-size:11px;color:var(--sub);font-weight:600}
+.wd b{font-size:16px}
+.wd i{width:5px;height:5px;border-radius:50%;background:transparent}
+.wd i.on{background:var(--me)}
+.wd.sel{background:var(--primary);color:var(--on-primary)}
+.wd.sel span{color:var(--on-primary)}
+.wd.today{box-shadow:inset 0 0 0 1.5px var(--primary-edge)}
+.wd[disabled]{opacity:.45}
+</style>
+<div class="scr" data-theme="soft-pastel">
+<div class="bar"><button type="button" class="iconbtn" aria-label="뒤로"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span style="flex: 1"></span><button type="button" class="iconbtn" aria-label="식단 설정"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button><button type="button" class="iconbtn" aria-label="기록하기"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div>
+<header style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px"><button type="button" class="datebtn">11월 17일 화요일 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><h1 class="title">짝꿍 식탁</h1></header>
+<div class="seg" role="group" aria-label="누구의 숫자" style="margin-bottom: 10px"><button type="button" aria-pressed="true">준민</button><button type="button" aria-pressed="false">단짝</button></div>
+<div class="card goal"><div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px"><span class="chip c-me">준민</span><span style="flex: 1; font-size: 14px; font-weight: 700">벌크업 목표 대비</span><span style="font-size: 11px; color: var(--sub)">목표는 예시</span></div><div class="grow"><span class="gl2">칼로리</span><span class="gmeter"><i class="me" style="width: 100%"></i></span><span class="gv">4,671<span class="gt2"> / 2,854kcal</span></span><span class="gs ok">달성 ✓ +1,817</span></div><div class="grow"><span class="gl2">탄수</span><span class="gmeter"><i class="me" style="width: 100%"></i></span><span class="gv">661<span class="gt2"> / 395g</span></span><span class="gs ok">달성 ✓ +266g</span></div><div class="grow"><span class="gl2">단백질</span><span class="gmeter"><i class="me" style="width: 100%"></i></span><span class="gv">201<span class="gt2"> / 140g</span></span><span class="gs ok">달성 ✓ +61g</span></div><div class="grow"><span class="gl2">지방</span><span class="gmeter"><i class="me" style="width: 100%"></i></span><span class="gv">138<span class="gt2"> / 79g</span></span><span class="gs over">59g 많음</span></div></div>
+<div class="card" style="margin-top: 8px">
+<div style="position: relative; width: 318px; height: 282px"><span class="band" style="top: 150px; height: 36px"></span><span class="axl" style="left: 2px; top: 161px">6시</span><span class="axl" style="right: 2px; top: 161px">24시</span><span class="tgt" style="left: 203.4px; width: 26px; top: 96.6px; height: 122.8px"></span><span class="stk who-me" style="left: 41.2px; bottom: 132px; height: 37.2px; width: 16px; margin-left: -8.0px; border-radius: 4px 4px 0 0"><i class="s-fat" style="flex: 49.2"></i><i class="s-pro" style="flex: 15.6"></i><i class="s-carb" style="flex: 35.2"></i></span><span class="cv" style="left: 41.2px; bottom: 172.2px">722</span><span class="tsub" style="left: 41.2px; top: 153px">08:20</span><span class="stk who-me hl" style="left: 117.8px; bottom: 132px; height: 80.0px; width: 16px; margin-left: -8.0px; border-radius: 4px 4px 0 0"><i class="s-fat" style="flex: 25.0"></i><i class="s-pro" style="flex: 15.8"></i><i class="s-carb" style="flex: 59.2"></i></span><span class="cv" style="left: 117.8px; bottom: 215.0px">1,552</span><span class="tsub" style="left: 117.8px; top: 153px">12:40</span><span class="stk who-me" style="left: 181.1px; bottom: 132px; height: 16.0px; width: 16px; margin-left: -8.0px; border-radius: 4px 4px 0 0"><i class="s-fat" style="flex: 7.4"></i><i class="s-pro" style="flex: 26.6"></i><i class="s-carb" style="flex: 66.0"></i></span><span class="cv" style="left: 181.1px; bottom: 151.0px">310</span><span class="tsub" style="left: 181.1px; top: 153px">16:15</span><span class="stk who-me" style="left: 216.4px; bottom: 132px; height: 49.4px; width: 16px; margin-left: -8.0px; border-radius: 4px 4px 0 0"><i class="s-fat" style="flex: 26.1"></i><i class="s-pro" style="flex: 14.2"></i><i class="s-carb" style="flex: 59.7"></i></span><span class="cv" style="left: 232.4px; bottom: 169.4px">958</span><span class="stk who-me" style="left: 291.5px; bottom: 132px; height: 58.2px; width: 16px; margin-left: -8.0px; border-radius: 4px 4px 0 0"><i class="s-fat" style="flex: 19.1"></i><i class="s-pro" style="flex: 19.8"></i><i class="s-carb" style="flex: 61.1"></i></span><span class="cv" style="left: 291.5px; bottom: 193.2px">1,129</span><span class="tsub" style="left: 291.5px; top: 153px">22:30</span><span class="stk who-her" style="left: 50.1px; top: 186px; height: 19.6px; width: 16px; margin-left: -8.0px; border-radius: 0 0 4px 4px"><i class="s-carb" style="flex: 58.7"></i><i class="s-pro" style="flex: 16.0"></i><i class="s-fat" style="flex: 25.2"></i></span><span class="cv" style="left: 50.1px; top: 208.6px">380</span><span class="tsub" style="left: 50.1px; top: 169px">08:50</span><span class="stk who-her" style="left: 114.8px; top: 186px; height: 23.2px; width: 16px; margin-left: -8.0px; border-radius: 0 0 4px 4px"><i class="s-carb" style="flex: 13.6"></i><i class="s-pro" style="flex: 49.8"></i><i class="s-fat" style="flex: 36.7"></i></span><span class="cv" style="left: 114.8px; top: 212.2px">450</span><span class="tsub" style="left: 114.8px; top: 169px">12:30</span><span class="stk who-her" style="left: 216.4px; top: 186px; height: 29.4px; width: 16px; margin-left: -8.0px; border-radius: 0 0 4px 4px"><i class="s-carb" style="flex: 50.8"></i><i class="s-pro" style="flex: 15.0"></i><i class="s-fat" style="flex: 34.1"></i></span><span class="cv" style="left: 232.4px; top: 203.4px">571</span><span class="tchip" style="left: 216.4px; top: 159px">18:15</span><span class="call" style="left: 117.8px; top: 0">12:40 점심 · 1,552kcal<br><b>탄 59%</b> · 단 16% · 지 25%</span><span class="lane2" style="top: 46px; left: 0"><span class="dot" style="background: var(--me)"></span>준민</span><span class="lane2" style="bottom: 0; left: 0"><span class="dot" style="background: var(--her)"></span>단짝</span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--sub)"><span class="lg"><i class="sw2 who-me s-carb"></i>탄수</span><span class="lg"><i class="sw2 who-me s-pro"></i>단백질</span><span class="lg"><i class="sw2 who-me s-fat"></i>지방</span><span class="lg"><i style="width: 14px; height: 10px; border-radius: 3px; background: color-mix(in srgb, var(--both) 30%, var(--surface))"></i>함께 먹음</span></div>
+<p style="margin: 4px 0 0; font-size: 11px; color: var(--sub)">가운데 띠 쪽부터 탄수 → 단백질 → 지방 · 높이 = kcal · 기둥을 누르면 비율 · 단짝 12:30은 고단백 예시</p>
+</div>
+<p class="sec">준민의 끼니</p>
+<div class="list" style="margin-top: 0px">
+<div class="frow"><span class="tm"></span><span class="fdot"></span><span>아침 전 공복 · 어제 기록 없음</span></div>
+<div class="row" style="min-height: 50px"><span class="tm">08:20</span><span class="tx"><span class="nm" style="font-size: 15px; display: flex; align-items: center; gap: 6px">아침</span><span class="ds">탄 66 · 단 29 · 지 41g</span></span><span class="vl">722</span></div>
+<div class="frow"><span class="tm"></span><span class="fdot"></span><span>공복 4시간 20분</span></div>
+<div class="row" style="min-height: 50px"><span class="tm">12:40</span><span class="tx"><span class="nm" style="font-size: 15px; display: flex; align-items: center; gap: 6px">점심</span><span class="ds">탄 226 · 단 60 · 지 43g</span></span><span class="vl">1,552</span></div>
+<div class="frow"><span class="tm"></span><span class="fdot"></span><span>공복 3시간 35분</span></div>
+<div class="row" style="min-height: 50px"><span class="tm">16:15</span><span class="tx"><span class="nm" style="font-size: 15px; display: flex; align-items: center; gap: 6px">간식</span><span class="ds">탄 56 · 단 23 · 지 3g</span></span><span class="vl">310</span></div>
+<div class="frow"><span class="tm"></span><span class="fdot"></span><span>공복 2시간</span></div>
+<div class="row" style="min-height: 50px"><span class="tm">18:15</span><span class="tx"><span class="nm" style="font-size: 15px; display: flex; align-items: center; gap: 6px">저녁<span class="chip c-both" style="min-height: 22px; font-size: 11px">함께</span></span><span class="ds">탄 141 · 단 34 · 지 28g</span></span><span class="vl">958</span></div>
+<div class="frow"><span class="tm"></span><span class="fdot"></span><span>공복 4시간 15분</span></div>
+<div class="row" style="min-height: 50px"><span class="tm">22:30</span><span class="tx"><span class="nm" style="font-size: 15px; display: flex; align-items: center; gap: 6px">식사</span><span class="ds">탄 171 · 단 56 · 지 24g</span></span><span class="vl">1,129</span></div>
+</div>
+<div class="scrim"></div><div class="sheet"><span class="grabber"></span><div style="display: flex; align-items: center; gap: 4px; margin-bottom: 8px"><p class="sheet__title" style="flex: 1">2026년 11월</p><button type="button" class="iconbtn" aria-label="이전 달"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="iconbtn" aria-label="다음 달"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div><div class="cal"><span class="cw">월</span><span class="cw">화</span><span class="cw">수</span><span class="cw">목</span><span class="cw">금</span><span class="cw">토</span><span class="cw">일</span><span></span><span></span><span></span><span></span><span></span><span></span><button type="button" class="cd">1</button><button type="button" class="cd">2</button><button type="button" class="cd">3</button><button type="button" class="cd">4</button><button type="button" class="cd">5</button><button type="button" class="cd">6</button><button type="button" class="cd">7</button><button type="button" class="cd">8</button><button type="button" class="cd">9</button><button type="button" class="cd">10</button><button type="button" class="cd">11</button><button type="button" class="cd">12</button><button type="button" class="cd">13</button><button type="button" class="cd">14</button><button type="button" class="cd">15</button><button type="button" class="cd">16</button><button type="button" class="cd sel">17<i></i></button><button type="button" class="cd today">18</button><button type="button" class="cd">19</button><button type="button" class="cd">20</button><button type="button" class="cd">21</button><button type="button" class="cd">22</button><button type="button" class="cd">23</button><button type="button" class="cd">24</button><button type="button" class="cd">25</button><button type="button" class="cd">26</button><button type="button" class="cd">27</button><button type="button" class="cd">28</button><button type="button" class="cd">29</button><button type="button" class="cd">30</button></div><p class="sheet__sub" style="margin-top: 10px">점 = 기록이 있는 날 · 테두리 = 오늘</p><button type="button" class="btn2" style="width: 100%">오늘로 가기</button></div>
+</div>
+<script>var t=new URLSearchParams(location.search).get("theme");if(t)document.querySelector(".scr").dataset.theme=t;</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "_note": "계산 시험(B) 고정값. 1단위당 kcal / carb / protein / fat (g). 실제 앱은 식약처 DB로 바꾸되 시험은 이 값으로. tests.md 3절과 같음",
+  "foods": {
+    "달걀":          { "unit": "개",   "unitG": 50,  "kcal": 72,  "carb": 0.4, "protein": 6.3,  "fat": 5,    "aliases": ["계란"] },
+    "카놀라유":      { "unit": "스푼", "unitG": 10,  "kcal": 88,  "carb": 0,   "protein": 0,    "fat": 10 },
+    "사과":          { "unit": "개",   "unitG": 200, "kcal": 105, "carb": 28,  "protein": 0.5,  "fat": 0.3 },
+    "바나나":        { "unit": "개",   "unitG": 120, "kcal": 105, "carb": 27,  "protein": 1.3,  "fat": 0.4 },
+    "카카오파우더":  { "unit": "스푼", "unitG": 5,   "kcal": 12,  "carb": 3,   "protein": 1,    "fat": 0.7 },
+    "파베글라스 설탕무첨가 다크 루미에르 초코칩": { "unit": "100g", "unitG": 100, "kcal": 478, "carb": 21, "protein": 4, "fat": 42, "source": "인아웃 등록값 — 포장지로 확인 필요", "foodUnits": { "줌": 20 } },
+    "햇반":          { "unit": "개",   "unitG": 210, "kcal": 315, "carb": 69,  "protein": 6,    "fat": 1 },
+    "진간장":        { "unit": "스푼", "kcal": 8,   "carb": 1,   "protein": 1.25, "fat": 0 },
+    "깨":            { "unit": "꼬집", "kcal": 3,   "carb": 0.1, "protein": 0.1,  "fat": 0.25 },
+    "참기름":        { "unit": "스푼", "unitG": 10,  "kcal": 90,  "carb": 0,   "protein": 0,    "fat": 10 },
+    "오뎅국":        { "unit": "그릇", "kcal": 120, "carb": 12,  "protein": 7,    "fat": 4,    "estimate": true },
+    "갓김치":        { "unit": "접시", "unitG": 40,  "kcal": 15,  "carb": 3,   "protein": 1,    "fat": 0,    "estimate": true },
+    "마이프로틴 임팩트 웨이": { "unit": "스쿱", "unitG": 25, "kcal": 100, "carb": 2, "protein": 20, "fat": 2 },
+    "크레아틴":      { "unit": "스쿱", "unitG": 3,   "kcal": 0,   "carb": 0,   "protein": 0,    "fat": 0,    "type": "supplement" },
+    "조기구이":      { "unit": "마리", "kcal": 140, "carb": 0,   "protein": 20,   "fat": 6.5,  "estimate": true },
+    "김치꽁치찌개":  { "unit": "인분", "kcal": 200, "carb": 8,   "protein": 16,   "fat": 12,   "estimate": true, "kcalRange": [150, 300] },
+    "멸치볶음":      { "unit": "접시", "unitG": 20,  "kcal": 80,  "carb": 8,   "protein": 6,    "fat": 3,    "estimate": true }
+  },
+  "units": { "공기": { "g": 210, "set": "default" }, "스푼": { "ml": 10, "set": "default" }, "꼬집": { "g": 0.5, "set": "default" } }
+}

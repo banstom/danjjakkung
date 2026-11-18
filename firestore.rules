@@ -275,6 +275,42 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // 단짝 식탁 (D1): 몸 정보 · 체중 기록은 본인만 (단짝도 못 읽음). 목표 숫자는 둘 다 읽고 본인만 고침
+    //  (기획은 users/{uid}.goal 이었지만 users 문서는 본인만 읽는 문서라 goals/{uid} 로 따로 둠 — docs/diet/plan.md 「바뀐 것」)
+    function dietNum(v, hi) { return (v is int || v is float) && v >= 0 && v <= hi; }
+    function validBody(b) {
+      return b is map && b.keys().hasOnly(['sex', 'age', 'heightCm', 'weightKg', 'activity'])
+        && (!('sex' in b) || b.sex in ['m', 'f'])
+        && (!('age' in b) || dietNum(b.age, 120))
+        && (!('heightCm' in b) || dietNum(b.heightCm, 260))
+        && (!('weightKg' in b) || dietNum(b.weightKg, 400))
+        && (!('activity' in b) || b.activity in ['none', 'w1_3', 'w3_5', 'daily']);
+    }
+    match /private/{uid} {
+      allow read, delete: if isMember() && request.auth.uid == uid;
+      allow create, update: if isMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['body', 'suggested', 'ackAt', 'updatedAt'])
+        && (!('body' in request.resource.data) || validBody(request.resource.data.body))
+        && (!('suggested' in request.resource.data) || request.resource.data.suggested is map)
+        && (!('ackAt' in request.resource.data) || request.resource.data.ackAt is string);
+      match /weights/{date} {
+        allow read, delete: if isMember() && request.auth.uid == uid;
+        allow create, update: if isMember() && request.auth.uid == uid && isDate(date)
+          && request.resource.data.keys().hasOnly(['kg', 'at']) && dietNum(request.resource.data.kg, 400);
+      }
+    }
+    function validGoal(g) {
+      return g.keys().hasOnly(['kind', 'kcal', 'carb', 'protein', 'fat', 'edited', 'retune', 'updatedAt'])
+        && g.kind in ['cut', 'keep', 'bulk']
+        && dietNum(g.kcal, 10000) && dietNum(g.carb, 2000) && dietNum(g.protein, 1000) && dietNum(g.fat, 1000)
+        && (!('edited' in g) || g.edited is bool) && (!('retune' in g) || g.retune is bool);
+    }
+    match /goals/{uid} {
+      allow read: if isMember();
+      allow create, update: if isMember() && request.auth.uid == uid && validGoal(request.resource.data);
+      allow delete: if isMember() && request.auth.uid == uid;
+    }
+
     // ── 알림 ──
     // users/<uid>: 내 알림 설정. 나만 읽고 쓴다.
     function validNotify(n) {

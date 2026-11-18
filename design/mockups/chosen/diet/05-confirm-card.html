@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<meta charset="utf-8">
+<title>⑤ 확인 카드 · 짝꿍 식탁 목업</title>
+</head>
+<body>
+<style>
+body{margin:0}
+[data-theme]{--divider:var(--line);--input-bg:var(--surface);--icon:var(--sub);--switch-knob:#FFFFFF;--strong:var(--primary);--primary-edge:var(--primary);--scrim:rgba(30,28,40,0.4);--shadow:0 -8px 24px rgba(30,28,40,0.08);--lift:0 1px 3px rgba(30,28,40,0.12);--font:'Pretendard','Tossface',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif}
+[data-theme="soft-pastel"]{color-scheme:light;--bg:#FFF8E7;--surface:#FFFFFF;--raised:#FCF4EE;--line:#EEE8E7;--text:#34313A;--sub:#6D6973;--faint:#C9C2CB;--primary:#F6DDE8;--on-primary:#34313A;--secondary:#DCD9FA;--accent:#BC7897;--strong:#B4587F;--primary-edge:var(--accent);--tint:#FBEDF3;--tint-text:#8E4467;--both:#D98E94;--both-ink:#2A2730;--her:#D78EAD;--her-ink:#2A2730;--me:#B0A5E8;--me-ink:#2A2730;--empty:#F1EAE8;--empty-text:#5F5A66;--warn:#C62F3A}
+[data-theme="cosmic-dream"]{color-scheme:dark;--bg:#101426;--surface:#191D33;--raised:#232842;--line:#30334B;--text:#F4F2FF;--sub:#B5B5D0;--faint:#4C506E;--primary:#7557C8;--on-primary:#FFFFFF;--secondary:#292650;--accent:#8F74E0;--tint:#292650;--tint-text:#CFC3FF;--both:#A84F88;--both-ink:#FFFFFF;--her:#267C91;--her-ink:#FFFFFF;--me:#7052B8;--me-ink:#FFFFFF;--empty:#2B3050;--empty-text:#C9C9E0;--warn:#FF7B86;--scrim:rgba(5,7,18,0.62);--shadow:0 -8px 24px rgba(0,0,0,0.45);--lift:0 1px 3px rgba(0,0,0,0.4)}
+.scr{width:390px;height:844px;box-sizing:border-box;background:var(--bg);color:var(--text);font-family:var(--font);position:relative;overflow:hidden;padding:12px 20px 0}
+.scr button,.scr textarea,.scr input{font:inherit;color:inherit}
+.caption{margin:0;font-size:13px;font-weight:500;color:var(--sub)}
+.title{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.sec{margin:20px 4px 8px;font-size:13px;font-weight:700;color:var(--sub)}
+.card{background:var(--surface);border-radius:20px;padding:14px 16px}
+.list{background:var(--surface);border-radius:20px;padding:4px 16px}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;background:none;padding:0;text-align:left;border-bottom:1px solid var(--divider)}
+.row:last-child{border-bottom:0}
+.row .ic{width:36px;height:36px;border-radius:12px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--icon);flex-shrink:0}
+.row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.row .nm{font-size:16px;font-weight:600}
+.row .ds{font-size:13px;color:var(--sub)}
+.row .vl{font-size:14px;color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700}
+.c-me{background:var(--me);color:var(--me-ink)}.c-her{background:var(--her);color:var(--her-ink)}.c-both{background:var(--both);color:var(--both-ink)}
+.btn{min-height:52px;border-radius:14px;border:1.5px solid var(--primary-edge);background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:700;padding:0 16px}
+.btn2{min-height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:16px;font-weight:700;padding:0 16px}
+.bar{display:flex;align-items:center;gap:4px;min-height:44px;margin:0 -12px}
+.iconbtn{width:44px;height:44px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--text)}
+.seg{display:flex;background:var(--raised);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;border:0;border-radius:10px;background:none;font-size:14px;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:var(--lift)}
+.ta{display:block;width:100%;box-sizing:border-box;min-height:132px;border:1.5px solid var(--line);border-radius:16px;background:var(--input-bg);padding:14px;font-size:16px;line-height:1.55;resize:none}
+.pick{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-size:14px;font-weight:600}
+.pick[aria-pressed="true"]{border-color:var(--primary-edge);background:var(--primary);color:var(--on-primary)}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:12px 20px 28px;background:var(--bg)}
+.ask{background:var(--tint);border-radius:20px;padding:16px}
+.q{margin:0;font-size:16px;font-weight:700}
+.qd{margin:4px 0 12px;font-size:13px;color:var(--tint-text)}
+.est{display:inline-block;vertical-align:2px;font-size:11px;font-weight:700;padding:2px 6px;border-radius:999px;background:var(--raised);color:var(--sub)}
+.meter{height:8px;border-radius:4px;background:var(--empty);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:4px;background:var(--me)}
+.mrow{display:grid;grid-template-columns:52px 1fr 64px;align-items:center;gap:10px;font-size:13px;font-variant-numeric:tabular-nums}
+</style>
+<div class="scr" data-theme="soft-pastel">
+<div class="bar"><button type="button" class="iconbtn" aria-label="닫기"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+<header style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px">
+<p class="caption">22:30 식사 · 4가지</p>
+<div style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 40px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">약 890</span><span style="font-size: 18px; font-weight: 600; color: var(--sub)">kcal</span></div>
+</header>
+<div class="card" style="display: flex; flex-direction: column; gap: 10px">
+<div class="mrow"><span style="font-weight: 700">탄수</span><span class="meter"><i style="width: 54%"></i></span><span style="text-align: right">120g</span></div>
+<div class="mrow"><span style="font-weight: 700">단백질</span><span class="meter"><i style="width: 23%"></i></span><span style="text-align: right">51g</span></div>
+<div class="mrow"><span style="font-weight: 700">지방</span><span class="meter"><i style="width: 23%"></i></span><span style="text-align: right">23g</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px"><span class="est">밥 1.5공기 · 추정</span><span class="est">조기 1마리</span><span class="est">김치꽁치찌개 · 추정</span><span class="est">멸치볶음</span></div>
+</div>
+<div class="ask" style="margin-top: 12px">
+<p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: var(--tint-text)">1 / 2</p>
+<p class="q">내 밥 한 공기는 햇반 몇 개쯤이에요?</p>
+<p class="qd">한 번 정하면 다음부터 안 물어요</p>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><button type="button" class="pick" style="justify-content: center">1개</button><button type="button" class="pick" style="justify-content: center">1.5개</button><button type="button" class="pick" style="justify-content: center">2개</button></div>
+<button type="button" style="margin-top: 10px; border: 0; background: none; padding: 8px 0; font-size: 14px; font-weight: 600; color: var(--tint-text)">건너뛰기</button>
+</div>
+<p class="sec">누구의 끼니</p>
+<div class="seg" role="group" aria-label="누구의 끼니"><button type="button" aria-pressed="false">나</button><button type="button" aria-pressed="true">단짝과 함께</button></div>
+<div class="list" style="margin-top: 8px">
+<div class="row" style="min-height: 52px"><span class="chip c-me">준민</span><span class="tx"><span class="ds">밥 1.5공기 · 나머지 1인분</span></span><span class="vl">890</span></div>
+<div class="row" style="min-height: 52px"><span class="chip c-her">단짝</span><span class="tx"><span class="ds">밥 1공기로 고침 · 예시</span></span><span class="vl">735</span></div>
+</div>
+<div class="foot"><button type="button" class="btn" style="width: 100%">둘 다 저장</button></div>
+</div>
+<script>var t=new URLSearchParams(location.search).get("theme");if(t)document.querySelector(".scr").dataset.theme=t;</script>
+</body>
+</html>

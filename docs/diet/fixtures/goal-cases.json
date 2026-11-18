@@ -1,0 +1,20 @@
+{
+  "_note": "goals.md 8절. 저장은 소수 그대로, 화면에서만 반올림. 비교는 ±0.1",
+  "activity": { "none": 1.2, "w1_3": 1.375, "w3_5": 1.55, "daily": 1.725 },
+  "cases": [
+    { "id": "G1", "in": { "sex": "m", "age": 25, "heightCm": 175, "weightKg": 70, "activity": "w3_5", "goal": "bulk" },
+      "out": { "bmr": 1673.75, "tdee": 2594.3, "kcal": 2853.7, "protein": 140.0, "fat": 79.3, "carb": 395.1 } },
+    { "id": "G2", "in": { "sex": "m", "age": 25, "heightCm": 175, "weightKg": 70, "activity": "w3_5", "goal": "keep" },
+      "out": { "kcal": 2594.3, "protein": 112.0, "fat": 72.1, "carb": 374.4 } },
+    { "id": "G3", "in": { "sex": "m", "age": 25, "heightCm": 175, "weightKg": 70, "activity": "w3_5", "goal": "cut" },
+      "out": { "kcal": 2209.3, "protein": 110.5, "proteinCapped": true, "fat": 61.4, "carb": 303.8 } },
+    { "id": "G4", "in": { "sex": "f", "age": 25, "heightCm": 162, "weightKg": 55, "activity": "w1_3", "goal": "cut" },
+      "out": { "bmr": 1276.5, "kcal": 1452.7, "protein": 72.6, "proteinCapped": true, "fat": 40.4, "carb": 199.7 } },
+    { "id": "G5", "rule": "K < BMR 이면 K = BMR. 예: 체중이 큰 사람이 '거의 안 함' + 감량으로 TDEE − 체중×5.5 가 BMR 아래로 내려가는 경우를 만들어 확인" }
+  ],
+  "statusRules": {
+    "fill":  ["protein", "bulk.kcal", "bulk.carb"],
+    "limit": ["fat", "cut.kcal", "cut.carb", "keep.kcal", "keep.carb"],
+    "text": { "fill.over": "달성 ✓ +{n}", "fill.under": "{n} 남음", "limit.over": "{n} 많음", "limit.under": "{n} 남음" }
+  }
+}
