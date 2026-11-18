@@ -772,7 +772,7 @@ async function tick(page, dateKey, key) {
   // 글자를 고쳐도 내 모양은 그대로
   await dj.click('[data-act="anniv-edit"]'); await dj.click('[data-act="anniv-save"]'); await dj.waitForTimeout(300);
   assert.strictEqual(await dj.getAttribute('[data-act="anniv-box"][aria-pressed="true"]', 'data-v'), 'ticket', '기념일을 저장해도 모양 유지');
-  assert.strictEqual(await dj.evaluate(() => localStorage.getItem('danjjakkung.box')), 'ticket', '이 기기에 기억');
+  assert.strictEqual(await dj.evaluate(() => Object.keys(localStorage).filter((k) => /^danjjakkung\.box\./.test(k)).map((k) => localStorage.getItem(k)).join()), 'ticket', '이 기기에 사람별로 기억');
   // 준민 폰에서 5가지를 하나씩 (390 · 320)
   for (const st of ['overlap', 'badge', 'ticket', 'polaroid', 'heart']) {
     await jm.click('.ubox [data-act="open-anniv"]'); await jm.waitForSelector('[data-act="anniv-box"]');
@@ -786,10 +786,12 @@ async function tick(page, dateKey, key) {
   }
   assert.ok(await dj.$('.ubox--ticket'), '준민이 바꿔도 다진 화면은 티켓');
   // 예전(v52)에 둘이 고른 모양이 있으면, 아직 안 고른 기기는 그걸 처음 값으로
-  await jm.evaluate(() => localStorage.removeItem('danjjakkung.box'));
+  await jm.evaluate(() => { Object.keys(localStorage).filter((k) => /^danjjakkung\.box\./.test(k)).forEach((k) => localStorage.removeItem(k)); });
   docs.set('couple/main', Object.assign({}, docs.get('couple/main'), { box: 'polaroid' })); await pushAll(['couple/main']);
-  await jm.waitForTimeout(300);
-  assert.ok(await jm.$('.ubox--polaroid'), 'v52 공유값을 처음 값으로');
+  const jmTab = await open(browser, '준민(새 탭)', { ctx: jm.context() }); // 같은 기기 · 새로 연 앱 (아직 안 고름)
+  await toAll(jmTab); await jmTab.waitForSelector('.ubox');
+  assert.ok(await jmTab.$('.ubox--polaroid'), 'v52 공유값을 처음 값으로');
+  await jmTab.close(); pages.splice(pages.indexOf(jmTab), 1);
   assert.ok(await dj.$('.ubox--ticket'), '이미 고른 기기는 내 선택 그대로');
   await dj.keyboard.press('Escape'); await dj.waitForTimeout(150);
   assert.ok(!(await dj.$('.sheet')), 'Esc 로 닫힘');

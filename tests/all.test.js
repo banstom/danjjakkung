@@ -176,4 +176,7 @@ test('v53 설정 줄 이름은 「테마」 · 박스 모양은 서버에 저장
   assert.ok(!src.includes('테마·사람 색'));
   const store = fs.readFileSync(path.join(ROOT, 'js', 'store.js'), 'utf8');
   assert.ok(!/saveBox/.test(store), '박스 모양은 각자 기기에');
+  const app = fs.readFileSync(path.join(ROOT, 'js', 'app.js'), 'utf8');
+  assert.ok(!/saveBox|'danjjakkung\.box'/.test(app), '회귀(점검 AI): v52 가 자동으로 써 둔 키는 안 씀 · 서버 저장 없음');
+  assert.match(app, /boxMem = id/, '저장 못 하는 브라우저에서도 이번엔 바뀜');
 });

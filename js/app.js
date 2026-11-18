@@ -98,7 +98,7 @@
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
   var TAB_IDS = ['routine', 'schedule', 'todo', 'look', 'all']; // v47: 「전체」
-  var LS_BOX = 'danjjakkung.box', LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
+  var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
@@ -2503,17 +2503,26 @@
     render(true);
   }
   /** v53 「우리 둘」 박스 모양 — 각자 고르고 각자 화면에서만 (테마처럼 이 기기에 저장).
-      아직 안 골랐으면 v52 때 둘이 같이 고른 모양(couple/main.box)을 처음 값으로 */
+      키는 사람마다 따로 (v52 가 자동으로 써 둔 예전 키(.box)는 고른 값이 아니라서 안 씀 — 점검 AI).
+      아직 안 골랐으면 v52 때 둘이 같이 고른 모양(couple/main.box)이 처음 값 — 그 값도 기억해 열 때 깜빡이지 않게.
+      저장이 안 되는 브라우저(사생활 모드)에서도 이번에는 바뀌게 boxMem 에도 둔다 */
+  var boxMem = null;
+  function boxKey(kind) { return 'danjjakkung.' + kind + '.' + (state.uid || ''); }
   function boxChoice() {
-    var A = RT.anniv, v = lsGet(LS_BOX);
+    var A = RT.anniv, v = boxMem || (state.uid ? lsGet(boxKey('box')) : null);
     if (v && A.cleanBox(v) === v) return v;
-    return A.cleanBox(state.couple && state.couple.box);
+    if (state.coupleLoaded) {
+      var seed = A.cleanBox(state.couple && state.couple.box);
+      if (state.uid && lsGet(boxKey('boxSeed')) !== seed) lsSet(boxKey('boxSeed'), seed);
+      return seed;
+    }
+    return A.cleanBox(state.uid ? lsGet(boxKey('boxSeed')) : null);
   }
   function annivBox(id) {
     var A = RT.anniv;
     if (!state.anniv) return;
     id = A.cleanBox(id); if (id === boxChoice()) return;
-    lsSet(LS_BOX, id);
+    boxMem = id; if (state.uid) lsSet(boxKey('box'), id);
     focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true;
     render(true);
   }
@@ -2729,6 +2738,7 @@
   function signOut() {
     if (!RT.firebase.signOut) return;
     if (RT.themes) RT.themes.forget(); // 다른 사람이 이 기기로 로그인해도 내 색이 남지 않게
+    boxMem = null; // 박스 모양은 사람마다 키가 따로라 남아도 다른 사람에게 안 보임
     // 로그아웃하면 이 기기로는 알림이 가지 않게 한다
     // (인터넷이 끊겨 있어도 로그아웃이 멈추지 않게 1.5초까지만 기다린다)
     var off = RT.push && RT.push.isOn() && store && state.uid ? RT.push.disable(store, state.uid).catch(function () {}) : Promise.resolve();
@@ -3253,12 +3263,12 @@
       if (!user) {
         // 로그아웃하면 로그인 칸으로 (방금 쓴 이메일은 남겨 둔다)
         state.auth = { mode: 'login', email: state.email || state.auth.email || '', password: '', error: '', busy: false, info: '' };
-        state.uid = null; state.email = '';
+        state.uid = null; state.email = ''; boxMem = null;
         state.status = 'login';
         render(true);
         return;
       }
-      state.uid = user.uid; state.email = user.email || '';
+      if (state.uid !== user.uid) boxMem = null; state.uid = user.uid; state.email = user.email || '';
       state.setup = { name: '', error: '', busy: false };
       if (!user.emailVerified) {
         // 이메일 인증 전에는 기록을 열지 않는다 (규칙도 막는다)
