@@ -43,7 +43,9 @@
   function tab(m) {
     var us = '<section class="card aus" aria-label="우리 둘">' +
       '<span class="aus__dots" aria-hidden="true"><span class="aus__dot aus__dot--me"></span><span class="aus__dot aus__dot--her"></span></span>' +
-      '<span class="aus__tx"><span class="aus__nm">우리 둘</span><span class="aus__ds">' + esc(m.dday || '우리가 시작한 날을 정해 볼까요?') + '</span></span>' +
+      '<span class="aus__tx"><span class="aus__nm">우리 둘</span>' +
+      // 기념일 규칙이 막혀 정할 수 없으면 안내 문구도 없음 (점검 AI)
+      (m.dday || !m.annivOff ? '<span class="aus__ds">' + esc(m.dday || '우리가 시작한 날을 정해 볼까요?') + '</span>' : '') + '</span>' +
       (m.annivOff ? '' : '<button type="button" class="aus__btn" data-act="open-anniv">기념일</button>') + '</section>';
     var map = m.map || {};
     var feats = '<h2 class="asec">우리 기능</h2><div class="afeat">' +
@@ -54,8 +56,9 @@
       '<span class="afeat__nm">운동·식단</span><span class="afeat__ico">' + svg(36, ICON.run) + '</span>' +
       '<span class="abadge">준비 중</span></button></div>';
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
-      row('open-notify', 'bell', '알림', '', m.notify, '알림 설정' + (m.notify ? ' (' + m.notify + ')' : '')) +
-      row('open-theme', 'palette', '테마·사람 색', '', m.theme, '테마·사람 색 (지금: ' + (m.theme || '') + ')') +
+      // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)
+      (m.notify ? row('open-notify', 'bell', '알림', '', m.notify, '알림 설정 (' + m.notify + ')') : '') +
+      (m.theme ? row('open-theme', 'palette', '테마·사람 색', '', m.theme, '테마·사람 색 (지금: ' + m.theme + ')') : '') +
       row('open-account', 'user', '계정', m.meName ? m.meName + ' 님으로 접속' : '', '', '계정' + (m.meName ? ' · ' + m.meName + ' 님으로 접속' : '')) +
       '</div>';
     return '<div class="all">' + us + feats + set + '</div>';
@@ -69,7 +72,7 @@
       '<span class="grabber" aria-hidden="true"></span>' +
       '<h2 id="account-title" class="sheet__title">계정</h2>' +
       '<p class="sheet__sub">' + esc((a.meName ? a.meName + ' 님으로 접속' : '접속 중') + (a.email ? ' · ' + a.email : '')) + '</p>' +
-      '<button type="button" class="close-btn acct__out" data-act="sign-out">로그아웃</button>' +
+      '<button type="button" class="acct__out" data-act="sign-out">로그아웃</button>' +
       '<button type="button" class="close-btn" data-act="close-account">닫기</button>' +
       '</section></div>';
   }

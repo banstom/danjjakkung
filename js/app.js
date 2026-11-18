@@ -1711,7 +1711,7 @@
   function allModel() {
     var v = state.couple && !state.coupleOff ? annivView(false) : null;
     return {
-      dday: v && !v.future ? v.line : '',
+      dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
       annivOff: !!state.coupleOff || !RT.anniv,
       map: { ready: false, count: 0, tiles: [] }, // 우리 지도는 M2 에서
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',

@@ -75,3 +75,19 @@ test('「전체」 탭 파일이 앱 · 오프라인 목록에 들어 있음, ?t
   const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
   assert.equal((app.match(/tab=\(routine\|schedule\|todo\|look\|all\)/g) || []).length, 2, '주소 · 알림 링크 둘 다');
 });
+
+test('점검 AI 회귀: 규칙이 막히면 「정해 볼까요?」 없음 · 못 쓰는 설정 줄은 숨김 · 로그아웃은 닫기와 다른 모양', () => {
+  const off = ALL.tab(Object.assign({}, base, { dday: '', annivOff: true }));
+  assert.doesNotMatch(off, /정해 볼까요/);
+  const bare = ALL.tab(Object.assign({}, base, { notify: '', theme: '' }));
+  assert.doesNotMatch(bare, /open-notify|open-theme/);
+  assert.match(bare, /open-account/);
+  const sh = ALL.accountSheet({ meName: '준민' });
+  assert.match(sh, /class="acct__out" data-act="sign-out"/);
+  assert.doesNotMatch(sh, /class="close-btn[^"]*" data-act="sign-out"/);
+});
+
+test('점검 AI 회귀: 시작일이 미래면 「○○부터 시작해요 · D-n」 (app.js allModel)', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
+  assert.match(app, /v\.future \? v\.startText \+ '부터 시작해요 · ' \+ v\.dText/);
+});
