@@ -24,12 +24,62 @@
       : '<span class="ubox__face"><span class="ubox__ring">' + inner + '</span>' + label + '</span>';
   }
 
-  /** b = { left, right, line1, line2, unset, off } */
+  var HEART = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.2 0 3.7 1.2 5.2 3 1.5-1.8 3-3 5.2-3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg>';
+
+  /** 가운데 글자 버튼 (기념일 시트 열기). 기념일 규칙이 없으면 버튼 아님 */
+  function mid(b, cls, inner) {
+    return b.off ? '<span class="ubox__mid ' + cls + '"><span class="ubox__l1">우리 둘</span></span>'
+      : '<button type="button" class="ubox__mid ' + cls + '" data-act="open-anniv" aria-label="' + esc((b.line1 || '') + ' · ' + (b.line2 || '') + ' · 기념일 보기') + '">' + inner + '</button>';
+  }
+  function lines(b) { return '<span class="ubox__l1">' + esc(b.line1) + '</span>' + (b.line2 ? '<span class="ubox__l2">' + esc(b.line2) + '</span>' : ''); }
+
+  /** 하트 잇기: 두 동그라미를 점선 + 하트로 잇고, 아래에 관계 이름 · 큰 숫자 · 다음 기념일 막대 */
+  function heart(b) {
+    var inner = b.count
+      ? '<span class="ubox__lab">' + esc(b.label) + '</span><span class="ubox__big">' + esc(b.countText) + '<small>일</small></span>' +
+        (b.prog ? '<span class="ubox__prog" aria-hidden="true"><span class="ubox__bar"><span class="ubox__fill" style="width:' + (+b.prog.pct || 0) + '%"></span></span>' +
+          '<span class="ubox__pl"><span>' + esc(b.prog.from) + '</span><span class="ubox__pn">' + esc(b.line2) + '</span></span></span>' : (b.line2 ? '<span class="ubox__l2">' + esc(b.line2) + '</span>' : ''))
+      : lines(b);
+    return '<section class="card ubox ubox--heart" aria-label="우리 둘">' +
+      '<div class="ubox__row">' + (b.left ? face(b.left) : '') + '<span class="ubox__link" aria-hidden="true"><span class="ubox__dash"></span><span class="ubox__heart">' + HEART + '</span></span>' + (b.right ? face(b.right) : '') + '</div>' +
+      mid(b, 'ubox__mid--heart', inner) + '</section>';
+  }
+
+  /** 단짝 티켓: 왼쪽 표(관계 이름 · 큰 숫자) + 오른쪽(두 사람 · 다음 기념일) */
+  function ticket(b) {
+    var stub = b.count
+      ? '<span class="ubox__lab">' + esc(b.label) + '</span><span class="ubox__big">' + esc(b.countText) + '</span><span class="ubox__unit">일째</span>'
+      : '<span class="ubox__l1">' + esc(b.line1 || '우리 둘') + '</span>';
+    var names = [b.left, b.right].filter(Boolean).map(function (p) { return esc(p.name); }).join(' &amp; ');
+    var nextLine = b.count && b.next ? '<span class="ubox__nl">다음 기념일</span><span class="ubox__nx"><b>' + esc(b.next.name) + '</b><span class="ubox__d">' + esc(b.next.d) + '</span></span>'
+      : b.count && b.todayName ? '<span class="ubox__nl">오늘은</span><span class="ubox__nx"><b>' + esc(b.todayName) + '</b><span class="ubox__d">🎉</span></span>'
+      : (b.line2 ? '<span class="ubox__nx"><span class="ubox__d">' + esc(b.line2) + '</span></span>' : '');
+    return '<section class="ubox ubox--ticket" aria-label="우리 둘">' +
+      mid(b, 'ubox__stub', stub) +
+      '<span class="ubox__perf" aria-hidden="true"></span>' +
+      '<div class="ubox__tbody"><div class="ubox__pair">' + (b.left ? face(b.left) : '') + (b.right ? face(b.right) : '') + '<span class="ubox__names">' + names + '</span></div>' +
+      '<div class="ubox__next">' + nextLine + '</div></div></section>';
+  }
+
+  /** 폴라로이드: 두 사진을 기울인 즉석 사진처럼 + 아래 글자 */
+  function polaroid(b) {
+    return '<section class="card ubox ubox--polaroid" aria-label="우리 둘">' +
+      '<div class="ubox__pics">' + (b.left ? face(b.left) : '') + (b.right ? face(b.right) : '') + '</div>' +
+      mid(b, 'ubox__mid--pol', lines(b)) + '</section>';
+  }
+
+  /** b = { style, left, right, line1, line2, off, count, label, countText, next, todayName, prog } */
   function box(b) {
-    var mid = b.off ? '<span class="ubox__mid"><span class="ubox__l1">우리 둘</span></span>'
-      : '<button type="button" class="ubox__mid" data-act="open-anniv" aria-label="' + esc((b.line1 || '') + ' · ' + (b.line2 || '') + ' · 기념일 보기') + '">' +
-        '<span class="ubox__l1">' + esc(b.line1) + '</span>' + (b.line2 ? '<span class="ubox__l2">' + esc(b.line2) + '</span>' : '') + '</button>';
-    return '<section class="card ubox" aria-label="우리 둘">' + (b.left ? face(b.left) : '') + mid + (b.right ? face(b.right) : '') + '</section>';
+    var st = b.style === 'ticket' ? ticket : b.style === 'polaroid' ? polaroid : heart;
+    return st(b);
+  }
+
+  /** 기념일 시트의 「박스 모양」 고르기 (v52). o = { current, boxes: [{ id, name }], busy } */
+  function picker(o) {
+    return '<h3 class="gsub" id="abox-title">박스 모양</h3><div class="abox" role="group" aria-labelledby="abox-title">' + o.boxes.map(function (x) {
+      return '<button type="button" class="abox__opt" data-act="anniv-box" data-v="' + esc(x.id) + '" aria-pressed="' + (o.current === x.id) + '"' + (o.busy ? ' disabled' : '') + '>' +
+        '<span class="abox__mini abox__mini--' + esc(x.id) + '" aria-hidden="true"><i></i><i></i></span><span class="abox__nm">' + esc(x.name) + '</span></button>';
+    }).join('') + '</div><p class="anniv-form__note">둘이 같이 보는 모양이에요 · 글자는 「고치기」에서 바꿔요</p>';
   }
 
   /** 내 사진 시트. a = { name, img, error, busy } */
@@ -75,7 +125,7 @@
       '</section></div>';
   }
 
-  var api = { box: box, face: face, sheet: sheet, crop: crop, viewer: viewer };
+  var api = { box: box, picker: picker, face: face, sheet: sheet, crop: crop, viewer: viewer };
   root.RT = root.RT || {};
   root.RT.viewAvatar = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

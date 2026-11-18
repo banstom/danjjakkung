@@ -12,6 +12,10 @@
   var DEFAULT_LABEL = '단짝이 된 지';
   var OLD_LABELS = { '사귄 지': true };
   var MIN_YEAR = 1950;
+  // v52: 「우리 둘」 박스 모양 — 둘이 같이 보는 값 (couple/main.box). 글자(관계 이름)는 그대로 label
+  var BOXES = [{ id: 'heart', name: '하트 잇기' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }];
+  var DEFAULT_BOX = 'heart';
+  function cleanBox(v) { for (var i = 0; i < BOXES.length; i++) if (BOXES[i].id === v) return v; return DEFAULT_BOX; }
 
   function cleanLabel(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
 
@@ -22,7 +26,7 @@
     if (isNaN(n)) return null;
     var label = cleanLabel(doc.label);
     if (!label || label.length > LABEL_MAX || OLD_LABELS[label]) label = DEFAULT_LABEL;
-    return { start: n, startKey: doc.start, label: label, updatedBy: typeof doc.updatedBy === 'string' ? doc.updatedBy : null, updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : null };
+    return { start: n, startKey: doc.start, label: label, box: cleanBox(doc.box), updatedBy: typeof doc.updatedBy === 'string' ? doc.updatedBy : null, updatedAt: typeof doc.updatedAt === 'string' ? doc.updatedAt : null };
   }
 
   /** 오늘이 며칠째 (시작한 날 = 1일). 시작 전이면 0 이하. */
@@ -96,12 +100,16 @@
     var next = upcoming(a.start, today, 4).map(function (m) { return { name: m.name, kind: m.kind, date: fullDate(m.day) + ' ' + D.DOW[D.parts(m.day).w], d: dLabel(m.day, today), today: m.day === today }; });
     var todayOne = next.filter(function (m) { return m.today; })[0] || null;
     var yrs = 0; while (yearsAfter(a.start, yrs + 1) <= today) yrs++;
+    // v52 박스 막대: 지난 기념일(없으면 시작한 날) → 다음 기념일 사이 어디쯤인지
+    var nx = upcoming(a.start, today + 1, 1)[0], pv = past(a.start, today + 1, 1)[0];
+    var from = pv ? pv.day : a.start, prog = nx ? { from: pv ? pv.name : '시작', to: nx.name, pct: Math.max(0, Math.min(100, Math.round((today - from) / (nx.day - from) * 100))) } : null;
     return {
       label: a.label, count: count, countText: comma(count),
       line: a.label + ' ' + comma(count) + '일',
       startText: fullDate(a.start), years: yrs,
       today: todayOne ? todayOne.name : null,
       next: next.filter(function (m) { return !m.today; }).slice(0, 3),
+      prog: prog,
       past: past(a.start, today, 3).map(function (m) { return { name: m.name, date: fullDate(m.day) }; })
     };
   }
@@ -118,7 +126,7 @@
     return '';
   }
 
-  var api = { LABEL_MAX: LABEL_MAX, PRESETS: PRESETS, DEFAULT_LABEL: DEFAULT_LABEL, cleanLabel: cleanLabel, fromDoc: fromDoc, dayCount: dayCount, yearsAfter: yearsAfter,
+  var api = { BOXES: BOXES, DEFAULT_BOX: DEFAULT_BOX, cleanBox: cleanBox, LABEL_MAX: LABEL_MAX, PRESETS: PRESETS, DEFAULT_LABEL: DEFAULT_LABEL, cleanLabel: cleanLabel, fromDoc: fromDoc, dayCount: dayCount, yearsAfter: yearsAfter,
     between: between, upcoming: upcoming, past: past, dLabel: dLabel, fullDate: fullDate, build: build, validate: validate };
   root.RT = root.RT || {};
   root.RT.anniv = api;

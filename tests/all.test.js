@@ -22,7 +22,7 @@ test('아래 탭이 다섯 개, 마지막이 「전체」', () => {
 
 test('「전체」: 우리 둘 카드 · 단짝 기능 2칸 · 설정 3줄이 각 시트를 연다', () => {
   const html = ALL.tab(base);
-  assert.match(html, /우리 둘[^]*준민[^]*data-act="open-anniv"[^]*단짝이 된 지 412일[^]*500일까지 D-88[^]*다진/, 'v51 박스: 왼쪽 준민 · 가운데 디데이 · 오른쪽 다진');
+  assert.match(html, /우리 둘[^]*준민[^]*다진[^]*data-act="open-anniv"[^]*단짝이 된 지 412일[^]*500일까지 D-88/, 'v52 하트 잇기: 왼쪽 준민 · 오른쪽 다진 · 아래 디데이');
   assert.match(html, /data-act="all-map"[^]*단짝 지도/);
   assert.match(html, /data-act="all-diet"[^]*단짝 식탁[^]*목표 정하기/, 'D2: 준비 중 대신 목표 정하기');
   assert.match(ALL.tab(Object.assign({}, base, { diet: { ready: true, kcal: 2853.7, kind: 'bulk' } })), /하루 2,854kcal/);
@@ -43,6 +43,24 @@ test('v51 「우리 둘」 박스: 내 동그라미만 사진 버튼 · 단짝�
   assert.doesNotMatch(AV.box(Object.assign({}, us, { right: Object.assign({}, us.right, { img: 'data:image/jpeg;base64,AA) ;background:url(http://x' }) })), /http:\/\/x/, '회귀(점검 AI): 이상한 글자는 사진으로 안 씀');
   assert.match(AV.box(Object.assign({}, us, { line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/);
   assert.doesNotMatch(AV.box(Object.assign({}, us, { off: true })), /data-act="open-anniv"/);
+});
+
+test('v52 박스 모양 3가지: 글자는 관계 이름 그대로 · 사진 버튼은 모든 모양에서 같음 · 고르기 버튼', () => {
+  const v = Object.assign({}, us, { line1: '연애한 지 465일', line2: '500일까지 D-35', count: 465, label: '연애한 지', countText: '465', next: { name: '500일', d: 'D-35' }, todayName: null, prog: { from: '400일', to: '500일', pct: 65 } });
+  const h = AV.box(Object.assign({}, v, { style: 'heart' }));
+  assert.match(h, /ubox--heart[^]*ubox__heart[^]*ubox__lab">연애한 지<[^]*ubox__big">465<small>일[^]*width:65%[^]*400일[^]*500일까지 D-35/);
+  const t = AV.box(Object.assign({}, v, { style: 'ticket' }));
+  assert.match(t, /ubox--ticket[^]*data-act="open-anniv"[^]*연애한 지[^]*465[^]*일째[^]*준민 &amp; 다진[^]*다음 기념일[^]*500일[^]*D-35/);
+  const p = AV.box(Object.assign({}, v, { style: 'polaroid' }));
+  assert.match(p, /ubox--polaroid[^]*ubox__pics[^]*준민[^]*다진[^]*연애한 지 465일[^]*500일까지 D-35/);
+  for (const html of [h, t, p]) { assert.match(html, /data-act="ava-open"/); assert.match(html, /data-act="ava-view" data-v="d"/); }
+  assert.match(AV.box(Object.assign({}, v, { style: 'nope' })), /ubox--heart/, '모르는 모양은 하트 잇기');
+  assert.match(AV.box(Object.assign({}, us, { style: 'ticket', line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/, '날짜 없을 때도 티켓에 안내');
+  assert.match(AV.box(Object.assign({}, v, { style: 'ticket', next: null, todayName: '1주년' })), /오늘은[^]*1주년/);
+  assert.doesNotMatch(AV.box(Object.assign({}, v, { style: 'heart', prog: { from: 'a', to: 'b', pct: '5%;x' } })), /5%;x/, '막대 값은 숫자만');
+  const pk = AV.picker({ current: 'ticket', boxes: [{ id: 'heart', name: '하트 잇기' }, { id: 'ticket', name: '단짝 티켓' }, { id: 'polaroid', name: '폴라로이드' }], busy: false });
+  assert.match(pk, /data-act="anniv-box" data-v="ticket" aria-pressed="true"/); assert.match(pk, /data-v="heart" aria-pressed="false"/);
+  assert.match(AV.picker({ current: 'heart', boxes: [{ id: 'heart', name: '하트 잇기' }], busy: true }), / disabled/);
 });
 
 test('v52 사진 크게 보기: 사진 있는 동그라미는 누구 것이든 ava-view · 단짝 사진엔 바꾸기 없음 · 이상한 글자는 안 씀 · 512px 부터', () => {

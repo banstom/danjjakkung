@@ -223,7 +223,7 @@
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-star': 'data-v', 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
-    'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
+    'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
     if (INPUT_IDS.indexOf(el.id) >= 0) {
@@ -613,6 +613,7 @@
     else if (act === 'anniv-edit') annivEdit();
     else if (act === 'anniv-cancel') { if (state.anniv) { state.anniv.edit = null; focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true; render(true); } }
     else if (act === 'anniv-label') annivLabel(btn.getAttribute('data-v'));
+    else if (act === 'anniv-box') annivBox(btn.getAttribute('data-v'));
     else if (act === 'anniv-save') saveAnniv();
   });
 
@@ -2316,7 +2317,8 @@
     else if (!a) { line1 = '우리가 시작한 날을'; line2 = '정해 볼까요?'; }
     else if (v && v.future) { line1 = v.startText + '부터'; line2 = '시작까지 ' + v.dText; }
     else if (v) { line1 = v.line; line2 = v.today ? '오늘은 ' + v.today + '이에요 🎉' : v.next[0] ? v.next[0].name + '까지 ' + v.next[0].d : ''; }
-    return { left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A };
+    return { style: a ? a.box : (A ? A.DEFAULT_BOX : 'heart'), left: order[0] || null, right: order[1] || null, line1: line1, line2: line2, off: !!state.coupleOff || !A,
+      count: v && !v.future ? v.count : 0, label: v ? v.label : '', countText: v && !v.future ? v.countText : '', next: v && !v.future && v.next[0] ? v.next[0] : null, todayName: v && !v.future ? v.today : null, prog: v && !v.future ? v.prog : null };
   }
   function avaViewModel() {
     var uid = state.avaView && state.avaView.uid, d = uid && (state.avaDocs || {})[uid];
@@ -2452,7 +2454,7 @@
       var t = a.updatedAt ? D.dayOfIso(a.updatedAt) : NaN;
       by = (a.updatedBy === state.me ? '내가' : nameOf(a.updatedBy) + ' 님이') + (isNaN(t) ? '' : ' ' + D.label(t)) + ' 정했어요';
     }
-    return { view: a ? A.build(a, state.today) : null, by: by,
+    return { view: a ? A.build(a, state.today) : null, by: by, box: a ? { current: a.box, boxes: A.BOXES, busy: !!state.anniv.boxBusy } : null,
       edit: f ? Object.assign({}, f, { presets: A.PRESETS, max: A.LABEL_MAX, maxDate: D.toKey(state.today), sample: sampleCount(f.start) }) : null };
   }
   function sampleCount(key) {
@@ -2499,6 +2501,25 @@
     f.error = '';
     render(true);
   }
+  /** v52 「우리 둘」 박스 모양 — 누르면 바로 저장 (화면엔 먼저, 못 하면 되돌림) */
+  function annivBox(id) {
+    var A = RT.anniv, a = A.fromDoc(state.couple);
+    if (!store || !state.me || !state.anniv || state.anniv.boxBusy || !a) return;
+    id = A.cleanBox(id); if (id === a.box) return;
+    var before = state.couple;
+    state.couple = Object.assign({}, state.couple, { box: id, updatedBy: state.me, updatedAt: new Date().toISOString() });
+    state.anniv.boxBusy = true;
+    focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true;
+    render(true);
+    store.saveBox(id, state.me).then(function () {
+      if (state.anniv) state.anniv.boxBusy = false;
+      focusAfter = ['[data-act="anniv-box"][data-v="' + id + '"]']; focusInSheet = true; render(true);
+    }, function () {
+      if (state.couple && state.couple.box === id) state.couple = before;
+      if (state.anniv) state.anniv.boxBusy = false;
+      showToast('바꾸지 못했어요. 인터넷 연결을 확인해 주세요'); render(true);
+    });
+  }
   function saveAnniv() {
     var A = RT.anniv, f = state.anniv && state.anniv.edit;
     if (!store || !f || f.saving || !state.me) return;
@@ -2508,7 +2529,7 @@
     var c = { start: f.start, label: A.cleanLabel(f.label) };
     var before = state.couple;
     f.saving = true; f.error = '';
-    state.couple = { start: c.start, label: c.label, updatedBy: state.me, updatedAt: new Date().toISOString() }; // 화면에는 먼저
+    state.couple = Object.assign({}, state.couple, { start: c.start, label: c.label, updatedBy: state.me, updatedAt: new Date().toISOString() }); // 화면에는 먼저 (박스 모양은 그대로)
     state.anniv.edit = null;
     focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true;
     render(true);

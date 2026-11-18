@@ -1110,6 +1110,7 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 
 /* ── 「우리 둘」 박스 · 프로필 사진 (v51) ── */
 .ubox { display: flex; align-items: center; gap: 8px; padding: 14px 12px; }
+.ubox--heart, .ubox--polaroid { flex-direction: column; align-items: stretch; }
 .ubox__face { flex-shrink: 0; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 6px; border: 0; background: none; padding: 0; font: inherit; color: inherit; }
 button.ubox__face { cursor: pointer; }
 .ubox__ring { position: relative; width: 64px; height: 64px; }
@@ -1133,6 +1134,79 @@ span.ubox__mid { cursor: default; }
 .acrop__mask { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 999px color-mix(in srgb, var(--bg) 62%, transparent); pointer-events: none; outline: 2px solid var(--surface); }
 .acrop__zoom input { width: 100%; accent-color: var(--accent); }
 .ubox__l2 { white-space: nowrap; }
+/* v52 박스 모양 3가지 — 하트 잇기 · 단짝 티켓 · 폴라로이드 (글자는 관계 이름 그대로) */
+.ubox__lab { font-size: 13px; font-weight: 700; color: var(--tint-text); word-break: keep-all; }
+.ubox__big { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
+.ubox__big small { font-size: 20px; font-weight: 800; margin-left: 1px; }
+/* 하트 잇기 */
+.ubox--heart { background: var(--tint); padding: 18px 16px 16px; gap: 10px; }
+.ubox__row { display: flex; align-items: flex-start; }
+.ubox__link { flex: 1; position: relative; height: 64px; display: flex; align-items: center; justify-content: center; }
+.ubox__dash { position: absolute; left: 6px; right: 6px; top: 50%; border-top: 2px dashed color-mix(in srgb, var(--strong) 45%, transparent); }
+.ubox__heart { position: relative; width: 40px; height: 40px; border-radius: 50%; background: var(--surface); color: var(--strong); display: flex; align-items: center; justify-content: center; box-shadow: var(--lift); animation: ubeat 1.6s ease-in-out infinite; }
+@keyframes ubeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+.ubox--heart .ubox__ph { box-shadow: 0 0 0 3px var(--surface); }
+.ubox__mid--heart { gap: 2px; padding: 0; width: 100%; }
+.ubox__prog { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 10px; }
+.ubox__bar { display: block; height: 8px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+.ubox__fill { display: block; height: 100%; border-radius: 999px; background: var(--lv-full); }
+.ubox__pl { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.ubox__pn { color: var(--tint-text); }
+/* 단짝 티켓 */
+.ubox--ticket { gap: 0; padding: 0; align-items: stretch; min-height: 150px; filter: drop-shadow(var(--lift)); }
+.ubox__stub { flex: 0 0 108px; border-radius: 20px 6px 6px 20px; background: var(--secondary); color: var(--text); gap: 0; justify-content: center; padding: 10px 6px; }
+.ubox__stub .ubox__lab { color: var(--text); opacity: 0.8; font-size: 11px; letter-spacing: 0.02em; }
+.ubox__stub .ubox__big { font-size: 34px; }
+.ubox__unit { font-size: 12px; font-weight: 700; }
+.ubox__perf { flex: 0 0 0; margin: 10px 0; border-left: 3px dotted var(--faint); }
+.ubox__tbody { flex: 1; min-width: 0; border-radius: 6px 20px 20px 6px; background: var(--surface); padding: 14px 14px 14px 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.ubox__pair { display: flex; align-items: center; min-width: 0; }
+.ubox--ticket .ubox__face { width: 44px; }
+.ubox--ticket .ubox__face + .ubox__face { margin-left: 6px; } /* 겹치면 내 카메라 표시가 가려짐 */
+.ubox--ticket .ubox__ring, .ubox--ticket .ubox__ph { width: 44px; height: 44px; }
+.ubox--ticket .ubox__ph { box-shadow: 0 0 0 2px var(--surface); }
+.ubox--ticket .ubox__ini { font-size: 16px; }
+.ubox--ticket .ubox__nm { display: none; }
+.ubox--ticket .ubox__cam { width: 18px; height: 18px; right: -4px; bottom: -4px; }
+.ubox--ticket .ubox__cam svg { width: 11px; height: 11px; }
+.ubox__names { margin-left: 10px; font-size: 16px; font-weight: 800; min-width: 0; line-height: 1.3; word-break: keep-all; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ubox__next { display: flex; flex-direction: column; gap: 2px; }
+.ubox__nl { font-size: 11px; font-weight: 700; color: var(--sub); }
+.ubox__nx { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ubox__nx b { font-size: 17px; font-weight: 900; }
+.ubox__d { font-size: 13px; font-weight: 800; color: var(--tint-text); background: var(--tint); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+/* 폴라로이드 */
+.ubox--polaroid { background: var(--raised); padding: 22px 16px 16px; gap: 14px; align-items: center; }
+.ubox__pics { display: flex; justify-content: center; align-items: flex-start; }
+.ubox--polaroid .ubox__face { width: 118px; box-sizing: border-box; padding: 8px 8px 10px; gap: 8px; background: var(--surface); border-radius: 6px; box-shadow: var(--toast-shadow); transform: rotate(-5deg); position: relative; }
+.ubox--polaroid .ubox__face + .ubox__face { margin-left: -10px; margin-top: 8px; transform: rotate(4deg); }
+.ubox--polaroid .ubox__face::before { content: ''; position: absolute; top: -9px; left: 39px; width: 40px; height: 16px; border-radius: 2px; background: var(--primary); opacity: 0.85; transform: rotate(6deg); }
+.ubox--polaroid .ubox__ring, .ubox--polaroid .ubox__ph { width: 102px; height: 102px; }
+.ubox--polaroid .ubox__ph { border-radius: 4px; box-shadow: none; }
+.ubox--polaroid .ubox__ini { font-size: 32px; }
+.ubox--polaroid .ubox__nm { color: var(--text); font-size: 13px; font-weight: 800; max-width: 100px; }
+.ubox--polaroid .ubox__cam { right: 4px; bottom: 4px; }
+.ubox__mid--pol { padding: 0; }
+.ubox__mid--pol .ubox__l1 { font-size: 19px; font-weight: 900; }
+/* 기념일 시트의 박스 모양 고르기 */
+.abox { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.abox__opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); font: inherit; color: var(--text); cursor: pointer; min-height: 44px; }
+.abox__opt[aria-pressed="true"] { border-color: var(--accent); background: var(--tint); }
+.abox__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.abox__opt:disabled { cursor: default; opacity: 0.7; }
+.abox__nm { font-size: 12px; font-weight: 700; }
+.abox__mini { position: relative; display: flex; align-items: center; justify-content: center; width: 64px; height: 36px; }
+.abox__mini i { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--me); }
+.abox__mini i + i { background: var(--her); }
+.abox__mini--heart i + i { margin-left: 22px; }
+.abox__mini--heart::after { content: ''; position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; background: var(--strong); transform: translate(-50%, -50%) rotate(45deg); border-radius: 2px; }
+.abox__mini--ticket { border-radius: 8px; background: var(--raised); justify-content: flex-start; padding-left: 26px; box-sizing: border-box; }
+.abox__mini--ticket::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 20px; border-radius: 8px 2px 2px 8px; background: var(--secondary); }
+.abox__mini--ticket i { width: 14px; height: 14px; }
+.abox__mini--ticket i + i { margin-left: -4px; }
+.abox__mini--polaroid i { width: 22px; height: 26px; border-radius: 2px; border: 3px solid var(--surface); border-bottom-width: 7px; box-shadow: var(--lift); transform: rotate(-6deg); }
+.abox__mini--polaroid i + i { margin-left: -4px; transform: rotate(5deg); }
+@media (prefers-reduced-motion: reduce) { .ubox__heart { animation: none; } }
 @media (max-width: 360px) {
   .ubox { gap: 4px; padding: 12px 8px; }
   .ubox__face { width: 60px; }
@@ -1140,6 +1214,14 @@ span.ubox__mid { cursor: default; }
   .ubox__ini { font-size: 18px; }
   .ubox__l1 { font-size: 15px; }
   .ubox__l2 { font-size: 12px; padding: 3px 8px; }
+  .ubox--heart { padding: 16px 12px 14px; }
+  .ubox__stub { flex-basis: 92px; }
+  .ubox__stub .ubox__big { font-size: 28px; }
+  .ubox--ticket .ubox__ring, .ubox--ticket .ubox__ph { width: 38px; height: 38px; }
+  .ubox--ticket .ubox__face { width: 38px; }
+  .ubox__names { font-size: 14px; }
+  .ubox--polaroid .ubox__face { width: 104px; }
+  .ubox--polaroid .ubox__ring, .ubox--polaroid .ubox__ph { width: 88px; height: 88px; }
 }
 
 /* ── 사진 크게 보기 (v52) ── */

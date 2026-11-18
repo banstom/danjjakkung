@@ -150,6 +150,7 @@
       '<div class="sheet__head"><h2 id="anniv-title" class="sheet__title">우리 기념일</h2>' +
       (v && !f ? '<button type="button" class="mini-btn" data-act="anniv-edit">고치기</button>' : '') + '</div>' +
       body +
+      (v && !f && s.box && root.RT && root.RT.viewAvatar ? root.RT.viewAvatar.picker(s.box) : '') + // v52 박스 모양
       (v && !f && s.by ? '<p class="anniv__by">' + esc(s.by) + '</p>' : '') +
       (!f ? '<button type="button" class="close-btn" data-act="close-anniv">닫기</button>' : '') +
       '</section></div>';

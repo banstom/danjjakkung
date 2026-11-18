@@ -76,7 +76,18 @@ test('규칙: couple/main — 관계 이름 글자 수가 앱과 같음', () => 
   const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
   assert.ok(rules.includes('match /couple/{id}'));
   assert.ok(rules.includes("request.resource.data.label.size() <= " + A.LABEL_MAX));
-  assert.ok(rules.includes("hasOnly(['start', 'label', 'updatedBy', 'updatedAt'])"));
+  assert.ok(rules.includes("hasOnly(['start', 'label', 'box', 'updatedBy', 'updatedAt'])"));
+  assert.ok(rules.includes("request.resource.data.box in [" + A.BOXES.map((b) => "'" + b.id + "'").join(', ') + "]"), 'v52 박스 모양 목록 = 앱 목록');
+});
+
+test('v52 박스 모양: 저장값이 이상하면 하트 잇기 · 막대는 지난 기념일 → 다음 기념일', () => {
+  assert.equal(A.fromDoc({ start: '2025-01-01', label: '만난 지' }).box, 'heart');
+  assert.equal(A.fromDoc({ start: '2025-01-01', label: '만난 지', box: 'ticket' }).box, 'ticket');
+  assert.equal(A.fromDoc({ start: '2025-01-01', label: '만난 지', box: '<x>' }).box, 'heart');
+  const s = d(2025, 1, 1);
+  assert.deepEqual(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 49).prog, { from: '시작', to: '100일', pct: 49 }, '첫 기념일 전엔 시작한 날부터');
+  assert.deepEqual(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 99).prog, { from: '100일', to: '200일', pct: 0 }, '기념일 당일은 다음 기념일까지 0%');
+  assert.equal(A.build(A.fromDoc({ start: '2025-01-01', label: '만난 지' }), s + 149).prog.pct, 50);
 });
 
 test('v47 용어: 예전에 저장된 「사귄 지」는 「단짝이 된 지」로 보이고, 고를 거리에도 「사귄」이 없다', () => {
