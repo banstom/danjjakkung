@@ -90,7 +90,7 @@
       body = head + '<p class="sheet__sub">' + (st.rankNo ? '다녀온 곳 별점 ' + st.rankNo + '위 · ' : '') + '마지막 ' + esc(s.lastText) +
         (s.wishNo ? ' · 또 가고 싶은 곳 ' + s.wishNo + '위' : '') + '</p>' +
         starCard(st) +
-        '<div class="mbtns mbtns--stack"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button>' +
+        '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button>' +
         (s.wishNo ? '<button type="button" class="mbtn" data-act="map-rank">순위 바꾸기</button>' : '<button type="button" class="mbtn" data-act="map-wish">또 가고 싶은 곳에 담기</button>') + '</div>' +
         (s.wishNo ? '<div class="mdel"><button type="button" class="text-btn" data-act="map-unwish">가고 싶은 곳에서 빼기</button></div>' : '') +
         '<ul class="mvisits">' + s.visitsView.map(function (v) {

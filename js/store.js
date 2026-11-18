@@ -178,11 +178,22 @@
           });
         });
       },
-      /** 가고 싶은 곳 순위 키를 한 번에 다시 매긴다 (간격이 너무 좁아졌을 때). keys = { code: key } */
-      setWishKeys: function (keys, uid) {
-        var b = db.batch(), at = new Date().toISOString();
-        Object.keys(keys).forEach(function (c) { b.update(db.doc('places/' + c), { wishRank: keys[c], updatedBy: uid, updatedAt: at }); });
-        return b.commit();
+      /** 여러 places 문서를 한 트랜잭션에서 읽고 고친다. fn({ code: 지금 값 | 없음 }) → { code: 바꿀 칸 } (v50 순위 · 다시 매기기) */
+      transactPlaces: function (codes, uid, fn) {
+        var refs = {}, at = new Date().toISOString();
+        codes.forEach(function (c) { refs[c] = db.doc('places/' + c); });
+        return db.runTransaction(function (tx) {
+          var list = Object.keys(refs);
+          return Promise.all(list.map(function (c) { return tx.get(refs[c]); })).then(function (snaps) {
+            var data = {}; snaps.forEach(function (sn, i) { if (sn.exists) data[list[i]] = sn.data(); });
+            var writes = fn(data);
+            Object.keys(writes).forEach(function (c) {
+              var cur = data[c] || {};
+              var next = Object.assign({ visits: [], stars: {} }, cur, writes[c], { code: c, updatedBy: uid, updatedAt: at });
+              tx.set(refs[c] || db.doc('places/' + c), next);
+            });
+          });
+        });
       },
       // couple/main : { start: 'YYYY-MM-DD', label, updatedBy, updatedAt } — 우리 기념일 (v46, 둘이 같이 쓰고 둘 다 고친다)
       watchCouple: function (next, fail) {

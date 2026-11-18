@@ -159,6 +159,7 @@
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
     if (state.map) mountMap();
+    if (mdrag && !mdrag.li.isConnected) mdrag = null; // 강제로 다시 그려 줄이 사라졌으면 끌기 끝
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
     if (state.eventForm) state.eventForm.errorFresh = false;
@@ -1829,8 +1830,9 @@
   }
   function mapUnsel() {
     if (!state.map) return;
-    state.map.sel = null; state.map.sheet = null;
-    focusAfter = ['[data-act="map-zoom"][data-v="1"]'];
+    var code = state.map.sel;
+    state.map.sel = null; state.map.sheet = null; state.map.star = null;
+    focusAfter = ['.mrow__main[data-v="' + code + '"]', '[data-act="map-zoom"][data-v="1"]', '[data-act="map-close"]']; // 목록에서 열었으면 그 줄로
     render(true);
   }
   function todayKey() { return D.toKey(state.today); }
@@ -1855,7 +1857,7 @@
       visitsView: vv, lastText: p && p.visits.length ? P.dateText(p.visits[p.visits.length - 1].date, tk) : '',
       wishNo: p && p.wishRank !== null ? P.wishList(placeList()).map(function (x) { return x.code; }).indexOf(code) + 1 : null,
       stars: p ? (function () { var pi = partnerInfo(), uid = state.uid || state.me, avg = P.avgStars(p);
-        return { me: p.stars[uid] || 0, partner: pi.partner ? p.stars[pi.partner] || 0 : 0, meSlot: pi.meSlot, partnerSlot: pi.partnerSlot, partnerName: pi.partnerName, avgText: P.avgText(avg), rankNo: P.starRank(placeList(), code) }; })() : null };
+        return { me: shownStar(code, uid), partner: pi.partner ? p.stars[pi.partner] || 0 : 0, meSlot: pi.meSlot, partnerSlot: pi.partnerSlot, partnerName: pi.partnerName, avgText: P.avgText(avg), rankNo: P.starRank(placeList(), code) }; })() : null };
   }
   function saveVisit() {
     var m = state.map, f = m && m.sheet && m.sheet.form;
@@ -1871,7 +1873,7 @@
     store.updatePlace(code, uid, function (cur) {
       var next = Object.assign({}, cur || {});
       next.visits = RT.places.withVisit(cur && cur.visits, visit);
-      next.wishRank = null; // 함께 다녀왔으면 가고 싶은 곳에서 빠진다
+      next.wishRank = null; next.wishNote = ''; // 함께 다녀왔으면 가고 싶은 곳에서 빠진다 (메모도 같이)
       if (!next.stars) next.stars = {};
       return next;
     }).then(function () {
@@ -1943,7 +1945,9 @@
     return { meSlot: me ? me.slot : 'me', partner: pt ? pt.key : null, partnerSlot: pt ? pt.slot : 'her', partnerName: pt ? pt.name : '단짝' };
   }
   function wishRows(pl) {
-    return RT.places.wishList(pl).map(function (p, i) { return { code: p.code, no: i + 1, name: RT.places.fullName(mapData, p.code), note: p.wishNote, again: p.visits.length > 0 }; });
+    var list = RT.places.wishList(pl), ord = state.map && state.map.wishOrder;
+    if (ord) list = list.slice().sort(function (a, b) { var i = ord.indexOf(a.code), j = ord.indexOf(b.code); return (i < 0 ? 1e9 : i) - (j < 0 ? 1e9 : j); });
+    return list.map(function (p, i) { return { code: p.code, no: i + 1, name: RT.places.fullName(mapData, p.code), note: p.wishNote, again: p.visits.length > 0 }; });
   }
   function beenRows(pl, sort) {
     var tk = todayKey();
@@ -1952,7 +1956,7 @@
   function openRank(code, change) {
     var pl = placeList(), p = pl[code] || null, list = RT.places.wishList(pl).filter(function (x) { return x.code !== code; });
     var cur = p && p.wishRank !== null ? RT.places.wishList(pl).map(function (x) { return x.code; }).indexOf(code) : -1;
-    state.map.rank = { code: code, idx: cur >= 0 ? cur : list.length, note: p ? p.wishNote : '', saving: false, error: '', change: cur >= 0 };
+    state.map.rank = { code: code, idx: cur >= 0 ? cur : list.length, idx0: cur, note: p && cur >= 0 ? p.wishNote : '', saving: false, error: '', change: cur >= 0 };
     state.map.find = null; state.sheetEntering = true;
     focusAfter = ['[data-act="map-rank-move"]:not([disabled])', '[data-act="map-rank-save"]']; focusInSheet = true;
     render(true);
@@ -1972,34 +1976,43 @@
     focusAfter = ['[data-act="map-rank-move"][data-v="' + d + '"]:not([disabled])', '[data-act="map-rank-move"]:not([disabled])']; focusInSheet = true;
     render(true);
   }
-  /** code 를 가고 싶은 곳 idx 자리에 둔다 (opts.note: 메모를 같이 바꿀 때). 간격이 좁으면 다른 곳 키를 한 번에 다시 매긴 뒤 */
-  function placeWish(code, idx, opts) {
-    var uid = state.uid || state.me, P = RT.places, pl = placeList();
-    var list = P.wishList(pl).filter(function (x) { return x.code !== code; });
-    var k = P.keyAt(list, idx), first = Promise.resolve(), key = k.key;
-    if (k.rebalance) {
-      var order = list.map(function (x) { return x.code; }); order.splice(idx, 0, code);
-      var keys = P.rebalance(order); key = keys[code]; delete keys[code];
-      first = store.setWishKeys(keys, uid);
-    }
-    return first.then(function () {
-      return store.updatePlace(code, uid, function (cur) {
-        var next = Object.assign({}, cur || {}), was = cur && typeof cur.wishRank === 'number';
-        next.wishRank = key;
-        if (opts && typeof opts.note === 'string') next.wishNote = P.cleanNote(opts.note);
-        if (!was) { next.wishedAt = new Date().toISOString(); next.wishedBy = uid; }
-        if (!next.visits) next.visits = [];
-        if (!next.stars) next.stars = {};
-        return next;
-      });
+  /** code 를 가고 싶은 곳에 둔다 — 바로 앞 이웃(prev 코드, null = 맨 앞) 뒤로.
+      한 트랜잭션 안에서 지금 저장된 값을 읽고 계산한다: 그 사이 단짝이 빼거나 다녀온 곳은 되살리지 않고(점검 AI),
+      간격이 너무 좁으면 그 자리에서 모두 다시 매긴다. fallbackIdx = 이웃이 사라졌을 때 쓸 자리 */
+  function placeWish(code, prev, fallbackIdx, opts) {
+    var uid = state.uid || state.me, P = RT.places;
+    var codes = P.wishList(placeList()).map(function (x) { return x.code; }).concat([code]);
+    return store.transactPlaces(codes, uid, function (data) {
+      var fresh = P.fromDocs(data), list = P.wishList(fresh).filter(function (x) { return x.code !== code; });
+      var at = prev === null ? 0 : list.map(function (x) { return x.code; }).indexOf(prev) + 1;
+      if (prev !== null && at === 0) at = Math.max(0, Math.min(list.length, fallbackIdx));
+      var k = P.keyAt(list, at), writes = {}, key = k.key;
+      if (k.rebalance) {
+        var order = list.map(function (x) { return x.code; }); order.splice(at, 0, code);
+        var keys = P.rebalance(order); key = keys[code];
+        Object.keys(keys).forEach(function (c) { if (c !== code) writes[c] = { wishRank: keys[c] }; });
+      }
+      var cur = data[code], was = cur && typeof cur.wishRank === 'number';
+      var w = { wishRank: key };
+      if (opts && typeof opts.note === 'string') w.wishNote = P.cleanNote(opts.note);
+      if (!was) { w.wishedAt = new Date().toISOString(); w.wishedBy = uid; }
+      writes[code] = w;
+      return writes;
     });
+  }
+  /** 순위 화면 · 끌기에서 고른 자리 → 바로 앞 이웃 코드 (자리 번호 대신 이웃으로 저장해야 그 사이 목록이 바뀌어도 고른 자리가 맞다) */
+  function prevOf(code, idx) {
+    var list = RT.places.wishList(placeList()).filter(function (x) { return x.code !== code; });
+    return idx > 0 && list[idx - 1] ? list[idx - 1].code : null;
   }
   function saveRank() {
     var r = state.map && state.map.rank; if (!r || r.saving || !store) return;
     var ni = document.getElementById('mp-wnote'); if (ni) r.note = ni.value;
     r.saving = true; r.error = ''; render(true);
-    var no = r.idx + 1, change = r.change;
-    placeWish(r.code, r.idx, { note: r.note }).then(function () {
+    var no = r.idx + 1, change = r.change, p0 = placeList()[r.code];
+    // 「순위 바꾸기」에서 자리도 메모도 그대로면 저장하지 않고 닫기
+    if (change && r.idx === r.idx0 && RT.places.cleanNote(r.note) === (p0 ? p0.wishNote : '')) { state.map.rank = null; if (state.map.sel) { focusAfter = ['[data-act="map-rank"]']; focusInSheet = true; } render(true); return; }
+    placeWish(r.code, prevOf(r.code, r.idx), r.idx, { note: r.note }).then(function () {
       if (!state.map) return;
       state.map.rank = null;
       if (state.map.sel) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-rank"]']; focusInSheet = true; }
@@ -2020,22 +2033,39 @@
     }).then(function () { focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; showToast('가고 싶은 곳에서 뺐어요'); render(true); },
       function () { showToast('빼지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
-  /** 내 별점 (같은 별을 다시 누르면 지움) — 단짝 별점은 못 고침(규칙) */
+  /** 내 별점 (같은 별을 다시 누르면 지움) — 단짝 별점은 못 고침(규칙).
+      화면엔 state.map.star(기다리는 값)를 먼저 보이고, 저장은 한 번에 하나씩 · 마지막 값만 (빨리 여러 번 눌러도 순서가 안 꼬이게).
+      실패하면 기다리는 값을 지워 저장된 값으로 돌아간다 (점검 AI) */
+  function shownStar(code, uid) {
+    var ps = state.map && state.map.star;
+    if (ps && ps.code === code) return ps.v;
+    var p = placeList()[code]; return p ? p.stars[uid] || 0 : 0;
+  }
   function setStar(n) {
     var code = state.map && state.map.sel, uid = state.uid || state.me; if (!code || !store) return;
-    var p = placeList()[code], mine = p && p.stars[uid];
-    var nv = mine === n ? null : n;
-    // 화면에 먼저
-    var d = state.placeDocs && state.placeDocs[code];
-    if (d) { d.stars = Object.assign({}, d.stars || {}); if (nv) d.stars[uid] = nv; else delete d.stars[uid]; }
+    var nv = shownStar(code, uid) === n ? 0 : n;
+    var ps = state.map.star && state.map.star.code === code ? state.map.star : (state.map.star = { code: code, v: nv, busy: false });
+    ps.v = nv;
     focusAfter = ['[data-act="map-star"][data-v="' + n + '"]']; focusInSheet = true;
     render(true);
-    store.updatePlace(code, uid, function (cur) {
+    if (!ps.busy) flushStar(ps, uid);
+  }
+  function flushStar(ps, uid) {
+    var want = ps.v; ps.busy = true;
+    store.updatePlace(ps.code, uid, function (cur) {
       var next = Object.assign({}, cur || {}); next.stars = Object.assign({}, (cur && cur.stars) || {});
-      if (nv) next.stars[uid] = nv; else delete next.stars[uid];
+      if (want) next.stars[uid] = want; else delete next.stars[uid];
       if (!next.visits) next.visits = [];
       return next;
-    }).then(null, function () { showToast('별점을 저장하지 못했어요'); });
+    }).then(function () {
+      ps.busy = false;
+      if (ps.v !== want) { flushStar(ps, uid); return; } // 그 사이 또 눌렀으면 마지막 값으로 한 번 더
+      if (state.map && state.map.star === ps) { state.map.star = null; render(); }
+    }, function () {
+      ps.busy = false;
+      if (state.map && state.map.star === ps) state.map.star = null;
+      showToast('별점을 저장하지 못했어요'); render(true);
+    });
   }
   // 끌어서 순위 바꾸기: 가고 싶은 곳 목록(#mwish)의 손잡이 · 순위 고르기 화면(#mrank)의 강조 줄
   var mdrag = null;
@@ -2070,11 +2100,18 @@
     noClickUntil = Date.now() + 400;
     var code = D0.li.getAttribute('data-code'), idx = order.indexOf(code);
     if (D0.box.id === 'mrank') { if (state.map && state.map.rank) state.map.rank.idx = idx; render(true); return; }
+    // 저장이 끝날 때까지 놓은 순서를 들고 있는다 (원래 자리로 튀었다 옮겨지지 않게 — 점검 AI)
+    var prev = idx > 0 ? order[idx - 1] : null, tmp = order.slice();
+    if (state.map) state.map.wishOrder = tmp;
     render(true);
-    placeWish(code, idx).then(function () { showToast((idx + 1) + '위로 옮겼어요'); }, function () { showToast('순위를 바꾸지 못했어요'); render(true); });
+    var done = function () { if (state.map && state.map.wishOrder === tmp) { state.map.wishOrder = null; render(true); } };
+    placeWish(code, prev, idx).then(function () { done(); showToast((idx + 1) + '위로 옮겼어요'); }, function () { done(); showToast('순위를 바꾸지 못했어요'); });
   }
   appEl.addEventListener('pointerup', function (ev) { if (mdrag && ev.pointerId === mdrag.pid) mdragEnd(false); });
   appEl.addEventListener('pointercancel', function (ev) { if (mdrag && ev.pointerId === mdrag.pid) mdragEnd(true); });
+  // 끄는 도중 줄이 사라지면(뒤로가기 등으로 다시 그림) 끌기를 끝낸다 — 남아 있으면 다시 그리기가 계속 미뤄진다 (점검 AI)
+  //  (줄을 옮기는 insertBefore 도 캡처를 풀기 때문에, 줄이 화면에서 사라졌을 때만)
+  appEl.addEventListener('lostpointercapture', function (ev) { if (mdrag && ev.pointerId === mdrag.pid && !mdrag.li.isConnected) mdragEnd(true); }, true);
   appEl.addEventListener('touchmove', function (ev) { if (mdrag) ev.preventDefault(); }, { passive: false });
 
   function openFind() {
@@ -2083,7 +2120,7 @@
     focusAfter = ['#mp-q']; focusInSheet = true;
     render(true);
   }
-  function closeFind() { if (!state.map) return; state.map.find = null; focusAfter = ['[data-act="map-find"]']; render(true); }
+  function closeFind() { if (!state.map) return; var wish = state.map.find && state.map.find.mode === 'wish'; state.map.find = null; focusAfter = wish ? ['[data-act="map-wish-add"]'] : ['[data-act="map-find"]']; render(true); }
   function mapFindModel() {
     var pl = placeList();
     return { q: state.map.find.q, results: RT.places.search(mapData, state.map.find.q, 20).map(function (r) { return { code: r.code, name: r.name, been: !!(pl[r.code] && pl[r.code].visits.length) }; }) };
