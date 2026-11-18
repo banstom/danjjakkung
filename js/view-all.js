@@ -1,4 +1,4 @@
-/* 「전체」 탭 (v47) — 우리 둘 카드 · 우리 기능(우리 지도 · 운동·식단) · 설정 목록, 그리고 계정 시트.
+/* 「전체」 탭 (v47) — 우리 둘 카드 · 단짝 기능(단짝 지도 · 단짝 식탁) · 설정 목록, 그리고 계정 시트.
    목업 design/mockups/chosen/01-전체-탭.html (B 카드형). 값은 app.js 의 allModel() 이 만든다. */
 (function (root) {
   'use strict';
@@ -14,11 +14,11 @@
     bell: '<path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/>',
     palette: '<path d="M12 3a9 9 0 100 18c1.2 0 1.8-.8 1.8-1.7 0-1-.8-1.4-.8-2.3 0-1 .8-1.6 1.8-1.6H17a4 4 0 004-4c0-4.6-4-8.4-9-8.4z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
-    run: '<circle cx="14" cy="4.5" r="1.8"/><path d="M8 21l3-6 3 2.5V21M6.5 12.5l2.5-4 4 1.5 2.5 3 3 .5"/>',
+    bowl: '<path d="M3.5 11h17a8.5 8.5 0 01-17 0z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/>', // 단짝 식탁
     chev: '<path d="M9 6l6 6-6 6"/>'
   };
 
-  // 우리 지도 미리보기: 한국 모양으로 늘어놓은 작은 칸 (8px 간격 · 6px 칸). 정확한 지도가 아니라 모양만 (사용자 결정)
+  // 단짝 지도 미리보기: 한국 모양으로 늘어놓은 작은 칸 (8px 간격 · 6px 칸). 정확한 지도가 아니라 모양만 (사용자 결정)
   var TILES = [[4,0],[5,0],[3,1],[4,1],[5,1],[6,1],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],[2,3],[3,3],[4,3],[5,3],[6,3],[7,3],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],
     [3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[2,6],[3,6],[4,6],[5,6],[6,6],[7,6],[8,6],[2,7],[3,7],[4,7],[5,7],[6,7],[7,7],[8,7],[9,7],[2,8],[3,8],[4,8],[5,8],[6,8],[7,8],[8,8],[9,8],
     [3,9],[4,9],[5,9],[6,9],[7,9],[8,9],[3,10],[4,10],[4,12]];
@@ -48,12 +48,12 @@
       (m.dday || !m.annivOff ? '<span class="aus__ds">' + esc(m.dday || '우리가 시작한 날을 정해 볼까요?') + '</span>' : '') + '</span>' +
       (m.annivOff ? '' : '<button type="button" class="aus__btn" data-act="open-anniv">기념일</button>') + '</section>';
     var map = m.map || {};
-    var feats = '<h2 class="asec">우리 기능</h2><div class="afeat">' +
-      '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('우리 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +
-      '<span class="afeat__nm">우리 지도</span>' + mapPreview(map.tiles) +
+    var feats = '<h2 class="asec">단짝 기능</h2><div class="afeat">' +
+      '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('단짝 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +
+      '<span class="afeat__nm">단짝 지도</span>' + mapPreview(map.tiles) +
       (map.ready ? '<span class="afeat__ds">함께 ' + esc(map.count || 0) + '곳</span>' : '<span class="abadge">준비 중</span>') + '</button>' +
-      '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="운동·식단 · 준비 중">' +
-      '<span class="afeat__nm">운동·식단</span><span class="afeat__ico">' + svg(36, ICON.run) + '</span>' +
+      '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="단짝 식탁 · 준비 중">' +
+      '<span class="afeat__nm">단짝 식탁</span><span class="afeat__ico">' + svg(36, ICON.bowl) + '</span>' +
       '<span class="abadge">준비 중</span></button></div>';
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
       // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)

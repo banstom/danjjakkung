@@ -539,8 +539,8 @@
     else if (act === 'open-anniv') openAnniv();
     else if (act === 'open-account') openAccount();
     else if (act === 'close-account') closeAccount();
-    else if (act === 'all-map') showToast('우리 지도는 곧 열려요');
-    else if (act === 'all-diet') showToast('운동·식단은 준비 중이에요');
+    else if (act === 'all-map') showToast('단짝 지도는 곧 열려요');
+    else if (act === 'all-diet') showToast('단짝 식탁은 준비 중이에요');
     else if (act === 'close-anniv') closeAnniv();
     else if (act === 'anniv-edit') annivEdit();
     else if (act === 'anniv-cancel') { if (state.anniv) { state.anniv.edit = null; focusAfter = ['[data-act="anniv-edit"]']; focusInSheet = true; render(true); } }
@@ -1713,7 +1713,7 @@
     return {
       dday: !v ? '' : v.future ? v.startText + '부터 시작해요 · ' + v.dText : v.line, // 시작일이 미래면 돌아보기 카드와 같은 문구 (점검 AI)
       annivOff: !!state.coupleOff || !RT.anniv,
-      map: { ready: false, count: 0, tiles: [] }, // 우리 지도는 M2 에서
+      map: { ready: false, count: 0, tiles: [] }, // 단짝 지도는 M2 에서
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
       theme: RT.themes ? RT.themes.byId(RT.themes.current()).name : '',
       meName: state.me ? nameOf(state.me) : ''

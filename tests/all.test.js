@@ -17,11 +17,11 @@ test('아래 탭이 다섯 개, 마지막이 「전체」', () => {
   assert.match(html, /data-tab="all" aria-current="page"[^]*?<span>전체<\/span>/);
 });
 
-test('「전체」: 우리 둘 카드 · 우리 기능 2칸 · 설정 3줄이 각 시트를 연다', () => {
+test('「전체」: 우리 둘 카드 · 단짝 기능 2칸 · 설정 3줄이 각 시트를 연다', () => {
   const html = ALL.tab(base);
   assert.match(html, /우리 둘[^]*단짝이 된 지 412일[^]*data-act="open-anniv"/);
-  assert.match(html, /data-act="all-map"[^]*우리 지도/);
-  assert.match(html, /data-act="all-diet"[^]*운동·식단[^]*준비 중/);
+  assert.match(html, /data-act="all-map"[^]*단짝 지도/);
+  assert.match(html, /data-act="all-diet"[^]*단짝 식탁[^]*준비 중/);
   for (const act of ['open-notify', 'open-theme', 'open-account']) assert.match(html, new RegExp('data-act="' + act + '"'));
   assert.match(html, /알림<\/span><\/span><span class="arow__vl">켜짐/);
   assert.match(html, /Soft Pastel/);
@@ -33,11 +33,11 @@ test('「전체」: 기념일을 아직 안 정했으면 안내 문구, 규칙�
   assert.doesNotMatch(ALL.tab(Object.assign({}, base, { annivOff: true })), /data-act="open-anniv"/);
 });
 
-test('우리 지도 미리보기: 칠한 칸만 is-on (색은 --both 하나), 지도 준비 전엔 「준비 중」', () => {
+test('단짝 지도 미리보기: 칠한 칸만 is-on (색은 --both 하나), 지도 준비 전엔 「준비 중」', () => {
   const html = ALL.mapPreview([0, 5]);
   assert.equal((html.match(/is-on/g) || []).length, 2);
   assert.equal((html.match(/amap__tile/g) || []).length, ALL.TILES.length);
-  assert.match(ALL.tab(base), /우리 지도[^]*준비 중/);
+  assert.match(ALL.tab(base), /단짝 지도[^]*준비 중/);
   assert.match(ALL.tab(Object.assign({}, base, { map: { ready: true, count: 12, tiles: [] } })), /함께 12곳/);
   const css = fs.readFileSync(path.join(ROOT, 'styles/app.css'), 'utf8');
   assert.match(css, /\.amap__tile\.is-on \{ background: var\(--both\); \}/);
