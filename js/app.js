@@ -207,7 +207,7 @@
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
     'open-account': null, 'close-account': null, 'all-map': null, 'all-diet': null,
-    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-wish': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
+    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -557,8 +557,10 @@
     else if (act === 'map-zoom') mapZoom(Number(btn.getAttribute('data-v')));
     else if (act === 'map-unsel') mapUnsel();
     else if (act === 'map-visit') mapVisitForm();
-    else if (act === 'map-visit-cancel') { if (state.map && state.map.sheet) { if (state.map.sheet.back) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; render(true); } else mapUnsel(); } }
-    else if (act === 'map-visit-save') saveVisit();
+    else if (act === 'map-visit-cancel') { if (state.map && state.map.sheet) { if (state.map.sheet.back || state.map.sheet.mode === 'edit') { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; render(true); } else mapUnsel(); } }
+    else if (act === 'map-visit-save') { if (state.map && state.map.sheet && state.map.sheet.mode === 'edit') saveVisitEdit(); else saveVisit(); }
+    else if (act === 'map-visit-edit') mapEditForm(btn.getAttribute('data-v'));
+    else if (act === 'map-visit-delete') deleteVisit();
     else if (act === 'map-wish') showToast('가고 싶은 곳 담기는 곧 열려요');
     else if (act === 'map-find') openFind();
     else if (act === 'map-find-close') closeFind();
@@ -1834,7 +1836,7 @@
     var m = state.map, P = RT.places, code = m.sel, p = placeList()[code] || null, start = coupleStartKey(), tk = todayKey();
     var vv = p ? p.visits.slice().reverse().map(function (v, i, arr) {
       var n = arr.length - i;
-      return { nth: n === 1 ? '처음' : n + '번째', date: P.dateText(v.date, tk), note: v.note };
+      return { id: v.id, nth: n === 1 ? '처음' : n + '번째', date: P.dateText(v.date, tk), note: v.note };
     }) : [];
     return { code: code, name: P.fullName(mapData, code), place: p, mode: m.sheet.mode, form: m.sheet.form, noteMax: P.NOTE_MAX,
       startKey: start, startText: start ? RT.anniv.fullDate(D.parse(start)) : '', todayKey: tk,
@@ -1869,6 +1871,57 @@
       render(true);
     });
   }
+  // ── 방문 고치기 · 지우기 (v49) ──
+  function mapEditForm(id) {
+    var m = state.map, p = m && m.sel && placeList()[m.sel];
+    var i = p ? p.visits.map(function (v) { return v.id; }).indexOf(id) : -1;
+    if (i < 0) return;
+    var v = p.visits[i];
+    m.sheet = { mode: 'edit', form: { id: id, nth: i === 0 ? '처음' : (i + 1) + '번째', date: v.date, note: v.note, saving: false, error: '', errorFresh: false, confirmDelete: false } };
+    focusAfter = ['#mp-date']; focusInSheet = true;
+    render(true);
+  }
+  /** 고친 · 지운 기록 저장. change(visits) → 새 visits */
+  function writeVisits(change, okText, onFail) {
+    var m = state.map, f = m && m.sheet && m.sheet.form, code = m && m.sel, uid = state.uid || state.me;
+    if (!f || f.saving || !store) return;
+    f.saving = true; render(true);
+    store.updatePlace(code, uid, function (cur) {
+      var next = Object.assign({}, cur || {});
+      next.visits = change((cur && cur.visits) || []);
+      if (!next.stars) next.stars = {};
+      return next;
+    }).then(function () {
+      if (state.map && state.map.sel === code) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; }
+      showToast(okText);
+      render(true);
+    }, function (e) {
+      if (!state.map || !state.map.sheet || !state.map.sheet.form) return;
+      var ff = state.map.sheet.form, denied = e && (e.code === 'permission-denied' || /permission/.test(String(e.message || e)));
+      ff.saving = false; ff.confirmDelete = false; ff.errorFresh = true;
+      ff.error = denied ? onFail : '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요';
+      render(true);
+    });
+  }
+  function saveVisitEdit() {
+    var f = state.map && state.map.sheet && state.map.sheet.form;
+    if (!f || f.saving) return;
+    var di = document.getElementById('mp-date'), ni = document.getElementById('mp-note');
+    if (di) f.date = di.value;
+    if (ni) f.note = ni.value;
+    var err = RT.places.validateVisit(f.date, coupleStartKey(), todayKey());
+    if (err) { f.error = err; f.errorFresh = true; render(true); return; }
+    var id = f.id, date = f.date, note = RT.places.cleanNote(f.note);
+    writeVisits(function (vs) { return RT.places.withEdited(vs, id, date, note); }, '기록을 고쳤어요', '저장이 막혔어요. 다녀온 날이 단짝이 된 날보다 이르지 않은지 확인해 주세요');
+  }
+  function deleteVisit() {
+    var f = state.map && state.map.sheet && state.map.sheet.form;
+    if (!f || f.saving) return;
+    if (!f.confirmDelete) { f.confirmDelete = true; focusAfter = ['[data-act="map-visit-delete"]']; focusInSheet = true; render(true); return; }
+    var id = f.id;
+    writeVisits(function (vs) { return RT.places.withoutVisit(vs, id); }, '기록을 지웠어요', '지우지 못했어요. 잠시 뒤 다시 해 주세요');
+  }
+
   function openFind() {
     if (!state.map || !mapReady()) return;
     state.map.find = { q: '' }; state.sheetEntering = true;
@@ -2362,7 +2415,7 @@
     if (state.account) { closeAccount(); return; }
     if (state.map) {
       if (state.map.find) closeFind();
-      else if (state.map.sheet && state.map.sheet.mode === 'visit' && state.map.sheet.back) { state.map.sheet = { mode: 'view' }; render(true); }
+      else if (state.map.sheet && ((state.map.sheet.mode === 'visit' && state.map.sheet.back) || state.map.sheet.mode === 'edit')) { state.map.sheet = { mode: 'view' }; render(true); }
       else if (state.map.sel) mapUnsel();
       else closeMap();
       return;

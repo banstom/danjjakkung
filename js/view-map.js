@@ -72,22 +72,26 @@
         '<p class="mnote">단짝 지도는 단짝이 된 날부터 함께 다녀온 곳을 칠해요. 기념일에서 그날을 정하면 바로 기록할 수 있어요.</p>' +
         '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="open-anniv">기념일 정하기</button>' +
         '<button type="button" class="mbtn" data-act="map-visit-cancel">돌아가기</button></div>';
-    } else if (s.mode === 'visit') {
-      var f = s.form;
-      body = head + '<p class="sheet__sub">' + (visited ? '또 다녀온 날을 적어요' : '함께 다녀온 날을 적어요') + '</p>' +
+    } else if (s.mode === 'visit' || s.mode === 'edit') {
+      var f = s.form, editing = s.mode === 'edit';
+      body = head + '<p class="sheet__sub">' + (editing ? esc(f.nth) + ' 기록 고치기' : visited ? '또 다녀온 날을 적어요' : '함께 다녀온 날을 적어요') + '</p>' +
         '<div class="mform">' +
         '<label class="field"><span class="field__label">다녀온 날</span><input id="mp-date" class="field__input" type="date"' + (s.startKey ? ' min="' + esc(s.startKey) + '"' : '') + ' max="' + esc(s.todayKey) + '" value="' + esc(f.date) + '"></label>' +
         (s.startText ? '<p class="mnote">다녀온 날은 단짝이 된 날(' + esc(s.startText) + ')부터 고를 수 있어요</p>' : '') +
         '<label class="field"><span class="field__label">메모 (선택)</span><input id="mp-note" class="field__input" type="text" maxlength="' + s.noteMax + '" autocomplete="off" enterkeyhint="done" placeholder="예: 한옥마을 야경" value="' + esc(f.note) + '"></label>' +
         (f.error ? '<p class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
         '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="map-visit-cancel">돌아가기</button>' +
-        '<button type="button" class="solid-btn" data-act="map-visit-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div></div>';
+        '<button type="button" class="solid-btn" data-act="map-visit-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div>' +
+        // 지우기는 두 번 눌러야 (실수로 지우지 않게)
+        (editing ? '<div class="mdel"><button type="button" class="text-btn' + (f.confirmDelete ? ' text-btn--warn' : '') + '" data-act="map-visit-delete"' + (f.saving ? ' disabled' : '') + '>' +
+          (f.confirmDelete ? '한 번 더 누르면 이 기록을 지워요' : '이 기록 지우기') + '</button></div>' : '') + '</div>';
     } else if (visited) {
       body = head + '<p class="sheet__sub">마지막 ' + esc(s.lastText) + '</p>' +
         '<div class="mbtns"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button></div>' +
         '<ul class="mvisits">' + s.visitsView.map(function (v) {
-          return '<li><span class="mvisits__when">' + esc(v.nth) + ' · ' + esc(v.date) + '</span><span class="mvisits__note">' + esc(v.note || '메모 없음') + '</span></li>';
-        }).join('') + '</ul>';
+          return '<li><button type="button" class="mvisits__row" data-act="map-visit-edit" data-v="' + esc(v.id) + '" aria-label="' + esc(v.nth + ' · ' + v.date + ' 고치기') + '">' +
+            '<span class="mvisits__when">' + esc(v.nth) + ' · ' + esc(v.date) + '</span><span class="mvisits__note">' + esc(v.note || '메모 없음') + '</span></button></li>';
+        }).join('') + '</ul><p class="mnote">기록을 누르면 날짜 · 메모를 고치거나 지울 수 있어요</p>';
     } else {
       body = head + '<p class="sheet__sub">아직 함께 가 보지 않은 곳</p>' +
         '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">함께 다녀왔어요</button>' +

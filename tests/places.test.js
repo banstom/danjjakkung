@@ -146,3 +146,16 @@ test('회귀(v48 배포 실패): 규칙 함수 이름이 겹치지 않음 · 식
   const lines = r.split('\n');
   lines.forEach((l, i) => { if (/^\s*\/\//.test(l) && i > 0 && /(&&|\|\||\()\s*$/.test(lines[i - 1])) assert.fail('식 안 주석: ' + (i + 1) + '번째 줄'); });
 });
+
+test('v49 기록 고치기 · 지우기: 고친 뒤 날짜 순 · 지우면 그것만 빠짐 · 두 번 눌러야 지움', () => {
+  const vs = [v('2025-08-15', { id: 'a' }), v('2026-10-01', { id: 'b' })];
+  assert.deepEqual(P.withEdited(vs, 'b', '2025-07-30', '첫 여행').map((x) => x.id + x.date + x.note), ['b2025-07-30첫 여행', 'a2025-08-15']);
+  assert.deepEqual(P.withoutVisit(vs, 'a').map((x) => x.id), ['b']);
+  assert.deepEqual(P.withoutVisit(vs, 'zz').length, 2);
+  const base = { code: '52190', name: '전북 남원시', place: P.fromDoc('52190', { visits: vs }), startKey: '2025-07-20', todayKey: '2026-10-27', noteMax: 100,
+    visitsView: [{ id: 'b', nth: '2번째', date: '10월 1일', note: '' }, { id: 'a', nth: '처음', date: '2025년 8월 15일', note: '' }], lastText: '10월 1일' };
+  assert.match(VM.sheet(Object.assign({ mode: 'view' }, base)), /data-act="map-visit-edit" data-v="b"[^]*data-act="map-visit-edit" data-v="a"/);
+  const ed = (c) => VM.sheet(Object.assign({ mode: 'edit', form: { id: 'b', nth: '2번째', date: '2026-10-01', note: '', saving: false, error: '', confirmDelete: c } }, base));
+  assert.match(ed(false), /2번째 기록 고치기[^]*이 기록 지우기/);
+  assert.match(ed(true), /text-btn--warn[^]*한 번 더 누르면 이 기록을 지워요/);
+});

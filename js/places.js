@@ -64,6 +64,14 @@
     return out.slice(Math.max(0, out.length - VISITS_MAX));
   }
 
+  function byDate(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.createdAt || '') < (b.createdAt || '') ? -1 : 1; }
+  /** 방문 하나 빼기 (v49 — 실수로 두 번 적은 기록 지우기) */
+  function withoutVisit(visits, id) { return (visits || []).filter(function (v) { return v.id !== id; }); }
+  /** 방문 하나 고치기 (날짜 · 메모) → 다시 날짜 순 */
+  function withEdited(visits, id, date, note) {
+    return (visits || []).map(function (v) { return v.id === id ? Object.assign({}, v, { date: date, note: note }) : v; }).sort(byDate);
+  }
+
   /** 지역 이름: 「전북 남원시」 (시·도 짧은 이름 + 시군구). map = 지도 데이터 */
   function fullName(map, code) {
     var r = regionOf(map, code);
@@ -99,7 +107,7 @@
   }
 
   var api = { NOTE_MAX: NOTE_MAX, VISITS_MAX: VISITS_MAX, cleanNote: cleanNote, fromDoc: fromDoc, fromDocs: fromDocs, paint: paint, counts: counts,
-    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
+    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, withoutVisit: withoutVisit, withEdited: withEdited, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
   root.RT = root.RT || {};
   root.RT.places = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

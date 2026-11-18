@@ -846,6 +846,28 @@ async function tick(page, dateKey, key) {
   assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15', '2026-10-01'], '또 다녀왔어요 = 날짜 순');
   assert.match(await jm.textContent('.mvisits li'), /2번째 · 10월 1일/, '최근 것이 위');
   await jm.screenshot({ path: path.join(OUT, 'map-sheet-visited.png') });
+  // (v49) 실수로 두 번 적은 기록: 눌러서 고치기 → 두 번 눌러 지우기
+  await jm.click('.mvisits__row'); await jm.waitForSelector('#mp-date');
+  assert.match(await jm.textContent('.sheet__sub'), /2번째 기록 고치기/);
+  assert.strictEqual(await jm.inputValue('#mp-date'), '2026-10-01');
+  await jm.fill('#mp-date', '2025-07-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.rform__error'), /단짝이 된 날/, '고칠 때도 단짝이 된 날부터');
+  await jm.fill('#mp-date', '2026-09-30'); await jm.fill('#mp-note', '두 번째'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date + ' ' + v.note), ['2025-08-15 광한루 산책', '2026-09-30 두 번째'], '고친 기록 저장');
+  await jm.click('.mvisits__row'); await jm.waitForSelector('[data-act="map-visit-delete"]');
+  await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(100);
+  assert.match(await jm.textContent('[data-act="map-visit-delete"]'), /한 번 더 누르면/, '한 번 누르면 묻기만');
+  assert.strictEqual(docs.get('places/52190').visits.length, 2, '아직 안 지움');
+  await jm.screenshot({ path: path.join(OUT, 'map-visit-edit.png') });
+  await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
+  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15'], '두 번째 기록 지움');
+  assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
+  // 하나 남은 것도 지우면 칠하기가 빠지고 「아직 함께 가 보지 않은 곳」
+  await jm.click('.mvisits__row'); await jm.click('[data-act="map-visit-delete"]'); await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(docs.get('places/52190').visits.length, 0);
+  assert.doesNotMatch(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다 지우면 칠하기 빠짐');
+  assert.match(await jm.textContent('.sheet__sub'), /아직 함께 가 보지 않은 곳/);
+  await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2025-08-15'); await jm.fill('#mp-note', '광한루 산책'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300); // 뒤 시험을 위해 다시
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
   assert.ok(!(await jm.$('#mapsheet-title')), 'Esc 로 시트 닫힘');
   // 짝꿍 화면도 바로 칠해짐
