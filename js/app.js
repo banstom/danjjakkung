@@ -113,7 +113,7 @@
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
   }
   function render(force) {
-    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on))) { deferred = true; return; } // 끌고 있는 동안에도 미룬다
+    if (!force && (composing || typing() || (lift && lift.on) || (rlift && rlift.on) || (kmZoom && kmZoom.busy()))) { deferred = true; return; } // 끌고 있는 동안에도 미룬다 (지도 확대 · 끌기 포함)
     deferred = false;
     var sheetEl = appEl.querySelector('.sheet');
     var scrollTop = sheetEl ? sheetEl.scrollTop : 0;
@@ -158,7 +158,7 @@
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
-    if (state.map) attachZoom();
+    if (state.map) mountMap();
     state.push.errorFresh = false;
     if (state.todoForm) state.todoForm.errorFresh = false;
     if (state.eventForm) state.eventForm.errorFresh = false;
@@ -553,11 +553,11 @@
     else if (act === 'all-map') openMap();
     else if (act === 'map-close') closeMap();
     else if (act === 'map-retry') { mapDataState = null; loadMapData(); render(true); }
-    else if (act === 'map-seg') { if (state.map) { state.map.seg = btn.getAttribute('data-v'); state.map.sel = null; state.map.sheet = null; render(true); attachZoom(); } }
+    else if (act === 'map-seg') { if (state.map) { state.map.seg = btn.getAttribute('data-v'); state.map.sel = null; state.map.sheet = null; render(true); } }
     else if (act === 'map-zoom') mapZoom(Number(btn.getAttribute('data-v')));
     else if (act === 'map-unsel') mapUnsel();
     else if (act === 'map-visit') mapVisitForm();
-    else if (act === 'map-visit-cancel') { if (state.map && state.map.sheet) { if (state.map.sheet.back) { state.map.sheet = { mode: 'view' }; render(true); } else mapUnsel(); } }
+    else if (act === 'map-visit-cancel') { if (state.map && state.map.sheet) { if (state.map.sheet.back) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; render(true); } else mapUnsel(); } }
     else if (act === 'map-visit-save') saveVisit();
     else if (act === 'map-wish') showToast('가고 싶은 곳 담기는 곧 열려요');
     else if (act === 'map-find') openFind();
@@ -1736,6 +1736,7 @@
   }
   // ── 단짝 지도 (v48) ──
   var mapDataState = null, mapData = null, unPlaces = null; // mapDataState: null | 'loading' | 'error' | 'ready'
+  var kmEl = null, kmSel = null, kmPaths = null, kmZoom = null; // 한 번만 만들어 두고 다시 붙이는 지도 <svg>
   function mapReady() { return mapDataState === 'ready' && !!mapData; }
   function placeList() { return RT.places.fromDocs(state.placeDocs || {}); }
   function loadMapData() {
@@ -1778,12 +1779,28 @@
     Object.keys(pl).forEach(function (c) { var p = RT.places.paint(pl[c]); if (p) paint[c] = p; });
     return { status: mapDataState === 'ready' ? 'ready' : mapDataState === 'error' ? 'error' : 'loading', off: state.placesOff, seg: m.seg, sel: m.sel, vb: m.vb, map: mapData, paint: paint, counts: RT.places.counts(pl) };
   }
-  // 다시 그릴 때마다 새 <svg> 가 생기므로 확대 · 끌기를 다시 붙인다 (render 끝에서 부름)
-  function attachZoom() {
-    var el = state.map && document.getElementById('km');
-    if (!el || el.__zoom) return;
-    el.__zoom = true;
-    RT.mapZoom.attach(el, { home: RT.viewMap.HOME, get: function () { return state.map ? state.map.vb : RT.viewMap.HOME; }, set: function (vb) { if (state.map) state.map.vb = vb; } });
+  /** render 끝에서: 지도 자리(#km-slot)에 만들어 둔 <svg> 를 붙이고 칠하기 · 고른 곳 · 보는 자리만 바꾼다.
+      (230곳 140KB 를 다시 그릴 때마다 새로 만들지 않고, 확대 · 끌기 손잡이도 한 번만 붙인다 — 점검 AI) */
+  function mountMap() {
+    var slot = document.getElementById('km-slot');
+    if (!slot || !mapReady()) return;
+    if (!kmEl) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = RT.viewMap.mapSvg(mapData, {}, null, RT.viewMap.HOME, '단짝 지도');
+      kmEl = tmp.firstChild;
+      kmPaths = Array.prototype.slice.call(kmEl.querySelectorAll('.rg'));
+      kmSel = document.createElementNS('http://www.w3.org/2000/svg', 'path'); kmSel.setAttribute('class', 'sel');
+      kmZoom = { home: RT.viewMap.HOME, get: function () { return state.map ? state.map.vb : RT.viewMap.HOME; }, set: function (vb) { if (state.map) state.map.vb = vb; } };
+      RT.mapZoom.attach(kmEl, kmZoom);
+    }
+    var mm = mapModel(), c = mm.counts;
+    kmPaths.forEach(function (p) { var k = mm.paint[p.getAttribute('data-code')] || ''; p.setAttribute('class', 'rg' + (k ? ' ' + k : '')); });
+    var r = mm.sel && RT.places.regionOf(mapData, mm.sel);
+    if (r) { kmSel.setAttribute('d', r.d); if (kmSel.parentNode !== kmEl) kmEl.appendChild(kmSel); }
+    else if (kmSel.parentNode) kmSel.parentNode.removeChild(kmSel);
+    kmEl.setAttribute('aria-label', '단짝 지도: 함께 다녀온 곳 ' + c.visited + '곳은 색칠, 가고 싶은 곳 ' + c.wished + '곳은 빗금');
+    RT.mapZoom.setBox(kmEl, state.map.vb);
+    slot.appendChild(kmEl);
   }
   function mapZoom(dir) {
     if (!state.map) return;
@@ -1807,6 +1824,8 @@
   function mapVisitForm() {
     if (!state.map || !state.map.sel) return;
     var back = !!(state.map.sheet && state.map.sheet.mode === 'view');
+    // 단짝이 된 날을 아직 안 정했으면 먼저 정하게 한다 (나중에 정하면 그 전 기록이 규칙에 걸리지 않게 — 점검 AI)
+    if (!coupleStartKey() && !state.coupleOff && RT.anniv) { state.map.sheet = { mode: 'needstart', back: back }; focusAfter = ['[data-act="open-anniv"]']; focusInSheet = true; render(true); return; }
     state.map.sheet = { mode: 'visit', back: back, form: { date: todayKey(), note: '', saving: false, error: '', errorFresh: false } };
     focusAfter = ['#mp-date']; focusInSheet = true;
     render(true);
@@ -1842,9 +1861,11 @@
       if (state.map && state.map.sel === code) { state.map.sheet = { mode: 'view' }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; } // 포커스가 시트에 남아야 Esc 가 먹는다
       showToast('함께 다녀온 곳에 칠했어요');
       render(true);
-    }, function () {
+    }, function (e) {
       if (!state.map || !state.map.sheet || !state.map.sheet.form) return;
-      var ff = state.map.sheet.form; ff.saving = false; ff.error = '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요'; ff.errorFresh = true;
+      var denied = e && (e.code === 'permission-denied' || /permission/.test(String(e.message || e)));
+      var ff = state.map.sheet.form; ff.saving = false; ff.errorFresh = true;
+      ff.error = denied ? '저장이 막혔어요. 다녀온 날이 단짝이 된 날보다 이르지 않은지 확인해 주세요' : '저장하지 못했어요. 인터넷 연결을 확인한 뒤 다시 해 주세요';
       render(true);
     });
   }
@@ -2281,7 +2302,12 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
-    if (state.map && state.map.find && id === 'mp-q') { state.map.find.q = ev.target.value; render(true); return; }
+    if (state.map && state.map.find && id === 'mp-q') {
+      // 결과 목록만 바꾼다 (입력칸을 다시 그리면 한글 조합이 「나ㅁ」처럼 깨진다 — 점검 AI)
+      state.map.find.q = ev.target.value;
+      var box = document.getElementById('mp-results'); if (box) box.innerHTML = RT.viewMap.findResults(mapFindModel());
+      return;
+    }
     if (state.map && state.map.sheet && state.map.sheet.form && (id === 'mp-date' || id === 'mp-note')) {
       state.map.sheet.form[id === 'mp-date' ? 'date' : 'note'] = ev.target.value; state.map.sheet.form.error = ''; return;
     }
@@ -2632,7 +2658,7 @@
     state.notifyOpen = false; state.themeOpen = false; state.prefs = null; state.prefsReady = false; state.colors = null;
     state.todoDocs = []; state.eventDocs = []; state.todoErr = ''; state.eventErr = ''; state.todoForm = null; state.eventForm = null; state.sched = null;
     state.catDocs = []; state.catErr = false; state.catSheet = null;
-    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false;
+    state.couple = null; state.coupleOff = false; state.anniv = null; stopMap(); state.placeDocs = null; state.placesOff = false; state.placesLoading = false;
     state.place = null; state.uniSheet = null; state.archive = null; state.uni.who = null; state.uni.flash = null;
   }
 

@@ -124,3 +124,15 @@ test('지도 파일은 처음 열 때만 받음 (오프라인 목록에 없고, 
   for (const f of ['js/places.js', 'js/map-zoom.js', 'js/view-map.js']) assert.match(sw, new RegExp("'" + f.replace('.', '\\.') + "'"));
   assert.match(fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8'), /fetch\('data\/kr-map\.json'\)/);
 });
+
+test('점검 AI 회귀: 찾기 결과만 따로 그림 · 단짝이 된 날을 안 정했으면 먼저 정하게 · 규칙은 맨 앞 방문이 그대로면 통과', () => {
+  const r = VM.findResults({ q: '해운대', results: [{ code: '26350', name: '부산 해운대구', been: true }] });
+  assert.match(r, /data-act="map-pick" data-v="26350"[^]*함께 다녀옴/);
+  assert.doesNotMatch(r, /mp-q/, '입력칸은 결과 안에 없음');
+  assert.match(VM.findSheet({ q: '', results: [] }), /id="mp-q"[^]*id="mp-results"/);
+  const need = VM.sheet({ code: '52110', name: '전북 전주시', place: null, mode: 'needstart' });
+  assert.match(need, /먼저 단짝이 된 날을 정해 주세요[^]*data-act="open-anniv"/);
+  const rules = fs.readFileSync(path.join(ROOT, 'firestore.rules'), 'utf8');
+  assert.match(rules, /vs\[0\] == o\.visits\[0\]/);
+  assert.match(VM.screen({ status: 'ready', seg: 'map', counts: { visited: 0, wished: 0 }, paint: {}, map: MAP }), /id="km-slot"/, '지도는 자리만, app.js 가 한 번 만든 svg 를 붙임');
+});

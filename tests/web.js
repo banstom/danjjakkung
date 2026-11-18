@@ -32,6 +32,7 @@ const FAKE_FIREBASE = `
   function snapDoc(p) { return { id: p.split('/').pop(), exists: local.has(p), data: function () { return local.get(p); } }; }
   function allowed() { return user && user.emailVerified && ${JSON.stringify(ALLOWED)}.indexOf(user.email) >= 0; }
   function denied() { return { code: 'permission-denied', message: 'denied' }; }
+  window.__colCount = function () { return colL.size; }; // 지도를 닫으면 places 구독이 끊기는지 보려고
   window.__push = function (s, changed) {
     local = new Map(JSON.parse(s));
     docL.forEach(function (f) { f(); });
@@ -184,7 +185,8 @@ async function open(browser, name, opts = {}) {
     // 단짝 지도 (v48): 지우기 없음, 별점은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
       const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
-      const cs = (docs.get('couple/main') || {}).start || '1950-01-01'; if ((d.visits || []).length && d.visits[0].date < cs) throw new Error('permission-denied');
+      const cs = (docs.get('couple/main') || {}).start || '1950-01-01'; const ov = old.visits || [];
+      if ((d.visits || []).length && d.visits[0].date < cs && !(ov.length && JSON.stringify(ov[0]) === JSON.stringify(d.visits[0]))) throw new Error('permission-denied');
       if (d.updatedBy !== uid || d.code !== p.split('/')[1]) throw new Error('permission-denied'); }
     if (p.startsWith('events/')) { const old = docs.get(p); for (const x of [old, d]) if (x && x.owner !== 'both' && x.owner !== uid) throw new Error('permission-denied'); }
     if (p.startsWith('checks/')) { const key = p.split('/')[1].split('_')[0]; const r = docs.get('routines/' + key); if (!r || r.owner !== uid) throw new Error('permission-denied'); }
@@ -811,7 +813,9 @@ async function tick(page, dateKey, key) {
   // 4-1a4) (v48) 단짝 지도 M2: 지도 열기 · 칠하기 규칙 · 함께 다녀왔어요(단짝이 된 날부터) · 지역 찾기 · 확대 · 짝꿍 화면 실시간
   await toAll(jm); await jm.waitForSelector('.afeat__ds');
   assert.strictEqual(await jm.textContent('.afeat__ds'), '함께 0곳', '「전체」 카드 개수');
+  const subs0 = await jm.evaluate(() => window.__colCount());
   await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg');
+  assert.strictEqual(await jm.evaluate(() => window.__colCount()), subs0 + 1, '지도를 열면 places 구독 하나');
   assert.strictEqual(await jm.$$eval('#km .rg', (e) => e.length), 230, '시·군·구 230곳');
   assert.ok(!(await jm.$('header.top')), '지도 화면은 머리말 대신 자기 머리줄');
   assert.strictEqual(await jm.textContent('.mbar__title'), '단짝 지도');
@@ -860,7 +864,9 @@ async function tick(page, dateKey, key) {
   // 지역 찾기 → 고르면 그 지역으로 확대 + 시트
   const vb0 = await jm.getAttribute('#km', 'viewBox');
   await jm.click('[data-act="map-find"]'); await jm.waitForSelector('#mp-q');
+  await jm.evaluate(() => { window.__q = document.getElementById('mp-q'); window.__km = document.getElementById('km'); });
   await jm.type('#mp-q', '해운대'); await jm.waitForTimeout(100);
+  assert.ok(await jm.evaluate(() => window.__q === document.getElementById('mp-q')), '회귀(점검 AI): 찾는 동안 입력칸을 새로 만들지 않음 (한글 조합이 안 깨지게)');
   assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'mp-q', '찾는 동안 입력칸 포커스 유지');
   assert.match(await jm.textContent('.mfind__row'), /부산 해운대구/);
   await jm.click('.mfind__row'); await jm.waitForSelector('#mapsheet-title');
@@ -873,9 +879,29 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(await jm.getAttribute('#km', 'viewBox'), '20 140 840 910', '가장 작게 = 처음 자리');
   await jm.click('[data-act="map-zoom"][data-v="1"]');
   assert.notStrictEqual(await jm.getAttribute('#km', 'viewBox'), '20 140 840 910', '크게');
+  // 끌기: 보는 자리가 움직이고, 끈 뒤에 지역 시트가 열리지 않음 / 휠: 확대
+  const bb = await (await jm.$('#km')).boundingBox(), vbz = await jm.getAttribute('#km', 'viewBox');
+  await jm.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await jm.mouse.down();
+  await jm.mouse.move(bb.x + bb.width / 2 + 60, bb.y + bb.height / 2 + 30, { steps: 6 }); await jm.mouse.up(); await jm.waitForTimeout(100);
+  assert.notStrictEqual(await jm.getAttribute('#km', 'viewBox'), vbz, '끌면 움직임');
+  assert.ok(!(await jm.$('#mapsheet-title')), '끈 뒤엔 시트 안 열림');
+  const vbw = await jm.getAttribute('#km', 'viewBox');
+  await jm.mouse.wheel(0, -200); await jm.waitForTimeout(80);
+  assert.ok(parseFloat((await jm.getAttribute('#km', 'viewBox')).split(' ')[2]) < parseFloat(vbw.split(' ')[2]), '휠로 확대');
+  assert.ok(await jm.evaluate(() => window.__km === document.getElementById('km')), '회귀(점검 AI): 다시 그려도 지도 <svg> 는 같은 것 (새로 만들지 않음)');
+  // 단짝이 된 날을 안 정했으면 먼저 정하게 (나중에 정하면 그 전 기록이 걸리지 않게)
+  const cpSaved = docs.get('couple/main'); docs.delete('couple/main'); await pushAll(['couple/main']); await jm.waitForTimeout(120);
+  await tapRegion(jm, '52110'); await jm.waitForSelector('#mapsheet-title');
+  await jm.click('[data-act="map-visit"]'); await jm.waitForTimeout(100);
+  assert.match(await jm.textContent('.sheet__sub'), /먼저 단짝이 된 날을 정해 주세요/);
+  assert.ok(await jm.$('.sheet [data-act="open-anniv"]'), '기념일 정하기 버튼');
+  docs.set('couple/main', cpSaved); await pushAll(['couple/main']); await jm.waitForTimeout(120);
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  if (await jm.$('#mapsheet-title')) { await jm.click('.scrim[data-act="map-unsel"]'); await jm.waitForTimeout(100); }
   // 뒤로가기 = 「전체」로, 카드 개수 · 미리보기 칸
   await jm.goBack(); await jm.waitForTimeout(150);
   assert.ok(await jm.$('.all') && !(await jm.$('.exit-box')), '뒤로가기는 지도만 닫음');
+  assert.strictEqual(await jm.evaluate(() => window.__colCount()), subs0, '지도를 닫으면 places 구독도 끊김');
   assert.strictEqual(await jm.textContent('.afeat__ds'), '함께 1곳');
   assert.ok((await jm.$$('.amap__tile.is-on')).length > 0, '미리보기에 전북 칸 칠함');
   await jm.screenshot({ path: path.join(OUT, 'all-map-card.png') });

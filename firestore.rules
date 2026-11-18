@@ -262,7 +262,9 @@ service cloud.firestore {
         && (d.get('wishRank', null) == null || d.wishRank is number)
         && d.get('wishNote', '') is string && d.get('wishNote', '').size() <= 100
         && vs is list && vs.size() <= 100
-        && (vs.size() == 0 || (validVisit(vs[0]) && vs[0].date >= coupleStart() && validVisit(vs[vs.size() - 1])))
+        // 맨 앞(가장 이른 방문)이 그대로면 통과 — 단짝이 된 날을 나중에 정해도 그 전 기록이 있는 문서가 얼어붙지 않게
+        && (vs.size() == 0 || (validVisit(vs[0]) && validVisit(vs[vs.size() - 1])
+            && (vs[0].date >= coupleStart() || (o.get('visits', []).size() > 0 && vs[0] == o.visits[0]))))
         && validStars(d.get('stars', {}), o.get('stars', {}));
     }
     match /places/{code} {

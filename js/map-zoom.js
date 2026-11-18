@@ -37,6 +37,7 @@
   /** el = <svg>, o = { get(): vb, set(vb), home, onMoved() } — 끌거나 확대한 뒤 바로 오는 click 은 막는다 */
   function attach(el, o) {
     var pts = {}, start = null, moved = false, blockUntil = 0;
+    o.busy = function () { return Object.keys(pts).length > 0; }; // 손가락이 닿아 있는 동안 app.js 는 다시 그리기를 미룬다
     function list() { return Object.keys(pts).map(function (k) { return pts[k]; }); }
     function rect() { return el.getBoundingClientRect(); }
     function apply(vb) { o.set(vb); setBox(el, vb); }
@@ -78,9 +79,12 @@
     el.addEventListener('pointercancel', end);
     el.addEventListener('click', function (e) { if (Date.now() < blockUntil) { e.stopPropagation(); e.preventDefault(); } }, true);
     el.addEventListener('wheel', function (e) {
+      if (!e.deltaY) return; // 가로 스크롤은 무시
       e.preventDefault();
       var r = rect();
-      apply(zoomAt(o.get(), e.deltaY < 0 ? 1.25 : 0.8, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, o.home));
+      // 트랙패드처럼 작은 값이 잇달아 와도 부드럽게: 움직인 만큼 비례해서 (한 번에 최대 1.25배)
+      var k = Math.max(0.8, Math.min(1.25, Math.exp(-e.deltaY * 0.002)));
+      apply(zoomAt(o.get(), k, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, o.home));
     }, { passive: false });
   }
 

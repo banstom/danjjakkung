@@ -52,7 +52,8 @@
       var c = m.counts;
       body = '<div class="mlegend"><span class="mchip mchip--both">함께 다녀온 곳 ' + c.visited + '</span>' +
         '<span class="mchip"><span class="mchip__hatch" aria-hidden="true"></span>가고 싶은 곳 ' + c.wished + '</span></div>' +
-        '<div class="mwrap">' + mapSvg(m.map, m.paint, m.sel, m.vb, '단짝 지도: 함께 다녀온 곳 ' + c.visited + '곳은 색칠, 가고 싶은 곳 ' + c.wished + '곳은 빗금') +
+        // 지도 <svg> 는 app.js 가 한 번만 만들어 이 자리에 붙인다 (다시 그릴 때마다 140KB 를 새로 만들지 않게)
+        '<div class="mwrap"><div class="kmslot" id="km-slot"></div>' +
         '<div class="mzoom"><button type="button" class="mzoom__btn" data-act="map-zoom" data-v="1" aria-label="크게">+</button>' +
         '<button type="button" class="mzoom__btn" data-act="map-zoom" data-v="-1" aria-label="작게">−</button></div></div>' +
         '<p class="mhint">지역을 누르면 기록하거나 가고 싶은 곳에 담을 수 있어요</p>' +
@@ -66,7 +67,12 @@
     var p = s.place, visited = p && p.visits.length > 0, body;
     var head = '<div class="sheet__head"><h2 id="mapsheet-title" class="sheet__title">' + esc(s.name) + '</h2>' +
       (visited ? '<span class="mchip mchip--both mchip--sm">함께 ' + p.visits.length + '번</span>' : '') + '</div>';
-    if (s.mode === 'visit') {
+    if (s.mode === 'needstart') {
+      body = head + '<p class="sheet__sub">먼저 단짝이 된 날을 정해 주세요</p>' +
+        '<p class="mnote">단짝 지도는 단짝이 된 날부터 함께 다녀온 곳을 칠해요. 기념일에서 그날을 정하면 바로 기록할 수 있어요.</p>' +
+        '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="open-anniv">기념일 정하기</button>' +
+        '<button type="button" class="mbtn" data-act="map-visit-cancel">돌아가기</button></div>';
+    } else if (s.mode === 'visit') {
       var f = s.form;
       body = head + '<p class="sheet__sub">' + (visited ? '또 다녀온 날을 적어요' : '함께 다녀온 날을 적어요') + '</p>' +
         '<div class="mform">' +
@@ -86,7 +92,7 @@
       body = head + '<p class="sheet__sub">아직 함께 가 보지 않은 곳</p>' +
         '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">함께 다녀왔어요</button>' +
         '<button type="button" class="mbtn" data-act="map-wish">가고 싶은 곳에 담기</button></div>' +
-        '<p class="mnote">담으면 몇 위로 둘지 고르는 화면으로 넘어가요.' + (s.startText ? ' 다녀온 날은 단짝이 된 날(' + esc(s.startText) + ')부터 고를 수 있어요' : '') + '</p>';
+        (s.startText ? '<p class="mnote">다녀온 날은 단짝이 된 날(' + esc(s.startText) + ')부터 고를 수 있어요</p>' : '');
     }
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="map-unsel" aria-label="닫기"></button>' +
@@ -94,6 +100,12 @@
       '<span class="grabber" aria-hidden="true"></span>' + body + '</section></div>';
   }
 
+  /** 찾기 결과만 (입력칸은 그대로 두고 이 부분만 바꿔야 한글 조합 입력이 안 깨진다) */
+  function findResults(f) {
+    return f.q ? (f.results.length ? '<ul class="mfind">' + f.results.map(function (r) {
+      return '<li><button type="button" class="mfind__row" data-act="map-pick" data-v="' + esc(r.code) + '"><span>' + esc(r.name) + '</span>' + (r.been ? '<span class="mchip mchip--both mchip--sm">함께 다녀옴</span>' : '') + '</button></li>';
+    }).join('') + '</ul>' : '<p class="muted mfind__none">맞는 지역이 없어요</p>') : '<p class="muted mfind__none">시 · 군 · 구 이름을 적어 보세요</p>';
+  }
   /** 지역 찾기 시트. f = { q, results: [{ code, name, been }] } */
   function findSheet(f, entering) {
     return '<div class="sheet-layer">' +
@@ -101,13 +113,11 @@
       '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="mapfind-title">' +
       '<span class="grabber" aria-hidden="true"></span><h2 id="mapfind-title" class="sheet__title">지역 찾기</h2>' +
       '<input id="mp-q" class="field__input mfind__q" type="search" autocomplete="off" enterkeyhint="search" placeholder="예: 남원, 해운대, 제주" value="' + esc(f.q) + '" aria-label="지역 이름">' +
-      (f.q ? (f.results.length ? '<ul class="mfind">' + f.results.map(function (r) {
-        return '<li><button type="button" class="mfind__row" data-act="map-pick" data-v="' + esc(r.code) + '"><span>' + esc(r.name) + '</span>' + (r.been ? '<span class="mchip mchip--both mchip--sm">함께 다녀옴</span>' : '') + '</button></li>';
-      }).join('') + '</ul>' : '<p class="muted mfind__none">맞는 지역이 없어요</p>') : '<p class="muted mfind__none">시 · 군 · 구 이름을 적어 보세요</p>') +
+      '<div id="mp-results" aria-live="polite">' + findResults(f) + '</div>' +
       '<button type="button" class="close-btn" data-act="map-find-close">닫기</button></section></div>';
   }
 
-  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet };
+  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet, findResults: findResults };
   root.RT = root.RT || {};
   root.RT.viewMap = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
