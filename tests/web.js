@@ -769,15 +769,31 @@ async function tick(page, dateKey, key) {
   await jm.screenshot({ path: path.join(OUT, 'avatar-crop.png') });
   await jm.click('[data-act="ava-crop-save"]'); await jm.waitForTimeout(400);
   const av = docs.get('avatars/' + jmUid0);
-  assert.ok(av && /^data:image\/jpeg;base64,/.test(av.img) && av.img.length <= 120000, '256px JPEG 저장 ' + (av && av.img.length));
-  assert.match(await jm.getAttribute('[data-act="ava-open"] .ubox__ph', 'style'), /background-image:url\(data:image\/jpeg/);
+  assert.ok(av && /^data:image\/jpeg;base64,/.test(av.img) && av.img.length <= 120000, 'JPEG 저장 ' + (av && av.img.length));
+  const avW = await jm.evaluate((src) => new Promise((r) => { const i = new Image(); i.onload = () => r(i.naturalWidth); i.src = src; }), av.img);
+  assert.ok(avW >= 384, '크게 보기용으로 384px 이상 저장 (v52) ' + avW);
+  assert.match(await jm.getAttribute('[data-act="ava-view"] .ubox__ph', 'style'), /background-image:url\(data:image\/jpeg/);
   await dj.waitForTimeout(200);
   assert.ok((await dj.$$eval('.ubox .ubox__ph', (e) => e.map((x) => x.getAttribute('style') || ''))).some((x) => /data:image\/jpeg/.test(x)), '짝꿍 박스에도 내 사진');
   assert.ok(!(await dj.$('.ubox [data-act="ava-open"] .ubox__ph[style]')), '짝꿍 자기 동그라미는 아직 색');
   await jm.screenshot({ path: path.join(OUT, 'avatar-box.png') });
-  await jm.click('[data-act="ava-open"]'); await jm.click('[data-act="ava-delete"]'); await jm.waitForTimeout(300);
+  // (v52) 사진 크게 보기: 짝꿍 폰에서 내 사진을 누르면 크게 · 바꾸기 버튼은 없음 · Esc/닫기
+  await dj.click('[data-act="ava-view"]'); await dj.waitForSelector('.aview__img');
+  assert.strictEqual(await dj.textContent('.aview__nm'), '준민');
+  assert.ok(!(await dj.$('[data-act="ava-view-edit"]')), '단짝 사진엔 바꾸기 없음');
+  const big = await (await dj.$('.aview__img')).boundingBox(); assert.ok(big.width >= 200, '크게 보임 ' + big.width);
+  await dj.waitForTimeout(300); await dj.screenshot({ path: path.join(OUT, 'avatar-view.png') });
+  await dj.keyboard.press('Escape'); await dj.waitForTimeout(150);
+  assert.ok(!(await dj.$('.aview')), 'Esc 로 닫힘');
+  assert.strictEqual(await dj.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-act')), 'ava-view', '닫으면 사진 버튼으로 포커스');
+  // 내 사진은 크게 보기 → 사진 바꾸기 → 시트
+  await jm.click('[data-act="ava-view"]'); await jm.waitForSelector('.aview__img');
+  await jm.click('[data-act="ava-view-edit"]'); await jm.waitForSelector('#ava-title');
+  assert.ok(!(await jm.$('.aview')), '바꾸기 누르면 크게 보기 닫힘');
+  await jm.click('[data-act="ava-delete"]'); await jm.waitForTimeout(300);
   assert.ok(!docs.get('avatars/' + jmUid0), '사진 지우기');
   assert.ok(!(await jm.$('[data-act="ava-open"] .ubox__ph[style]')), '지우면 사람 색');
+  assert.ok(!(await jm.$('.ubox [data-act="ava-view"]')), '사진 없으면 크게 보기 버튼 없음');
   await jm.setViewportSize({ width: 320, height: 700 }); await jm.waitForTimeout(150);
   assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 박스 넘치지 않음');
   await jm.screenshot({ path: path.join(OUT, 'anniv-320.png') });

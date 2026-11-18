@@ -35,12 +35,27 @@ test('「전체」: 우리 둘 카드 · 단짝 기능 2칸 · 설정 3줄이 �
 test('v51 「우리 둘」 박스: 내 동그라미만 사진 버튼 · 단짝은 사진 보기만 · 사진 없으면 사람 색 · 기념일 규칙이 없으면 디데이 버튼 없음', () => {
   const html = AV.box(us);
   assert.match(html, /data-act="ava-open" aria-label="준민 사진 올리기"/);
-  assert.doesNotMatch(html, /다진 사진/, '단짝 동그라미는 버튼 아님');
+  assert.doesNotMatch(html, /data-act="ava-open"[^>]*다진/, '단짝 동그라미는 바꾸기 버튼 아님');
+  assert.match(html, /data-act="ava-view"[^>]*다진 사진 크게 보기/, 'v52: 단짝 사진은 크게 보기');
+  assert.doesNotMatch(AV.box(Object.assign({}, us, { right: Object.assign({}, us.right, { img: '' }) })), /다진 사진/, '단짝 사진이 없으면 버튼 아님');
   assert.match(html, /ubox__ph--me"><span class="ubox__ini"[^>]*>준</, '사진 없으면 사람 색 + 첫 글자');
   assert.match(html, /ubox__ph--her" style="background-image:url\(data:image\/jpeg;base64,AAAA\)"/, '단짝이 올린 사진');
   assert.doesNotMatch(AV.box(Object.assign({}, us, { right: Object.assign({}, us.right, { img: 'data:image/jpeg;base64,AA) ;background:url(http://x' }) })), /http:\/\/x/, '회귀(점검 AI): 이상한 글자는 사진으로 안 씀');
   assert.match(AV.box(Object.assign({}, us, { line1: '우리가 시작한 날을', line2: '정해 볼까요?' })), /정해 볼까요\?/);
   assert.doesNotMatch(AV.box(Object.assign({}, us, { off: true })), /data-act="open-anniv"/);
+});
+
+test('v52 사진 크게 보기: 사진 있는 동그라미는 누구 것이든 ava-view · 단짝 사진엔 바꾸기 없음 · 이상한 글자는 안 씀 · 512px 부터', () => {
+  const withMine = Object.assign({}, us, { left: Object.assign({}, us.left, { uid: 'u1', img: 'data:image/jpeg;base64,BBBB' }), right: Object.assign({}, us.right, { uid: 'u2' }) });
+  const html = AV.box(withMine);
+  assert.match(html, /data-act="ava-view" data-v="u1" aria-label="준민 사진 크게 보기"/);
+  assert.match(html, /data-act="ava-view" data-v="u2" aria-label="다진 사진 크게 보기"/);
+  assert.doesNotMatch(html, /ava-open/, '사진이 있으면 바로 시트 대신 크게 보기');
+  const mine = AV.viewer({ name: '준민', img: 'data:image/jpeg;base64,BBBB', mine: true });
+  assert.match(mine, /class="aview__img" src="data:image\/jpeg;base64,BBBB"/); assert.match(mine, /data-act="ava-view-edit"/);
+  assert.doesNotMatch(AV.viewer({ name: '다진', img: 'data:image/jpeg;base64,BBBB', mine: false }), /ava-view-edit/);
+  assert.doesNotMatch(AV.viewer({ name: '다진', img: 'javascript:x', mine: false }), /<img/);
+  assert.deepEqual(CROP.SIZES, [512, 384, 256]); assert.equal(CROP.OUT, 512);
 });
 
 test('v51 사진 자리 고르기: 처음엔 칸을 꽉 채움 · 빈틈 없게 묶음 · 확대 4배까지 · 저장 범위', () => {

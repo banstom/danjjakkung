@@ -1141,3 +1141,18 @@ span.ubox__mid { cursor: default; }
   .ubox__l1 { font-size: 15px; }
   .ubox__l2 { font-size: 12px; padding: 3px 8px; }
 }
+
+/* ── 사진 크게 보기 (v52) ── */
+.sheet-layer--view { z-index: 26; }
+.sheet-layer--view .scrim { background: linear-gradient(var(--toast-bg), var(--toast-bg)), var(--toast-bg); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.sheet.aview { top: 0; bottom: 0; max-width: 520px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: none; box-shadow: none; border-radius: 0; pointer-events: none; }
+.sheet.aview > * { pointer-events: auto; }
+.sheet.aview.is-entering { animation: aview-in 0.2s ease-out; }
+@keyframes aview-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
+.aview__img { width: min(84vw, 420px, 62vh); height: min(84vw, 420px, 62vh); border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 4px color-mix(in srgb, var(--toast-fg) 18%, transparent); }
+.aview__nm { margin: 0; color: var(--toast-fg); font-size: 17px; font-weight: 800; }
+.aview__actions { display: flex; gap: 8px; }
+.aview__btn { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; font: inherit; font-size: 14px; font-weight: 700; background: color-mix(in srgb, var(--toast-fg) 18%, transparent); color: var(--toast-fg); cursor: pointer; }
+.aview__btn--close { background: var(--surface); color: var(--text); }
+.aview__btn:focus-visible { outline: 2px solid var(--toast-fg); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .sheet.aview.is-entering { animation: none; } }

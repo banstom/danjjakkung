@@ -3,7 +3,7 @@
    언제나 칸이 사진으로 가득 차게(빈틈 없이) 묶는다. 저장은 OUT px 정사각형 JPEG. */
 (function (root) {
   'use strict';
-  var OUT = 256, QUALITY = 0.85, MAX_ZOOM = 4, MAX_LEN = 120000; // 규칙(avatars)의 글자 수 상한과 같음
+  var OUT = 512, SIZES = [512, 384, 256], QUALITY = 0.85, MAX_ZOOM = 4, MAX_LEN = 120000; // 규칙(avatars)의 글자 수 상한과 같음
 
   /** 처음 자리: 짧은 변이 칸을 꽉 채우게(cover), 가운데 */
   function cover(iw, ih, view) {
@@ -26,7 +26,7 @@
     return { sx: -st.x / st.scale, sy: -st.y / st.scale, size: view / st.scale };
   }
 
-  var api = { OUT: OUT, QUALITY: QUALITY, MAX_ZOOM: MAX_ZOOM, MAX_LEN: MAX_LEN, cover: cover, clamp: clamp, zoomAt: zoomAt, source: source };
+  var api = { OUT: OUT, SIZES: SIZES, QUALITY: QUALITY, MAX_ZOOM: MAX_ZOOM, MAX_LEN: MAX_LEN, cover: cover, clamp: clamp, zoomAt: zoomAt, source: source };
   root.RT = root.RT || {};
   root.RT.avatarCrop = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
