@@ -14,6 +14,9 @@
   /** 식품 몇 단위인지: grams 가 있고 1단위 g(unitG)을 알면 grams ÷ unitG, 아니면 qty */
   function unitsOf(food, item) {
     if (item.grams != null && food.unitG) return item.grams / food.unitG;
+    // 1단위 g 을 모르는데 g 만 있거나, 식품표와 다른 단위(공기 · 줌 등)면 조용히 1단위로 세지 않고 알린다 — 단위 바꾸기는 앱이 먼저 (점검 AI)
+    if (item.grams != null && item.qty == null) throw new Error('g 을 식품 단위로 바꿀 수 없음: ' + item.food);
+    if (item.unit && item.unit !== food.unit && item.grams == null) throw new Error('단위가 다름: ' + item.food + ' ' + item.unit + ' (식품표 ' + food.unit + ')');
     return item.qty == null ? 1 : item.qty;
   }
 

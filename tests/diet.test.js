@@ -138,3 +138,41 @@ test('P1 · 규칙: 몸 정보 · 체중 기록은 본인만, 목표 숫자는 �
   // 몸 정보 칸 이름이 목표 문서에 들어갈 수 없음
   assert.doesNotMatch(r.slice(r.indexOf('function validGoal'), r.indexOf('match /goals/{uid}')), /weightKg|heightCm|age|sex/);
 });
+
+test('점검 AI 회귀: 다시 맞추기는 계산에 쓰는 구간이 3주 이상일 때만 (8일치로 제안하던 문제)', () => {
+  const r = G.retune('bulk', [{ date: '2026-10-01', kg: 70 }, { date: '2026-10-15', kg: 70.1 }, { date: '2026-10-23', kg: 70.3 }]);
+  near(r.perWeek, 0.3 / (22 / 7), '10-01 → 10-23 (22일) 전체로 계산 — 10-15 → 10-23(8일)이 아님', 1e-9);
+  assert.equal(G.retune('bulk', [{ date: '2026-10-03', kg: 70 }, { date: '2026-10-23', kg: 70.3 }]), null, '20일이면 제안 안 함');
+  assert.ok(G.retune('bulk', [{ date: '2026-10-02', kg: 70 }, { date: '2026-10-23', kg: 70.3 }]), '딱 21일이면 제안');
+  // 아주 오래된 기록이 있어도 최근 3주에 가장 가까운 시작점을 씀
+  const r2 = G.retune('keep', [{ date: '2026-08-01', kg: 60 }, { date: '2026-10-01', kg: 70 }, { date: '2026-10-23', kg: 70 }]);
+  near(r2.perWeek, 0, '8월 기록이 아니라 10-01부터', 1e-9);
+});
+
+test('점검 AI 회귀: 안전장치 — 감량은 주 1%보다 빠르게 못 줄임 · BMR 아래 안 됨', () => {
+  const b = { sex: 'm', age: 25, heightCm: 175, weightKg: 70, activity: 'w3_5' };
+  near(G.clampKcal(1700, b, 'cut'), G.tdee(b) - 70 * 0.01 * 7700 / 7, '주 1% 감량 = 하루 −770', 1e-9);
+  near(G.clampKcal(1500, b, 'keep'), G.bmr(b), '유지는 BMR 아래만 막음', 1e-9);
+  assert.equal(G.clampKcal(2500, b, 'cut'), 2500);
+  assert.equal(G.clampKcal(900, null, 'cut'), 900, '몸 정보를 모르면 그대로');
+});
+
+test('점검 AI 회귀: 0.5 안쪽 차이는 「달성 ✓」 · 「딱 맞아요」', () => {
+  assert.equal(G.status('bulk', 'protein', 139.6, 140).text, '달성 ✓');
+  assert.equal(G.status('cut', 'kcal', 2209.0, 2209.3).text, '딱 맞아요');
+  assert.equal(G.status('cut', 'carb', 300, 303.8).text, '4 남음');
+  assert.equal(G.kindOf('cut', 'protein'), 'fill'); assert.equal(G.kindOf('cut', 'fat'), 'limit'); assert.equal(G.kindOf('bulk', 'carb'), 'fill');
+});
+
+test('점검 AI 회귀: g 만 있고 1단위 g 을 모르거나 단위가 다르면 조용히 1단위로 세지 않음', () => {
+  assert.throws(() => C.foodTotal(FOODS, { food: '진간장', grams: 30 }), /g 을 식품 단위로/);
+  assert.throws(() => C.foodTotal(FOODS, { food: '햇반', qty: 1.5, unit: '공기' }), /단위가 다름/);
+  near(C.foodTotal(FOODS, { food: '햇반', qty: 2.25, unit: '개', grams: 472.5 }).kcal, 708.75, 'T7 밥 472.5g = 햇반 2.25개');
+  near(C.foodTotal(FOODS, { food: '햇반', qty: 1.5, unit: '공기', grams: 472.5 }).kcal, 708.75, '공기도 g 이 있으면 g 으로');
+});
+
+test('점검 AI 회귀: 규칙 — 몸 정보 숫자는 그럴듯한 범위 · 시각 칸은 글자 40자', () => {
+  const r = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.match(r, /b\.age >= 1/); assert.match(r, /b\.heightCm >= 50/);
+  assert.match(r, /dietAt\(request\.resource\.data, 'updatedAt'\)/); assert.match(r, /dietAt\(g, 'updatedAt'\)/); assert.match(r, /dietAt\(request\.resource\.data, 'at'\)/);
+});

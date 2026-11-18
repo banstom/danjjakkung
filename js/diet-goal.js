@@ -50,7 +50,8 @@
   /** 목표 대비 문구. → { kind, over, n, text } (n 은 화면용 정수) */
   function status(goal, key, actual, target) {
     var kind = kindOf(goal, key), diff = actual - target, n = Math.round(Math.abs(diff)), over = diff > 0;
-    var text = kind === 'fill' ? (over || diff === 0 ? '달성 ✓ +' + n : n + ' 남음') : (over ? n + ' 많음' : n + ' 남음');
+    var text = n === 0 ? (kind === 'fill' ? '달성 ✓' : '딱 맞아요') // 0.5 안쪽 차이에 「+0」 · 「0 남음」이 나오지 않게
+      : kind === 'fill' ? (over ? '달성 ✓ +' + n : n + ' 남음') : (over ? n + ' 많음' : n + ' 남음');
     return { kind: kind, over: over, n: n, text: text };
   }
 
@@ -60,11 +61,11 @@
     var w = (weights || []).filter(function (x) { return x && typeof x.kg === 'number' && /^\d{4}-\d{2}-\d{2}$/.test(x.date); })
       .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
     if (w.length < 2) return null;
-    var days = (Date.parse(w[w.length - 1].date) - Date.parse(w[0].date)) / 86400000;
-    if (days < 21) return null;
-    var cut = w.filter(function (x) { return (Date.parse(w[w.length - 1].date) - Date.parse(x.date)) / 86400000 <= 21; });
-    var first = cut[0], last = cut[cut.length - 1], weeks = (Date.parse(last.date) - Date.parse(first.date)) / 86400000 / 7;
-    if (weeks <= 0) return null;
+    // 최근 3주: 마지막 기록에서 21일 이상 앞선 기록 중 가장 늦은 것부터 마지막까지 (계산에 쓰는 구간이 3주 이상이어야 — 점검 AI)
+    var last = w[w.length - 1], lastT = Date.parse(last.date), first = null;
+    w.forEach(function (x) { if ((lastT - Date.parse(x.date)) / 86400000 >= 21) first = x; });
+    if (!first) return null;
+    var weeks = (lastT - Date.parse(first.date)) / 86400000 / 7;
     var perWeek = (last.kg - first.kg) / weeks;
     var rate = goal === 'cut' ? -0.005 : goal === 'bulk' ? 0.00375 : 0;
     var target = last.kg * rate;
@@ -72,8 +73,14 @@
     return { perWeek: perWeek, target: target, kcal: kcal };
   }
 
-  /** 5절 안전장치: 바꾼 칼로리가 기초대사량 아래면 올림 (몸 정보를 알 때만) */
-  function clampKcal(kcal, body) { return body ? Math.max(kcal, bmr(body)) : kcal; }
+  /** 5절 안전장치 (직접 고치거나 다시 맞춘 뒤에도): 기초대사량 아래로 안 내려가고, 감량이면 주 1%보다 빠르게 빼지 않음.
+      body = { sex, age, heightCm, weightKg, activity } (몸 정보를 모르면 그대로) */
+  function clampKcal(kcal, body, goal) {
+    if (!body) return kcal;
+    var lo = bmr(body);
+    if (goal === 'cut') lo = Math.max(lo, tdee(body) - body.weightKg * 0.01 * KCAL_PER_KG / 7);
+    return Math.max(kcal, lo);
+  }
 
   var NOTICE = '참고용 추천이에요. 의학적 진단·처방이 아니어서 효력이 없어요. 정확한 목표는 의사나 임상영양사 같은 전문가와 상의해 주세요. 질환이 있거나 임신 중이거나 성장기라면 꼭 전문가와 상의해 주세요. 숫자는 언제든 직접 고칠 수 있어요.';
 
