@@ -77,6 +77,9 @@
     }
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
+    // 지도 밖에서 손을 떼거나 지도가 잠시 화면에서 빠져도 「손가락이 닿아 있음」이 남지 않게
+    window.addEventListener('pointerup', end, true);
+    window.addEventListener('pointercancel', end, true);
     el.addEventListener('click', function (e) { if (Date.now() < blockUntil) { e.stopPropagation(); e.preventDefault(); } }, true);
     el.addEventListener('wheel', function (e) {
       if (!e.deltaY) return; // 가로 스크롤은 무시

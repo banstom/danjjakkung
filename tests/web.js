@@ -106,6 +106,7 @@ const FAKE_FIREBASE = `
       return {
         set: function (v, o) { if (!allowed()) return Promise.reject(denied());
           // mergeFields: 적힌 칸만 통째로 바꾸고 나머지 칸은 그대로 (Firestore와 같게)
+          if (o && o.merge) v = Object.assign({}, local.get(p) || {}, v); // merge: 적은 칸만 덮음
           if (o && o.mergeFields) { var base = Object.assign({}, local.get(p) || {}); o.mergeFields.forEach(function (k) { if (k in v) base[k] = v[k]; else delete base[k]; }); v = base; }
           return window.__set(p, JSON.stringify(v), user.uid); },
         delete: function () { if (!allowed()) return Promise.reject(denied()); return window.__set(p, null, user.uid); },
@@ -189,6 +190,13 @@ async function open(browser, name, opts = {}) {
     // 단짝 지도 (v48): 지우기 없음, 별점은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
     // 단짝 식탁: 몸 정보 · 목표는 자기 것만 쓸 수 있다
     if ((p.startsWith('private/') || p.startsWith('goals/')) && p.split('/')[1] !== uid) throw new Error('permission-denied');
+    // 규칙 흉내: goals 는 정해진 칸 · 숫자 범위 (validGoal), private 는 정해진 칸 · 몸 정보 범위 (validBody)
+    if (p.startsWith('goals/') && d) { const ok = Object.keys(d).every((k) => ['kind', 'kcal', 'carb', 'protein', 'fat', 'edited', 'retune', 'updatedAt'].includes(k)) && ['cut', 'keep', 'bulk'].includes(d.kind)
+        && [['kcal', 10000], ['carb', 2000], ['protein', 1000], ['fat', 1000]].every(([k, hi]) => typeof d[k] === 'number' && isFinite(d[k]) && d[k] >= 0 && d[k] <= hi) && typeof d.edited === 'boolean' && typeof d.retune === 'boolean';
+      if (!ok) throw new Error('permission-denied'); }
+    if (p.startsWith('private/') && d && p.split('/').length === 2) { const ok = Object.keys(d).every((k) => ['body', 'suggested', 'edits', 'ackAt', 'updatedAt'].includes(k))
+        && (!d.body || (d.body.age >= 1 && d.body.heightCm >= 50 && d.body.weightKg >= 10 && ['m', 'f'].includes(d.body.sex))) && (!d.edits || Object.values(d.edits).every((x) => typeof x === 'number' && isFinite(x)));
+      if (!ok) throw new Error('permission-denied'); }
     if (p.startsWith('places/') && failPlaces) { failPlaces = false; throw new Error('unavailable'); } // 저장 실패 흉내 (한 번)
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
       const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
@@ -873,6 +881,15 @@ async function tick(page, dateKey, key) {
   assert.doesNotMatch(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다 지우면 칠하기 빠짐');
   assert.match(await jm.textContent('.sheet__sub'), /아직 함께 가 보지 않은 곳/);
   await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2025-08-15'); await jm.fill('#mp-note', '광한루 산책'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300); // 뒤 시험을 위해 다시
+  // 회귀(사용자 제보): 한글 조합 중에 입력칸이 사라져도(저장) 그 뒤 변경이 바로 보임 — 조합 끝 신호가 안 오던 문제
+  await jm.click('.mvisits__row'); await jm.waitForSelector('#mp-note');
+  await jm.$eval('#mp-note', (el) => { el.focus(); el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })); });
+  await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  const keep52 = docs.get('places/52190');
+  docs.set('places/52190', Object.assign({}, keep52, { visits: keep52.visits.concat([{ id: 'zz', date: '2026-10-20', note: '', createdAt: 'x', createdBy: 'x' }]) })); await pushAll(['places/52190']); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.sheet .mchip--both'), /함께 2번/, '조합이 남아도 짝꿍 변경이 바로 반영');
+  docs.set('places/52190', keep52); await pushAll(['places/52190']); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
   assert.ok(!(await jm.$('#mapsheet-title')), 'Esc 로 시트 닫힘');
   // 짝꿍 화면도 바로 칠해짐
@@ -1063,8 +1080,11 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="dg-act"][data-v="w3_5"]');
   const recoVals = () => jm.$$eval('#dg-reco .drow__vl', (e) => e.map((x) => x.textContent));
   assert.deepStrictEqual(await recoVals(), ['2,854kcal', '140g', '79g', '395g'], 'G1 추천값');
-  assert.strictEqual(await jm.$eval('.ddisc', (e) => e.textContent), '참고용 추천이에요' + '의학적 진단·처방이 아니어서 효력이 없어요. 정확한 목표는 의사나 임상영양사 같은 전문가와 상의해 주세요. 질환이 있거나 임신 중이거나 성장기라면 꼭 전문가와 상의해 주세요. 숫자는 언제든 직접 고칠 수 있어요.', '안내 문구 그대로');
+  assert.strictEqual(await jm.$eval('.ddisc', (e) => e.textContent), '참고용 추천이에요. ' + '의학적 진단·처방이 아니어서 효력이 없어요. 정확한 목표는 의사나 임상영양사 같은 전문가와 상의해 주세요. 질환이 있거나 임신 중이거나 성장기라면 꼭 전문가와 상의해 주세요. 숫자는 언제든 직접 고칠 수 있어요.', '안내 문구 그대로');
   await jm.screenshot({ path: path.join(OUT, 'diet-goal.png'), fullPage: true });
+  // 회귀(점검 AI): 「고치기」 → 그대로 「완료」는 고친 값이 아님
+  await jm.click('[data-act="dg-edit"][data-v="kcal"]'); await jm.waitForSelector('#dg-e-kcal'); await jm.click('[data-act="dg-edit"][data-v="kcal"]'); await jm.waitForTimeout(60);
+  assert.ok(!/고친 값/.test(await jm.textContent('#dg-reco')), '그대로 완료 = 고친 값 아님');
   await jm.click('[data-act="dg-edit"][data-v="protein"]'); await jm.waitForSelector('#dg-e-protein');
   await jm.fill('#dg-e-protein', '150'); await jm.click('[data-act="dg-edit"][data-v="protein"]'); await jm.waitForTimeout(80);
   assert.match(await jm.textContent('#dg-reco'), /150g/); assert.match(await jm.textContent('#dg-reco'), /고친 값/);
@@ -1078,20 +1098,30 @@ async function tick(page, dateKey, key) {
   assert.deepStrictEqual(pv.body, { sex: 'm', age: 25, heightCm: 175, weightKg: 70, activity: 'w3_5' }, '몸 정보 = private');
   assert.ok(pv.ackAt, '확인한 때');
   assert.strictEqual(gl.kind, 'bulk'); assert.ok(Math.abs(gl.kcal - 2853.74) < 0.1, '목표 칼로리 소수 그대로'); assert.strictEqual(gl.protein, 150); assert.strictEqual(gl.edited, true);
+  assert.deepStrictEqual(pv.edits, { protein: 150 }, '고친 줄만 기록');
   assert.ok(!('weightKg' in gl) && !('body' in gl), '목표 문서엔 몸 정보 없음');
   assert.match(await jm.textContent('.dgc'), /2,854kcal[^]*단 150g/);
   await jm.screenshot({ path: path.join(OUT, 'diet-home.png'), fullPage: true });
   // 다시 열면 고치기 화면은 저장된 값으로 · 근거 확인은 다시 안 물음
   await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
   assert.strictEqual(await jm.inputValue('#dg-weight'), '70'); assert.match(await jm.textContent('.dscreen .caption'), /내 목표 고치기/);
+  assert.match(await jm.textContent('#dg-reco'), /150g[^]*고친 값|고친 값[^]*150g/, '다시 열면 고친 줄만 고친 값');
+  assert.match(await jm.textContent('#dg-reco'), /2,854kcal/);
   await jm.click('[data-act="dg-goal"][data-v="cut"]'); await jm.click('[data-act="dg-start"]'); await jm.waitForTimeout(300);
   assert.ok(!(await jm.$('#dbasis-title')), '두 번째부턴 근거 확인 없이 저장');
-  assert.strictEqual(docs.get('goals/' + jmUid0).kind, 'cut');
+  const gc = docs.get('goals/' + jmUid0);
+  assert.strictEqual(gc.kind, 'cut');
+  assert.ok(Math.abs(gc.kcal - 2209.31) < 0.1 && Math.abs(gc.protein - 110.47) < 0.1, '회귀(점검 AI): 목표를 바꾸면 추천 숫자도 바뀜 (벌크업 숫자가 굳지 않음)');
+  assert.ok(docs.get('private/' + jmUid0).body.weightKg === 70 && docs.get('private/' + jmUid0).ackAt === pv.ackAt, 'merge: 몸 정보 · 확인한 때 그대로');
   // 단짝: 건너뛰고 직접 입력 → 몸 정보 없이 목표만, 내 목표가 보임
   await toAll(dj); await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('#dg-title');
   await dj.click('[data-act="dg-skip"]'); await dj.waitForSelector('#dg-e-kcal');
   assert.ok(!(await dj.$('#dg-weight')), '직접 입력은 몸 정보 칸 없음');
-  await dj.fill('#dg-e-kcal', '1800'); await dj.fill('#dg-e-protein', '80'); await dj.fill('#dg-e-fat', '50'); await dj.fill('#dg-e-carb', '240');
+  await dj.fill('#dg-e-kcal', '20000'); await dj.fill('#dg-e-protein', '80'); await dj.fill('#dg-e-fat', '50'); await dj.fill('#dg-e-carb', '240');
+  await dj.click('[data-act="dg-start"]'); await dj.waitForTimeout(100);
+  assert.match(await dj.textContent('.dscreen .rform__error'), /너무 커요/, '회귀(점검 AI): 규칙 상한을 넘으면 저장 전에 알림');
+  assert.ok(!(await dj.$('#dbasis-title')) && !docs.get('goals/' + djUid0));
+  await dj.fill('#dg-e-kcal', '1800');
   await dj.click('[data-act="dg-start"]'); await dj.waitForSelector('#dbasis-title'); await dj.click('[data-act="dg-basis-ok"]'); await dj.waitForTimeout(300);
   assert.ok(!(docs.get('private/' + djUid0) || {}).body, '직접 입력이면 몸 정보 저장 안 함');
   assert.strictEqual(docs.get('goals/' + djUid0).kcal, 1800);

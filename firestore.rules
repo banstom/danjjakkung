@@ -290,7 +290,8 @@ service cloud.firestore {
     match /private/{uid} {
       allow read, delete: if isMember() && request.auth.uid == uid;
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['body', 'suggested', 'ackAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['body', 'suggested', 'edits', 'ackAt', 'updatedAt'])
+        && (!('edits' in request.resource.data) || (request.resource.data.edits is map && request.resource.data.edits.keys().hasOnly(['kcal', 'protein', 'fat', 'carb'])))
         && (!('body' in request.resource.data) || validBody(request.resource.data.body))
         && (!('suggested' in request.resource.data) || request.resource.data.suggested is map)
         && dietAt(request.resource.data, 'ackAt') && dietAt(request.resource.data, 'updatedAt');

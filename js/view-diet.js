@@ -30,8 +30,11 @@
         (editing ? '<span class="dfin dfin--sm"><input id="dg-e-' + k + '" type="number" inputmode="decimal" min="0" step="any" value="' + (v == null ? '' : esc(Math.round(v))) + '" aria-label="' + x[1] + ' 목표 (' + x[2] + ')"><i>' + x[2] + '</i></span>'
           : '<span class="drow__vl">' + (v == null ? '—' : comma(v) + x[2]) + '</span>') +
         (r.skip ? '' : '<button type="button" class="dedit" data-act="dg-edit" data-v="' + k + '" aria-pressed="' + (r.editing === k) + '">' + (r.editing === k ? '완료' : '고치기') + '</button>') + '</div>';
-    }).join('') + '</div>' +
-      (r.notes.length ? '<ul class="dnotes">' + r.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '');
+    }).join('') + '</div>';
+  }
+  /** 범위 안내 줄 (고친 값을 적는 동안 이 부분만 다시 그림) */
+  function notes(r) {
+    return r.notes.length ? '<ul class="dnotes">' + r.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '';
   }
 
   /** ① 목표 고르기. m = { goal, sex, age, height, weight, activity, skip, retune, reco, saving, error, first, notice } */
@@ -54,16 +57,18 @@
         return '<button type="button" class="dgoal" data-act="dg-goal" data-v="' + g[0] + '" aria-pressed="' + (m.goal === g[0]) + '"><span class="dgoal__n">' + g[1] + '</span><span class="dgoal__d">' + g[2] + '</span></button>';
       }).join('') + '</div>' +
       body +
-      '<div id="dg-reco">' + reco(m.reco) + '</div>' +
+      '<div id="dg-reco">' + reco(m.reco) + '</div><div id="dg-notes" aria-live="polite">' + notes(m.reco) + '</div>' +
       '<div class="card dsw"><span class="dsw__tx"><span class="dsw__n" id="dg-retune-l">체중 변화로 목표 다시 맞추기</span><span class="dsw__d">선택 · 켜면 주 1회 체중을 물어봐요</span></span>' +
         '<button type="button" class="switch" role="switch" aria-checked="' + !!m.retune + '" aria-labelledby="dg-retune-l" data-act="dg-retune"><span class="switch__knob"></span></button></div>' +
       '<button type="button" class="dbasis" data-act="dg-basis"><span class="dbasis__tx"><b>이렇게 계산했어요</b><span>Mifflin-St Jeor 식 · 국제스포츠영양학회 · 한국인 영양소 섭취기준</span></span>' + svg(CHEV, 18) + '</button>' +
-      '<div class="ddisc"><b>참고용 추천이에요</b>' + esc(m.notice.replace(/^참고용 추천이에요\.\s*/, '')) + '</div>' +
+      disc(m.notice) +
       (m.error ? '<p class="rform__error" role="alert">' + esc(m.error) + '</p>' : '') +
       '<div class="dfoot"><button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dg-start"' + (m.saving ? ' disabled' : '') + '>' + (m.saving ? '저장 중…' : m.first ? '이 목표로 시작' : '이 목표로 바꾸기') + '</button></div>' +
       '</section></div>';
   }
 
+  /** 안내 상자 — goals.md 8절 문구 글자 그대로 (첫 문장만 굵게) */
+  function disc(t) { var i = t.indexOf('. ') + 1; return '<div class="ddisc"><b>' + esc(t.slice(0, i)) + '</b> ' + esc(t.slice(i + 1)) + '</div>'; }
   var STEPS = [
     ['기초대사량', 'Mifflin-St Jeor 식 · 성별, 나이, 키, 체중으로 계산. 여러 식을 비교한 연구에서 가장 정확했지만, 실제와 10% 넘게 다른 사람도 있어요', 'Frankenfield 외, 미국영양사협회지 2005'],
     ['하루 소비량', '기초대사량 × 운동 빈도 계수(1.2~1.725). 사람마다 차이가 커요', '널리 쓰는 관례값 · 추정'],
@@ -79,7 +84,7 @@
       '<span class="grabber" aria-hidden="true"></span><h2 id="dbasis-title" class="sheet__title">이렇게 계산했어요</h2>' +
       '<p class="sheet__sub">공식으로 낸 추정값이라 실제와 다를 수 있어요</p>' +
       '<ol class="dsteps">' + STEPS.map(function (s) { return '<li><b>' + s[0] + '</b><span>' + s[1] + '</span><em>' + s[2] + '</em></li>'; }).join('') + '</ol>' +
-      '<div class="ddisc"><b>참고용 추천이에요</b>' + esc(b.notice.replace(/^참고용 추천이에요\.\s*/, '')) + '</div>' +
+      disc(b.notice) +
       '<button type="button" class="mbtn mbtn--solid dbasis__ok" data-act="dg-basis-ok">' + (b.needAck ? '확인했어요 · 이 목표로 시작' : '확인했어요') + '</button>' +
       '</section></div>';
   }
@@ -96,7 +101,7 @@
       '<section class="card notice"><h2 class="notice__title">기록하기는 곧 열려요</h2><p class="notice__body">평소 말투로 적으면 정리해 주는 식단 기록은 다음 업데이트에서 열려요. 목표 숫자는 단짝과 같이 보고, 몸 정보는 나만 봐요.</p></section></div>';
   }
 
-  var api = { goalScreen: goalScreen, reco: reco, basisSheet: basisSheet, home: home, GOAL_NAME: GOAL_NAME };
+  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -175,6 +175,7 @@
             var next = change(snap.exists ? snap.data() : null);
             next.code = code; next.updatedBy = uid; next.updatedAt = new Date().toISOString();
             tx.set(ref, next);
+            return next; // 저장한 값 → 화면에 바로 반영
           });
         });
       },
@@ -186,12 +187,14 @@
           var list = Object.keys(refs);
           return Promise.all(list.map(function (c) { return tx.get(refs[c]); })).then(function (snaps) {
             var data = {}; snaps.forEach(function (sn, i) { if (sn.exists) data[list[i]] = sn.data(); });
-            var writes = fn(data);
+            var writes = fn(data), done = {};
             Object.keys(writes).forEach(function (c) {
               var cur = data[c] || {};
               var next = Object.assign({ visits: [], stars: {} }, cur, writes[c], { code: c, updatedBy: uid, updatedAt: at });
               tx.set(refs[c] || db.doc('places/' + c), next);
+              done[c] = next;
             });
+            return done;
           });
         });
       },
@@ -208,7 +211,7 @@
       /** 몸 정보와 목표를 한 번에 (둘 중 하나만 저장되지 않게) */
       saveDietGoal: function (uid, priv, goal) {
         var b = db.batch();
-        b.set(db.doc('private/' + uid), priv);
+        b.set(db.doc('private/' + uid), priv, { merge: true }); // 몸 정보 · 확인한 때를 지우지 않게 (점검 AI)
         b.set(db.doc('goals/' + uid), goal);
         return b.commit();
       },
