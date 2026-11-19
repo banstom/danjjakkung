@@ -21,6 +21,9 @@
 /* 도트 글꼴은 가짜 굵게 · 부드럽게를 끈다 (Galmuri14 에는 굵은 판이 없어 굵기 대신 크기 · 색으로 위계) */
 [data-skin="pixel"] body { font-synthesis: none; -webkit-font-smoothing: none; text-rendering: optimizeSpeed; }
 
+/* 글씨 크기가 따로 없는 폼 부품(브라우저 기본 13.33px)은 부모 글씨를 따른다 — 아래 크기 표가 이긴다 (:where 로 우선순위 0) */
+:where([data-skin="pixel"]) :where(button, input, select, textarea) { font-family: inherit; font-size: inherit; }
+
 /* 2. 바탕 · 머리 장식 — 그림은 themes/<테마>/{bg,head}[-night].svg (토큰 --bg-art · --head-art) */
 [data-skin="pixel"] body {
   background-color: var(--bg);
@@ -62,7 +65,10 @@
 [data-skin="pixel"] :is(.chip, .dday, .mchip, .uchip, .tag) { border: 0; border-radius: 0; box-shadow: var(--px-frame-2); }
 [data-skin="pixel"] .chip[aria-pressed="true"] { box-shadow: var(--px-frame-2), inset 0 -3px 0 var(--btn-lo); }
 [data-skin="pixel"] :is(.field__input, .nselect, .icon-pick) { border-radius: 0; }
-[data-skin="pixel"] :is(.cell, .emoji-tile, .tcheck, .cpick, .swatch) { border-radius: 0; }
+[data-skin="pixel"] :is(.cell, .emoji-tile, .tcheck, .cpick, .swatch, .ttag, .tcolors, .tcolors__who) { border-radius: 0; }
+[data-skin="pixel"] .tpick { border: 0; border-radius: 0; box-shadow: var(--px-frame); }
+[data-skin="pixel"] .tpick.is-on { box-shadow: var(--px-frame), 0 0 0 6px var(--primary); }
+[data-skin="pixel"] .tprev { border-radius: 0; }
 [data-skin="pixel"] :is(.switch, .switch__knob) { border-radius: 0; }
 
 /* 5. 목록 구분선 — 6px 간격 픽셀 점선 */
@@ -195,9 +201,11 @@
 [data-skin="pixel"] .sstatus__now { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"] .sstatus__row { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"] .slanes-head > span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tpick__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tset__sec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tset__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tset__more { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"] .tpick__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tpick__desc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ttag { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"] .tcolors__title { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"] .tcolors__sub { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"] .tcolors__who { font-size: 12px; font-family: var(--px-font-11); }
@@ -456,4 +464,13 @@
 [data-skin="pixel"] .dask__q { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"] .dask__in { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"] .mvdel .text-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dwhen__l { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dwhen__v { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dcal__m { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dcal__w { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dcal__d { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tdone__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tdone__s { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .recap-cover__when { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .recap-cover__title { font-size: 24px; font-family: var(--px-font-11); }
 /* ── 글씨 크기 표 끝 ── */

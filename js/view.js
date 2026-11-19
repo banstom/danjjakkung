@@ -27,6 +27,8 @@
       (h.dday ? '<button type="button" class="dday" data-act="open-anniv" aria-label="' + esc(h.dday.text + (h.dday.today ? ' · 오늘은 ' + h.dday.today : '') + ' · 기념일 보기') + '">' +
         '<span aria-hidden="true">' + (h.dday.today ? '🎉' : '💞') + '</span>' + esc(h.dday.text) + '</button>' : '') +
       '</div></div>' +
+      // 도트 테마 그림 S1: 칩이 없는 머리말(「전체」 탭) 오른쪽 — 그림이 있는 테마에서만
+      (!h.dday && root.RT && root.RT.themes ? root.RT.themes.artHtml('s1', 'top__art') : '') +
       '</header>';
   }
 
@@ -105,28 +107,47 @@
       '</section>';
   }
 
-  // 「테마」 시트 — 카드마다 그 테마 색으로 칠한 작은 화면. 누르면 바로 바뀐다.
-  var MINI_CELLS = ['full', 'half', 'none', 'full', 'full', 'half', 'full', 'none', 'half', 'full'];
+  // 「테마」 시트 (11/19 겨울 업데이트, docs/themes-winter/spec.md 7절 — 제목은 v53 결정대로 「테마」) — 위에서부터 낮 · 밤 / 테마 카드 / 다른 테마 더 보기 / 사람 색.
+  // 카드 미리보기는 CSS 만: 그 테마의 지금 판(낮 · 밤) 색을 data-theme 으로 받는다. 누르면 바로 바뀌고 저장 버튼은 없다.
+  var FEATURED = ['winter-snack', 'merry-xmas', 'soft-pastel', 'cosmic-dream'];
+  var MODE_LABEL = { auto: '자동', light: '낮', dark: '밤' };
+  function themeCard(th, t) {
+    var on = th.id === t.current;
+    var tags = (on ? ['<span class="ttag ttag--on">사용 중</span>'] : []).concat(th.modes ? ['<span class="ttag">낮·밤</span>'] : [])
+      .concat((th.tags || []).map(function (x) { return '<span class="ttag">' + esc(x) + '</span>'; }))
+      .concat(th.modes ? [] : ['<span class="ttag">' + (th.dark ? '어둡게' : '밝게') + '</span>']);
+    return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.ko + (th.name !== th.ko ? ' (' + th.name + ')' : '') + ' — ' + th.desc + (th.modes ? ', 낮·밤' : '') + (on ? ', 사용 중' : '')) + '">' +
+      '<span class="tprev' + (th.skin ? ' tprev--' + th.skin : '') + '" data-theme="' + esc(th.board) + '" aria-hidden="true"><span class="tprev__card"><i class="tprev__bar"></i><i class="tprev__bar tprev__bar--sub"></i></span></span>' +
+      '<span class="tpick__name">' + esc(th.ko) + '</span>' +
+      '<span class="tpick__tags">' + tags.join('') + '</span>' +
+      '</button>';
+  }
   function themeSheet(t, entering) {
     if (!t) return '';
-    var cells = MINI_CELLS.map(function (c) { return '<i class="tmini__cell lv-' + c + '"></i>'; }).join('');
+    var feat = FEATURED.slice();
+    if (feat.indexOf(t.current) < 0) feat.push(t.current); // 지금 테마는 늘 보이게
+    var main = t.themes.filter(function (th) { return feat.indexOf(th.id) >= 0; }).sort(function (a, b) { return feat.indexOf(a.id) - feat.indexOf(b.id); }); // 목업 순서: 도트 2 → 기본 밝게 · 어둡게
+    var rest = t.themes.filter(function (th) { return feat.indexOf(th.id) < 0; });
+    var modeSec = t.hasModes ?
+      '<section class="tset" aria-labelledby="tmode-title"><h3 id="tmode-title" class="tset__sec">낮 · 밤</h3>' +
+      '<div class="seg seg--full" role="group" aria-label="낮 · 밤 고르기">' + ['auto', 'light', 'dark'].map(function (m) {
+        return '<button type="button" class="seg__btn" data-act="theme-mode" data-v="' + m + '" aria-pressed="' + (t.mode === m) + '">' + MODE_LABEL[m] + '</button>';
+      }).join('') + '</div>' +
+      '<p class="tset__hint" aria-live="polite">' + (t.mode === 'auto' ? '지금은 ' + (t.night ? '밤' : '낮') + '이에요 · 휴대폰 설정을 따라요' : '늘 ' + (t.mode === 'dark' ? '밤' : '낮') + '으로 보여요') + '</p></section>' : '';
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="close-theme" aria-label="닫기"></button>' +
       '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="theme-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="theme-title" class="sheet__title">테마</h2></div>' +
-      '<p class="sheet__sub">고르면 바로 바뀌어요 · 테마는 이 기기에 저장돼요</p>' +
-      personColors(t.colors) +
-      '<div class="tgrid" role="group" aria-label="테마 고르기">' + t.themes.map(function (th) {
-        var on = th.id === t.current;
-        return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-theme="' + esc(th.id) + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.name + ' (' + th.ko + ') — ' + th.desc + (on ? ', 사용 중' : '')) + '">' +
-          (on ? '<span class="tpick__badge" aria-hidden="true">' + CHECK_SVG + '</span>' : '') +
-          '<span class="tmini" aria-hidden="true">' + cells + '</span>' +
-          '<span class="tpick__btn" aria-hidden="true">체크</span>' +
-          '<span class="tpick__name">' + esc(th.name) + '</span>' +
-          '<span class="tpick__desc">' + esc(th.desc) + (on ? ' · 사용 중' : '') + '</span>' +
-          '</button>';
-      }).join('') + '</div>' +
+      '<p class="sheet__sub">고르면 바로 바뀌어요 · 테마와 낮·밤은 이 기기에 저장돼요</p>' +
+      modeSec +
+      '<section class="tset" aria-labelledby="tpick-title"><h3 id="tpick-title" class="tset__sec">테마</h3>' +
+      (t.hasModes ? '' : '<p class="tset__hint">이 테마는 한 가지 밝기만 있어서 낮·밤 고르기가 없어요</p>') +
+      '<div class="tgrid" role="group" aria-label="테마 고르기">' + main.map(function (th) { return themeCard(th, t); }).join('') +
+      (t.more ? rest.map(function (th) { return themeCard(th, t); }).join('') : '') + '</div>' +
+      (rest.length ? '<button type="button" class="tset__more" data-act="theme-more" aria-expanded="' + !!t.more + '">' + (t.more ? '접기' : '다른 테마 더 보기 · ' + rest.length + '개') + '</button>' : '') +
+      '</section>' +
+      (t.colors ? '<section class="tset" aria-labelledby="tcolor-sec"><h3 id="tcolor-sec" class="tset__sec">사람 색</h3>' + personColors(t.colors) + '</section>' : '') +
       '<button type="button" class="close-btn" data-act="close-theme">닫기</button>' +
       '</section></div>';
   }
@@ -509,6 +530,16 @@
       '</section>';
   }
 
+  /** 결산 표지 (S4 자리 부품) — 월말 · 연말결산 화면이 생기면 첫 장으로 쓴다. 아직 어디서도 부르지 않음.
+      c = { kind: 'month' | 'year', year, month } → 「2026년 11월 · 이번 달의 단짝꿍」 / 「2026년 · 이번 해의 단짝꿍」 */
+  function recapCover(c) {
+    var art = root.RT && root.RT.themes ? root.RT.themes.artHtml('s4') : '';
+    var when = c.kind === 'year' ? c.year + '년' : c.year + '년 ' + c.month + '월';
+    return '<section class="card recap-cover">' + art + '<div class="recap-cover__tx"><p class="recap-cover__when">' + esc(when) + '</p>' +
+      '<h2 class="recap-cover__title">' + (c.kind === 'year' ? '이번 해의 단짝꿍' : '이번 달의 단짝꿍') + '</h2>' +
+      '<button type="button" class="solid-btn" data-act="recap-next">넘겨 보기 ▶</button></div></section>';
+  }
+
   /** status: 'loading' | 'nodb' | 'ready' | 'login' | 'setup' | 'denied' | 'unconfigured' */
   function page(status, m, toastText, opts) {
     var out = header(m.header);
@@ -551,7 +582,7 @@
     return out;
   }
 
-  var api = { questBody: questBody, page: page, esc: esc, TITLE: TITLE };
+  var api = { questBody: questBody, page: page, esc: esc, TITLE: TITLE, recapCover: recapCover };
   root.RT = root.RT || {};
   root.RT.view = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

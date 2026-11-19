@@ -40,7 +40,8 @@
     catSheet: null,      // 「카테고리」 시트 { back: 돌아갈 일정 · 할 일 폼, backKind: 'event' | 'todo', sorting: 순서 바꾸는 중, edit: { id, name, icon, error, saving, confirmDelete } | null, error }
     sched: null,         // { mode: 'week' | 'day', weekStart, day }
     notifyOpen: false,   // 「알림」 시트
-    themeOpen: false,    // 「테마」 시트
+    themeOpen: false,    // 「테마·사람 색」 시트
+    themeMore: false,    // 그 시트의 「다른 테마 더 보기」
     couple: null,        // 우리 기념일 couple/main (v46) — 없으면 null
     coupleOff: false,    // 규칙이 아직 없거나 막히면 기념일 칸만 숨긴다
     anniv: null,         // 기념일 시트 { edit: null | { label, custom, start, saving, error } }
@@ -214,7 +215,7 @@
     'routine-view': 'data-v', 'pick-kind': 'data-v', 'rt-order': null, 'rt-order-done': null, 'rt-move': 'data-key',
     'when-mode': 'data-v', 'when-cue': 'data-v', 'when-remind': null, 'when-clear-at': null,
     'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'theme-mode': 'data-v', 'theme-more': null, 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -407,6 +408,8 @@
   }
 
   // 단짝 지도: 지역(path)을 누르면 그 지역 시트 (끌거나 확대한 직후의 click 은 map-zoom.js 가 막음)
+  // 휴대폰 다크 모드가 바뀌어 판이 바뀌면(자동) 시트의 「지금은 낮/밤이에요」 · 카드 미리보기 · 그림 자리를 다시 그린다
+  if (RT.themes && RT.themes.onChange) RT.themes.onChange(function () { render(); });
   appEl.addEventListener('click', function (ev) {
     var rg = state.map && ev.target.closest && ev.target.closest('#km [data-code]');
     if (rg) mapSel(rg.getAttribute('data-code'));
@@ -556,6 +559,8 @@
     else if (act === 'open-theme') openTheme();
     else if (act === 'close-theme') closeTheme();
     else if (act === 'pick-theme') pickTheme(btn.getAttribute('data-v'));
+    else if (act === 'theme-mode') { if (RT.themes.chooseMode(btn.getAttribute('data-v'))) render(); }
+    else if (act === 'theme-more') { state.themeMore = !state.themeMore; render(); }
     else if (act === 'pick-color') pickColor(btn.getAttribute('data-who'), btn.getAttribute('data-v'));
     else if (act === 'reset-colors') resetColors();
     else if (act === 'push-on') pushOn();
@@ -2698,7 +2703,7 @@
       map: allMapModel(),
       diet: allDietModel(),
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
-      theme: RT.themes ? RT.themes.byId(RT.themes.current()).name : '',
+      theme: RT.themes ? RT.themes.byId(RT.themes.current()).ko : '',
       meName: state.me ? nameOf(state.me) : ''
     };
   }
@@ -2816,7 +2821,12 @@
   // ── 테마 ── (테마는 이 기기에, 나 · 상대 색은 내 계정에 테마마다 저장: js/themes.js)
   function themeModel() {
     var T = RT.themes, id = T.current(), slot = mySlot(), ps = planPeople();
-    var out = { themes: T.THEMES, current: id, colors: null };
+    var mode = T.mode();
+    var out = {
+      // 카드 미리보기는 그 테마의 지금 판(낮 · 밤 고르기를 따름)
+      themes: T.THEMES.map(function (th) { return Object.assign({}, th, { board: T.board(th.id) }); }),
+      current: id, colors: null, hasModes: T.hasModes(id), mode: mode, night: T.isNight(id), more: !!state.themeMore
+    };
     if (!slot || !store) return out;
     var colors = state.colors || {}, pair = T.pairFor(id, colors, slot);
     var partner = ps.filter(function (p) { return !p.mine; })[0];

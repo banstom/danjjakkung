@@ -68,7 +68,17 @@
         (p.mine ? '<button type="button" class="add-line add-line--mini" data-act="todo-add" data-key="' + esc(p.key) + '">＋ 추가</button>' : '') +
         '</section>';
     }).join('');
-    return '<div class="plan">' + todoBar(t) + tog + '<div class="tcols">' + cols + '</div>' + archiveLine(t) + '</div>';
+    return '<div class="plan">' + todoBar(t) + doneCard(t) + tog + '<div class="tcols">' + cols + '</div>' + archiveLine(t) + '</div>';
+  }
+  // 도트 테마 그림 S3: 함께 할 일 · 내 할 일이 남지 않았고 오늘 끝낸 일이 있을 때 (그림이 있는 테마에서만 — 다른 테마는 화면 그대로)
+  function doneCard(t) {
+    var art = root.RT && root.RT.themes ? root.RT.themes.artHtml('s3') : '';
+    if (!art) return '';
+    var mine = t.people.filter(function (p) { return p.mine; })[0];
+    if (!mine || t.together.open.length || mine.open.length) return '';
+    var doneToday = (t.together.doneCount || t.together.done.length || 0) + (mine.doneCount || mine.done.length || 0);
+    if (!doneToday) return '';
+    return '<section class="card tdone" role="status">' + art + '<p class="tdone__t">오늘 할 일을 다 끝냈어요</p><p class="tdone__s">따뜻한 거 하나 먹고 쉬어요</p></section>';
   }
   function todoBar(t) {
     return '<div class="plan__bar"><div class="seg" role="group" aria-label="할 일 보기">' +

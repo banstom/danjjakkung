@@ -61,7 +61,9 @@
         d = d || {};
         var line = d.kcal ? '하루 ' + Math.round(d.kcal).toLocaleString('ko-KR') + 'kcal' : '목표 정하기';
         return '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="' + esc('단짝 식탁 · ' + line) + '">' +
-          '<span class="afeat__nm">단짝 식탁</span><span class="afeat__ico">' + svg(36, ICON.bowl) + '</span>' +
+          '<span class="afeat__nm">단짝 식탁</span>' +
+          // 도트 테마 그림 S2 (그림이 있는 테마에서만, 없으면 그릇 아이콘)
+          '<span class="afeat__ico">' + ((root.RT && root.RT.themes && root.RT.themes.artHtml('s2', 'afeat__art')) || svg(36, ICON.bowl)) + '</span>' +
           '<span class="afeat__ds">' + esc(line) + '</span></button></div>';
       })(m.diet);
     var set = '<h2 class="asec">설정</h2><div class="alist">' +

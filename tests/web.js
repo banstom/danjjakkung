@@ -1970,8 +1970,10 @@ async function tick(page, dateKey, key) {
   await ip.close();
 
   // 4-4) 테마: 처음엔 기본(밝은 화면 → Soft Pastel), 🎨에서 고르면 바로 바뀌고 새로 열어도 그대로. 짝꿍 기기는 그대로.
-  const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'];
+  const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas'];
   const themeOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  // 테마 카드 누르기 — 앞 네 개 밖은 「다른 테마 더 보기」를 먼저 연다 (11/19)
+  const tpick = async (p, id) => { if (!(await p.$(`.tpick[data-v="${id}"]`))) await p.click('[data-act="theme-more"]'); await p.click(`.tpick[data-v="${id}"]`); };
   await toAll(jm);
   console.log('테마 처음:', await themeOf(jm), '| 계절 칩 없음:', (await jm.$$('.season-chip')).length === 0, '| 🎨:', await jm.getAttribute('[data-act="open-theme"]', 'aria-label'));
   await jm.click('[data-act="open-theme"]');
@@ -1979,8 +1981,11 @@ async function tick(page, dateKey, key) {
     '| 선택 표시:', await jm.getAttribute('.tpick.is-on', 'data-v'), await jm.getAttribute('.tpick.is-on', 'aria-pressed'));
   await jm.screenshot({ path: path.join(OUT, 'theme-sheet-soft-pastel.png') });
   // 카드마다 제 테마 색으로 칠해졌는지 (카드 바탕 = 그 테마의 바탕색)
-  console.log('카드 바탕:', (await jm.$$eval('.tpick', (els) => els.map((e) => e.getAttribute('data-v') + '=' + getComputedStyle(e).backgroundColor))).join(' '));
+  // 카드 미리보기는 그 테마(지금 판) 바탕색 (11/19: 미리보기 상자 .tprev 가 data-theme 을 받음)
+  console.log('카드 바탕:', (await jm.$$eval('.tpick', (els) => els.map((e) => e.getAttribute('data-v') + '=' + getComputedStyle(e.querySelector('.tprev')).backgroundColor))).join(' '));
   for (const id of THEME_IDS) {
+    // 앞 네 개(도트 2 · 소프트 파스텔 · 코스믹 드림) 밖은 「다른 테마 더 보기」 안에
+    if (!(await jm.$(`.tpick[data-v="${id}"]`))) await jm.click('[data-act="theme-more"]');
     await jm.click(`.tpick[data-v="${id}"]`);
     await jm.waitForTimeout(380);
     const st = await jm.evaluate(() => ({ t: document.documentElement.getAttribute('data-theme'), saved: localStorage.getItem('danjjakkung.theme'),
@@ -2040,7 +2045,7 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="tab"][data-tab="routine"]');
   // 바꿀 때 실제로 스르륵 전환되는지 (선택 표시를 먼저 그린 뒤 색을 바꾼다)
   await openSet(jm, 'open-theme');
-  await jm.click('.tpick[data-v="cosmic-dream"]');
+  await tpick(jm, 'cosmic-dream');
   const mid = await jm.evaluate(() => ({ cls: document.documentElement.classList.contains('is-theming'), tr: getComputedStyle(document.querySelector('.sheet')).transitionDuration }));
   await jm.waitForTimeout(400);
   console.log('전환 중:', mid.cls, mid.tr, '| 끝난 뒤:', await jm.evaluate(() => document.documentElement.classList.contains('is-theming')));
@@ -2072,13 +2077,13 @@ async function tick(page, dateKey, key) {
   await jm.waitForTimeout(150);
   console.log('서로 바꾸기:', JSON.stringify(docs.get('users/' + jmUid).colors['soft-pastel']), '| 표시(나=a, 상대=b):', await jm.$$eval('.cpick[aria-pressed="true"]', (a) => a.map((x) => x.dataset.who + x.dataset.v).join(' ')));
   // 다른 테마로 가면 그 테마 기본색, 거기서 고른 색은 따로
-  await jm.click('.tpick[data-v="ocean-breeze"]');
+  await tpick(jm, 'ocean-breeze');
   await jm.waitForTimeout(350);
   console.log('Ocean으로:', await vars(jm), '| 기본으로 버튼 없음:', !(await jm.$('[data-act="reset-colors"]')));
   await jm.click('.cpick[data-who="self"][data-v="#B49AD8"]');
   await jm.waitForTimeout(150);
   await jm.screenshot({ path: path.join(OUT, 'theme-colors-ocean-breeze.png') });
-  await jm.click('.tpick[data-v="soft-pastel"]');
+  await tpick(jm, 'soft-pastel');
   await jm.waitForTimeout(350);
   console.log('Soft로 돌아오면 고른 색 그대로:', await vars(jm));
   // 내 다른 기기: 같은 계정이면 같은 색 (테마는 기기마다)
@@ -2088,13 +2093,13 @@ async function tick(page, dateKey, key) {
   console.log('다른 기기(Ocean):', await vars(jm2));
   // 다른 기기에서 바꾸면 이 기기도 바로 바뀐다
   await jm2.click('[data-act="open-theme"]');
-  await jm2.click('.tpick[data-v="soft-pastel"]');
+  await tpick(jm2, 'soft-pastel');
   await jm2.waitForTimeout(350);
   await jm2.click('[data-act="reset-colors"]');
   await jm2.waitForTimeout(150);
   console.log('기본으로(다른 기기) → 이 기기:', await vars(jm), '| 저장:', JSON.stringify(docs.get('users/' + jmUid).colors));
   // 새로 열 때 깜빡임 없이: 그리기 전부터 지난번 색
-  await jm.click('.tpick[data-v="ocean-breeze"]');
+  await tpick(jm, 'ocean-breeze');
   await jm.waitForTimeout(350);
   await jm.keyboard.press('Escape');
   await jm.reload();
@@ -2113,7 +2118,7 @@ async function tick(page, dateKey, key) {
   await toAll(bl);
   await bl.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('blocked'); }; });
   await bl.click('[data-act="open-theme"]');
-  await bl.click('.tpick[data-v="vintage-film"]');
+  await tpick(bl, 'vintage-film');
   await bl.waitForTimeout(350);
   await bl.emulateMedia({ colorScheme: 'dark' });
   await bl.waitForTimeout(350);

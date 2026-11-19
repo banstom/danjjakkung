@@ -78,6 +78,18 @@
    ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'], // 10/28 시간표 색 바꿈
    ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'] // 11/19 겨울 도트 테마
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
+  // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
+  // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
+  var ART = {
+    'winter-snack': {
+      s1: { w: 38, h: 38, x: 2, alt: '군밤 봉지' }, s2: { w: 34, h: 34, x: 2, alt: '붕어빵 두 마리' },
+      s3: { w: 40, h: 31, x: 3, alt: '김 나는 군고구마' }, s4: { w: 64, h: 65, x: 2, alt: '간식 한 상' }
+    },
+    'merry-xmas': {
+      s1: { w: 32, h: 40, x: 2, alt: '작은 트리' }, s2: { w: 37, h: 38, x: 2, alt: '진저브레드 쿠키 둘' },
+      s3: { w: 28, h: 41, x: 3, alt: '눈사람' }, s4: { w: 40, h: 40, x: 3, alt: '선물 더미' }
+    }
+  };
   var LIGHT_DEFAULT = 'soft-pastel';
   var DARK_DEFAULT = 'cosmic-dream';
 
@@ -176,6 +188,18 @@
     if (!save(id)) return false;
     apply(id, { smooth: true });
     return true;
+  }
+  /** 지금 테마의 그림 자리 (없으면 null): { src, w, h, alt } — w · h 는 화면 크기(원본 × 정수 배율) */
+  function art(slot, id) {
+    var t = byId(id || current()), a = t && ART[t.id] && ART[t.id][slot];
+    if (!a) return null;
+    return { src: 'themes/' + t.id + '/' + slot + '.png', w: a.w * a.x, h: a.h * a.x, nw: a.w, nh: a.h, alt: a.alt };
+  }
+  /** 그림 자리 <img> (없으면 '') */
+  function artHtml(slot, cls) {
+    var a = art(slot);
+    if (!a) return '';
+    return '<img class="theme-art theme-art--' + slot + (cls ? ' ' + cls : '') + '" src="' + a.src + '" width="' + a.w + '" height="' + a.h + '" alt="' + a.alt + '" decoding="async">';
   }
   /** 낮 · 밤 고르기: 저장하고 지금 테마를 다시 단다 */
   function chooseMode(m) {
@@ -278,7 +302,7 @@
   function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
 
   var api = { THEMES: THEMES, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
-    mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
+    ART: ART, art: art, artHtml: artHtml, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
     palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;
