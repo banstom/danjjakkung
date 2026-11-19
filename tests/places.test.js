@@ -223,7 +223,11 @@ test('v54 저장 모양: 새 방문 + 내 기록 · 내 칸만 고침 · 비우�
   many.entries.d = {}; many.visits.forEach((x) => { many.entries.d[x.id] = ent(3); });
   const n3 = P.addVisit(many, { id: 'new', date: '2026-10-01' }, 'j', null);
   assert.equal(n3.visits.length, 100);
-  assert.equal(Object.keys(n3.entries.d).length, 99, '빠진 방문의 기록도 함께 빠짐');
+  assert.equal(Object.keys(n3.entries.d).length, 100, '점검 AI: 단짝 칸은 건드리지 않음 (규칙 거부 방지) — 빠진 방문 기록은 fromDoc 이 무시');
+  assert.equal(P.fromDoc('11110', n3).entries.d && Object.keys(P.fromDoc('11110', n3).entries.d).length, 99, '보이는 건 남은 방문 것만');
+  const mine = P.addVisit({ visits: [{ id: 'a', date: '2026-01-01' }], entries: { j: { gone: ent(5), a: ent(4) }, d: { gone: ent(1) } } }, { id: 'b', date: '2026-02-01' }, 'j', null);
+  assert.deepEqual(Object.keys(mine.entries.j), ['a'], '내 칸의 옛 기록은 정리'); assert.deepEqual(mine.entries.d, { gone: ent(1) }, '단짝 칸은 그대로');
+  assert.throws(() => P.setEntry({ visits: [{ id: 'a', date: '2026-01-01' }] }, 'j', 'zz', ent(3)), /지워진 방문/, '그 사이 지워진 방문에는 저장 안 함');
   assert.ok(n3.visits.every((x) => !('note' in x)) && !('stars' in n3));
 });
 

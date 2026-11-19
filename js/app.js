@@ -2007,7 +2007,10 @@
       var vid = f.vid;
       f.saving = true; render(true);
       savePlace(code, uid, function (cur) { return RT.places.setEntry(cur, uid, vid, entry); })
-        .then(function () { backToView(code, entry ? '내 기록을 남겼어요' : '내 기록을 비웠어요'); }, function (e) { recordFail(e, '저장이 막혔어요. 잠시 뒤 다시 해 주세요'); });
+        .then(function () { backToView(code, entry ? '내 기록을 남겼어요' : '내 기록을 비웠어요'); }, function (e) {
+          if (e && e.code === 'visit-gone') { backToView(code, '그 사이 지워진 방문이에요'); return; }
+          recordFail(e, '저장이 막혔어요. 잠시 뒤 다시 해 주세요');
+        });
       return;
     }
     var err = RT.places.validateVisit(f.date, coupleStartKey(), todayKey());
@@ -3117,7 +3120,7 @@
     if (state.map) {
       if (state.map.rank) closeRank();
       else if (state.map.find) closeFind();
-      else if (state.map.sheet && state.map.sheet.mode === 'record' && state.map.sheet.back) { state.map.sheet = { mode: 'view', open: state.map.sheet.open }; render(true); }
+      else if (state.map.sheet && state.map.sheet.mode === 'record' && state.map.sheet.back) { state.map.sheet = { mode: 'view', open: state.map.sheet.open }; focusAfter = ['[data-act="map-visit"]']; focusInSheet = true; render(true); }
       else if (state.map.sel) mapUnsel();
       else closeMap();
       return;
@@ -3244,7 +3247,7 @@
     root.navigator.serviceWorker.addEventListener('message', function (ev) {
       var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(String(d.link || ''));
       var mq = /[?&]map=(\d{5})/.exec(String(d.link || ''));
-      if (d.type === 'open' && mq && state.status === 'ready') { state.pendingMap = mq[1]; openPendingMap(); return; }
+      if (d.type === 'open' && mq) { state.pendingMap = mq[1]; openPendingMap(); return; } // 아직 준비 중이면 ready() 가 연다
       if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
     });
   }

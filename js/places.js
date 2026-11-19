@@ -136,23 +136,27 @@
     if (Object.keys(mine).length) out[uid] = mine; else delete out[uid];
     return out;
   }
-  /** 새 방문 (visit = { id, date, createdAt, createdBy }) + 내 기록(없어도 됨). 100개를 넘으면 가장 오래된 방문과 그 기록을 뺀다 */
+  /** 내 칸에서 남은 방문에 없는 기록을 뺀다 — 다른 사람 칸은 건드리지 않는다
+      (규칙: visits 가 줄지 않은 쓰기에서 단짝 칸을 바꾸면 거부. 단짝 칸에 남은 옛 기록은 fromDoc 이 무시하고, 단짝이 자기 것을 저장할 때 정리된다 — 점검 AI) */
+  function pruneMine(entries, uid, visits) {
+    var keep = {}; visits.forEach(function (v) { keep[v.id] = true; });
+    var out = Object.assign({}, entries || {}), mine = {};
+    Object.keys(out[uid] || {}).forEach(function (vid) { if (keep[vid]) mine[vid] = out[uid][vid]; });
+    if (Object.keys(mine).length) out[uid] = mine; else delete out[uid];
+    return out;
+  }
+  /** 새 방문 (visit = { id, date, createdAt, createdBy }) + 내 기록(없어도 됨). 100개를 넘으면 가장 오래된 방문을 뺀다 */
   function addVisit(cur, visit, uid, entry) {
     var next = baseNext(cur);
     next.visits = withVisit(next.visits, visit);
-    var keep = {}; next.visits.forEach(function (v) { keep[v.id] = true; });
-    var ent = {};
-    Object.keys(next.entries).forEach(function (u) {
-      var m = {}; Object.keys(next.entries[u]).forEach(function (vid) { if (keep[vid]) m[vid] = next.entries[u][vid]; });
-      if (Object.keys(m).length) ent[u] = m;
-    });
-    next.entries = putEntry(ent, uid, visit.id, entry);
+    next.entries = putEntry(pruneMine(next.entries, uid, next.visits), uid, visit.id, entry);
     return next;
   }
-  /** 내 기록 고치기 */
+  /** 내 기록 고치기 — 그 사이 방문이 지워졌으면 저장하지 않는다 (지운 방문에 기록이 남지 않게 — 점검 AI) */
   function setEntry(cur, uid, vid, entry) {
     var next = baseNext(cur);
-    next.entries = putEntry(next.entries, uid, vid, entry);
+    if (!next.visits.some(function (v) { return v.id === vid; })) { var e = new Error('지워진 방문이에요'); e.code = 'visit-gone'; throw e; }
+    next.entries = putEntry(pruneMine(next.entries, uid, next.visits), uid, vid, entry);
     return next;
   }
   /** 방문 지우기 — 두 사람 기록도 함께 */

@@ -127,7 +127,7 @@
         if (day > today) st = 'future';
         else {
           var lv = M.dayLevel(routines, keys, day, isDone).level; // 루틴 탭 달력의 「모두」와 같은 규칙: full · half · none
-          if (day < today) { pastN++; if (lv === 'full') bothN++; }
+          if (day < today && lv !== 'pre' && lv !== 'rest') { pastN++; if (lv === 'full') bothN++; } // 지난 날 = 루틴을 하던 날만 (만들기 전 · 모두 쉬는 날 빼기 — 점검 AI)
           st = lv === 'pre' || lv === 'rest' ? 'rest' : day === today && lv !== 'full' ? 'open' : lv;
         }
         return { n: D.parts(day).d, st: st, today: day === today, mon: S.weekdayOf(day) === 0 };

@@ -244,6 +244,8 @@ test('v54 달: 「모두」 칸은 루틴 탭 달력(model.dayLevel)과 같은 �
   assert.equal(mo.all[1].st, 'full'); assert.equal(mo.all[2].st, 'half'); assert.equal(mo.all[3].st, 'none');
   assert.equal(mo.all[18].st, 'full', '오늘 다 했으면 색'); assert.equal(mo.all[19].st, 'future');
   assert.deepEqual([mo.bothDays, mo.pastDays], [1, 18]);
+  const mid = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: [routine('a', JUN, '준민', '2026-11-11'), routine('c', DAJIN, '다진', '2026-11-11')] }, checks: cks }));
+  assert.equal(mid.routine.month.pastDays, 8, '점검 AI: 지난 날도 루틴을 하던 날만 (11~18일)');
   assert.equal(R.build(base({ mode: 'week', page: 0, today: t, config: { people: {}, routines: rs }, checks: cks })).routine.month, null, '주 보기는 그대로');
 });
 
