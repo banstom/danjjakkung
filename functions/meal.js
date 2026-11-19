@@ -127,7 +127,10 @@ async function callModel(key, system, user, fetchImpl) {
     body: JSON.stringify({ model: MODEL, max_tokens: LIMITS.maxTokens, temperature: 0, system, messages: [{ role: 'user', content: user }] })
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) { const e = new Error('model ' + res.status + ' ' + ((body.error && body.error.type) || '')); e.status = res.status; throw e; }
+  if (!res.ok) { // 오류 이유(키는 들어 있지 않음)를 함께 — 크레딧 부족 · 모델 이름 등을 알 수 있게
+    const er = body.error || {};
+    const e = new Error('model ' + res.status + ' ' + (er.type || '') + ' ' + String(er.message || '').slice(0, 300)); e.status = res.status; throw e;
+  }
   const text = (body.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
   return { text, usage: body.usage || null, stop: body.stop_reason || null };
 }
