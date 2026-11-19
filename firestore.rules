@@ -315,6 +315,20 @@ service cloud.firestore {
       allow delete: if isMember() && request.auth.uid == uid;
     }
 
+    // 단짝 식탁 하루 기록 (D3): meals/<uid>_<YYYY-MM-DD> = { uid, date, meals: [끼니 20개까지], updatedAt }. 둘 다 읽고 본인만 고침
+    //   끼니 안쪽 모양은 앱이 맞춤(규칙은 목록을 돌 수 없음) — 크기 상한으로 막음 (문서 1MB 아래)
+    match /meals/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember()
+        && request.resource.data.keys().hasOnly(['uid', 'date', 'meals', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && id == request.auth.uid + '_' + request.resource.data.date
+        && request.resource.data.meals is list && request.resource.data.meals.size() <= 20
+        && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40;
+      allow delete: if isMember() && resource.data.uid == request.auth.uid;
+    }
+
     // 프로필 사진 (v51): avatars/<uid> — 256px JPEG 를 data URL 글자로 (Storage 없이). 둘 다 읽고 본인만 올리고 지움
     match /avatars/{uid} {
       allow read: if isMember();

@@ -197,6 +197,9 @@ async function open(browser, name, opts = {}) {
     if (p.startsWith('private/') && d && p.split('/').length === 2) { const ok = Object.keys(d).every((k) => ['body', 'suggested', 'edits', 'ackAt', 'updatedAt'].includes(k))
         && (!d.body || (d.body.age >= 1 && d.body.heightCm >= 50 && d.body.weightKg >= 10 && ['m', 'f'].includes(d.body.sex))) && (!d.edits || Object.values(d.edits).every((x) => typeof x === 'number' && isFinite(x)));
       if (!ok) throw new Error('permission-denied'); }
+    // 단짝 식탁 D3: 하루 기록은 자기 것만 (meals/<uid>_<날짜>, 정해진 칸 · 20끼까지)
+    if (p.startsWith('meals/')) { if (p.split('/')[1].split('_')[0] !== uid) throw new Error('permission-denied');
+      if (d && !(Object.keys(d).every((k) => ['uid', 'date', 'meals', 'updatedAt'].includes(k)) && d.uid === uid && p === 'meals/' + uid + '_' + d.date && Array.isArray(d.meals) && d.meals.length <= 20)) throw new Error('permission-denied'); }
     if (p.startsWith('places/') && failPlaces) { failPlaces = false; throw new Error('unavailable'); } // 저장 실패 흉내 (한 번)
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
       const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
@@ -1222,6 +1225,59 @@ async function tick(page, dateKey, key) {
   await jm.setViewportSize({ width: 390, height: 844 }); await jm.evaluate(() => RT.themes.apply(localStorage.getItem('danjjakkung.theme') || 'soft-pastel'));
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(80); await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   console.log('단짝 식탁 D2 확인 끝 (추천 · 고치기 · 근거 확인 · private/goals · 직접 입력 · 단짝 화면 · 뒤로 · 320px)');
+  // 4-1a7) (D3) 기록하기 → 확인 카드 → 저장 · 정리 대기 · 단짝 화면 · 지우기
+  await jm.click('[data-act="all-diet"]'); await jm.waitForSelector('[data-act="dl-open"]');
+  assert.match(await jm.textContent('.dtoday'), /아직 오늘 기록이 없어요/);
+  await jm.click('[data-act="dl-open"]'); await jm.waitForSelector('#dl-text');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'dl-text', '열면 바로 적기');
+  await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; }, null, { timeout: 8000 });
+  await jm.click('[data-act="dl-go"]'); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent('.dscreen .rform__error'), /적어 주세요/, '빈 글은 안 됨');
+  await jm.fill('#dl-text', '점심 12:40\n-사과 1개\n-계란 2개\n-밥 1.5공기\n-우리집 특제 볶음');
+  await jm.click('[data-act="dl-who"][data-v="both"]');
+  assert.strictEqual(await jm.inputValue('#dl-text'), '점심 12:40\n-사과 1개\n-계란 2개\n-밥 1.5공기\n-우리집 특제 볶음', '누르는 사이 적은 글 그대로');
+  await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
+  assert.strictEqual(await jm.textContent('#dc-title'), '12:40 점심 · 4가지');
+  const conf = await jm.textContent('.dconf');
+  assert.match(conf, /사과[^]*114[^]*계란[^]*136[^]*밥 · 추정[^]*공기 기본값 210g[^]*우리집 특제 볶음[^]*정리 대기/);
+  assert.match(await jm.textContent('.dsum'), /약 [\d,]+ kcal[^]*정리 대기 1줄은 합계에 아직 빠져/);
+  await jm.screenshot({ path: path.join(OUT, 'diet-confirm.png') });
+  await jm.click('[data-act="dl-back"]'); await jm.waitForSelector('#dl-text');
+  assert.match(await jm.inputValue('#dl-text'), /우리집 특제 볶음$/, '돌아가도 글 그대로');
+  await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForSelector('.dmeal');
+  const today = await jm.evaluate(() => RT.dates.toKey(RT.dates.fromLocal(new Date())));
+  const md = docs.get('meals/' + jmUid0 + '_' + today);
+  assert.ok(md && md.meals.length === 1, '하루 문서에 끼니 하나');
+  const ml = md.meals[0];
+  assert.strictEqual(ml.at, '12:40'); assert.strictEqual(ml.label, '점심'); assert.strictEqual(ml.together, true); assert.strictEqual(ml.status, 'pending');
+  assert.deepStrictEqual(ml.pending.map((x) => x.raw), ['우리집 특제 볶음']);
+  assert.deepStrictEqual(ml.items.map((x) => x.ref.key), ['사과_생것', '달걀_생것', '쌀밥']);
+  assert.strictEqual(ml.items[2].est, '공기'); assert.strictEqual(ml.items[2].grams, 315);
+  assert.match(await jm.textContent('.dtoday'), /12:40[^]*점심[^]*함께[^]*정리 대기 1/);
+  await jm.screenshot({ path: path.join(OUT, 'diet-today.png') });
+  await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('.dtoday');
+  await dj.waitForFunction(() => /준민 님 오늘 [\d,]+kcal · 1끼/.test(document.querySelector('.dtoday').textContent));
+  await dj.click('[data-act="diet-close"]');
+  // 시각을 안 적으면 지금 · 두 번째 끼니는 시각 순
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '아침 07:30 바나나 2개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title'); await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.map((m) => m.at), ['07:30', '12:40'], '시각 순');
+  // 지우기: 한 번 누르면 확인, 두 번째에 지움
+  await jm.click('.dmeal [data-act="dm-del"]'); await jm.waitForTimeout(60);
+  assert.ok(await jm.$('.dmeal__del.is-armed')); assert.strictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.length, 2);
+  await jm.click('.dmeal__del.is-armed'); await jm.waitForTimeout(250);
+  assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.map((m) => m.at), ['12:40']);
+  // Esc: 확인 카드 → 기록하기 → 닫기
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
+  await jm.keyboard.press('Escape'); await jm.waitForSelector('#dl-text'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('#dl-text')) && await jm.$('.dtoday'), 'Esc 두 번이면 첫 화면');
+  await jm.setViewportSize({ width: 320, height: 640 }); await jm.waitForTimeout(100);
+  assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 첫 화면 넘치지 않음');
+  await jm.setViewportSize({ width: 390, height: 844 });
+  await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
+  console.log('단짝 식탁 D3 확인 끝 (기록하기 · 확인 카드 · 정리 대기 · 저장 · 단짝 화면 · 지우기 · Esc · 320px)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 
   // 4-1b) 시간표 탭: 매주 · 한 번 · 함께 일정, 주 보기 → 일 보기, 남의 일정은 보기만

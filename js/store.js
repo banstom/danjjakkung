@@ -216,6 +216,33 @@
         b.set(db.doc('goals/' + uid), goal);
         return b.commit();
       },
+      // meals/<uid>_<YYYY-MM-DD> = { uid, date, meals: [끼니], updatedAt } — 단짝 식탁 하루 기록 (D3). 둘 다 읽고 본인만 고침
+      watchMealDay: function (uid, date, next, fail) {
+        return db.doc('meals/' + uid + '_' + date).onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
+      },
+      /** 끼니 하나 더하기 / 바꾸기(같은 id) — 시각 순으로 */
+      saveMeal: function (uid, date, meal) {
+        var ref = db.doc('meals/' + uid + '_' + date);
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (snap) {
+            var list = ((snap.exists && snap.data().meals) || []).filter(function (m) { return m.id !== meal.id; });
+            if (list.length >= 20) throw new Error('too-many');
+            list.push(meal);
+            list.sort(function (a, b) { return String(a.at || '').localeCompare(String(b.at || '')); });
+            tx.set(ref, { uid: uid, date: date, meals: list, updatedAt: new Date().toISOString() });
+          });
+        });
+      },
+      deleteMeal: function (uid, date, id) {
+        var ref = db.doc('meals/' + uid + '_' + date);
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (snap) {
+            if (!snap.exists) return;
+            var list = (snap.data().meals || []).filter(function (m) { return m.id !== id; });
+            tx.set(ref, { uid: uid, date: date, meals: list, updatedAt: new Date().toISOString() });
+          });
+        });
+      },
       // avatars/<uid> = { img: 'data:image/jpeg;base64,…'(256px), updatedAt } — 프로필 사진 (v51). 둘 다 읽고 본인만 고침
       watchAvatars: function (next, fail) {
         return db.collection('avatars').onSnapshot(function (q) { var out = {}; q.docs.forEach(function (doc) { out[doc.id] = doc.data(); }); next(out); }, fail);

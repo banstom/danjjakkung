@@ -93,7 +93,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['dl-text', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -221,7 +221,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
-    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null,
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-edit': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-star': 'data-v', 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -599,6 +599,14 @@
     else if (act === 'map-pick') mapPick(btn.getAttribute('data-v'));
     else if (act === 'all-diet') openDiet();
     else if (act === 'diet-close') closeDiet();
+    else if (act === 'dl-open') dietLogOpen();
+    else if (act === 'dl-close') dietLogClose();
+    else if (act === 'dl-go') dietLogGo();
+    else if (act === 'dl-back') { var lb = state.diet && state.diet.log; if (lb) { lb.step = 'input'; lb.result = null; lb.error = ''; focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
+    else if (act === 'dl-save') dietLogSave();
+    else if (act === 'dl-chip') { var lc = state.diet && state.diet.log; if (lc) { dietLogTake(lc); lc.text = (lc.text ? lc.text.replace(/\s+$/, '') + '\n' : '') + btn.getAttribute('data-v'); focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
+    else if (act === 'dl-who') { var lw = state.diet && state.diet.log; if (lw) { dietLogTake(lw); lw.together = btn.getAttribute('data-v') === 'both'; focusAfter = ['[data-act="dl-who"][data-v="' + (lw.together ? 'both' : 'me') + '"]']; focusInSheet = true; render(true); } }
+    else if (act === 'dm-del') dietMealDelete(btn.getAttribute('data-v'));
     else if (act === 'dg-open') { if (state.diet) { dietGoalForm(false); focusAfter = ['[data-act="dg-close"]']; focusInSheet = true; render(true); } }
     else if (act === 'dg-close') { if (state.diet) { if (myGoal()) { state.diet.view = 'home'; state.diet.form = null; focusAfter = ['[data-act="dg-open"]']; render(true); } else closeDiet(); } }
     else if (act === 'dg-goal' || act === 'dg-sex' || act === 'dg-act') { var df = state.diet && state.diet.form; if (df) { var nv0 = btn.getAttribute('data-v'); if (act === 'dg-goal' && df.goal !== nv0 && !df.skip) { df.edits = {}; df.editing = null; } df[act === 'dg-goal' ? 'goal' : act === 'dg-sex' ? 'sex' : 'activity'] = nv0; df.error = ''; focusInSheet = true; render(true); } }
@@ -702,6 +710,7 @@
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietHomeModel()) : RT.viewAll.tab(allModel());
+    if (state.tab === 'all' && state.diet && state.diet.log && !(state.diet.view === 'goal' && state.diet.form)) out.sheet = state.diet.log.step === 'confirm' && state.diet.log.result ? RT.viewDiet.confirmScreen(dietConfirmModel(), state.sheetEntering) : RT.viewDiet.logScreen(dietLogModel(), state.sheetEntering);
     if (state.tab === 'all' && state.diet && state.diet.view === 'goal' && state.diet.form) out.sheet = RT.viewDiet.goalScreen(dietGoalModel(), state.sheetEntering && !state.diet.basis) + (state.diet.basis ? RT.viewDiet.basisSheet({ needAck: state.diet.basis.needAck, notice: RT.dietGoal.NOTICE }, state.sheetEntering) : '');
     if (state.tab === 'all' && state.map && state.map.rank && mapReady()) out.sheet = RT.viewMap.rankScreen(rankModel(), state.sheetEntering);
     else if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
@@ -2206,12 +2215,122 @@
     unGoals = store.watchGoals(function (d) { state.goalDocs = d; state.goalsOff = false; if (state.diet && state.diet.view === 'home' && !myGoal() && !state.diet.form) dietGoalForm(true); render(); },
       function () { state.goalsOff = true; render(); });
     unPriv = store.watchPrivate(uid, function (d) { state.privDoc = d || {}; render(); }, function () { state.privDoc = null; state.privOff = true; render(); });
+    dietWatchDay();
     if (state.goalDocs && !myGoal()) dietGoalForm(true);
     focusAfter = ['[data-act="diet-close"]', '[data-act="dg-close"]'];
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
   }
-  function stopDiet() { if (unGoals) { unGoals(); unGoals = null; } if (unPriv) { unPriv(); unPriv = null; } state.diet = null; }
+  function stopDiet() { if (unGoals) { unGoals(); unGoals = null; } if (unPriv) { unPriv(); unPriv = null; } unMeals.forEach(function (f) { f(); }); unMeals = []; state.diet = null; }
+
+  /* ── 단짝 식탁 D3: 오늘 먹은 것 · ④ 기록하기 · ⑤ 확인 카드 ── */
+  var unMeals = [], foodTabP = null;
+  function dietDayKey() { return RT.dates.toKey(state.today); }
+  /** 오늘 내 기록 · 단짝 기록 (meals/<uid>_<날짜>). 날짜가 바뀌면 다시 */
+  function dietWatchDay() {
+    unMeals.forEach(function (f) { f(); }); unMeals = [];
+    var day = dietDayKey(), uid = state.uid || state.me, pi = partnerInfo();
+    state.mealDocs = {}; state.mealDay = day;
+    [uid, pi.partner].filter(Boolean).forEach(function (u) {
+      unMeals.push(store.watchMealDay(u, day, function (d) { if (state.mealDay !== day) return; state.mealDocs[u] = d; render(); }, function () { state.mealsOff = true; render(); }));
+    });
+  }
+  /** 식품표(data/foods-kr.json, 약 1.4MB)는 기록하기를 처음 열 때 한 번만 */
+  function loadFoodTab() {
+    if (state.foodTab) return Promise.resolve(state.foodTab);
+    if (!foodTabP) foodTabP = fetch('data/foods-kr.json').then(function (r) { if (!r.ok) throw new Error('food table ' + r.status); return r.json(); })
+      .then(function (j) { state.foodTab = RT.dietMatch.index(j); return state.foodTab; }, function (e) { foodTabP = null; throw e; });
+    return foodTabP;
+  }
+  function dietLogTake(l) { var ta = document.getElementById('dl-text'); if (ta) l.text = ta.value; }
+  function dietLogOpen() {
+    if (!state.diet) return;
+    state.diet.log = { step: 'input', text: '', together: false, result: null, saving: false, error: '' };
+    state.sheetEntering = true; focusAfter = ['#dl-text']; focusInSheet = true;
+    render(true);
+    loadFoodTab().then(function () { if (state.diet && state.diet.log && state.diet.log.step === 'input') { dietLogTake(state.diet.log); render(true); } }, function () {
+      if (state.diet && state.diet.log) { dietLogTake(state.diet.log); state.diet.log.error = '식품표를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 열어 주세요'; render(true); }
+    });
+  }
+  function dietLogClose() { if (state.diet) { state.diet.log = null; focusAfter = ['[data-act="dl-open"]']; render(true); } }
+  function nowAt() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function dietLogModel() {
+    var l = state.diet.log, pi = partnerInfo();
+    return { dateLabel: RT.dates.full(state.today), text: l.text, together: l.together, chips: [], partnerName: pi.partner ? pi.partnerName : '', loading: !state.foodTab && !l.error, error: l.error };
+  }
+  /** 정리하기: AI 없이 맞춰 보기 (저장된 레시피 · 내 식품은 D6, 지금은 식품표) → 확인 카드 */
+  function dietLogGo() {
+    var l = state.diet && state.diet.log; if (!l || !state.foodTab) return;
+    dietLogTake(l);
+    var text = l.text.trim();
+    if (!text) { l.error = '먹은 것을 적어 주세요'; focusAfter = ['#dl-text']; focusInSheet = true; render(true); return; }
+    var units = (state.privDoc && state.privDoc.units) || {};
+    var r = RT.dietMatch.match(RT.dietMatch.parse(text, nowAt()), { foods: {}, recipes: [], table: state.foodTab, units: units });
+    if (!r.items.length && !r.pending.length) { l.error = '먹은 것을 찾지 못했어요. 음식 이름을 적어 주세요'; focusAfter = ['#dl-text']; focusInSheet = true; render(true); return; }
+    l.result = r; l.step = 'confirm'; l.error = ''; state.sheetEntering = true;
+    focusAfter = ['[data-act="dl-save"]', '[data-act="dl-back"]']; focusInSheet = true;
+    render(true);
+  }
+  function itemSub(i) {
+    var g = i.calc && i.calc.grams != null ? Math.round(i.calc.grams * 10) / 10 + 'g' : '';
+    var q = i.amount != null ? i.amount + (i.unit || '') : '';
+    var src = i.ref.kind === 'table' ? '식품표 ' + i.ref.key.replace(/_/g, ' ') : i.ref.kind === 'recipe' ? '내 레시피' : i.ref.kind === 'supplement' ? '보충제 · 먹었는지만' : '내 식품';
+    return [q && g && q !== g ? q + ' = ' + g : q || g, src, i.defaultUnit ? i.defaultUnit + ' 기본값 210g' : ''].filter(Boolean).join(' · ');
+  }
+  function dietConfirmModel() {
+    var l = state.diet.log, r = l.result, pi = partnerInfo();
+    return { at: r.at, name: r.label || (r.kind === 'snack' ? '간식' : '식사'), total: r.total,
+      items: r.items.map(function (i) { return { name: i.name, sub: itemSub(i), kcal: i.total.kcal, est: !!i.defaultUnit }; }),
+      pending: r.pending, together: l.together, partnerName: pi.partner ? pi.partnerName : '', saving: l.saving, error: l.error };
+  }
+  function dietLogSave() {
+    var l = state.diet && state.diet.log, uid = state.uid || state.me; if (!l || !l.result || l.saving || !store) return;
+    var r = l.result, round = function (t) { var o = {}; ['kcal', 'carb', 'protein', 'fat'].forEach(function (k) { o[k] = Math.round((t[k] || 0) * 100) / 100; }); return o; };
+    var meal = {
+      id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: r.at || nowAt(), kind: r.kind, label: r.label || null,
+      text: l.text.trim().slice(0, 2000), together: !!l.together, status: r.pending.length ? 'pending' : 'done',
+      items: r.items.slice(0, 40).map(function (i) { return { name: String(i.name).slice(0, 60), amount: i.amount, unit: i.unit || null, ref: i.ref, grams: i.calc.grams != null ? i.calc.grams : null, portion: i.calc.portion || null, est: i.defaultUnit || null, total: round(i.total) }; }),
+      pending: r.pending.slice(0, 40).map(function (x) { return { raw: String(x.raw).slice(0, 200), reason: x.reason }; }),
+      total: round(r.total), createdAt: new Date().toISOString()
+    };
+    l.saving = true; l.error = ''; focusInSheet = true; render(true);
+    var day = dietDayKey();
+    store.saveMeal(uid, day, meal).then(function () {
+      if (!state.diet) return;
+      var cur = state.mealDocs && state.mealDocs[uid];
+      if (state.mealDay === day) state.mealDocs[uid] = { uid: uid, date: day, meals: ((cur && cur.meals) || []).filter(function (m) { return m.id !== meal.id; }).concat([meal]).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); }) };
+      state.diet.log = null; showToast('저장했어요' + (meal.pending.length ? ' · 정리 대기 ' + meal.pending.length + '줄' : ''));
+      focusAfter = ['[data-act="dl-open"]']; render(true);
+    }, function (e) {
+      if (!state.diet || !state.diet.log) return;
+      state.diet.log.saving = false;
+      state.diet.log.error = e && e.message === 'too-many' ? '하루에 20끼까지 저장할 수 있어요' : e && e.code === 'permission-denied' ? '저장 규칙이 아직 준비되지 않았어요' : '저장하지 못했어요. 인터넷 연결을 확인해 주세요';
+      focusInSheet = true; render(true);
+    });
+  }
+  /** 끼니 지우기 — 두 번 눌러야 (3초 안) */
+  var delTimer = null;
+  function dietMealDelete(id) {
+    if (!state.diet || !id) return;
+    var uid = state.uid || state.me;
+    if (state.diet.delId !== id) {
+      state.diet.delId = id; clearTimeout(delTimer);
+      delTimer = setTimeout(function () { if (state.diet && state.diet.delId === id) { state.diet.delId = null; render(); } }, 3000);
+      focusAfter = ['[data-act="dm-del"][data-v="' + id.replace(/[^A-Za-z0-9]/g, '') + '"]']; render(true); return;
+    }
+    state.diet.delId = null; clearTimeout(delTimer);
+    var day = dietDayKey();
+    store.deleteMeal(uid, day, id).then(function () {
+      var cur = state.mealDocs && state.mealDocs[uid];
+      if (cur && state.mealDay === day) state.mealDocs[uid] = Object.assign({}, cur, { meals: (cur.meals || []).filter(function (m) { return m.id !== id; }) });
+      showToast('지웠어요'); focusAfter = ['[data-act="dl-open"]']; render(true);
+    }, function () { showToast('지우지 못했어요. 인터넷 연결을 확인해 주세요'); render(true); });
+  }
+  function dayTotal(doc) {
+    var t = { kcal: 0, carb: 0, protein: 0, fat: 0 };
+    ((doc && doc.meals) || []).forEach(function (m) { ['kcal', 'carb', 'protein', 'fat'].forEach(function (k) { t[k] += (m.total && +m.total[k]) || 0; }); });
+    return t;
+  }
   function closeDiet() { stopDiet(); focusAfter = ['[data-act="all-diet"]']; render(true); }
   /** 목표 고르기 열기 — 저장된 몸 정보 · 목표로 채움 (처음이면 비움) */
   function dietGoalForm(first) {
@@ -2257,7 +2376,12 @@
   }
   function dietHomeModel() {
     var pi = partnerInfo(), pg = pi.partner && state.goalDocs ? state.goalDocs[pi.partner] : null;
-    return { mine: myGoal(), partner: pi.partner ? { name: pi.partnerName, goal: pg && pg.kind ? pg : null } : null };
+    if (state.diet && state.mealDay !== dietDayKey()) dietWatchDay(); // 자정이 지나면 새 날
+    var uid = state.uid || state.me, md = (state.mealDocs || {})[uid], pd = pi.partner ? (state.mealDocs || {})[pi.partner] : null;
+    var meals = ((md && md.meals) || []).filter(function (m) { return m && typeof m === 'object' && m.id; });
+    return { mine: myGoal(), partner: pi.partner ? { name: pi.partnerName, goal: pg && pg.kind ? pg : null } : null,
+      today: { meals: meals, total: meals.length ? dayTotal(md) : null, goal: myGoal(), delId: state.diet && state.diet.delId },
+      partnerToday: pi.partner ? { name: pi.partnerName, total: dayTotal(pd), n: ((pd && pd.meals) || []).length } : null };
   }
   function dietRefreshReco() {
     var box = document.getElementById('dg-reco'); if (!box || !state.diet || !state.diet.form) return;
@@ -2933,6 +3057,11 @@
     if (state.avaView) { closeAvaView(); return; }
     if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
+    if (state.diet && state.diet.log) {
+      if (state.diet.log.step === 'confirm') { state.diet.log.step = 'input'; state.diet.log.result = null; focusAfter = ['#dl-text']; focusInSheet = true; render(true); }
+      else dietLogClose();
+      return;
+    }
     if (state.diet) {
       if (state.diet.basis) { state.diet.basis = null; focusAfter = ['[data-act="dg-basis"]']; focusInSheet = true; render(true); }
       else if (state.diet.view === 'goal' && myGoal()) { state.diet.view = 'home'; state.diet.form = null; render(true); }
@@ -3025,7 +3154,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
