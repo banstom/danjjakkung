@@ -10,7 +10,8 @@
 """
 import getpass, gzip, json, os, sys, time, urllib.parse, urllib.request, urllib.error
 
-URL = 'https://api.data.go.kr/openapi/tn_pubr_public_nutri_info_api'
+# 가공식품 전용 주소 (활용신청한 「가공식품」 API 의 End Point). 다른 주소는 NUTRI_URL 로 바꿀 수 있음
+URL = os.environ.get('NUTRI_URL') or 'https://api.data.go.kr/openapi/tn_pubr_public_nutri_process_info_api'
 ROWS = 1000
 OUT = os.path.expanduser('~/nutri')
 PAGES = os.path.join(OUT, 'pages')
@@ -27,6 +28,10 @@ def call(key, page, rows, extra=None):
             if raw.lstrip().startswith('<'):
                 raise ValueError('JSON 이 아닌 답: ' + raw[:300])
             return json.loads(raw)
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                raise SystemExit('키가 이 주소에 안 맞아요 (HTTP %d). 활용신청한 API 의 End Point 가 %s 인지, 승인 뒤 1~2시간 지났는지 확인해 주세요.' % (e.code, URL))
+            wait = 3 * (t + 1); print('  다시 시도 (HTTP %d) — %d초 뒤' % (e.code, wait), flush=True); time.sleep(wait)
         except (urllib.error.URLError, ValueError, TimeoutError, json.JSONDecodeError) as e:
             wait = 3 * (t + 1)
             print('  다시 시도 (%s) — %d초 뒤' % (str(e)[:160], wait), flush=True)
