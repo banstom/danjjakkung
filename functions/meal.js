@@ -32,13 +32,38 @@ function badInput(d) {
   return null;
 }
 
-/** 모델 답에서 JSON 하나를 꺼낸다 (코드펜스 · 앞뒤 말이 붙어도) */
+/** 모델 답에서 JSON 하나를 꺼낸다 — 코드펜스 · 앞뒤 말 · 두 번째 객체 · // 주석 · 끝 쉼표가 붙어도 (T3 0/3 — 점검)
+    문자열 안의 괄호 · // 는 건드리지 않는다 */
+function firstObject(s) {
+  const a = s.indexOf('{'); if (a < 0) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = a; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') inStr = true; else if (c === '{') depth++; else if (c === '}') { depth--; if (!depth) return s.slice(a, i + 1); }
+  }
+  return null;
+}
+function loosen(s) { // 문자열 밖의 // 주석 · /* */ 주석 · 끝 쉼표를 지운다
+  let out = '', inStr = false, esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) { out += c; if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') { inStr = true; out += c; continue; }
+    if (c === '/' && s[i + 1] === '/') { while (i < s.length && s[i] !== '\n') i++; out += '\n'; continue; }
+    if (c === '/' && s[i + 1] === '*') { const e = s.indexOf('*/', i + 2); i = e < 0 ? s.length : e + 1; continue; }
+    out += c;
+  }
+  return out.replace(/,(\s*[}\]])/g, '$1');
+}
 function extractJson(t) {
   if (typeof t !== 'string') return null;
-  let s = t.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  const s = t.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim();
+  const tries = [firstObject(s), firstObject(loosen(s))];
   const a = s.indexOf('{'), b = s.lastIndexOf('}');
-  if (a < 0 || b <= a) return null;
-  try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return null; }
+  if (a >= 0 && b > a) tries.push(s.slice(a, b + 1), loosen(s.slice(a, b + 1)));
+  for (const x of tries) { if (!x) continue; try { const j = JSON.parse(x); if (j && typeof j === 'object' && !Array.isArray(j)) return j; } catch (e) { /* 다음 방법 */ } }
+  return null;
 }
 
 /* 남길 칸만 정해 두고 나머지는 버린다 (점검 AI: 지울 키를 나열하면 carbohydrate · 열량(kcal) 같은 다른 이름이 샌다).
@@ -77,13 +102,20 @@ function setOf(x) { // 정정의 set: 끼니 · 항목 칸만
   Object.keys(x).forEach((k) => { if (!(k in o) && /^[A-Za-z_]{1,30}$/.test(k) && k !== '__proto__' && typeof x[k] === 'string') o[k] = str(x[k]); });
   return o;
 }
-const LEARN_STR = ['type', 'recipe', 'ingredient', 'name', 'food', 'product', 'food_name', 'product_name', 'unit', 'unit_name', 'base', 'equals', 'memo'];
+const LEARN_STR = ['type', 'recipe', 'ingredient', 'name', 'food', 'product', 'food_name', 'product_name', 'unit', 'unit_name', 'base', 'memo'];
 const LEARN_NUM = ['amount', 'grams', 'count', 'value'];
 function learnOf(x) {
   if (!x || typeof x !== 'object') return null;
   const o = {};
   LEARN_STR.forEach((k) => { if (typeof x[k] === 'string') o[k] = str(x[k]); });
   LEARN_NUM.forEach((k) => { if (x[k] != null && numv(x[k]) != null) o[k] = numv(x[k]); });
+  // 「다른 음식 기준」 내 단위: equals (또는 means) = { amount, unit, food } (T7-2 — 정리하다 지워지던 것)
+  const eq = x.equals && typeof x.equals === 'object' ? x.equals : x.means && typeof x.means === 'object' ? x.means : null;
+  if (eq) {
+    const m = match(eq.match);
+    const e = { amount: numv(eq.amount), unit: str(eq.unit), food: str(eq.food) || str(eq.name) || (m && m.key) || null };
+    if (e.amount != null || e.food) o.equals = e;
+  }
   return o.type ? o : null;
 }
 function atOf(t) { // "8:20" · "08:20:00" · "1815" → "HH:MM", 범위 밖이면 null

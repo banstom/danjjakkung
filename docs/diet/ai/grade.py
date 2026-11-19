@@ -125,7 +125,7 @@ def checks(case, d):
         mu = [x for x in ln if x.get('type') == 'my_unit']
         ok('learn: 내 단위 공기 = 315g (또는 햇반 1.5개)', mu and '공기' in S(mu) and ('315' in S(mu) or ('햇반' in S(mu) and '1.5' in S(mu))))
         cs = S(d.get('corrections'))
-        ok('22:30 밥 → 472.5g (또는 1.5공기 그대로 + 공기 315g)', '472.5' in cs or not cs or cs == '[]' or '22:30' in cs)
+        ok('22:30 밥 → 472.5g (또는 햇반 2.25개 · 1.5공기 그대로 + 공기 315g)', '472.5' in cs or not cs or cs == '[]' or '22:30' in cs or ('2.25' in cs and '햇반' in cs))
         ok('이전 기록(점심 · 18:15)은 안 바꿈', not re.search('점심|12:40|18:15|저녁', cs))
     return c
 

@@ -49,6 +49,7 @@ async function main() {
       fs.writeFileSync(path.join(dir, c.name + '.json'), raw ? JSON.stringify(raw, null, 2) : out.text);
       fs.writeFileSync(path.join(dir, c.name + '.clean.json'), clean ? JSON.stringify(clean, null, 2) : '');
       process.stdout.write('run' + r + ' ' + c.name + (raw ? (out.stop === 'max_tokens' ? ' (잘림) ' : ' ✓ ') : ' (JSON 아님) '));
+      if (!raw) console.log('\n  [' + c.name + ' 끝 300자 · stop=' + out.stop + ']\n' + out.text.slice(-300));
     }
     process.stdout.write('\n');
   }

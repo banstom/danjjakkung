@@ -38,6 +38,10 @@ test('D4 JSON 꺼내기: 코드펜스 · 앞뒤 말 · 깨진 것', () => {
   assert.deepEqual(M.extractJson('```json\n{"a":1}\n```'), { a: 1 });
   assert.deepEqual(M.extractJson('여기요 {"a":{"b":2}} 끝'), { a: { b: 2 } });
   assert.equal(M.extractJson('{"a":'), null); assert.equal(M.extractJson(null), null); assert.equal(M.extractJson('없음'), null);
+  // 회귀(T3 0/3): 주석 · 끝 쉼표 · 뒤에 붙은 말이나 두 번째 객체 — 문자열 안의 // 와 괄호는 그대로
+  assert.deepEqual(M.extractJson('{\n  "a": 1, // 설명\n  "b": [1, 2,],\n  "u": "http://x.y/{z}"\n}\n설명 {끝}'), { a: 1, b: [1, 2], u: 'http://x.y/{z}' });
+  assert.deepEqual(M.extractJson('{"a":"그\\"}"} {"b":2}'), { a: '그"}' });
+  assert.deepEqual(M.extractJson('/* 앞 */ {"a": /* 안 */ 1}'), { a: 1 });
 });
 
 test('D4 정리: 남길 칸만 (영양 숫자 칸은 이름이 달라도 없음) · kcalRange 는 unknowns 에만 · 상한', () => {
@@ -68,6 +72,9 @@ test('D4 정리: 남길 칸만 (영양 숫자 칸은 이름이 달라도 없음)
   assert.equal(set.oil, '카놀라유'); assert.equal(set.name, '파베글라스'); assert.equal(set.grams, 40); assert.equal(set.fat, undefined); assert.equal(set.ingredients[0].kcal, undefined);
   assert.deepEqual(r.learn[0], { type: 'food_unit', product: '파베글라스', unit: '줌', grams: 20 });
   assert.deepEqual(r.learn[1], { type: 'my_unit', unit: '공기', grams: 315 });
+  const eq = M.sanitize({ learn: [{ type: 'my_unit', unit: '공기', equals: { amount: 1.5, unit: '개', match: { kind: 'table', key: '햇반' } } }, { type: 'my_unit', unit: '공기', grams: 315, means: { amount: 1.5, unit: '개', food: '햇반', kcal: 9 } }] }).learn;
+  assert.deepEqual(eq[0].equals, { amount: 1.5, unit: '개', food: '햇반' }, '회귀(T7-2): 다른 음식 기준 내 단위가 지워지지 않음');
+  assert.deepEqual(eq[1].equals, { amount: 1.5, unit: '개', food: '햇반' });
   assert.equal(r.learn.length, 19, 'type 없는 건 버림 · 20개까지');
   assert.doesNotMatch(JSON.stringify(r).replace(/"kcalRange":(\[[^\]]*\]|null)/g, ''), /kcal|carb|protein|fat|열량|탄수|단백질|지방|nutrition/i);
   assert.equal(M.sanitize(null), null); assert.equal(M.sanitize([1]), null);
