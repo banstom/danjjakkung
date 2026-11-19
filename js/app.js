@@ -226,7 +226,7 @@
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null,
-    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
+    'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
     if (!el || !el.getAttribute || !appEl.contains(el)) return null;
@@ -594,6 +594,7 @@
     else if (act === 'map-entry') mapRecordForm(btn.getAttribute('data-v'));
     else if (act === 'map-rec-star') setRecordStar(Number(btn.getAttribute('data-v')));
     else if (act === 'map-visit-delete') deleteVisit();
+    else if (act === 'map-visit-del') deleteVisitInList(btn.getAttribute('data-v'));
     else if (act === 'map-wish') { if (state.map && state.map.sel) openRank(state.map.sel, false); }
     else if (act === 'map-rank') { if (state.map && state.map.sel) openRank(state.map.sel, true); }
     else if (act === 'map-rank-close') closeRank();
@@ -1957,6 +1958,7 @@
   }
   function toggleVisit(vid) {
     var sh = state.map && state.map.sheet; if (!sh || sh.mode !== 'view') return;
+    sh.confirmDel = null;
     var open = openVisits(placeList()[state.map.sel]);
     open[vid] = !open[vid];
     focusAfter = ['[data-act="map-visit-toggle"][data-v="' + vid + '"]']; focusInSheet = true;
@@ -1980,6 +1982,7 @@
       visitsView: vv, lastText: p && p.visits.length ? P.dateText(p.visits[p.visits.length - 1].date, tk) : '',
       dateText: m.sheet.form && m.sheet.form.date ? P.dateText(m.sheet.form.date, tk) : '',
       wishNo: p && p.wishRank !== null ? P.wishList(placeList()).map(function (x) { return x.code; }).indexOf(code) + 1 : null,
+      confirmDel: m.sheet.confirmDel || null, deleting: !!m.sheet.deleting,
       meSlot: pi.meSlot, partnerSlot: pi.partnerSlot, meName: pi.meName, partnerName: pi.partnerName, hasPartner: !!pi.partner,
       summary: p && p.visits.length ? { avgText: P.avgText(avg), fill: P.starFill(avg), count: P.allStars(p).length, rankNo: P.starRank(placeList(), code),
         me: who(uid, pi.meSlot, pi.meName), partner: pi.partner ? who(pi.partner, pi.partnerSlot, pi.partnerName) : null } : null };
@@ -2034,6 +2037,22 @@
     f.stars = f.stars === n ? 0 : n; // 같은 별을 다시 누르면 지움
     focusAfter = ['[data-act="map-rec-star"][data-v="' + n + '"]']; focusInSheet = true;
     render(true);
+  }
+  /** 다녀온 곳 시트의 펼친 줄에서 바로 지우기 (v56 — 기록 남기기 시트 안에만 있어서 찾기 어려웠음). 처음 누르면 묻기만 */
+  function deleteVisitInList(vid) {
+    var sh = state.map && state.map.sheet;
+    if (!sh || sh.mode !== 'view' || sh.deleting || !store) return;
+    focusAfter = ['[data-act="map-visit-del"][data-v="' + vid + '"]', '[data-act="map-visit"]']; focusInSheet = true;
+    if (sh.confirmDel !== vid) { sh.confirmDel = vid; render(true); return; }
+    var code = state.map.sel, uid = state.uid || state.me;
+    sh.deleting = true; render(true);
+    savePlace(code, uid, function (cur) { return RT.places.removeVisit(cur, vid); }).then(function () {
+      if (state.map && state.map.sheet === sh) { sh.deleting = false; sh.confirmDel = null; }
+      showToast('방문을 지웠어요'); focusAfter = ['[data-act="map-visit"]']; render(true);
+    }, function () {
+      if (state.map && state.map.sheet === sh) { sh.deleting = false; sh.confirmDel = null; }
+      showToast('지우지 못했어요. 잠시 뒤 다시 해 주세요'); render(true);
+    });
   }
   /** 방문 지우기 — 확인을 받은 뒤, 두 사람의 그 방문 기록도 함께 (규칙: visits 가 줄어든 쓰기만 단짝 칸을 지울 수 있음) */
   function deleteVisit() {

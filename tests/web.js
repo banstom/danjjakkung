@@ -1020,8 +1020,12 @@ async function tick(page, dateKey, key) {
   assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15'], '두 번째 방문 지움');
   assert.ok(!docs.get('places/52190').entries[djUid0], '단짝 기록도 함께 지움');
   assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
-  // 하나 남은 것도 지우면 칠하기가 빠지고 「아직 함께 가 보지 않은 곳」
-  await jm.click(`.mvnote--mine[data-v="${v1}"]`); await jm.click('[data-act="map-visit-delete"]'); await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
+  // 하나 남은 것도 지우면 칠하기가 빠지고 「아직 함께 가 보지 않은 곳」 — v56: 펼친 줄의 「이 방문 지우기」로 (두 번)
+  await jm.click(`[data-act="map-visit-del"][data-v="${v1}"]`); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent(`[data-act="map-visit-del"][data-v="${v1}"]`), /한 번 더 누르면/, '처음엔 묻기만');
+  assert.strictEqual(docs.get('places/52190').visits.length, 1, '아직 안 지움');
+  await jm.screenshot({ path: path.join(OUT, 'map-visit-del.png') });
+  await jm.click(`[data-act="map-visit-del"][data-v="${v1}"]`); await jm.waitForTimeout(300);
   assert.strictEqual(docs.get('places/52190').visits.length, 0);
   assert.deepStrictEqual(docs.get('places/52190').entries, {});
   assert.doesNotMatch(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다 지우면 칠하기 빠짐');
@@ -1197,7 +1201,7 @@ async function tick(page, dateKey, key) {
   await toAll(dj); await dj.click('[data-act="all-map"]'); await dj.waitForSelector('#km .rg');
   await dj.click('[data-act="map-seg"][data-v="been"]'); await dj.click('.mrow__main[data-v="52190"]'); await dj.waitForSelector('.mvlist');
   assert.match(await dj.textContent('.mvbody'), /광한루 산책/, '단짝 화면에 내 메모');
-  assert.strictEqual(await dj.$$eval('.mvbody button', (e) => e.length), 1, '자기 칸만 버튼');
+  assert.strictEqual(await dj.$$eval('.mvbody button.mvnote', (e) => e.length), 1, '자기 칸만 버튼');
   await dj.click('.mvnote--mine'); await dj.waitForSelector('.mrec__stars');
   await dj.click('[data-act="map-rec-star"][data-v="5"]'); await dj.click('[data-act="map-visit-save"]'); await dj.waitForTimeout(300);
   assert.strictEqual(docs.get('places/52190').entries[jmUid0][v52].stars, 4, '짝꿍이 매겨도 내 별점은 그대로');

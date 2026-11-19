@@ -141,10 +141,13 @@
         body = '<div class="mvbody" id="mv-' + id + '">' +
           '<button type="button" class="mvnote mvnote--mine" data-act="map-entry" data-v="' + id + '" aria-label="' + esc(v.date + ' 내 기록 ' + (mine ? '고치기' : '남기기')) + '">' + dot(s.meSlot) + '<b class="mvnote__who">' + esc(s.meName) + '</b><span class="mvnote__tx">' + mineTx + '</span></button>' +
           (s.hasPartner ? '<div class="mvnote">' + dot(s.partnerSlot) + '<b class="mvnote__who">' + esc(s.partnerName) + '</b><span class="mvnote__tx' + (v.partner && v.partner.note ? '' : ' mvnote__tx--sub') + '">' +
-            (v.partner ? (v.partner.note ? esc(v.partner.note) : '한 줄은 안 남겼어요') : '아직 안 남겼어요') + '</span></div>' : '') + '</div>';
+            (v.partner ? (v.partner.note ? esc(v.partner.note) : '한 줄은 안 남겼어요') : '아직 안 남겼어요') + '</span></div>' : '') +
+          // v56: 펼친 줄에서 바로 지우기 (두 번 눌러야 — 두 사람 기록이 함께 사라지므로)
+          '<div class="mvdel"><button type="button" class="text-btn' + (s.confirmDel === v.id ? ' text-btn--warn' : '') + '" data-act="map-visit-del" data-v="' + id + '"' + (s.deleting ? ' disabled' : '') + '>' +
+          (s.confirmDel === v.id ? '한 번 더 누르면 이 방문과 두 사람 기록을 모두 지워요' : '이 방문 지우기') + '</button></div></div>';
       }
       return '<li class="mvitem">' + row + body + '</li>';
-    }).join('') + '</ul><p class="mnote">줄을 누르면 메모가 펼쳐져요 · 내 칸을 누르면 별점과 한 줄을 남기거나 고쳐요</p>';
+    }).join('') + '</ul><p class="mnote">줄을 누르면 메모가 펼쳐져요 · 내 칸을 누르면 별점과 한 줄을 남기거나 고쳐요 · 잘못 적은 방문은 펼친 줄 아래에서 지워요</p>';
   }
   /** 기록 남기기 시트 (또 다녀왔어요 · 함께 다녀왔어요 · 내 기록 고치기 공통) */
   function recordSheet(s) {

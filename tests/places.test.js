@@ -281,6 +281,10 @@ test('v54 다녀온 곳 시트(C): 요약 카드 · 버튼 둘 · 접힌 줄에 
   assert.match(onlyStar, /＋ 한 줄 남기기/, '별점만 있으면 한 줄 남기기');
   const none = VM.visitList(Object.assign({}, s, { visitsView: [{ id: 'b', nth: 1, date: 'x', open: true, me: null, partner: null }] }));
   assert.match(none, /＋ 별점 · 한 줄 남기기/);
+  // v56 (사용자 제보: 지우기를 못 찾음): 펼친 줄 안에 바로 「이 방문 지우기」, 두 번째 누르면 경고
+  assert.match(html, /id="mv-b"[^]*data-act="map-visit-del" data-v="b"[^>]*>이 방문 지우기/);
+  assert.equal((html.match(/data-act="map-visit-del"/g) || []).length, 1, '펼친 줄에만');
+  assert.match(VM.visitList(Object.assign({}, s, { confirmDel: 'b' })), /text-btn--warn" data-act="map-visit-del" data-v="b"[^>]*>한 번 더 누르면 이 방문과 두 사람 기록을 모두 지워요/);
 });
 
 test('v54 기록 남기기 시트: 새 방문(날짜 · 알림 안내) · 고치기(날짜 없음 · 방문 지우기 두 번) · 별 5개 radiogroup', () => {

@@ -1446,3 +1446,6 @@ button.rv-srow { cursor: pointer; }
 .dask__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .dask__row { display: flex; gap: 8px; margin-top: 10px; }
 .dask__row .mbtn { min-height: 48px; }
+.mvdel { display: flex; justify-content: flex-end; margin-top: -2px; }
+.mvdel .text-btn { min-height: 44px; font-size: 13px; color: var(--sub); }
+.mvdel .text-btn--warn { color: var(--warn); }
