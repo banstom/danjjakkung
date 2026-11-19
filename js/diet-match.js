@@ -20,9 +20,12 @@
   // 흔히 부르는 이름 → 식품표 이름 (사용자: 「햇반 어떤 음식이에요?」 같은 질문은 하지 말 것)
   var ALIAS = { '계란': '달걀', '밥': '쌀밥', '공기밥': '쌀밥', '흰밥': '쌀밥', '흰쌀밥': '쌀밥', '햇반': '쌀밥', '즉석밥': '쌀밥', '오뎅': '어묵', '오뎅국': '어묵국',
     '김치': '배추김치', '삶은계란': '달걀_삶은것', '삶은달걀': '달걀_삶은것', '구운계란': '달걀_삶은것', '계란후라이': '달걀후라이', '계란프라이': '달걀후라이', '달걀프라이': '달걀후라이',
-    '닭가슴살': '닭고기_가슴(껍질 제거)_삶은것', '아메리카노': '커피_아메리카노', '커피': '커피_아메리카노', '치킨': '닭튀김_간편조리세트_후라이드치킨', '후라이드치킨': '닭튀김_간편조리세트_후라이드치킨' };
+    '닭가슴살': '닭고기_가슴(껍질 제거)_삶은것', '아메리카노': '커피_아메리카노', '커피': '커피_아메리카노', '치킨': '닭튀김_간편조리세트_후라이드치킨', '후라이드치킨': '닭튀김_간편조리세트_후라이드치킨',
+    '닭국': '닭곰탕', '닭백숙': '닭백숙', '계란국': '달걀국', '쇠고기무국': '소고기 무국', '소고기무국': '소고기 무국', '북엇국': '무 북어국', '북어국': '무 북어국', '만둣국': '만두국', '떡만둣국': '떡만두국',
+    '김': '김구이_조미김', '조미김': '김구이_조미김', '구운김': '김구이_조미김', '김자반': '김구이_조미김' };
   // 식품표 이름으로 정한 1개 무게 (제품 · 포장 단위)
-  var EACH_BY_NAME = { '쌀밥': 210, '닭고기_가슴(껍질 제거)_삶은것': 100, '우유': 200 };
+  var EACH_BY_NAME = { '쌀밥': 210, '닭고기_가슴(껍질 제거)_삶은것': 100, '우유': 200, '김구이_조미김': 5 }; // 조미김 1봉 ≈ 5g
+  var SHEET_G = { '김구이_조미김': 2 }; // 김 1장
 
   function norm(s) { return String(s || '').replace(/\s+/g, '').toLowerCase(); }
 
@@ -112,6 +115,9 @@
     var fam = tab.first[q] || [];
     var raw = fam.filter(function (e) { return e.kind === 'r' && /_생것$/.test(e.name) && e.name.split('_').length === 2; });
     if (raw.length) return pick(raw);
+    // 「된장국」처럼 이름 뒤에 _재료가 붙은 것만 있으면 가장 기본에 가까운 것(토막이 적고 g 기준)으로 — 사용자: 흔한 음식을 못 알아보면 안 됨
+    var fam2 = (tab.first[q] || []).filter(function (e) { return e.kind === 'd'; });
+    if (fam2.length) return fam2.slice().sort(function (x, y) { return x.name.split('_').length - y.name.split('_').length || (x.base === 'g' ? 0 : 1) - (y.base === 'g' ? 0 : 1) || x.name.length - y.name.length; })[0];
     var sg = (tab.seg && tab.seg[q]) || [];
     if (sg.length === 1 || (sg.length > 1 && sg.every(function (e) { return e.name.split('_')[0] === sg[0].name.split('_')[0]; }) && sg.filter(function (e) { return e.name.split('_').length === 3; }).length === 1))
       return sg.length === 1 ? sg[0] : sg.filter(function (e) { return e.name.split('_').length === 3; })[0];
@@ -178,6 +184,7 @@
     if (mine && (mine.g || mine.ml)) return { g: a * (mine.g || mine.ml) };
     if (u && DEFAULT_UNITS[u]) return { g: a * DEFAULT_UNITS[u].g, est: u + ' 기본값 ' + DEFAULT_UNITS[u].g + 'g', dflt: u };
     if (!u && e.name === '쌀밥') return { g: a * DEFAULT_UNITS['공기'].g, est: '공기 기본값 ' + DEFAULT_UNITS['공기'].g + 'g', dflt: '공기' }; // 양 없는 밥 = 한 공기
+    if (u === '장' && SHEET_G[e.name]) return { g: a * SHEET_G[e.name], est: '1장 ≈ ' + SHEET_G[e.name] + 'g' };
     if (SPOON_G[u]) return { g: a * SPOON_G[u], est: u + ' ≈ ' + SPOON_G[u] + 'g' };
     var each = EACH_BY_NAME[e.name] || null; if (each == null) e.name.split('_').reverse().forEach(function (seg) { if (each == null && EACH_G[seg]) each = EACH_G[seg]; }); // 뒤 토막이 더 구체적 (토마토_방울토마토)
     if (each && (!u || u === '개' || u === '알' || u === '팩' || u === '봉지')) return { g: a * each, est: '1' + (u || '개') + ' ≈ ' + each + 'g' }; // 1개 무게가 정해진 건 1인분보다 먼저 (삶은계란 2개 = 100g)

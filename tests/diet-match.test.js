@@ -102,3 +102,12 @@ test('사용자 요청: 흔한 이름은 식품표로 (햇반 · 김치 · 닭�
   assert.deepEqual(g['햇반'], ['쌀밥', 210]); assert.equal(g['김치'][0], '배추김치'); assert.deepEqual(g['닭가슴살'], ['닭고기_가슴(껍질 제거)_삶은것', 100]);
   assert.deepEqual(g['삶은계란'], ['달걀_삶은것', 100], '1개 50g 이 1인분보다 먼저'); assert.equal(g['우유'][1], 200);
 });
+
+test('사용자 요청: 닭국 · 김 · 국 이름 (별칭 · 「_재료」만 있는 국은 기본에 가까운 것)', () => {
+  const r = M.match(M.parse('닭국\n김 2장\n김 1봉지\n된장국\n계란국\n만둣국'), { table: TAB });
+  assert.deepEqual(r.pending, []);
+  const k = r.items.map((i) => [i.name, i.ref.key, i.calc.grams]);
+  assert.deepEqual(k[0].slice(0, 2), ['닭국', '닭곰탕']);
+  assert.deepEqual(k[1], ['김', '김구이_조미김', 4], '김 1장 2g'); assert.deepEqual(k[2], ['김', '김구이_조미김', 5], '조미김 1봉 5g');
+  assert.match(k[3][1], /^된장국_/); assert.equal(k[4][1], '달걀국'); assert.equal(k[5][1], '만두국');
+});

@@ -2319,9 +2319,10 @@
   function dietMealFix(id) {
     var uid = state.uid || state.me, cur = state.mealDocs && state.mealDocs[uid], m = cur && (cur.meals || []).filter(function (x) { return x.id === id; })[0];
     if (!state.diet || !m) return;
-    var text = m.text || [].concat((m.items || []).map(function (i) { return i.name + (i.amount != null ? ' ' + i.amount + (i.unit || '') : ''); }), (m.pending || []).map(function (x) { return x.raw; })).join('\n');
-    if (m.at && !/\d{1,2}:\d{2}/.test(text)) text = (m.label || (m.kind === 'snack' ? '간식' : '식사')) + ' ' + m.at + '\n' + text; // 시각이 글에 없으면 붙여서 같은 시각으로
-    state.diet.log = { step: 'input', dayKey: state.mealDay, text: text, together: !!m.together, replaceId: id, result: null, saving: false, error: '' };
+    // 이 끼니만 다시: 여러 끼니를 한 번에 적은 글이면 그 글 전체가 끼니마다 들어 있어서, 글 대신 이 끼니의 항목 · 정리 대기 줄로 만든다 (사용자: 정리할 때마다 끼니가 늘어남)
+    var text = [].concat((m.items || []).map(function (i) { return i.name + (i.amount != null ? ' ' + i.amount + (i.unit || '') : ''); }), (m.pending || []).map(function (x) { return x.raw; })).join('\n');
+    text = (m.label || (m.kind === 'snack' ? '간식' : '식사')) + ' ' + (m.at || '') + '\n' + text;
+    state.diet.log = { step: 'input', dayKey: state.mealDay, text: text, together: !!m.together, replaceId: id, onlyAt: m.at || null, result: null, saving: false, error: '' };
     state.sheetEntering = true; focusInSheet = true; render(true);
     loadFoodTab().then(function () { if (state.diet && state.diet.log && state.diet.log.replaceId === id) dietLogGo(); }, function () {
       if (state.diet && state.diet.log) { state.diet.log.tabFail = true; render(true); }
@@ -2376,6 +2377,11 @@
     RT.firebase.callFn('parseMeal', { text: text.slice(0, 2000), today: l.day, state: st.slice(0, 6000) }).then(function (out) {
       var lx = state.diet && state.diet.log; if (seq !== aiSeq || !lx || lx.step !== 'confirm') return;
       var conv = RT.dietAi.fromAi(out && out.result, ctx);
+      if (lx.onlyAt && conv.meals.length > 1) { // 다시 정리는 끼니 하나로 — 같은 시각 끼니만 (없으면 항목을 합쳐 하나로)
+        var same = conv.meals.filter(function (m) { return m.at === lx.onlyAt; });
+        conv.meals = same.length ? same.slice(0, 1) : [conv.meals.reduce(function (a, m) { a.items = a.items.concat(m.items); a.pending = a.pending.concat(m.pending); ['kcal', 'carb', 'protein', 'fat'].forEach(function (k) { a.total[k] += m.total[k]; }); return a; }, { at: lx.onlyAt, kind: conv.meals[0].kind, label: conv.meals[0].label, items: [], pending: [], total: { kcal: 0, carb: 0, protein: 0, fat: 0 } })];
+      }
+      if (lx.onlyAt && conv.meals[0]) conv.meals[0].at = lx.onlyAt;
       if (!conv.meals.length) { lx.ai = 'fail'; lx.aiNote = 'AI가 끼니를 찾지 못했어요 · 그대로 저장하면 정리 대기로 남아요'; }
       else {
         lx.meals = conv.meals; lx.ai = 'done';
