@@ -1,0 +1,18 @@
+{
+  "_": "단짝 영수증 시험 데이터 — 목업 숫자는 모두 이 기록에서 계산한 값이에요 (2026-11-19 기준)",
+  "people": { "me": { "uid": "jm", "name": "준민" }, "partner": { "uid": "dj", "name": "단짝" } },
+  "spends": [
+    { "id": "s01", "date": "2026-11-01", "what": "카페 · 성수", "cat": "cafe", "amount": 9800, "paidBy": "jm" },
+    { "id": "s02", "date": "2026-11-01", "what": "점심 · 파스타", "cat": "meal", "amount": 38000, "paidBy": "dj" },
+    { "id": "s03", "date": "2026-11-03", "what": "장보기 · 마트", "cat": "shop", "amount": 27400, "paidBy": "jm" },
+    { "id": "s04", "date": "2026-11-08", "what": "영화", "cat": "play", "amount": 30000, "paidBy": "dj" },
+    { "id": "s05", "date": "2026-11-08", "what": "저녁 · 곱창", "cat": "meal", "amount": 46000, "paidBy": "jm" },
+    { "id": "s06", "date": "2026-11-09", "what": "카페", "cat": "cafe", "amount": 12500, "paidBy": "dj" },
+    { "id": "s07", "date": "2026-11-15", "what": "KTX 서울 → 강릉", "cat": "move", "amount": 59800, "paidBy": "dj" },
+    { "id": "s08", "date": "2026-11-15", "what": "저녁 · 물회", "cat": "meal", "amount": 42000, "paidBy": "jm" },
+    { "id": "s09", "date": "2026-11-16", "what": "숙소 · 속초", "cat": "stay", "amount": 120000, "paidBy": "both", "shares": { "jm": 60000, "dj": 60000 } },
+    { "id": "s10", "date": "2026-11-16", "what": "케이블카", "cat": "play", "amount": 24000, "paidBy": "jm" },
+    { "id": "s11", "date": "2026-11-16", "what": "택시", "cat": "move", "amount": 13700, "paidBy": "dj" },
+    { "id": "s12", "date": "2026-11-18", "what": "배달 치킨", "cat": "meal", "amount": 23000, "paidBy": "both", "shares": { "jm": 12000, "dj": 11000 } }
+  ]
+}
