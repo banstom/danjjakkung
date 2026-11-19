@@ -2996,6 +2996,16 @@
     if ((ev.target.id === 'rs-from' || ev.target.id === 'rs-until') && state.manage && state.manage.form && state.manage.form.rest) {
       var rsf = state.manage.form.rest; rsf[ev.target.id === 'rs-from' ? 'fromDate' : 'untilDate'] = ev.target.value; rsf.error = ''; render(true); return;
     }
+    // 시작 시간을 고르면 그 줄의 끝 시간을 1시간 뒤로 맞춰 둔다 (v62) — 그다음 끝은 마음대로 고칠 수 있음.
+    // 끝 칸에 change 를 다시 보내 그 칸의 원래 담는 길(ev-end · 요일마다 · 한 번 더 · 그날만)을 그대로 탄다
+    var endId = ev.target.id === 'ev-start' ? 'ev-end' : (/^ev-([xtm])s-(\d)$/.exec(ev.target.id) || [])[1] ? ev.target.id.replace(/^ev-([xtm])s-/, 'ev-$1e-') : null;
+    if (endId && state.eventForm) {
+      var st1 = RT.schedule.toMin(ev.target.value), endEl = document.getElementById(endId);
+      if (endEl && !isNaN(st1) && st1 < 23 * 60 + 55) {
+        endEl.value = RT.schedule.fmt(Math.min(st1 + 60, 23 * 60 + 55)); // 밤 11시 넘어 시작하면 23:55 까지
+        endEl.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
     // 날짜 · 시간 칸은 고른 순간 값만 담는다 (다시 그리지 않음)
     if (ev.target.id === 'td-date' && state.todoForm) { state.todoForm.date = ev.target.value; return; }
     if (ev.target.id === 'ev-date' && state.eventForm) { state.eventForm.date = ev.target.value; return; }

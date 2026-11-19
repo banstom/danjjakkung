@@ -1552,6 +1552,11 @@ async function tick(page, dateKey, key) {
   await jm.fill('#ev-start', '13:00'); await jm.fill('#ev-end', '14:00');
   await jm.click('[data-act="ev-timemode"][data-v="per"]');
   console.log('같은 시간 13시로 바꾸고 요일마다:', await jm.$$eval('.drow:not(.drow--head) input', (e) => e.map((i) => i.value).join(' ')));
+  // (v62) 요일마다 줄에서도 시작을 고르면 그 줄 끝이 1시간 뒤로
+  await jm.fill('#ev-ts-3', '18:20');
+  assert.strictEqual(await jm.inputValue('#ev-te-3'), '19:20', '요일마다 줄도 1시간 뒤');
+  await jm.fill('#ev-ts-3', '13:00'); await jm.fill('#ev-te-3', '14:00');
+  console.log('같은 시간 13시로 바꾸고 요일마다(다시):', await jm.$$eval('.drow:not(.drow--head) input', (e) => e.map((i) => i.value).join(' ')));
   await jm.click('[data-act="ev-repeat"][data-v="once"]'); await jm.click('[data-act="ev-repeat"][data-v="weekly"]');
   console.log('한 번→매주 뒤 시간 모드:', await jm.getAttribute('[data-act="ev-timemode"][aria-pressed="true"]', 'data-v'), await jm.inputValue('#ev-start'));
   await jm.keyboard.press('Escape');
@@ -1707,7 +1712,16 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="ev-repeat"][data-v="week"]');
   await jm.click('[data-act="ev-wd"][data-v="3"]');
   console.log('이번 주만 칸:', await jm.textContent('.sheet .field__label:has(+ #ev-from), label:has(#ev-from) .field__label').catch(() => ''), '|', await jm.textContent('#ev-from-note'));
-  await jm.fill('#ev-start', '15:00'); await jm.fill('#ev-end', '17:00');
+  // (v62) 시작을 고르면 끝이 1시간 뒤로 · 그다음 끝은 마음대로
+  await jm.fill('#ev-start', '16:00');
+  assert.strictEqual(await jm.inputValue('#ev-end'), '17:00', '시작 16:00 → 끝 17:00');
+  await jm.fill('#ev-start', '23:30');
+  assert.strictEqual(await jm.inputValue('#ev-end'), '23:55', '늦은 시작은 23:55 까지');
+  await jm.fill('#ev-start', '15:00');
+  assert.strictEqual(await jm.inputValue('#ev-end'), '16:00');
+  await jm.fill('#ev-end', '17:00');
+  assert.strictEqual(await jm.inputValue('#ev-start'), '15:00', '끝을 고쳐도 시작은 그대로');
+  console.log('시작 → 끝 1시간 뒤: 확인');
   await jm.click('form[data-form="event"] button[type="submit"]');
   await jm.waitForTimeout(250);
   const skKey = [...docs.entries()].find(([k, v]) => v && v.title === '특강')[0];
