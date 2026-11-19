@@ -6,7 +6,12 @@
    나 · 상대 색: 테마마다 따로 고른다 (테마를 바꾸면 그 테마에서 고른 색, 안 골랐으면 그 테마 기본색).
    고른 색은 내 계정(users 문서의 colors)에 저장돼 내 모든 기기에서 같고, 내 화면에만 쓰인다.
    화면에는 자리(slot) 색 --her(첫째 사람) · --me(둘째 사람)를 <html>에 덮어써서 칠한다. 글자색(--*-ink)은 자동.
-   첫 화면 깜빡임이 없게 마지막으로 쓴 색을 이 기기에도 적어 둔다 (COLOR_KEY). */
+   첫 화면 깜빡임이 없게 마지막으로 쓴 색을 이 기기에도 적어 둔다 (COLOR_KEY).
+
+   낮 · 밤 판 (11/19 겨울 업데이트, docs/themes-winter/spec.md): modes 가 있는 테마는 판이 둘(낮 · 밤).
+   저장 · 목록은 묶음 id(winter-snack), 화면에는 판 id(winter-snack-night)를 단다. 고르는 법은 MODE_KEY(auto | light | dark, 기본 auto) —
+   auto 면 휴대폰 다크 모드를 따라 켜 둔 채로 바로 바뀐다. skin 이 있는 테마는 <html data-skin> 도 단다 (픽셀 스킨 = 도트 글꼴 · 픽셀 카드).
+   modes 가 없는 테마는 지금 그대로 (모드 값 무시). */
 (function (root) {
   'use strict';
   var THEMES = [
@@ -23,9 +28,16 @@
     { id: 'chocolate-noir', name: 'Chocolate Noir', ko: '초콜릿 누아르', desc: '다크 초콜릿과 크리미한 브라운', dark: false },
     { id: 'roast-nuts', name: 'Roast Nuts', ko: '로스트 너츠', desc: '구운 견과류와 달콤한 황금빛', dark: false },
     { id: 'winter-knit', name: 'Winter Knit', ko: '윈터 니트', desc: '포근한 니트와 부드러운 겨울', dark: false },
-    { id: 'harvest', name: 'Harvest', ko: '하베스트', desc: '황금빛 들판과 차분한 가을', dark: false }
+    { id: 'harvest', name: 'Harvest', ko: '하베스트', desc: '황금빛 들판과 차분한 가을', dark: false },
+    // 겨울 업데이트 (11/19) — 도트 테마, 낮 · 밤 판. 1년 내내 고를 수 있다
+    { id: 'winter-snack', name: '도란도란 겨울 간식', ko: '도란도란 겨울 간식', desc: '군밤 · 붕어빵 노점의 도트 간식', dark: false, skin: 'pixel',
+      modes: { light: 'winter-snack', dark: 'winter-snack-night' }, tags: ['NEW'] },
+    { id: 'merry-xmas', name: '두근두근 크리스마스', ko: '두근두근 크리스마스', desc: '솔잎 가랜드와 반짝이는 전구', dark: false, skin: 'pixel',
+      modes: { light: 'merry-xmas', dark: 'merry-xmas-night' }, tags: ['NEW'] }
   ];
   var KEY = 'danjjakkung.theme';
+  var MODE_KEY = 'danjjakkung.themeMode';
+  var MODES = ['auto', 'light', 'dark'];
   var COLOR_KEY = 'danjjakkung.colors';
   // 테마마다 고를 수 있는 사람 색 8개. 앞의 둘은 그 테마 기본색(--her, --me 와 같다).
   // ink: 색 위 글자 후보(어두운 쪽) — 흰색과 견줘 더 잘 보이는 쪽을 쓴다 (4.5:1 이상은 tests/themes.test.js 가 확인).
@@ -43,7 +55,10 @@
     'chocolate-noir': { ink: '#2A1D18', both: '#92A77A', colors: ['#B99583', '#D8B99B', '#C49A78', '#C98F7A', '#92A77A', '#E0C080', '#9AA8C0', '#9A4A2A'] },
     'roast-nuts': { ink: '#2E2116', both: '#A8C27A', colors: ['#D39A70', '#F4C95D', '#E8D77D', '#D6AC83', '#A8C27A', '#E8A07A', '#9FC0D0', '#D99A9A'] },
     'winter-knit': { ink: '#26282C', both: '#DCC9BC', colors: ['#E8B6C5', '#B2DCD6', '#DCC9BC', '#A8C0D8', '#C8B8D8', '#E8C89A', '#B8C8A8', '#D0A0A0'] },
-    'harvest': { ink: '#24230F', both: '#CA8D7D', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#CA8D7D', '#9DB4C8'] }
+    'harvest': { ink: '#24230F', both: '#CA8D7D', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#CA8D7D', '#9DB4C8'] },
+    // 낮 · 밤 판이 있는 테마는 묶음 id 하나로 (앞 둘 · both = 낮 판 값, 밤 판 기본색은 tokens.css 의 밤 블록)
+    'winter-snack': { ink: '#2E1C12', both: '#D49A5A', colors: ['#D9825B', '#F0C27B', '#D49A5A', '#E8A0A0', '#A8C27A', '#9FC0D0', '#C9A27A', '#B49AD8'] },
+    'merry-xmas': { ink: '#29291F', both: '#6E9E5A', colors: ['#D07A6A', '#E9B949', '#6E9E5A', '#8FB5D0', '#C49AC0', '#F2A08A', '#B8C8A8', '#E8A0A0'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -60,7 +75,8 @@
    ['#C98A5B','아몬드'],['#F4C95D','꿀'],['#E8D77D','보리'],['#D6AC83','캐러멜'],['#A8C27A','피스타치오'],['#E8A07A','살구'],['#9FC0D0','하늘'],['#D99A9A','대추'],
    ['#E8B6C5','더스티 핑크'],['#B2DCD6','민트'],['#DCC9BC','오트밀'],['#A8C0D8','겨울 하늘'],['#C8B8D8','라벤더'],['#E8C89A','캐멀'],['#B8C8A8','세이지'],['#D0A0A0','로즈 브라운'],
    ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘'],
-   ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'] // 10/28 시간표 색 바꿈
+   ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'], // 10/28 시간표 색 바꿈
+   ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'] // 11/19 겨울 도트 테마
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   var LIGHT_DEFAULT = 'soft-pastel';
   var DARK_DEFAULT = 'cosmic-dream';
@@ -69,10 +85,37 @@
     for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i];
     return null;
   }
+  /** 판 id(winter-snack-night) → 그 판이 속한 테마 (없으면 null) */
+  function ofBoard(boardId) {
+    for (var i = 0; i < THEMES.length; i++) {
+      var t = THEMES[i];
+      if (t.id === boardId || (t.modes && (t.modes.light === boardId || t.modes.dark === boardId))) return t;
+    }
+    return null;
+  }
   var picked = null; // 이번에 고른 값 (저장이 막힌 브라우저에서도 화면 · 표시가 어긋나지 않게)
   function stored() {
     if (picked) return picked;
-    try { var v = root.localStorage && root.localStorage.getItem(KEY); return byId(v) ? v : null; } catch (e) { return null; }
+    try {
+      var v = root.localStorage && root.localStorage.getItem(KEY);
+      if (byId(v)) return v;
+      // 판 id 가 저장돼 있으면(예전 시험판 · 손으로 고친 값) 묶음 id 로 고쳐 저장한다
+      var t = v ? ofBoard(v) : null;
+      if (t) { try { root.localStorage.setItem(KEY, t.id); } catch (e) {} return t.id; }
+      return null;
+    } catch (e) { return null; }
+  }
+  // 낮 · 밤 고르기 — 이 기기에 저장. 모르는 값이면 auto
+  var pickedMode = null;
+  function mode() {
+    if (pickedMode) return pickedMode;
+    try { var v = root.localStorage && root.localStorage.getItem(MODE_KEY); return MODES.indexOf(v) >= 0 ? v : 'auto'; } catch (e) { return 'auto'; }
+  }
+  function saveMode(m) {
+    if (MODES.indexOf(m) < 0) return false;
+    pickedMode = m;
+    try { root.localStorage.setItem(MODE_KEY, m); } catch (e) {}
+    return true;
   }
   function prefersDark() {
     try { return !!(root.matchMedia && root.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) { return false; }
@@ -81,6 +124,22 @@
   function defaultId(dark) { return dark ? DARK_DEFAULT : LIGHT_DEFAULT; }
   function current() { return stored() || defaultId(prefersDark()); }
   function chosen() { return !!stored(); }
+  /** 테마에 낮 · 밤 판이 있는지 */
+  function hasModes(id) { var t = byId(id); return !!(t && t.modes); }
+  /** 지금 그릴 판이 밤 판인지 (modes 가 없는 테마는 그 테마의 dark) */
+  function isNight(id, m, dark) {
+    var t = byId(id || current());
+    if (!t) return false;
+    if (!t.modes) return !!t.dark;
+    m = m || mode();
+    return m === 'auto' ? (dark === undefined ? prefersDark() : !!dark) : m === 'dark';
+  }
+  /** 실제로 <html data-theme> 에 달 판 id. id · m · dark 를 안 주면 지금 값 */
+  function board(id, m, dark) {
+    var t = byId(id || current()) || byId(current());
+    if (!t.modes) return t.id;
+    return isNight(t.id, m, dark) ? t.modes.dark : t.modes.light;
+  }
 
   // 휴대폰 위쪽 띠 색을 화면 바탕(--bg)과 맞춘다. 변수 값은 전환 효과 중에도 바로 최종값이라 타이밍과 상관없다.
   function syncMeta(doc) {
@@ -93,12 +152,13 @@
   function apply(id, opts) {
     var doc = root.document;
     if (!doc) return;
-    var t = byId(id) || byId(current());
-    var html = doc.documentElement;
-    if (html.getAttribute('data-theme') === t.id) { paintPeople(doc, t.id); syncMeta(doc); return; }
+    var t = byId(id) || ofBoard(id) || byId(current());
+    var html = doc.documentElement, b = board(t.id), skin = t.skin || null;
+    if (html.getAttribute('data-theme') === b && html.getAttribute('data-skin') === skin) { paintPeople(doc, t.id); syncMeta(doc); return; }
     var smooth = opts && opts.smooth;
     if (smooth) html.classList.add('is-theming');
-    html.setAttribute('data-theme', t.id);
+    html.setAttribute('data-theme', b);
+    if (skin) html.setAttribute('data-skin', skin); else html.removeAttribute('data-skin');
     paintPeople(doc, t.id);
     syncMeta(doc);
     if (smooth) setTimeout(function () { html.classList.remove('is-theming'); }, 320);
@@ -115,6 +175,12 @@
   function choose(id) {
     if (!save(id)) return false;
     apply(id, { smooth: true });
+    return true;
+  }
+  /** 낮 · 밤 고르기: 저장하고 지금 테마를 다시 단다 */
+  function chooseMode(m) {
+    if (!saveMode(m)) return false;
+    apply(current(), { smooth: true });
     return true;
   }
 
@@ -211,18 +277,28 @@
   }
   function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
 
-  var api = { THEMES: THEMES, KEY: KEY, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
+  var api = { THEMES: THEMES, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
+    mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
     palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 
-  // 첫 화면: 저장된 테마(없으면 기본)를 바로 단다. 아직 고르지 않았으면 휴대폰 다크 모드가 바뀔 때 따라간다.
+  // 첫 화면: 저장된 테마(없으면 기본)를 바로 단다 — <head> 에서 CSS 바로 뒤에 불러서 첫 프레임부터 맞는 판 · 스킨.
+  // 휴대폰 다크 모드가 바뀌면 따라간다: 아직 고르지 않았거나, 낮 · 밤 판이 있는 테마를 「자동」으로 쓸 때.
+  var listeners = [];
+  function onChange(fn) { listeners.push(fn); }
+  api.onChange = onChange;
   if (root.document && root.document.documentElement) {
     apply(current());
     try {
       var mq = root.matchMedia && root.matchMedia('(prefers-color-scheme: dark)');
-      var follow = function () { if (!chosen()) apply(current(), { smooth: true }); };
+      var follow = function () {
+        if (!chosen() || (hasModes(current()) && mode() === 'auto')) {
+          apply(current(), { smooth: true });
+          listeners.forEach(function (fn) { try { fn(); } catch (e) {} });
+        }
+      };
       if (mq && mq.addEventListener) mq.addEventListener('change', follow);
       else if (mq && mq.addListener) mq.addListener(follow);
     } catch (e) {}

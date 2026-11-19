@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const T = require('../js/themes.js');
 
-const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest'];
+const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas'];
+// 화면에 다는 판 id — 낮 · 밤 판이 있는 테마는 판 둘 (11/19 겨울 도트 테마)
+const BOARDS = IDS.concat(['winter-snack-night', 'merry-xmas-night']);
 const css = fs.readFileSync(path.join(__dirname, '../styles/tokens.css'), 'utf8');
 const appCss = fs.readFileSync(path.join(__dirname, '../styles/app.css'), 'utf8');
 
@@ -26,7 +28,7 @@ function lum(h) {
 }
 function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 
-test('테마 ID 14개 (기존 6 + 신규 8), 순서와 이름', () => {
+test('테마 ID 16개 (기존 6 + 신규 8 + 겨울 도트 2), 순서와 이름', () => {
   assert.deepStrictEqual(T.THEMES.map((t) => t.id), IDS);
   for (const t of T.THEMES) assert.ok(t.name && t.desc);
   assert.strictEqual(T.byId('nope'), null);
@@ -46,7 +48,7 @@ test('app.css 가 쓰는 색 변수는 모든 테마에 다 있다', () => {
   const used = new Set([...appCss.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]));
   used.delete('font');
   for (const m of appCss.matchAll(/(--[a-z-]+):/g)) used.delete(m[1].slice(2)); // app.css 안에서 정하는 변수(빗금 --hatch 등)
-  for (const id of IDS) {
+  for (const id of BOARDS) {
     const v = Object.assign({}, common, block(id));
     for (const k of used) assert.ok(k in v, id + ' 에 --' + k + ' 없음');
   }
@@ -61,7 +63,7 @@ test('글자 대비: 본문 · 보조 글자 · 버튼 · 강조 카드 4.5:1 �
     ['on-primary', 'primary', 4.5], ['tab-active', 'surface', 4.5], ['tint-text', 'tint', 4.5], ['tint-text', 'surface', 4.5],
     ['her-ink', 'her', 4.5], ['me-ink', 'me', 4.5], ['lv-half-text', 'lv-half', 4.5], ['lv-full-text', 'lv-full', 4.5], ['empty-text', 'empty', 4.5],
     ['warn', 'surface', 4.5], ['warn', 'raised', 4.5], ['toast-fg', 'toast-bg', 4.5], ['accent', 'surface', 3], ['accent', 'bg', 3], ['accent', 'raised', 3], ['lv-full', 'surface', 3]];
-  for (const id of IDS) {
+  for (const id of BOARDS) {
     const v = block(id);
     for (const [f, b, min] of pairs) {
       const r = contrast(v[f], v[b]);
@@ -70,7 +72,7 @@ test('글자 대비: 본문 · 보조 글자 · 버튼 · 강조 카드 4.5:1 �
     // 켜진 스위치 · 지금 선: 카드 위 3:1, 그 위 흰 손잡이 3:1
     const strong = v.strong || v.primary;
     assert.ok(contrast(strong, v.surface) >= 3, id + ' --strong / --surface');
-    assert.ok(contrast('#FFFFFF', strong) >= 3, id + ' 손잡이 / --strong');
+    assert.ok(contrast(/^#/.test(v['switch-knob'] || '') ? v['switch-knob'] : '#FFFFFF', strong) >= 3, id + ' 손잡이 / --strong');
   }
 });
 

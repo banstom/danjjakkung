@@ -52,6 +52,17 @@
   --today: var(--text);
   --on-today: var(--surface);
   --today-col: color-mix(in srgb, var(--text) 5%, transparent);
+  /* 픽셀 스킨(도트 테마) 토큰 — 다른 테마에서는 쓰이지 않지만 값은 있어야 한다 (11/19 겨울 업데이트) */
+  --ol: var(--line);               /* 픽셀 외곽선 */
+  --sh: transparent;               /* 각진 그림자 */
+  --btn-hi: transparent;           /* 버튼 안쪽 위 밝은 줄 */
+  --btn-lo: transparent;           /* 버튼 안쪽 아래 어두운 줄 */
+  --sec-dot: var(--accent);        /* 섹션 제목 앞 작은 점 (장식) */
+  --deco-a: var(--accent);         /* 장식 두 색 — 그림 SVG 안의 색과 같은 값 (기록용) */
+  --deco-b: var(--surface);
+  --checker: transparent;          /* 바탕 체크 무늬 */
+  --bg-art: none; --bg-art-size: 96px;  /* 바탕 무늬 그림 */
+  --head-art: none; --head-h: 0px;      /* 화면 맨 위 머리 장식 */
 }
 
 /* Soft Pastel — 포근한 파스텔 — 채움은 연분홍, 테두리 · 글자 강조만 진한 장밋빛 */
@@ -271,4 +282,88 @@
   --her: #EAB45B; --her-ink: #24230F; --me: #B5B581; --me-ink: #24230F;
   --empty: #EEE8CF; --empty-text: #5E5C45; --lv-half: #F1E2A1; --lv-half-text: #35341F; --lv-full: #7A6B22; --lv-full-text: #FFFFFF;
   --warn: #B3261E; --toast-bg: #35341F; --toast-fg: #FFFDF5;
+}
+
+/* ── 겨울 업데이트 (11/19): 도트 테마 2종 × 낮 · 밤 판 — docs/themes-winter/spec.md ──
+   판 id 는 화면에만 (<html data-theme>). 저장 · 목록은 묶음 id(winter-snack · merry-xmas), js/themes.js 의 modes.
+   글자 대비는 docs/themes-winter/contrast.md (tests/themes.test.js 가 다시 확인). 머리 장식 · 바탕 그림은 themes/<테마>/ */
+
+/* 도란도란 겨울 간식 (낮) — 도트 테마, 군밤 · 붕어빵 노점. 차양 머리 장식 · 크림 바탕 · 캐러멜 버튼 */
+[data-theme="winter-snack"] {
+  color-scheme: light;
+  --bg: #F6E7CF; --surface: #FFF8EC; --raised: #F3E1C4; --input-bg: #FFF8EC;
+  --text: #3B2A1E; --sub: #6B5442; --faint: #B9A48A; --line: #E3CFB0;
+  --divider: #E3CFB0; --primary: #8A5229; --primary-edge: #4A3527; --on-primary: #FFF8EC;
+  --secondary: #F3E1C4; --accent: #AD6C33; --strong: #8A5229; --icon: #6B5442;
+  --tab-bg: #FFF8EC; --tab-active: #8A5229; --tab-inactive: #6B5442; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #B8272F; --her: #D9825B; --her-ink: #2E1C12;
+  --me: #F0C27B; --me-ink: #2E1C12; --both: #D49A5A; --both-ink: #2E1C12;
+  --tint: #FBE3B8; --tint-text: #6B3F22;
+  --lv-full: #C0803F; --lv-full-text: #2E1C12; --lv-half: #EBCB9F;
+  --lv-half-text: #3B2A1E; --empty: #EEDDC4; --empty-text: #6B5442; --switch-knob: #FFF8EC;
+  --scrim: rgba(59, 42, 30, 0.45); --shadow: 0 -8px 24px rgba(74, 53, 39, 0.12); --lift: 0 1px 3px rgba(74, 53, 39, 0.18); --toast-bg: #3B2A1E;
+  --toast-fg: #FFF8EC; --toast-shadow: 0 4px 0 #D8BE98; --tomato-green: #4E8A55; --tomato-red: #C9573C;
+  --ol: #4A3527; --sh: #D8BE98; --btn-hi: #A9673A; --btn-lo: #6B3F22;
+  --sec-dot: #C9573C; --deco-a: #C9573C; --deco-b: #FFF8EC;
+  --bg-art: url('../themes/winter-snack/bg.svg'); --bg-art-size: 96px; --head-art: url('../themes/winter-snack/head.svg'); --head-h: 42px; --checker: rgba(201, 140, 80, 0.09);
+}
+
+/* 도란도란 겨울 간식 (밤) — 짙은 남보라 밤하늘 · 노랑 전구 · 토스트 금빛 버튼 */
+[data-theme="winter-snack-night"] {
+  color-scheme: dark;
+  --bg: #1D1A2C; --surface: #2B2539; --raised: #382F48; --input-bg: #2B2539;
+  --text: #FBEBD3; --sub: #D2BC9F; --faint: #6E6488; --line: #3E3556;
+  --divider: #3E3556; --primary: #E8B06A; --primary-edge: #B5743A; --on-primary: #2E1C12;
+  --secondary: #382F48; --accent: #E8B06A; --strong: #F6D29A; --icon: #D2BC9F;
+  --tab-bg: #2B2539; --tab-active: #F6D29A; --tab-inactive: #D2BC9F; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #D9825B; --her-ink: #2E1C12;
+  --me: #F0C27B; --me-ink: #2E1C12; --both: #D49A5A; --both-ink: #2E1C12;
+  --tint: #4D3826; --tint-text: #F6D29A; --today: #F5ECDD; --on-today: #2B2539;
+  --lv-full: #D49A5A; --lv-full-text: #2E1C12; --lv-half: #6B5640;
+  --lv-half-text: #FBEBD3; --empty: #40375A; --empty-text: #D2BC9F; --switch-knob: #2E1C12;
+  --scrim: rgba(5, 4, 12, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #FBEBD3;
+  --toast-fg: #1D1A2C; --toast-shadow: 0 4px 0 #100D1A; --tomato-green: #7FB06A; --tomato-red: #E2584A;
+  --ol: #56497A; --sh: #100D1A; --btn-hi: #F6D29A; --btn-lo: #B5743A;
+  --sec-dot: #C9573C; --deco-a: #B8473A; --deco-b: #EBD9BC;
+  --bg-art: url('../themes/winter-snack/bg-night.svg'); --bg-art-size: 128px; --head-art: url('../themes/winter-snack/head-night.svg'); --head-h: 60px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 두근두근 크리스마스 (낮) — 도트 테마, 솔잎 가랜드 · 눈송이 바탕 · 솔잎 초록 버튼 */
+[data-theme="merry-xmas"] {
+  color-scheme: light;
+  --bg: #F3EEE3; --surface: #FFFDF7; --raised: #EEF0E4; --input-bg: #FFFDF7;
+  --text: #29291F; --sub: #5B5A4A; --faint: #A9AE98; --line: #DCDFCF;
+  --divider: #DCDFCF; --primary: #2F6B3A; --primary-edge: #1D4626; --on-primary: #FFFDF7;
+  --secondary: #E2EDD9; --accent: #4E8A55; --strong: #2F6B3A; --icon: #5B5A4A;
+  --tab-bg: #FFFDF7; --tab-active: #2F6B3A; --tab-inactive: #5B5A4A; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C62F3A; --her: #D07A6A; --her-ink: #29291F;
+  --me: #E9B949; --me-ink: #29291F; --both: #6E9E5A; --both-ink: #29291F;
+  --tint: #E2EDD9; --tint-text: #2B5332;
+  --lv-full: #6E9E5A; --lv-full-text: #14200F; --lv-half: #BFD6B0;
+  --lv-half-text: #29291F; --empty: #E6E2D4; --empty-text: #5B5A4A; --switch-knob: #FFFDF7;
+  --scrim: rgba(41, 41, 31, 0.45); --shadow: 0 -8px 24px rgba(44, 58, 44, 0.12); --lift: 0 1px 3px rgba(44, 58, 44, 0.18); --toast-bg: #29291F;
+  --toast-fg: #FFFDF7; --toast-shadow: 0 4px 0 #D3D8C4; --tomato-green: #4E8A55; --tomato-red: #B83A3A;
+  --ol: #2C3A2C; --sh: #D3D8C4; --btn-hi: #4E8A55; --btn-lo: #1D4626;
+  --sec-dot: #B83A3A; --deco-a: #B83A3A; --deco-b: #E9B949;
+  --bg-art: url('../themes/merry-xmas/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/merry-xmas/head.svg'); --head-h: 42px; --checker: rgba(70, 110, 70, 0.06);
+}
+
+/* 두근두근 크리스마스 (밤) — 짙은 숲색 · 알록달록 전구 · 금빛 버튼 */
+[data-theme="merry-xmas-night"] {
+  color-scheme: dark;
+  --bg: #12221B; --surface: #1C3127; --raised: #264034; --input-bg: #1C3127;
+  --text: #F4EFE1; --sub: #C5CCB4; --faint: #5E7A68; --line: #2F4A3B;
+  --divider: #2F4A3B; --primary: #E9B949; --primary-edge: #B58A2A; --on-primary: #2A2010;
+  --secondary: #264034; --accent: #E9B949; --strong: #F2D98A; --icon: #C5CCB4;
+  --tab-bg: #1C3127; --tab-active: #F2D98A; --tab-inactive: #C5CCB4; --success: #7FD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #D9826F; --her-ink: #1A120C;
+  --me: #E9B949; --me-ink: #2A2010; --both: #7FB06A; --both-ink: #12221B;
+  --tint: #2F4A39; --tint-text: #F2D98A;
+  --lv-full: #7FB06A; --lv-full-text: #12221B; --lv-half: #3F5E47;
+  --lv-half-text: #F4EFE1; --empty: #2C4537; --empty-text: #C5CCB4; --switch-knob: #2A2010;
+  --scrim: rgba(3, 8, 5, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F4EFE1;
+  --toast-fg: #12221B; --toast-shadow: 0 4px 0 #0A140F; --tomato-green: #7FB06A; --tomato-red: #E2584A;
+  --ol: #4E7A5D; --sh: #0A140F; --btn-hi: #F6D98A; --btn-lo: #B58A2A;
+  --sec-dot: #D9564A; --deco-a: #C9443A; --deco-b: #E9B949;
+  --bg-art: url('../themes/merry-xmas/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/merry-xmas/head-night.svg'); --head-h: 60px; --checker: rgba(255, 255, 255, 0.025);
 }
