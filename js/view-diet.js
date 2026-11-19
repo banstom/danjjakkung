@@ -108,7 +108,7 @@
         '<span class="dmeal__ds">' + esc((m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(' · ')) + '</span></span>' +
         '<span class="dmeal__vl">' + comma(m.total ? m.total.kcal : 0) + '</span>' +
         '<button type="button" class="dmeal__del' + (del ? ' is-armed' : '') + '" data-act="dm-del" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + (del ? ' 정말 지우기' : ' 지우기')) + '">' + (del ? '지우기' : '×') + '</button></li>';
-    }).join('') + '</ul>' : '<p class="dnote">아직 오늘 기록이 없어요</p>';
+    }).join('') + '</ul>' : '<p class="dnote">' + (t.off ? '기록을 불러오지 못했어요 · 저장 규칙 배포 전이거나 연결이 끊겼어요' : '아직 오늘 기록이 없어요') + '</p>';
     var sum = t.total ? '<p class="dtoday__sum"><b>' + comma(t.total.kcal) + '</b> kcal' + (t.goal ? ' / ' + comma(t.goal.kcal) : '') + ' · 탄 ' + grams(t.total.carb) + ' · 단 ' + grams(t.total.protein) + ' · 지 ' + grams(t.total.fat) + '</p>' : '';
     var pt = h.partnerToday ? '<p class="dnote">' + esc(h.partnerToday.name) + ' 님 오늘 ' + (h.partnerToday.n ? comma(h.partnerToday.total.kcal) + 'kcal · ' + h.partnerToday.n + '끼' : '아직 기록 없음') + '</p>' : '';
     return '<div class="mscreen"><div class="mbar"><button type="button" class="mbar__btn" data-act="diet-close" aria-label="전체로 돌아가기">' + svg(BACK) + '</button><h1 class="mbar__title">단짝 식탁</h1></div>' +
@@ -129,9 +129,14 @@
       (e.chips && e.chips.length ? '<h3 class="dsec">자주 먹는 것 · 누르면 위에 붙어요</h3><div class="dpicks">' + e.chips.map(function (c) { return '<button type="button" class="dpick" data-act="dl-chip" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
       (e.partnerName ? '<h3 class="dsec" id="dl-who-l">누구의 끼니</h3><div class="dseg dseg--wide" role="group" aria-labelledby="dl-who-l">' +
         [['me', '나'], ['both', '단짝과 함께']].map(function (x) { return '<button type="button" class="dseg__b" data-act="dl-who" data-v="' + x[0] + '" aria-pressed="' + ((x[0] === 'both') === !!e.together) + '">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
-      (e.error ? '<p class="rform__error" role="alert">' + esc(e.error) + '</p>' : '') +
-      '<div class="dfoot"><button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-go"' + (e.loading ? ' disabled' : '') + '>' + (e.loading ? '식품표 불러오는 중…' : '정리하기') + '</button></div>' +
+      '<div id="dl-foot">' + logFoot(e) + '</div>' +
       '</section></div>';
+  }
+  /** 기록하기 아래쪽(안내 · 버튼) — 식품표를 다 받으면 이 부분만 바꾼다 (적는 글은 그대로) */
+  function logFoot(e) {
+    return (e.error ? '<p class="rform__error" role="alert">' + esc(e.error) + '</p>' : '') +
+      '<div class="dfoot">' + (e.retry ? '<button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-retry">식품표 다시 불러오기</button>'
+        : '<button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-go"' + (e.loading ? ' disabled' : '') + '>' + (e.loading ? '식품표 불러오는 중…' : '정리하기') + '</button>') + '</div>';
   }
 
   /** ⑤ 확인 카드 (목업 05, 질문은 D4 다음). c = { at, name, total, items: [{ name, sub, kcal, est }], pending: [{ raw }], together, partnerName, saving, error } */
@@ -145,7 +150,7 @@
     return '<div class="sheet-layer sheet-layer--full">' +
       '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dc-title">' +
       '<div class="dbar"><button type="button" class="mbar__btn" data-act="dl-back" aria-label="고치러 돌아가기">' + svg(BACK) + '</button></div>' +
-      '<p class="caption">확인하고 저장해요</p>' +
+      '<p class="caption">' + (c.dayLabel ? esc(c.dayLabel) + ' 기록이에요 · 확인하고 저장해요' : '확인하고 저장해요') + '</p>' +
       '<section class="card dsum"><h2 id="dc-title" class="dsum__t">' + esc((c.at || '') + ' ' + c.name + ' · ' + n + '가지') + '</h2>' +
         '<p class="dsum__k">' + (c.pending.length || c.items.some(function (i) { return i.est; }) ? '약 ' : '') + '<b>' + comma(c.total.kcal) + '</b> kcal</p>' +
         '<div class="dsum__m"><span>탄수 <b>' + grams(c.total.carb) + '</b></span><span>단백질 <b>' + grams(c.total.protein) + '</b></span><span>지방 <b>' + grams(c.total.fat) + '</b></span></div>' +
@@ -157,7 +162,7 @@
       '</section></div>';
   }
 
-  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
+  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

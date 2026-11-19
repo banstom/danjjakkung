@@ -1268,6 +1268,16 @@ async function tick(page, dateKey, key) {
   assert.ok(await jm.$('.dmeal__del.is-armed')); assert.strictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.length, 2);
   await jm.click('.dmeal__del.is-armed'); await jm.waitForTimeout(250);
   assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.map((m) => m.at), ['12:40']);
+  // 회귀(점검 AI): 두 끼니는 한 끼씩 안내 · 지난 날짜는 그날 문서로
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '아침 08:20\n사과 1개\n점심 12:40\n김밥'); await jm.click('[data-act="dl-go"]'); await jm.waitForTimeout(80);
+  assert.match(await jm.textContent('.dscreen .rform__error'), /한 끼씩[^]*2개/);
+  const yKey = await jm.evaluate(() => { const D = RT.dates, n = D.fromLocal(new Date()) - 1, p = D.parts(n); return [D.toKey(n), p.m + '.' + p.d + '.']; });
+  await jm.fill('#dl-text', yKey[1] + '\n저녁 19:00\n사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
+  assert.match(await jm.textContent('.dscreen .caption'), /기록이에요/, '지난 날짜라고 알려 줌');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(300);
+  assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + yKey[0]).meals.map((m) => m.at), ['19:00'], '어제 문서에');
+  assert.strictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.length, 1, '오늘 문서는 그대로');
   // Esc: 확인 카드 → 기록하기 → 닫기
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
   await jm.fill('#dl-text', '사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
@@ -1277,6 +1287,16 @@ async function tick(page, dateKey, key) {
   assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 첫 화면 넘치지 않음');
   await jm.setViewportSize({ width: 390, height: 844 });
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
+  // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
+  await dj.route('**/data/foods-kr.json', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.continue(); });
+  await dj.evaluate(() => { location.hash = ''; }); 
+  await toAll(dj); await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('[data-act="dl-open"]');
+  await dj.click('[data-act="dl-open"]'); await dj.waitForSelector('#dl-text');
+  const loadingNow = await dj.evaluate(() => document.querySelector('[data-act="dl-go"]').disabled);
+  await dj.keyboard.type('사과 1개 바나나');
+  await dj.waitForFunction(() => !document.querySelector('[data-act="dl-go"]').disabled, null, { timeout: 8000 });
+  assert.strictEqual(await dj.inputValue('#dl-text'), '사과 1개 바나나', '받는 동안 적은 글 그대로 (받는 중이었나: ' + loadingNow + ')');
+  await dj.keyboard.press('Escape'); await dj.waitForTimeout(80); await dj.click('[data-act="diet-close"]'); await dj.unroute('**/data/foods-kr.json');
   console.log('단짝 식탁 D3 확인 끝 (기록하기 · 확인 카드 · 정리 대기 · 저장 · 단짝 화면 · 지우기 · Esc · 320px)');
   await jm.click('[data-act="tab"][data-tab="todo"]');
 

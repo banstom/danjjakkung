@@ -25,7 +25,7 @@ test('T5 · 저장된 것만이면 앱 코드만 — AI 0번(정리 대기 0) ·
 
 test('D3 글 읽기: 시각 · 끼니 · 양 · 단위 · 몫 · 재료 줄은 AI 로', () => {
   const p = M.parse('11.17.\n아침 08:20\n-달걀스크램블  3개\n-사과 1개\n-셀프메이드 브라우니 9조각/16조각\n:(바나나2개+계란2개)', null);
-  assert.deepEqual(p.date, [11, 17]); assert.equal(p.at, '08:20');
+  assert.deepEqual(p.date, [null, 11, 17]); assert.equal(p.at, '08:20');
   assert.deepEqual(p.lines.slice(0, 3).map((l) => [l.name, l.amount, l.unit]), [['달걀스크램블', 3, '개'], ['사과', 1, '개'], ['셀프메이드 브라우니', 9, '조각']]);
   assert.deepEqual(p.lines[2].portion, [9, 16]);
   assert.equal(p.lines[3].complex, true, '재료 줄은 AI 가 위 항목에 붙임');
@@ -39,6 +39,31 @@ test('D3 글 읽기: 시각 · 끼니 · 양 · 단위 · 몫 · 재료 줄은 A
   assert.equal(M.parse('사과 한 개', '07:05').at, '07:05', '시각이 없으면 지금');
   assert.deepEqual([M.parseItem('사과 한 개').amount, M.parseItem('바나나2개').amount, M.parseItem('반 공기 밥').complex], [1, 2, false]);
   assert.equal(M.takeTime('9시 반').at, '09:30'); assert.equal(M.takeTime('2599'), null);
+});
+
+test('D3 회귀(점검 AI): 4자리 양 · 이름 앞 에/로 · 여러 끼니 · 날짜 · 분수 · 엉뚱한 양', () => {
+  const p1 = M.parse('닭가슴살 1000g', '12:00');
+  assert.equal(p1.at, '12:00'); assert.deepEqual([p1.lines[0].name, p1.lines[0].amount, p1.lines[0].unit], ['닭가슴살', 1000, 'g']);
+  const p2 = M.parse('우유 1200ml\n아침 0800', '12:00');
+  assert.equal(p2.at, '08:00', '양은 시각이 아님 · 시각 줄이 뒤에 와도 그 끼니 시각'); assert.equal(p2.label, '아침'); assert.equal(p2.more, 0);
+  assert.equal(M.parse('로제떡볶이').lines[0].name, '로제떡볶이'); assert.equal(M.parse('에그타르트 1개').lines[0].name, '에그타르트');
+  const p3 = M.parse('아침 08:20\n사과 1개\n점심 12:40\n김밥');
+  assert.equal(p3.more, 1, '두 번째 끼니는 앱이 「한 끼씩」 안내'); assert.deepEqual(p3.lines.map((l) => l.name), ['사과']);
+  assert.deepEqual(M.parse('2026.11.17\n사과 1개').date, [2026, 11, 17]);
+  assert.equal(M.parse('1.5').date, null, '「1.5」는 날짜 아님');
+  assert.equal(M.parse('사과 1/2개').lines[0].amount, 0.5);
+  const big = M.match(M.parse('사과 99999개\n사과 0개'), { table: TAB });
+  assert.deepEqual(big.pending.map((x) => x.reason), ['amount', 'amount']);
+});
+
+test('D3 회귀(점검 AI): ml 기준 줄은 기준을 남김 · 어림한 양은 추정 표시 · 양 없는 밥 = 한 공기', () => {
+  const r = M.match(M.parse('짜장면\n밥\n사과 1개\n참기름 1스푼\n방울토마토 10알'), { table: TAB });
+  const by = Object.fromEntries(r.items.map((i) => [i.name, i]));
+  assert.equal(by['짜장면'].ref.base, TAB.by['짜장면'].find((e) => e.base === 'g') ? 'g' : 'ml');
+  assert.match(by['짜장면'].est, /1인분/);
+  assert.equal(by['밥'].calc.grams, 210); assert.equal(by['밥'].defaultUnit, '공기');
+  assert.match(by['사과'].est, /1개 ≈ 200g/); assert.match(by['참기름'].est, /스푼/);
+  assert.equal(by['방울토마토'] && by['방울토마토'].calc.grams, 150, '토막 어디든 1개 무게');
 });
 
 test('D3 식약처 식품표: 음식 · 원재료 2만 개쯤 · 이름 그대로 / 「_생것」 · 1개 무게 · 내 단위 · 1인분', () => {

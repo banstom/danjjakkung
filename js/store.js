@@ -220,7 +220,11 @@
       watchMealDay: function (uid, date, next, fail) {
         return db.doc('meals/' + uid + '_' + date).onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
       },
-      /** 끼니 하나 더하기 / 바꾸기(같은 id) — 시각 순으로 */
+      /** 오늘 문서를 통째로 (앱이 가진 목록으로) — 오프라인이어도 바로 화면에 반영되고 나중에 올라감 (트랜잭션은 오프라인에서 실패 — 점검 AI). 쓰는 사람은 본인뿐 */
+      setMealDay: function (uid, date, meals) {
+        return db.doc('meals/' + uid + '_' + date).set({ uid: uid, date: date, meals: meals, updatedAt: new Date().toISOString() });
+      },
+      /** 끼니 하나 더하기 / 바꾸기(같은 id) — 시각 순으로 (지난 날짜처럼 앱에 그날 목록이 없을 때) */
       saveMeal: function (uid, date, meal) {
         var ref = db.doc('meals/' + uid + '_' + date);
         return db.runTransaction(function (tx) {
