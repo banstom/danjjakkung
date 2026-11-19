@@ -134,3 +134,9 @@ test('D4 레시피 재료를 고친 정정 → learn 에도 (모델이 빠뜨려
   assert.equal(ri.length, 2, '항목 자체를 고친 건 레시피 재료 아님 · 이미 있는 건 안 겹침');
   assert.deepEqual(ri[1], { type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', auto: true, amount: 3, unit: '개', food: '햇반' });
 });
+
+test('D4 모델이 적은 레시피 재료 learn 에 기준이 빠지면 정정에서 채움 (시험 A 5차 T3)', () => {
+  const r = M.sanitize({ corrections: [{ path: '점심/특 간계밥/밥', set: { name: '밥', amount: 3, unit: '개', match: { kind: 'table', key: '햇반' } } }],
+    learn: [{ type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', amount: 3, unit: '개' }] });
+  assert.deepEqual(r.learn, [{ type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', amount: 3, unit: '개', food: '햇반' }]);
+});

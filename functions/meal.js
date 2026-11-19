@@ -148,8 +148,14 @@ function sanitize(d) {
   corrections.forEach((c) => {
     const seg = c.path.split('/').map((x) => x.trim()).filter(Boolean);
     if (seg.length !== 3 || (c.set.amount == null && c.set.grams == null)) return;
-    const has = learn.some((l) => l.type === 'recipe_ingredient' && l.recipe && seg[1].indexOf(l.recipe) + l.recipe.indexOf(seg[1]) > -2 && l.ingredient === seg[2]);
-    if (has || learn.length >= 20) return;
+    const has = learn.find((l) => l.type === 'recipe_ingredient' && l.recipe && seg[1].indexOf(l.recipe) + l.recipe.indexOf(seg[1]) > -2 && l.ingredient === seg[2]);
+    if (has) { // 모델이 적었지만 기준(햇반 등) · g 이 빠졌으면 정정에서 채움 (시험 A 5차 T3: 「밥 3개」만 있고 무엇 3개인지 없음)
+      if (!has.food && c.set.match && c.set.match.key) has.food = c.set.match.key;
+      if (has.grams == null && c.set.grams != null) has.grams = c.set.grams;
+      if (has.amount == null && c.set.amount != null) { has.amount = c.set.amount; if (!has.unit && c.set.unit) has.unit = c.set.unit; }
+      return;
+    }
+    if (learn.length >= 20) return;
     const l = { type: 'recipe_ingredient', recipe: seg[1].slice(0, STR), ingredient: seg[2].slice(0, STR), auto: true };
     if (c.set.amount != null) l.amount = c.set.amount;
     if (c.set.unit) l.unit = c.set.unit;
