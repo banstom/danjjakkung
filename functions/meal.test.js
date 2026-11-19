@@ -73,14 +73,14 @@ test('D4 정리: 남길 칸만 (영양 숫자 칸은 이름이 달라도 없음)
   assert.equal(M.sanitize(null), null); assert.equal(M.sanitize([1]), null);
 });
 
-test('D4 모델 부르기: 헤더 · 모델 · 온도 0 · 오류', async () => {
+test('D4 모델 부르기: 헤더 · 모델 · 온도 안 보냄 · 오류', async () => {
   let seen;
   const ok = async (url, o) => { seen = { url, o: o, b: JSON.parse(o.body) }; return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: '{"meals":[]}' }], usage: { input_tokens: 10, output_tokens: 5 } }) }; };
   const out = await M.callModel('k', 'sys', 'user', ok);
   assert.equal(out.text, '{"meals":[]}'); assert.equal(out.stop, null);
   assert.equal(seen.url, 'https://api.anthropic.com/v1/messages');
   assert.equal(seen.o.headers['x-api-key'], 'k'); assert.equal(seen.o.headers['anthropic-version'], '2023-06-01');
-  assert.equal(seen.b.model, 'claude-haiku-5-5'); assert.equal(seen.b.temperature, 0); assert.equal(seen.b.system, 'sys');
+  assert.equal(seen.b.model, 'claude-haiku-5-5'); assert.equal(seen.b.temperature, undefined, 'Haiku 5.5 는 temperature 를 안 받음 (400)'); assert.equal(seen.b.system, 'sys');
   await assert.rejects(M.callModel('k', 's', 'u', async () => ({ ok: false, status: 529, json: async () => ({ error: { type: 'overloaded_error' } }) })), /529/);
 });
 

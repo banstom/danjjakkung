@@ -124,7 +124,7 @@ async function callModel(key, system, user, fetchImpl) {
   const res = await f(API, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: MODEL, max_tokens: LIMITS.maxTokens, temperature: 0, system, messages: [{ role: 'user', content: user }] })
+    body: JSON.stringify({ model: MODEL, max_tokens: LIMITS.maxTokens, system, messages: [{ role: 'user', content: user }] })
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) { // 오류 이유(키는 들어 있지 않음)를 함께 — 크레딧 부족 · 모델 이름 등을 알 수 있게
