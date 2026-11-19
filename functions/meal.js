@@ -102,7 +102,7 @@ function setOf(x) { // 정정의 set: 끼니 · 항목 칸만
   Object.keys(x).forEach((k) => { if (!(k in o) && /^[A-Za-z_]{1,30}$/.test(k) && k !== '__proto__' && typeof x[k] === 'string') o[k] = str(x[k]); });
   return o;
 }
-const LEARN_STR = ['type', 'recipe', 'ingredient', 'name', 'food', 'product', 'food_name', 'product_name', 'unit', 'unit_name', 'base', 'memo'];
+const LEARN_STR = ['type', 'recipe', 'recipe_name', 'ingredient', 'ingredient_name', 'name', 'food', 'product', 'food_name', 'product_name', 'unit', 'unit_name', 'base', 'memo'];
 const LEARN_NUM = ['amount', 'grams', 'count', 'value'];
 function learnOf(x) {
   if (!x || typeof x !== 'object') return null;
@@ -141,12 +141,28 @@ function sanitize(d) {
   const unknowns = arr(d.unknowns, 20).filter((u) => u && typeof u === 'object').map((u) => ({
     path: String(u.path || u.item || u.name || '').slice(0, 200), what: str(u.what) || '', kcalRange: rangeOf(u.kcalRange)
   }));
+  const corrections = arr(d.corrections, 20).filter((c) => c && typeof c === 'object').map((c) => ({ path: String(c.path || '').slice(0, 200), set: setOf(c.set) }));
+  const learn = arr(d.learn, 20).map(learnOf).filter(Boolean);
+  // 레시피 재료를 고친 정정이면 learn 에도 (docs/diet/plan.md 11-18: 모델이 가끔 빠뜨림 → 앱 코드가 「레시피 재료를 고치면 레시피도 고침」).
+  // 그 항목이 저장된(또는 이번에 만든) 레시피인지는 앱이 확인하고, 아니면 이 줄은 버린다 (auto: true)
+  corrections.forEach((c) => {
+    const seg = c.path.split('/').map((x) => x.trim()).filter(Boolean);
+    if (seg.length !== 3 || (c.set.amount == null && c.set.grams == null)) return;
+    const has = learn.some((l) => l.type === 'recipe_ingredient' && l.recipe && seg[1].indexOf(l.recipe) + l.recipe.indexOf(seg[1]) > -2 && l.ingredient === seg[2]);
+    if (has || learn.length >= 20) return;
+    const l = { type: 'recipe_ingredient', recipe: seg[1].slice(0, STR), ingredient: seg[2].slice(0, STR), auto: true };
+    if (c.set.amount != null) l.amount = c.set.amount;
+    if (c.set.unit) l.unit = c.set.unit;
+    if (c.set.grams != null) l.grams = c.set.grams;
+    if (c.set.match && c.set.match.key) l.food = c.set.match.key;
+    learn.push(l);
+  });
   return {
     date: typeof d.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : null,
     meals,
     unknowns,
-    corrections: arr(d.corrections, 20).filter((c) => c && typeof c === 'object').map((c) => ({ path: String(c.path || '').slice(0, 200), set: setOf(c.set) })),
-    learn: arr(d.learn, 20).map(learnOf).filter(Boolean)
+    corrections,
+    learn
   };
 }
 

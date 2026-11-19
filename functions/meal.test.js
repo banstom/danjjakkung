@@ -123,3 +123,14 @@ test('D4 하루 횟수 문서(aiUse)는 앱이 못 읽고 못 씀 — 규칙에 
   const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
   assert.doesNotMatch(rules, /aiUse/); assert.doesNotMatch(rules, /document=\*\*\}[^]*allow/);
 });
+
+test('D4 레시피 재료를 고친 정정 → learn 에도 (모델이 빠뜨려도) · 이미 있으면 안 겹침', () => {
+  const r = M.sanitize({ corrections: [
+    { path: '점심/특 간계밥/밥', set: { name: '밥', amount: 3, unit: '개', match: { kind: 'table', key: '햇반' } } },
+    { path: '아침/달걀스크램블', set: { name: '달걀', amount: 3 } },
+    { path: '아침/셀프메이드 브라우니/무당초콜릿', set: { name: '파베글라스', grams: 40 } }],
+    learn: [{ type: 'recipe_ingredient', recipe: '셀프메이드 브라우니', ingredient: '무당초콜릿', grams: 40 }] });
+  const ri = r.learn.filter((l) => l.type === 'recipe_ingredient');
+  assert.equal(ri.length, 2, '항목 자체를 고친 건 레시피 재료 아님 · 이미 있는 건 안 겹침');
+  assert.deepEqual(ri[1], { type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', auto: true, amount: 3, unit: '개', food: '햇반' });
+});
