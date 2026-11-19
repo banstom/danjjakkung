@@ -12,17 +12,18 @@
 [data-skin="pixel"] {
   --px-font-11: 'Galmuri11', 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   --px-font-14: 'Galmuri14', 'Galmuri11', 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
-  --font: var(--px-font-14);
   /* 픽셀 테두리 — 네 방향 3px 외곽선(모서리 한 칸이 파여 둥글게 보임) + 아래 각진 그림자 */
   --px-frame: 0 -3px 0 var(--ol), 0 3px 0 var(--ol), -3px 0 0 var(--ol), 3px 0 0 var(--ol);
   --px-frame-2: 0 -2px 0 var(--ol), 0 2px 0 var(--ol), -2px 0 0 var(--ol), 2px 0 0 var(--ol);
   --px-drop: 0 9px 0 var(--sh), 3px 6px 0 var(--sh), -3px 6px 0 var(--sh);
 }
+/* 글씨체 (v61): 기본은 도트 글씨. 「테마」 시트에서 「기본」을 고르면 <html data-font="plain"> → 글자만 프리텐다드로, 테두리 · 장식 · 그림은 그대로 */
+[data-skin="pixel"]:not([data-font="plain"]) { --font: var(--px-font-14); }
 /* 도트 글꼴은 가짜 굵게 · 부드럽게를 끈다 (Galmuri14 에는 굵은 판이 없어 굵기 대신 크기 · 색으로 위계) */
-[data-skin="pixel"] body { font-synthesis: none; -webkit-font-smoothing: none; text-rendering: optimizeSpeed; }
+[data-skin="pixel"]:not([data-font="plain"]) body { font-synthesis: none; -webkit-font-smoothing: none; text-rendering: optimizeSpeed; }
 
 /* 글씨 크기가 따로 없는 폼 부품(브라우저 기본 13.33px)은 부모 글씨를 따른다 — 아래 크기 표가 이긴다 (:where 로 우선순위 0) */
-:where([data-skin="pixel"]) :where(button, input, select, textarea) { font-family: inherit; font-size: inherit; }
+:where([data-skin="pixel"]:not([data-font="plain"])) :where(button, input, select, textarea) { font-family: inherit; font-size: inherit; }
 
 /* 2. 바탕 · 머리 장식 — 그림은 themes/<테마>/{bg,head}[-night].svg (토큰 --bg-art · --head-art) */
 [data-skin="pixel"] body {
@@ -102,375 +103,375 @@
 .theme-art { display: block; image-rendering: pixelated; flex: none; max-width: none; }
 
 /* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */
-[data-skin="pixel"] body { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .caption { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .tag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .chip { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .grid-range { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mini-btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dow { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .cell { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .grid-foot { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .emoji-tile { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .emoji-tile--lg { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .routine__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .routine__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .routine__count { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .stat__label { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .stat__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .routine__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .both__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .both__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .both__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .sheet__title { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
-[data-skin="pixel"] .sheet__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .row__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .row__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .row__meta { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .row__by { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pill-btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .close-btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .exit-box__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .exit-box__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .toast { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .notice__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .notice__body { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mgroup { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mitem__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mitem__status { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .small-btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .muted { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .add-btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rform__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .field__label { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .field__input { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .icon-pick { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rform__error { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ghost-btn, [data-skin="pixel"] .solid-btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .text-btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .auth__info { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .bell-btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .nbox__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .nbox__body { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .nbox__info { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .nrow__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .nrow__desc { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .nselect { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .nfoot { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tabbar__btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tcard__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tcard__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tcard__count { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .trow__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .trow--mini .trow__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .trow__meta { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .trow__memo { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tempty { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tempty--mini { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .more-btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .add-line { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .add-line--mini { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pick { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .cpreview__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .cnote { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .drow--head { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .drow__day { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .einfo__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .einfo__line { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .seg__btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .scard__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .sday__wd { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sday__date { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .shour { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .shours--day .shour { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sblock--full.sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .sblock__ico { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .slist__title-day { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .slist__item { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .slist__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .slist__time { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sblock:not(.sblock--compact) .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sblock__time { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .slegend { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .shint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sstrip__btn span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sstrip__btn b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .sstatus__now { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sstatus__row { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .slanes-head > span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tset__sec { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tset__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tset__more { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tpick__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ttag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tcolors__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tcolors__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .tcolors__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .cpick.is-both .cpick__tag { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .cpick__tag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .skipbox__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .skipbox__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .chip--rest { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .uhead__name { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
-[data-skin="pixel"] .uhead__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .seg--mini .seg__btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ul { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .uaxis { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .uempty { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .upt__tag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .upt__name { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .upreview__k { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ulegend { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .utray { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .uchip { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ustat__k { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ustat__v { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .place__back { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .place__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .place__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pline__top, [data-skin="pixel"] .pline__bottom { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pmark__name { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pblock { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .phint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pnote { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .pask__step { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pask__q { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .agroup__day { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .arow__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .kung__text { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .umemo__k { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .umemo__t { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .uhint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mhead__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mitem__num { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .pick-row--days .pick { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rv-sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-grid .dow { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-name { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .emoji-tile.rv-tile { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mini-plane__label { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mini-plane__n { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-note { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-note--sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-bar { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .routine__rest { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rest__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rest__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rest__note { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rgroup__head { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rgroup__me { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rgroup__count { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .grow__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .grow__title b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .grow__harvest { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .grow__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .grow__next { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .quest__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .quest__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .qrow__label { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .qrow__tag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .qrow__val { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .qrow--bonus .qrow__label { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .gbig__stage { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .gbig__line, [data-skin="pixel"] .gbig__next { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .gstats span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .gstats b { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .gsub { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .gweek__day { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .gstages li { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .grules { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .cell.lv-full::after { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .day-sum { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .routine__when { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .miss-tag { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .miss-banner { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .when__sub { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .when__preview { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .chip--sm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .sgroup__head { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .icon-group { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rview__label { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rview__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rsub__head { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .morder { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mitem--order .mitem__no { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .kind__chips small { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dday { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .anniv__icon { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .anniv__title { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .anniv__title b { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .anniv__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .anniv__since { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .anniv__by { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abig__label { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .abig__count { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .abig__count span { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abig__since { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abig__today { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .alist li { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .anniv-form__note { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .asec { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .afeat__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .afeat__ds { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abadge { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .arow__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .arow__ds { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .arow__vl { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .acct__out { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mbar__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .mseg__btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mchip { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mchip--sm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .km .lb { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .mzoom__btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mhint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mcredit { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mbtn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mnote { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mvisits__when { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mvisits__note { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mfind__row { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mlisthead__t { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mlisthead__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mrow__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mrow__ds { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mrankno { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mrankno--big { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mchip--xs { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .madd { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .msort__btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mstars__who { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mstars__avg { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mrank__sub { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dbar__skip { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dgoal__n { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dgoal__d { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsec { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsec__t { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dlock { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dbody__l { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dseg__b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dfld { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dfin input { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dfin i { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dpick { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .drow__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .drow__ds { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .drow__vl { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dedit { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dnote { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dnotes { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsw__n { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dsw__d { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dbasis { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dbasis__tx b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dbasis__tx span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ddisc { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ddisc b { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsteps li { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsteps li::before { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsteps b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dsteps em { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dgc__t { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dgc__nums { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dgc__nums b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ubox__ini { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
-[data-skin="pixel"] .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__lab { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .ubox__big small { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__pl { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__stub .ubox__lab { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__stub .ubox__big { font-size: 36px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__unit { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox--ticket .ubox__ini { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ubox__names { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ubox__nl { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__nx b { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ubox__d { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox--polaroid .ubox__ini { font-size: 36px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox--polaroid .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__mid--pol .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__mid--ov .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__mn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__amp { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .ubox__btitle .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__bnm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .ubox__bst { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abox__nm { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .abox__mini--badge::after { font-size: 12px; font-family: var(--px-font-11); }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__ini { font-size: 15px; font-family: var(--px-font-14); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__stub .ubox__big { font-size: 24px; font-family: var(--px-font-11); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__names { font-size: 15px; font-family: var(--px-font-14); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox--overlap .ubox__mid--ov .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__btitle .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
-@media (max-width: 360px) { [data-skin="pixel"] .ubox__mn { font-size: 12px; font-family: var(--px-font-11); } }
-[data-skin="pixel"] .aview__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .aview__btn { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dtoday__sum { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dtoday__sum b { font-size: 24px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dmeal__at { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dmeal__nm { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dmeal__ds { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dmeal__vl { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dmeal__del { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dmeal__del.is-armed { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dwait { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dlog__sub { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dlog__ta { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dlog__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dsum__t { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dsum__k { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dsum__k b { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .dsum__m { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dest { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .msum__none { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .msum__avg { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
-[data-skin="pixel"] .msum__cap { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .msum__who { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .msum__n { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mvhead { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mvrow__when { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mvrow__nth { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mvchip { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mvnote { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mvnote__who { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .mrec__nudge { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-cal__dow { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-cal--big .rv-d { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-cal--sm .rv-d { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-lg { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-mwho { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-mcard__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rv-mcard__stat { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-mcard__stat--big { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rv-strip--scale span { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .rv-srow__name { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .rv-srow__n { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dai { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dask__n { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dask__q { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dask__in { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .mvdel .text-btn { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dwhen__l { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dwhen__v { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dcal__m { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .dcal__w { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .dcal__d { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tdone__t { font-size: 15px; font-family: var(--px-font-14); }
-[data-skin="pixel"] .tdone__s { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .recap-cover__when { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"] .recap-cover__title { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) body { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .caption { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .chip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .grid-range { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mini-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .cell { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .grid-foot { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .emoji-tile { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .emoji-tile--lg { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .stat__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .stat__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .both__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .both__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .both__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .sheet__title { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .sheet__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .row__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .row__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .row__meta { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .row__by { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pill-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .close-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .exit-box__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .exit-box__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .toast { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .notice__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .notice__body { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mgroup { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mitem__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mitem__status { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .small-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .muted { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .add-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rform__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .field__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .field__input { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .icon-pick { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rform__error { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ghost-btn, [data-skin="pixel"]:not([data-font="plain"]) .solid-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .text-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .auth__info { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .bell-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .nbox__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .nbox__body { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .nbox__info { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .nrow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .nrow__desc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .nselect { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .nfoot { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tabbar__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcard__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcard__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcard__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .trow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .trow--mini .trow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .trow__meta { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .trow__memo { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tempty { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tempty--mini { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .more-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .add-line { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .add-line--mini { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pick { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .cpreview__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .cnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .drow--head { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .drow__day { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .einfo__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .einfo__line { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .seg__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .scard__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .sday__wd { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sday__date { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .shour { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .shours--day .shour { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock--full.sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock__ico { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .slist__title-day { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .slist__item { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .slist__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .slist__time { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock:not(.sblock--compact) .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sblock__time { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .slegend { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .shint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sstrip__btn span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sstrip__btn b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .sstatus__now { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sstatus__row { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .slanes-head > span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tset__sec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tset__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tset__more { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tpick__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ttag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcolors__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcolors__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tcolors__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .cpick.is-both .cpick__tag { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .cpick__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .skipbox__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .skipbox__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .chip--rest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .uhead__name { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .uhead__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .seg--mini .seg__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ul { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .uaxis { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .uempty { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .upt__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .upt__name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .upreview__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ulegend { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .utray { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .uchip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ustat__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ustat__v { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .place__back { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .place__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .place__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pline__top, [data-skin="pixel"]:not([data-font="plain"]) .pline__bottom { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pmark__name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pblock { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .phint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pnote { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .pask__step { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pask__q { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .agroup__day { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .arow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .kung__text { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .umemo__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .umemo__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .uhint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mhead__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mitem__num { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .pick-row--days .pick { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-grid .dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .emoji-tile.rv-tile { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mini-plane__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mini-plane__n { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-note--sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-bar { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__rest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rest__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rest__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rest__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rgroup__head { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rgroup__me { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rgroup__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .grow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .grow__title b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .grow__harvest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .grow__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .grow__next { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .quest__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .quest__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .qrow__label { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .qrow__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .qrow__val { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .qrow--bonus .qrow__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .gbig__stage { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .gbig__line, [data-skin="pixel"]:not([data-font="plain"]) .gbig__next { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .gstats span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .gstats b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .gsub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .gweek__day { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .gstages li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .grules { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .cell.lv-full::after { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .day-sum { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .routine__when { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .miss-tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .miss-banner { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .when__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .when__preview { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .chip--sm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .sgroup__head { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .icon-group { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rview__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rview__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rsub__head { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .morder { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mitem--order .mitem__no { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .kind__chips small { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dday { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__icon { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__title b { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__since { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv__by { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abig__label { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .abig__count { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .abig__count span { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abig__since { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abig__today { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alist li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .anniv-form__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .asec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .afeat__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .afeat__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abadge { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .arow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .arow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .arow__vl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .acct__out { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mbar__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .mseg__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mchip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mchip--sm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .km .lb { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .mzoom__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mhint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mcredit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mbtn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvisits__when { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvisits__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mfind__row { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mlisthead__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mlisthead__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrankno { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrankno--big { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mchip--xs { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .madd { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .msort__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mstars__who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mstars__avg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrank__sub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dbar__skip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgoal__n { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgoal__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsec__t { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dlock { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dbody__l { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dseg__b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfld { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfin input { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfin i { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dpick { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .drow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .drow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .drow__vl { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dedit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dnotes { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsw__n { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsw__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dbasis { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dbasis__tx b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dbasis__tx span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ddisc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ddisc b { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsteps li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsteps li::before { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsteps b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsteps em { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgc__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgc__nums { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgc__nums b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__ini { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__lab { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__big small { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__pl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__stub .ubox__lab { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__stub .ubox__big { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__unit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox--ticket .ubox__ini { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__names { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__nl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__nx b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox--polaroid .ubox__ini { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox--polaroid .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__mid--pol .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__mid--ov .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__mn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__amp { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__btitle .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__bnm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ubox__bst { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .abox__mini--badge::after { font-size: 12px; font-family: var(--px-font-11); }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__ini { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__stub .ubox__big { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__names { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox--overlap .ubox__mid--ov .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__btitle .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"]:not([data-font="plain"]) .ubox__mn { font-size: 12px; font-family: var(--px-font-11); } }
+[data-skin="pixel"]:not([data-font="plain"]) .aview__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .aview__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dtoday__sum { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dtoday__sum b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__at { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__vl { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__del { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__del.is-armed { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dwait { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dlog__sub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dlog__ta { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dlog__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsum__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsum__k { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dsum__k b { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .dsum__m { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .msum__none { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .msum__avg { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .msum__cap { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .msum__who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .msum__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvhead { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvrow__when { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvrow__nth { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvchip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvnote { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvnote__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .mrec__nudge { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-cal__dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-cal--big .rv-d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-cal--sm .rv-d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-lg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-mwho { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-mcard__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-mcard__stat { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-mcard__stat--big { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-strip--scale span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-srow__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rv-srow__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dai { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dask__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dask__q { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dask__in { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .mvdel .text-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dwhen__l { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dwhen__v { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dcal__m { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dcal__w { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dcal__d { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tdone__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tdone__s { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .recap-cover__when { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .recap-cover__title { font-size: 24px; font-family: var(--px-font-11); }
 /* ── 글씨 크기 표 끝 ── */

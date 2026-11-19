@@ -148,6 +148,19 @@ test('B9 모드 값이 이상하면 auto', () => {
   assert.strictEqual(s.T.chooseMode('dusk'), false);
 });
 
+test('v61 글씨체: 도트 테마에서 「기본」이면 data-font="plain", 다른 테마 · 모르는 값은 없음', () => {
+  const s = boot({ 'danjjakkung.theme': 'winter-snack', 'danjjakkung.font': 'plain' }, false);
+  assert.strictEqual(s.attrs['data-font'], 'plain');
+  assert.strictEqual(s.attrs['data-skin'], 'pixel');
+  s.T.chooseFont('pixel');
+  assert.ok(!('data-font' in s.attrs));
+  assert.strictEqual(s.store['danjjakkung.font'], 'pixel');
+  assert.strictEqual(s.T.chooseFont('comic'), false);
+  s.T.chooseFont('plain'); s.T.choose('soft-pastel');
+  assert.ok(!('data-font' in s.attrs), '도트 테마가 아니면 글씨체 표시 없음');
+  assert.strictEqual(boot({ 'danjjakkung.theme': 'merry-xmas', 'danjjakkung.font': 'x' }, true).attrs['data-font'], undefined);
+});
+
 // ── D. 그림 파일 ──
 test('D4 · D5 테마 그림: 테마마다 낮 · 밤이 같은 s1~s4, 합계 150KB 이하', () => {
   for (const id of ['winter-snack', 'merry-xmas']) {

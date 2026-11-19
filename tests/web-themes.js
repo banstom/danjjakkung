@@ -162,11 +162,27 @@ async function main() {
     assert.match(await p.textContent('.tpick[data-v="cosmic-dream"] .tpick__tags'), /어둡게/);
     await p.click('[data-act="theme-more"]');
     assert.strictEqual(await p.$$eval('.tpick', (a) => a.length), 16, 'E 더 보기 → 16장');
+    // v61 글씨체: 기본 → 글자만 프리텐다드, 테두리는 그대로 · 다시 열어도 그대로 · 도트로 되돌리기
+    const look = () => p.evaluate(() => ({ fam: getComputedStyle(document.querySelector('.sheet__title')).fontFamily, frame: getComputedStyle(document.querySelector('.tpick')).boxShadow !== 'none', font: document.documentElement.getAttribute('data-font') }));
+    assert.match((await look()).fam, /Galmuri/, '도트 글씨가 기본');
+    await p.click('[data-act="theme-font"][data-v="plain"]'); await p.waitForTimeout(200);
+    let lk = await look();
+    assert.ok(!/Galmuri/.test(lk.fam) && /Pretendard/.test(lk.fam) && lk.frame && lk.font === 'plain', 'v61 기본 글씨 ' + JSON.stringify(lk));
+    assert.strictEqual(await p.getAttribute('[data-act="theme-font"][aria-pressed="true"]', 'data-v'), 'plain');
+    await shot(p, 'settings-font-plain');
+    await p.keyboard.press('Escape'); await p.reload(); await p.waitForSelector('.tabbar');
+    assert.strictEqual(await p.evaluate(() => document.documentElement.getAttribute('data-font')), 'plain', 'v61 다시 열어도 기본 글씨');
+    await p.click('[data-act="tab"][data-tab="routine"]'); await p.waitForTimeout(150); await shot(p, 'font-plain-routine', true);
+    await p.click('[data-act="tab"][data-tab="all"]'); await p.click('[data-act="open-theme"]'); await p.waitForSelector('#theme-title');
+    await p.click('[data-act="theme-font"][data-v="pixel"]'); await p.waitForTimeout(200);
+    assert.match((await look()).fam, /Galmuri/, 'v61 도트로 되돌리기');
+    if (!(await p.$('.tpick[data-v="soft-pastel"]'))) await p.click('[data-act="theme-more"]');
     // 판이 없는 테마 → 낮 · 밤 줄 숨김 + 안내
     await p.click('.tpick[data-v="soft-pastel"]'); await p.waitForTimeout(400);
     assert.strictEqual(await p.$$eval('[data-act="theme-mode"]', (a) => a.length), 0, 'E 판 없는 테마는 낮 · 밤 숨김');
     assert.strictEqual((await hint()).trim(), '이 테마는 한 가지 밝기만 있어서 낮·밤 고르기가 없어요');
     assert.deepStrictEqual(await themeOf(p), ['soft-pastel', null], 'E 스킨 꺼짐');
+    assert.strictEqual(await p.$$eval('[data-act="theme-font"]', (a) => a.length), 0, 'v61 도트 테마가 아니면 글씨체 줄 없음');
     await shot(p, 'settings-single-mode');
     await ctx.close();
     console.log('E 설정 화면 통과');

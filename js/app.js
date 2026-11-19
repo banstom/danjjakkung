@@ -215,7 +215,7 @@
     'routine-view': 'data-v', 'pick-kind': 'data-v', 'rt-order': null, 'rt-order-done': null, 'rt-move': 'data-key',
     'when-mode': 'data-v', 'when-cue': 'data-v', 'when-remind': null, 'when-clear-at': null,
     'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'theme-mode': 'data-v', 'theme-more': null, 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-v', 'theme-mode': 'data-v', 'theme-font': 'data-v', 'theme-more': null, 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
@@ -560,6 +560,7 @@
     else if (act === 'close-theme') closeTheme();
     else if (act === 'pick-theme') pickTheme(btn.getAttribute('data-v'));
     else if (act === 'theme-mode') { if (RT.themes.chooseMode(btn.getAttribute('data-v'))) render(); }
+    else if (act === 'theme-font') { if (RT.themes.chooseFont(btn.getAttribute('data-v'))) render(); }
     else if (act === 'theme-more') { state.themeMore = !state.themeMore; render(); }
     else if (act === 'pick-color') pickColor(btn.getAttribute('data-who'), btn.getAttribute('data-v'));
     else if (act === 'reset-colors') resetColors();
@@ -2825,7 +2826,8 @@
     var out = {
       // 카드 미리보기는 그 테마의 지금 판(낮 · 밤 고르기를 따름)
       themes: T.THEMES.map(function (th) { return Object.assign({}, th, { board: T.board(th.id) }); }),
-      current: id, colors: null, hasModes: T.hasModes(id), mode: mode, night: T.isNight(id), more: !!state.themeMore
+      current: id, colors: null, hasModes: T.hasModes(id), mode: mode, night: T.isNight(id), more: !!state.themeMore,
+      pixel: (T.byId(id) || {}).skin === 'pixel', font: T.font ? T.font() : 'pixel'
     };
     if (!slot || !store) return out;
     var colors = state.colors || {}, pair = T.pairFor(id, colors, slot);

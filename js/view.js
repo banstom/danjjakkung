@@ -141,6 +141,12 @@
       '<div class="sheet__head"><h2 id="theme-title" class="sheet__title">테마</h2></div>' +
       '<p class="sheet__sub">고르면 바로 바뀌어요 · 테마와 낮·밤은 이 기기에 저장돼요</p>' +
       modeSec +
+      // 글씨체 (v61) — 도트 테마에서만: 도트 글씨가 읽기 불편하면 글자만 기본 글꼴로
+      (t.pixel ? '<section class="tset" aria-labelledby="tfont-title"><h3 id="tfont-title" class="tset__sec">글씨체</h3>' +
+        '<div class="seg seg--full" role="group" aria-label="글씨체 고르기">' + [['pixel', '도트'], ['plain', '기본']].map(function (f) {
+          return '<button type="button" class="seg__btn" data-act="theme-font" data-v="' + f[0] + '" aria-pressed="' + (t.font === f[0]) + '">' + f[1] + '</button>';
+        }).join('') + '</div>' +
+        '<p class="tset__hint">' + (t.font === 'plain' ? '글자만 기본 글꼴로 · 테두리와 그림은 도트 그대로' : '그림과 어울리는 도트 글씨') + '</p></section>' : '') +
       '<section class="tset" aria-labelledby="tpick-title"><h3 id="tpick-title" class="tset__sec">테마</h3>' +
       (t.hasModes ? '' : '<p class="tset__hint">이 테마는 한 가지 밝기만 있어서 낮·밤 고르기가 없어요</p>') +
       '<div class="tgrid" role="group" aria-label="테마 고르기">' + main.map(function (th) { return themeCard(th, t); }).join('') +

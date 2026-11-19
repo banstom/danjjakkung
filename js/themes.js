@@ -38,6 +38,9 @@
   var KEY = 'danjjakkung.theme';
   var MODE_KEY = 'danjjakkung.themeMode';
   var MODES = ['auto', 'light', 'dark'];
+  // 글씨체 (v61): 픽셀 스킨 테마에서만 쓰임 — pixel(도트 글씨, 기본) | plain(프리텐다드). 이 기기에 저장
+  var FONT_KEY = 'danjjakkung.font';
+  var FONTS = ['pixel', 'plain'];
   var COLOR_KEY = 'danjjakkung.colors';
   // 테마마다 고를 수 있는 사람 색 8개. 앞의 둘은 그 테마 기본색(--her, --me 와 같다).
   // ink: 색 위 글자 후보(어두운 쪽) — 흰색과 견줘 더 잘 보이는 쪽을 쓴다 (4.5:1 이상은 tests/themes.test.js 가 확인).
@@ -123,6 +126,17 @@
     if (pickedMode) return pickedMode;
     try { var v = root.localStorage && root.localStorage.getItem(MODE_KEY); return MODES.indexOf(v) >= 0 ? v : 'auto'; } catch (e) { return 'auto'; }
   }
+  var pickedFont = null;
+  function font() {
+    if (pickedFont) return pickedFont;
+    try { var v = root.localStorage && root.localStorage.getItem(FONT_KEY); return FONTS.indexOf(v) >= 0 ? v : 'pixel'; } catch (e) { return 'pixel'; }
+  }
+  function saveFont(f) {
+    if (FONTS.indexOf(f) < 0) return false;
+    pickedFont = f;
+    try { root.localStorage.setItem(FONT_KEY, f); } catch (e) {}
+    return true;
+  }
   function saveMode(m) {
     if (MODES.indexOf(m) < 0) return false;
     pickedMode = m;
@@ -166,6 +180,8 @@
     if (!doc) return;
     var t = byId(id) || ofBoard(id) || byId(current());
     var html = doc.documentElement, b = board(t.id), skin = t.skin || null;
+    var plain = skin === 'pixel' && font() === 'plain' ? 'plain' : null; // 도트 테마에서 「글씨체: 기본」
+    if (html.getAttribute('data-font') !== plain) { if (plain) html.setAttribute('data-font', plain); else html.removeAttribute('data-font'); }
     if (html.getAttribute('data-theme') === b && html.getAttribute('data-skin') === skin) { paintPeople(doc, t.id); syncMeta(doc); return; }
     var smooth = opts && opts.smooth;
     if (smooth) html.classList.add('is-theming');
@@ -200,6 +216,12 @@
     var a = art(slot);
     if (!a) return '';
     return '<img class="theme-art theme-art--' + slot + (cls ? ' ' + cls : '') + '" src="' + a.src + '" width="' + a.w + '" height="' + a.h + '" alt="' + a.alt + '" decoding="async">';
+  }
+  /** 글씨체 고르기 (도트 테마): 저장하고 바로 */
+  function chooseFont(f) {
+    if (!saveFont(f)) return false;
+    apply(current());
+    return true;
   }
   /** 낮 · 밤 고르기: 저장하고 지금 테마를 다시 단다 */
   function chooseMode(m) {
@@ -302,7 +324,7 @@
   function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
 
   var api = { THEMES: THEMES, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
-    ART: ART, art: art, artHtml: artHtml, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
+    ART: ART, art: art, artHtml: artHtml, FONT_KEY: FONT_KEY, font: font, saveFont: saveFont, chooseFont: chooseFont, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
     palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;

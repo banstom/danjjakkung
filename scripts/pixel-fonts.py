@@ -18,7 +18,9 @@ APP = os.path.join(ROOT, 'styles', 'app.css')
 PIXEL = os.path.join(ROOT, 'styles', 'pixel.css')
 START = '/* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */'
 END = '/* ── 글씨 크기 표 끝 ── */'
-PRE = '[data-skin="pixel"] '
+# 「글씨체: 기본」(data-font="plain")이면 표 전체가 빠져 app.css 원래 크기 · 글꼴로 돌아간다 (v61)
+SKIN = '[data-skin="pixel"]:not([data-font="plain"])'
+PRE = SKIN + ' '
 
 
 def bucket(px):
@@ -81,11 +83,11 @@ def prefix(sel):
         if not p:
             continue
         if p in ('body', 'html', ':root'):
-            parts.append('[data-skin="pixel"] body' if p == 'body' else '[data-skin="pixel"]')
+            parts.append(SKIN + ' body' if p == 'body' else SKIN)
         elif p.startswith('body'):
-            parts.append(PRE.strip() + ' ' + p)
+            parts.append(SKIN + ' ' + p)
         elif p.startswith('html'):
-            parts.append(p.replace('html', 'html[data-skin="pixel"]', 1))
+            parts.append(p.replace('html', 'html' + SKIN, 1))
         else:
             parts.append(PRE + p)
     return ', '.join(parts)
