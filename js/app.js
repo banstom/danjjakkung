@@ -2379,7 +2379,7 @@
       if (!conv.meals.length) { lx.ai = 'fail'; lx.aiNote = 'AI가 끼니를 찾지 못했어요 · 그대로 저장하면 정리 대기로 남아요'; }
       else {
         lx.meals = conv.meals; lx.ai = 'done';
-        lx.questions = conv.questions.filter(function (q) { return !lx.answers.some(function (a) { return a.path === q.path; }); });
+        lx.questions = dietNextQuestions(conv, lx.answers);
         var left = conv.meals.reduce(function (a, m) { return a + m.pending.length; }, 0);
         lx.aiNote = 'AI가 정리했어요 · 숫자는 식품표로 계산했어요' + (left ? ' · 정리 대기 ' + left + '줄' : '');
       }
@@ -2396,6 +2396,21 @@
       else focusAfter = ['[data-act="dl-save"]'];
       focusInSheet = true; render(true);
     });
+  }
+  /** 다음에 물을 것 (한 번에 최대 3개): AI 가 낸 모르는 것 먼저, 그다음 아직 정리 대기인데 질문이 없는 줄.
+      답한 것은 다시 묻지 않고, 답하면 다시 정리한 뒤 남은 줄을 이어서 묻는다 (여러 끼니를 한 번에 적어도 끝까지 — 사용자 요청) */
+  function dietNextQuestions(conv, answers) {
+    var asked = function (label, path) { return answers.some(function (a) { return a.path === path || a.label === label; }); };
+    var qs = conv.questions.filter(function (q) { return !asked(q.label, q.path); });
+    conv.meals.forEach(function (m) {
+      m.pending.forEach(function (x) {
+        var label = String(x.name || x.raw).slice(0, 40), path = (m.label || m.at || '') + '/' + label;
+        if (asked(label, path) || qs.some(function (q) { return q.label === label || label.indexOf(q.label) >= 0; })) return;
+        qs.push({ path: path, what: x.reason === 'product' ? 'product_and_grams' : 'describe', label: label,
+          ask: x.reason === 'product' ? '어떤 제품이고 몇 g쯤이에요? (제품 등록이 생기기 전엔 정리 대기로 남을 수 있어요)' : '어떤 음식이고 얼마나 먹었나요? (예: 제육볶음 1인분 · 200g)' });
+      });
+    });
+    return qs.slice(0, 3);
   }
   function dietAskSend() {
     var l = state.diet && state.diet.log; if (!l || !l.questions.length || l.ai === 'busy') return;
@@ -2421,7 +2436,7 @@
     var l = state.diet.log, pi = partnerInfo();
     return { meals: l.meals.map(function (m) { return { at: m.at, name: mealTitle(m), total: m.total,
         items: m.items.map(function (i) { return { name: i.name, sub: itemSub(i), kcal: i.total.kcal, est: !!i.est }; }), pending: m.pending }; }),
-      ai: l.ai, aiNote: l.aiNote, questions: l.ai === 'busy' ? [] : l.questions,
+      ai: l.ai, aiNote: l.aiNote, questions: l.ai === 'busy' ? [] : l.questions, round: Math.floor(l.answers.length / 3) + 1,
       together: l.together, partnerName: pi.partner ? pi.partnerName : '', saving: l.saving, error: l.error, dayLabel: l.dayLabel };
   }
   function dietLogSave() {

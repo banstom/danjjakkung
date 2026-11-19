@@ -187,7 +187,7 @@
     var many = c.meals.length > 1, nAll = c.meals.reduce(function (a, m) { return a + m.items.length + m.pending.length; }, 0);
     var aiBox = c.ai === 'busy' ? '<p class="dai" role="status"><span class="dai__dot" aria-hidden="true"></span>모르는 줄을 AI가 정리하는 중이에요…</p>'
       : c.aiNote ? '<p class="dai dai--' + (c.ai === 'fail' ? 'fail' : 'ok') + '" role="' + (c.ai === 'fail' ? 'alert' : 'status') + '">' + esc(c.aiNote) + '</p>' : '';
-    var qs = c.questions && c.questions.length && c.ai !== 'busy' ? '<section class="dasks" aria-labelledby="dq-title"><h3 class="dsec" id="dq-title">꼭 필요한 것만 물어볼게요 · 한 번 정하면 다음부터 덜 물어요</h3>' +
+    var qs = c.questions && c.questions.length && c.ai !== 'busy' ? '<section class="dasks" aria-labelledby="dq-title"><h3 class="dsec" id="dq-title">' + (c.round > 1 ? '남은 것도 마저 물어볼게요' : '꼭 필요한 것만 물어볼게요 · 한 번 정하면 다음부터 덜 물어요') + '</h3>' +
       c.questions.map(function (q, i) { return askCard(q, i, c.questions.length); }).join('') +
       '<div class="dask__row"><button type="button" class="mbtn mbtn--solid" data-act="dq-send">답하고 다시 정리</button><button type="button" class="mbtn" data-act="dq-skip">건너뛰기</button></div></section>' : '';
     return '<div class="sheet-layer sheet-layer--full">' +

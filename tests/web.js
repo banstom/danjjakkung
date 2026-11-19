@@ -1415,7 +1415,7 @@ async function tick(page, dateKey, key) {
   const ct = await jm.textContent('.dconf');
   assert.match(ct, /달걀스크램블[^]*셀프메이드 브라우니 \(무당초콜릿\)[^]*재료 중 모르는 것/, 'AI 구조 + 모르는 재료는 정리 대기');
   assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'dq-0', '질문에 바로');
-  assert.match(await jm.textContent('.dasks'), /1 \/ 2[^]*무당초콜릿 · 어떤 제품이고 몇 g쯤이에요\?[^]*2 \/ 2[^]*달걀스크램블 · 기름/);
+  assert.match(await jm.textContent('.dasks'), /1 \/ 3[^]*무당초콜릿 · 어떤 제품이고 몇 g쯤이에요\?[^]*2 \/ 3[^]*달걀스크램블 · 기름[^]*3 \/ 3[^]*셀프메이드 브라우니 · /, 'AI 가 안 물은 정리 대기 줄도 물음');
   await jm.screenshot({ path: path.join(OUT, 'diet-ai-ask.png') });
   aiReplies.push({ body: { result: { result: { meals: [{ at: '08:20', kind: 'meal', label: '아침', items: [{ name: '달걀스크램블', amount: 3, unit: '개', match: { kind: 'table', key: '달걀' }, ingredients: [{ name: '카놀라유', amount: 1, unit: '스푼', match: { kind: 'table', key: '카놀라유' } }] }] }], unknowns: [] } } } });
   aiReplies[aiReplies.length - 1].delay = 300;
@@ -1446,6 +1446,19 @@ async function tick(page, dateKey, key) {
   assert.match(await jm.textContent('#dc-title'), /끼니 2개/);
   await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
   assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.map((m) => m.at), ['07:00', '08:20', '12:40', '15:00']);
+  // 여러 끼니 · 정리 대기가 많으면 3개씩 끝까지 이어서 물음 (사용자 요청)
+  const many = (n0, n1) => ({ body: { result: { result: { meals: [{ at: '07:10', kind: 'meal', label: '아침', items: n0.map((n) => ({ name: n, amount: 1, unit: '개', match: { kind: 'table', key: n } })) }, { at: '19:10', kind: 'meal', label: '저녁', items: n1.map((n) => ({ name: n, amount: 1, unit: '개', match: { kind: 'table', key: n } })) }], unknowns: [] } } } });
+  aiReplies.push(many(['비밀1', '비밀2', '사과'], ['비밀3', '비밀4']));
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '아침 07:10 비밀1 / 비밀2 / 사과\n저녁 19:10 비밀3 / 비밀4'); await jm.click('[data-act="dl-go"]');
+  await jm.waitForSelector('.dasks');
+  assert.deepStrictEqual(await jm.$$eval('.dask__q', (e) => e.map((x) => x.textContent.split(' · ')[0])), ['비밀1', '비밀2', '비밀3'], '첫 3개');
+  aiReplies.push(many(['사과'], ['비밀4']));
+  await jm.fill('#dq-0', '사과 1개'); await jm.fill('#dq-1', '사과 1개'); await jm.fill('#dq-2', '사과 1개'); await jm.click('[data-act="dq-send"]');
+  await jm.waitForSelector('.dasks');
+  assert.match(await jm.textContent('#dq-title'), /남은 것도 마저/);
+  assert.deepStrictEqual(await jm.$$eval('.dask__q', (e) => e.map((x) => x.textContent.split(' · ')[0])), ['비밀4'], '남은 줄을 이어서');
+  await jm.click('[data-act="dq-skip"]'); await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
   // AI 실패 → 정리 대기로 저장할 수 있음
   aiReplies.push({ status: 429, body: { error: { status: 'RESOURCE_EXHAUSTED', message: 'x' } } });
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
