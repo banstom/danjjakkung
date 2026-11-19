@@ -16,3 +16,7 @@ D4에서 이 파일들로 `npm run test:ai`(실제 API, 3번 돌려 3번 맞기)
 ## D4 (2026-11-19)
 - 서버 함수 `parseMeal` = `functions/index.js` + `functions/meal.js`, 지시문은 `functions/meal-prompt.md` (이 폴더의 parse-prompt.md와 같은 내용인지 `npm test`가 확인)
 - 실제 API 시험: Cloud Shell에서 `ANTHROPIC_API_KEY=$(gcloud secrets versions access latest --secret=ANTHROPIC_API_KEY --project jjakkung-grid) npm run test:ai`
+- 지시문은 고정이고 사용자 값은 넣지 않음. 식품표 이름은 사용자 글의 `식품표:` 줄로 (`meal.userMessage`)
+- 서버는 남길 칸만 남김(`meal.sanitize`): 영양 숫자 칸은 이름이 달라도 남지 않음. 단 memo 같은 글자 칸 안의 숫자는 막지 못해서 앱은 글자 칸의 숫자를 계산에 쓰지 않음
+- 실패(모델 오류 · max_tokens 잘림 · JSON 못 읽음)면 그날 횟수를 돌려줌
+- `npm run test:ai`는 모델이 낸 그대로와 서버가 정리한 뒤를 둘 다 채점함

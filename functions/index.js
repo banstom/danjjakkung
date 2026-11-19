@@ -232,6 +232,7 @@ exports.weeklyReview = onSchedule({ schedule: '0 21 * * 0', timeZone: 'Asia/Seou
 });
 
 /* 단짝 식탁 · 끼니 정리 (D4). 앱이 { text, today, state, table? } 를 보내면 정리한 구조를 돌려준다.
+   - state 에 넣는 것(D3 앱 코드): 저장된 레시피 · 내 식품 이름과 재료, 내 단위(정했는지), 오늘 기록, 물은 질문 — 몸 정보 · 목표는 넣지 않는다
    - 두 사람(members)만 · 한 사람 하루 LIMITS.perDay 번까지 (aiUse/{uid_날짜}, 앱 규칙엔 없어 앱은 못 읽고 못 씀)
    - 몸 정보는 받지 않는다. 영양 숫자는 답에서 지운다 (meal.sanitize) */
 exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '256MiB', maxInstances: 3 }, async (req) => {
@@ -250,16 +251,28 @@ exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, m
     return n + 1;
   });
   if (used < 0) throw new HttpsError('resource-exhausted', '오늘은 정리를 많이 했어요. 내일 다시 해 주세요');
+  // 실패하면 오늘 횟수를 돌려준다 (모델 오류 · 잘림 · JSON 못 읽음)
+  const refund = () => db.runTransaction(async (tx) => {
+    const d = await tx.get(useRef); const n = (d.exists && d.data().n) || 0;
+    if (n > 0) tx.set(useRef, { n: n - 1 }, { merge: true });
+  }).catch(() => {});
   let out;
   try {
-    out = await M.callModel(ANTHROPIC_API_KEY.value(), M.systemPrompt(req.data.table), M.userMessage(req.data.today, req.data.state, req.data.text));
+    out = await M.callModel(ANTHROPIC_API_KEY.value(), M.systemPrompt(), M.userMessage(req.data.today, req.data.state, req.data.text, req.data.table));
   } catch (e) {
     logger.error('parseMeal model', { status: e.status, msg: String(e.message).slice(0, 200) });
+    await refund();
     throw new HttpsError('unavailable', '지금은 정리하지 못했어요. 잠시 뒤 다시 해 주세요');
+  }
+  if (out.stop === 'max_tokens') {
+    logger.warn('parseMeal cut', { len: out.text.length, usage: out.usage });
+    await refund();
+    throw new HttpsError('out-of-range', '한 번에 적은 게 많아요. 끼니를 나눠서 적어 주세요');
   }
   const result = M.sanitize(M.extractJson(out.text));
   if (!result) {
-    logger.warn('parseMeal json', { len: out.text.length });
+    logger.warn('parseMeal json', { len: out.text.length, stop: out.stop });
+    await refund();
     throw new HttpsError('internal', '정리 결과를 읽지 못했어요. 다시 해 주세요');
   }
   logger.info('parseMeal ok', { uid, used, usage: out.usage });

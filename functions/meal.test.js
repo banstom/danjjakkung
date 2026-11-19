@@ -6,14 +6,14 @@ const path = require('path');
 const M = require('./meal');
 const { parseCases } = require('../scripts/test-ai');
 
-test('D4 지시문: docs/diet/ai/parse-prompt.md 와 같은 내용 (식품표 자리만 {{TABLE}})', () => {
+test('D4 지시문: docs/diet/ai/parse-prompt.md 와 같은 내용 · 사용자 글은 지시문에 안 들어감', () => {
   const doc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'diet', 'ai', 'parse-prompt.md'), 'utf8');
   const head = doc.slice(0, doc.indexOf('## 식품표 이름'));
   assert.ok(M.PROMPT.startsWith(head), '규칙 · 출력 모양 · 짝짓기 · 정정 부분이 그대로');
-  assert.match(M.PROMPT, /\{\{TABLE\}\}/);
-  assert.match(M.systemPrompt('달걀(=계란), 사과'), /달걀\(=계란\), 사과/);
-  assert.match(M.systemPrompt(''), /식약처 식품표에서 찾는다/);
-  assert.doesNotMatch(M.systemPrompt('x'), /\{\{TABLE\}\}/);
+  assert.equal(M.systemPrompt(), M.PROMPT.replace('{{TABLE}}', M.TABLE_RULE), '지시문은 고정');
+  assert.equal(M.systemPrompt.length, 0, '받는 값 없음 (회귀: 사용자 table 이 지시문 자리에 들어가던 것)');
+  const u = M.userMessage('2026-11-17', '상태', '입력', "달걀(=계란), $` $& 사과");
+  assert.match(u, /^오늘은 2026-11-17\.\n식품표: 달걀\(=계란\), \$` \$& 사과\n상태: 상태\n입력:\n입력$/, '식품표는 사용자 글에 · $ 기호 그대로');
   assert.match(M.PROMPT, /영양 숫자\(kcal · 탄수 · 단백질 · 지방\)를 절대 내지 않는다/);
 });
 
@@ -25,6 +25,7 @@ test('D4 받은 값 확인: 글 · 날짜 필수 · 길이 상한 · 몸 정보 
   assert.ok(M.badInput({ text: 'a', today: '2026-11-19', state: 'x'.repeat(6001) }));
   assert.ok(M.badInput({ text: 'a', today: '2026-11-19', state: {} }));
   const u = M.userMessage('2026-11-19', '', '사과');
+  assert.doesNotMatch(u, /식품표:/);
   assert.match(u, /^오늘은 2026-11-19\.\n상태: .+\n입력:\n사과$/);
   const src = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
   const body = src.slice(src.indexOf('exports.parseMeal'));
@@ -39,29 +40,44 @@ test('D4 JSON 꺼내기: 코드펜스 · 앞뒤 말 · 깨진 것', () => {
   assert.equal(M.extractJson('{"a":'), null); assert.equal(M.extractJson(null), null); assert.equal(M.extractJson('없음'), null);
 });
 
-test('D4 정리: 영양 숫자는 어디서든 지움 · kcalRange 는 남김 · 모양 · 개수 상한', () => {
+test('D4 정리: 남길 칸만 (영양 숫자 칸은 이름이 달라도 없음) · kcalRange 는 unknowns 에만 · 상한', () => {
   const r = M.sanitize({
     date: '2026-11-17', extra: 'x',
-    meals: [{ at: '8:20', kind: 'meal', label: '아침', items: [{ name: '사과', amount: 1, unit: '개', kcal: 105, match: { kind: 'table', key: '사과' }, ingredients: [{ name: '설탕', protein: 3, 탄수: 9 }] }, { amount: 2 }] }, { at: 'x', kind: 'weird', items: 'no' }],
-    unknowns: [{ path: '아침/사과', what: 'amount', kcalRange: [120, 40] }, { path: 'a', what: 'b', kcalRange: ['1', 2] }],
-    corrections: [{ path: 'p', set: { name: '파베글라스', grams: 40, fat: 9 } }],
-    learn: Array.from({ length: 30 }, () => ({ type: 'product', name: 'x', calories: 1 }))
+    meals: [{ at: '8:20', kind: 'meal', label: '아침', items: [
+      { name: '사과', amount: 1, unit: '개', kcal: 105, carbohydrate: 27, '열량(kcal)': 105, 'Kcal ': 1, totalKcal: 3, nutrition: [105, 27], kcalRange: [1, 2], match: { kind: 'table', key: '사과', kcal: 1 },
+        ingredients: [{ name: '설탕', amount: '2', protein: 3, '탄수화물(g)': 9 }], overrides: [{ name: '밥', grams: 420, fats: 1 }], portion: { num: 9, den: 16 }, memo: '오븐 170도', __proto__: { polluted: 1 } },
+      { amount: 2 }] },
+      { at: '1815', items: 'no' }, { at: '18:15:00' }, { at: '25:00' }],
+    unknowns: [{ path: '아침/사과', what: 'amount', kcalRange: [120, 40] }, { item: '무당초콜릿', what: 'product_and_grams', kcalRange: ['0', '300'] }, { path: 'a', kcalRange: ['x', 2] }],
+    corrections: [{ path: '아침/스크램블', set: { oil: '카놀라유', name: '파베글라스', grams: 40, fat: 9, ingredients: [{ name: '초코칩', grams: 40, kcal: 190 }] } }],
+    learn: [{ type: 'food_unit', product: '파베글라스', unit: '줌', grams: 20, kcal: 96 }, { type: 'my_unit', unit: '공기', grams: '315' }, { name: 'type 없음' }].concat(Array.from({ length: 30 }, () => ({ type: 'product', name: 'x' })))
   });
   assert.equal(r.extra, undefined);
-  assert.equal(r.meals[0].at, '08:20'); assert.equal(r.meals[0].items.length, 1, '이름 없는 항목은 버림');
-  assert.equal(r.meals[0].items[0].kcal, undefined); assert.equal(r.meals[0].items[0].ingredients[0].protein, undefined); assert.equal(r.meals[0].items[0].ingredients[0]['탄수'], undefined);
-  assert.equal(r.meals[1].at, null); assert.equal(r.meals[1].kind, 'meal'); assert.deepEqual(r.meals[1].items, []);
-  assert.deepEqual(r.unknowns[0].kcalRange, [40, 120]); assert.equal(r.unknowns[1].kcalRange, null);
-  assert.equal(r.corrections[0].set.fat, undefined); assert.equal(r.corrections[0].set.grams, 40);
-  assert.equal(r.learn.length, 20); assert.equal(r.learn[0].calories, undefined);
-  assert.equal(M.sanitize(null), null);
+  const it = r.meals[0].items[0];
+  assert.deepEqual(Object.keys(it).sort(), ['amount', 'grams', 'ingredients', 'match', 'memo', 'name', 'overrides', 'portion', 'unit']);
+  assert.deepEqual(it.match, { kind: 'table', key: '사과' }); assert.deepEqual(it.portion, { num: 9, den: 16 });
+  assert.deepEqual(it.ingredients, [{ name: '설탕', amount: 2, unit: null, grams: null, match: null }]);
+  assert.deepEqual(it.overrides, [{ name: '밥', amount: null, unit: null, grams: 420, match: null }]);
+  assert.equal({}.polluted, undefined);
+  assert.equal(r.meals[0].items.length, 1, '이름 없는 항목은 버림');
+  assert.deepEqual(r.meals.map((m) => m.at), ['08:20', '18:15', '18:15', null], '1815 · 18:15:00 도 읽음 · 25시는 버림');
+  assert.deepEqual(r.unknowns[0].kcalRange, [40, 120]);
+  assert.deepEqual(r.unknowns[1], { path: '무당초콜릿', what: 'product_and_grams', kcalRange: [0, 300] }, 'path 대신 item · 글자 숫자 범위도');
+  assert.equal(r.unknowns[2].kcalRange, null);
+  const set = r.corrections[0].set;
+  assert.equal(set.oil, '카놀라유'); assert.equal(set.name, '파베글라스'); assert.equal(set.grams, 40); assert.equal(set.fat, undefined); assert.equal(set.ingredients[0].kcal, undefined);
+  assert.deepEqual(r.learn[0], { type: 'food_unit', product: '파베글라스', unit: '줌', grams: 20 });
+  assert.deepEqual(r.learn[1], { type: 'my_unit', unit: '공기', grams: 315 });
+  assert.equal(r.learn.length, 19, 'type 없는 건 버림 · 20개까지');
+  assert.doesNotMatch(JSON.stringify(r).replace(/"kcalRange":(\[[^\]]*\]|null)/g, ''), /kcal|carb|protein|fat|열량|탄수|단백질|지방|nutrition/i);
+  assert.equal(M.sanitize(null), null); assert.equal(M.sanitize([1]), null);
 });
 
 test('D4 모델 부르기: 헤더 · 모델 · 온도 0 · 오류', async () => {
   let seen;
   const ok = async (url, o) => { seen = { url, o: o, b: JSON.parse(o.body) }; return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: '{"meals":[]}' }], usage: { input_tokens: 10, output_tokens: 5 } }) }; };
   const out = await M.callModel('k', 'sys', 'user', ok);
-  assert.equal(out.text, '{"meals":[]}');
+  assert.equal(out.text, '{"meals":[]}'); assert.equal(out.stop, null);
   assert.equal(seen.url, 'https://api.anthropic.com/v1/messages');
   assert.equal(seen.o.headers['x-api-key'], 'k'); assert.equal(seen.o.headers['anthropic-version'], '2023-06-01');
   assert.equal(seen.b.model, 'claude-haiku-5-5'); assert.equal(seen.b.temperature, 0); assert.equal(seen.b.system, 'sys');
@@ -79,6 +95,20 @@ test('D4 시험 A 문제 읽기: cases.md 7문제 · 상태 · 입력', () => {
   assert.match(cs[0].input, /^11\.17\.\n아침 08:20/); assert.match(cs[0].input, /:\(바나나2개/);
   assert.match(cs[2].state, /앱이 물은 질문 3개/); assert.match(cs[2].input, /^스크램블 할 때/);
   assert.match(cs[4].input, /^1815 저녁/);
+  // 회귀(점검 AI): 「T1과 같음」 「T4와 같음. …」 은 그 문제의 상태를 펼침
+  assert.equal(cs[1].state, cs[0].state);
+  assert.match(cs[4].state, /특 간계밥\(계란5 · 진간장2스푼 · 깨2꼬집 · 참기름1스푼 · 밥 630g\)/);
+  assert.match(cs[5].state, /특 간계밥[^]*\(내 단위 공기는 아직 기본값 210g/);
+  assert.match(cs[6].state, /특 간계밥[^]*오늘 기록에 점심/);
+  assert.ok(cs.every((c) => !/^T[\w-]+(과|와) 같음/.test(c.state)));
+});
+
+test('D4 서버 함수: 실패 · 잘림이면 횟수 돌려줌 · 잘림은 따로 안내', () => {
+  const src = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+  const body = src.slice(src.indexOf('exports.parseMeal'));
+  assert.equal((body.match(/await refund\(\)/g) || []).length, 3, '모델 오류 · 잘림 · JSON 못 읽음');
+  assert.match(body, /out\.stop === 'max_tokens'/);
+  assert.match(body, /M\.systemPrompt\(\)/, '지시문에 사용자 값 안 넣음');
 });
 
 test('D4 하루 횟수 문서(aiUse)는 앱이 못 읽고 못 씀 — 규칙에 없고 모두 열어 두는 규칙도 없음', () => {
