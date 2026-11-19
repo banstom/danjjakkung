@@ -189,8 +189,9 @@
             var data = {}; snaps.forEach(function (sn, i) { if (sn.exists) data[list[i]] = sn.data(); });
             var writes = fn(data), done = {};
             Object.keys(writes).forEach(function (c) {
-              var cur = data[c] || {};
-              var next = Object.assign({ visits: [], stars: {} }, cur, writes[c], { code: c, updatedBy: uid, updatedAt: at });
+              // v54: 옛 칸(지역 stars · visits[].note)은 지운 모양으로 — 규칙이 옛 칸을 받지 않는다
+              var cur = root.RT && root.RT.places ? root.RT.places.tidy(data[c] || {}) : (data[c] || {});
+              var next = Object.assign({ visits: [], entries: {} }, cur, writes[c], { code: c, updatedBy: uid, updatedAt: at });
               tx.set(refs[c] || db.doc('places/' + c), next);
               done[c] = next;
             });

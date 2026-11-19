@@ -1,6 +1,11 @@
 /* 단짝 지도 (v48) — 함께 다녀온 곳 · 가고 싶은 곳 값 계산. 화면은 view-map.js, 상태 · 저장은 app.js · store.js.
-   저장 places/{시군구코드} = { code, wishRank: number|null, wishNote, wishedAt, wishedBy, stars: { uid: 1..5 },
-     visits: [{ id, date: 'YYYY-MM-DD', note, createdAt, createdBy }], updatedAt, updatedBy }
+   저장 places/{시군구코드} = { code, wishRank: number|null, wishNote, wishedAt, wishedBy,
+     visits: [{ id, date: 'YYYY-MM-DD', createdAt, createdBy }],
+     entries: { <uid>: { <visitId>: { stars: 1..5 | null, note, at } } },   ← v54: 방문마다 각자 별점 + 한 줄
+     updatedAt, updatedBy }
+   v54 전에는 지역에 한 번 매기는 stars: { uid: n } 와 visits[].note 가 있었다 — 읽을 땐 entries 로 옮겨 보고(legacyFold),
+   저장할 땐 지운다. 한 번에 옮기는 스크립트는 scripts/migrate-place-entries.js.
+   entries 를 사람 기준으로 두는 이유: 규칙이 배열 안을 하나씩 못 봐서, visits[] 안에 두면 「자기 것만 고치기」를 못 막는다.
    단짝과 함께 다녀온 곳만 칠한다 (나 · 단짝 · 함께로 나누지 않음). 다녀온 날은 단짝이 된 날(couple/main.start)부터. */
 (function (root) {
   'use strict';
@@ -9,19 +14,66 @@
 
   function cleanNote(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, NOTE_MAX); }
 
-  /** 저장된 문서 하나 → { code, visits(날짜 순), wishRank, wishNote, stars } | null */
-  function fromDoc(code, doc) {
-    if (!CODE_RE.test(code) || !doc) return null;
+  function cleanStars(n) { return typeof n === 'number' && n >= 1 && n <= 5 && Math.round(n) === n ? n : null; }
+  function byDate(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.createdAt || '') < (b.createdAt || '') ? -1 : 1; }
+
+  /** v54 옮기기 — 옛 문서(지역 stars · visits[].note) → entries. 순수 함수: 앱이 읽을 때와 옮기기 스크립트가 같이 쓴다.
+      옛 stars.<uid> → 가장 최근 방문의 entries.<uid>, 옛 visits[].note → 만든 사람(createdBy)의 칸. 이미 그 칸에 값이 있으면 그대로 둔다.
+      돌려주는 값에는 stars 와 visits[].note 가 없다. */
+  function legacyFold(doc) {
+    var d = Object.assign({}, doc || {});
+    var visits = (Array.isArray(d.visits) ? d.visits : []).filter(function (v) { return v && typeof v === 'object'; });
+    var entries = {};
+    Object.keys(d.entries && typeof d.entries === 'object' ? d.entries : {}).forEach(function (u) {
+      var m = d.entries[u]; if (!m || typeof m !== 'object') return;
+      entries[u] = {}; Object.keys(m).forEach(function (vid) { if (m[vid] && typeof m[vid] === 'object') entries[u][vid] = Object.assign({}, m[vid]); });
+    });
+    function slot(u, vid) { entries[u] = entries[u] || {}; return entries[u][vid] = entries[u][vid] || { stars: null, note: '', at: null }; }
+    visits.forEach(function (v) {
+      var note = typeof v.note === 'string' ? cleanNote(v.note) : '';
+      if (note && v.createdBy && v.id) { var e = slot(v.createdBy, v.id); if (!e.note) { e.note = note; e.at = e.at || v.createdAt || null; } }
+    });
+    var sorted = visits.filter(function (v) { return v.id && DATE_RE.test(String(v.date || '')); }).slice().sort(byDate), last = sorted[sorted.length - 1];
+    if (d.stars && typeof d.stars === 'object' && last) Object.keys(d.stars).forEach(function (u) {
+      var n = cleanStars(d.stars[u]); if (n === null) return;
+      var e = slot(u, last.id); if (cleanStars(e.stars) === null) { e.stars = n; e.at = e.at || null; }
+    });
+    d.visits = visits.map(function (v) { var o = Object.assign({}, v); delete o.note; return o; });
+    d.entries = entries;
+    delete d.stars;
+    return d;
+  }
+  /** 옮길 게 남았는지 (스크립트 · 테스트용) */
+  function needsFold(doc) {
+    return !!(doc && ((doc.stars && typeof doc.stars === 'object') || (Array.isArray(doc.visits) && doc.visits.some(function (v) { return v && 'note' in v; }))));
+  }
+
+  /** 저장된 문서 하나 → { code, visits(날짜 순), wishRank, wishNote, entries: { uid: { visitId: { stars|null, note } } } } | null
+      entries 는 지금 있는 방문 것만 남긴다 (지운 방문의 기록이 남아 있어도 평균에 안 들어가게) */
+  function fromDoc(code, raw) {
+    if (!CODE_RE.test(code) || !raw) return null;
+    var doc = needsFold(raw) ? legacyFold(raw) : raw;
     var visits = (Array.isArray(doc.visits) ? doc.visits : []).filter(function (v) {
       return v && typeof v.date === 'string' && DATE_RE.test(v.date);
     }).map(function (v) {
-      return { id: String(v.id || ''), date: v.date, note: typeof v.note === 'string' ? v.note : '', createdAt: v.createdAt || null, createdBy: v.createdBy || null };
-    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.createdAt || '') < (b.createdAt || '') ? -1 : 1; });
-    var stars = {};
-    if (doc.stars && typeof doc.stars === 'object') Object.keys(doc.stars).forEach(function (u) { var s = doc.stars[u]; if (s >= 1 && s <= 5 && Math.round(s) === s) stars[u] = s; });
+      return { id: String(v.id || ''), date: v.date, createdAt: v.createdAt || null, createdBy: v.createdBy || null };
+    }).sort(byDate);
+    var ids = {}; visits.forEach(function (v) { ids[v.id] = true; });
+    var entries = {};
+    if (doc.entries && typeof doc.entries === 'object') Object.keys(doc.entries).forEach(function (u) {
+      var m = doc.entries[u]; if (!m || typeof m !== 'object') return;
+      Object.keys(m).forEach(function (vid) {
+        var e = m[vid]; if (!ids[vid] || !e || typeof e !== 'object') return;
+        var st = cleanStars(e.stars), note = typeof e.note === 'string' ? e.note : '';
+        if (st === null && !note) return;
+        (entries[u] = entries[u] || {})[vid] = { stars: st, note: note };
+      });
+    });
     return { code: code, visits: visits, wishRank: typeof doc.wishRank === 'number' && isFinite(doc.wishRank) ? doc.wishRank : null,
-      wishNote: typeof doc.wishNote === 'string' ? doc.wishNote : '', stars: stars };
+      wishNote: typeof doc.wishNote === 'string' ? doc.wishNote : '', entries: entries };
   }
+  /** 한 사람 · 한 방문의 기록 | null */
+  function entryOf(p, uid, vid) { return (p && p.entries && p.entries[uid] && p.entries[uid][vid]) || null; }
 
   /** docs: { code: doc } → { code: place } */
   function fromDocs(docs) {
@@ -64,13 +116,56 @@
     return out.slice(Math.max(0, out.length - VISITS_MAX));
   }
 
-  function byDate(a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.createdAt || '') < (b.createdAt || '') ? -1 : 1; }
   /** 방문 하나 빼기 (v49 — 실수로 두 번 적은 기록 지우기) */
   function withoutVisit(visits, id) { return (visits || []).filter(function (v) { return v.id !== id; }); }
-  /** 방문 하나 고치기 (날짜 · 메모) → 다시 날짜 순 */
-  function withEdited(visits, id, date, note) {
-    return (visits || []).map(function (v) { return v.id === id ? Object.assign({}, v, { date: date, note: note }) : v; }).sort(byDate);
+
+  // ── v54: 방문마다 각자 별점 + 한 줄. 저장할 새 문서를 만든다(지금 저장된 값 cur → next). app.js 가 트랜잭션 안에서 부른다 ──
+  /** 저장할 기록 하나 | null(비었으면 — 칸을 지움) */
+  function cleanEntry(stars, note, at) {
+    var st = cleanStars(stars), n = cleanNote(note);
+    return st === null && !n ? null : { stars: st, note: n, at: at };
   }
+  function baseNext(cur) {
+    var d = legacyFold(cur || {});
+    return Object.assign({}, d, { visits: d.visits.slice(), entries: d.entries });
+  }
+  /** 내 칸 하나 넣기 · 지우기 (entry = cleanEntry 결과, null 이면 지움). 다른 사람 칸은 건드리지 않는다 */
+  function putEntry(entries, uid, vid, entry) {
+    var out = Object.assign({}, entries || {}), mine = Object.assign({}, out[uid] || {});
+    if (entry) mine[vid] = entry; else delete mine[vid];
+    if (Object.keys(mine).length) out[uid] = mine; else delete out[uid];
+    return out;
+  }
+  /** 새 방문 (visit = { id, date, createdAt, createdBy }) + 내 기록(없어도 됨). 100개를 넘으면 가장 오래된 방문과 그 기록을 뺀다 */
+  function addVisit(cur, visit, uid, entry) {
+    var next = baseNext(cur);
+    next.visits = withVisit(next.visits, visit);
+    var keep = {}; next.visits.forEach(function (v) { keep[v.id] = true; });
+    var ent = {};
+    Object.keys(next.entries).forEach(function (u) {
+      var m = {}; Object.keys(next.entries[u]).forEach(function (vid) { if (keep[vid]) m[vid] = next.entries[u][vid]; });
+      if (Object.keys(m).length) ent[u] = m;
+    });
+    next.entries = putEntry(ent, uid, visit.id, entry);
+    return next;
+  }
+  /** 내 기록 고치기 */
+  function setEntry(cur, uid, vid, entry) {
+    var next = baseNext(cur);
+    next.entries = putEntry(next.entries, uid, vid, entry);
+    return next;
+  }
+  /** 방문 지우기 — 두 사람 기록도 함께 */
+  function removeVisit(cur, vid) {
+    var next = baseNext(cur);
+    next.visits = withoutVisit(next.visits, vid);
+    var ent = {};
+    Object.keys(next.entries).forEach(function (u) { var m = Object.assign({}, next.entries[u]); delete m[vid]; if (Object.keys(m).length) ent[u] = m; });
+    next.entries = ent;
+    return next;
+  }
+  /** 저장 전 정리: 옛 칸을 지운 모양 (가고 싶은 곳 · 순위만 바꿀 때도 — 규칙이 옛 칸을 받지 않는다) */
+  function tidy(cur) { return baseNext(cur); }
 
   // ── M3 (v50): 가고 싶은 곳 순위 · 다녀온 곳 별점 ──
   var GAP = 1000, MIN_GAP = 1e-6;
@@ -93,10 +188,21 @@
     var out = {}; codes.forEach(function (c, i) { out[c] = (i + 1) * GAP; }); return out;
   }
 
-  /** 별점 평균 (둘이 각자, 한 사람만 매겼으면 그 점수) → number | null */
-  function avgStars(p) {
-    var vs = Object.keys(p.stars || {}).map(function (u) { return p.stars[u]; });
-    return vs.length ? vs.reduce(function (a, b) { return a + b; }, 0) / vs.length : null;
+  /** 모든 별점 (방문 · 사람 구분 없이) → [{ uid, vid, stars }] */
+  function allStars(p) {
+    var out = [];
+    Object.keys((p && p.entries) || {}).forEach(function (u) {
+      Object.keys(p.entries[u]).forEach(function (vid) { var st = p.entries[u][vid].stars; if (st) out.push({ uid: u, vid: vid, stars: st }); });
+    });
+    return out;
+  }
+  function mean(list) { return list.length ? list.reduce(function (a, b) { return a + b.stars; }, 0) / list.length : null; }
+  /** 지역 별점 = 그 지역의 모든 별점 평균 (단순 평균) → number | null */
+  function avgStars(p) { return mean(allStars(p)); }
+  /** 한 사람의 평균과 매긴 횟수 → { avg: number | null, n } */
+  function personStars(p, uid) {
+    var l = allStars(p).filter(function (x) { return x.uid === uid; });
+    return { avg: mean(l), n: l.length };
   }
 
   /** 다녀온 곳 목록. sort: 'stars'(평균 → 횟수 → 최근, 안 매긴 곳은 뒤) | 'recent' | 'many' */
@@ -158,7 +264,8 @@
   }
 
   var api = { NOTE_MAX: NOTE_MAX, VISITS_MAX: VISITS_MAX, cleanNote: cleanNote, fromDoc: fromDoc, fromDocs: fromDocs, paint: paint, counts: counts,
-    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, withoutVisit: withoutVisit, withEdited: withEdited, GAP: GAP, wishList: wishList, keyAt: keyAt, rebalance: rebalance, avgStars: avgStars, visitedList: visitedList, starRank: starRank, starFill: starFill, avgText: avgText, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
+    visitedSidos: visitedSidos, validateVisit: validateVisit, withVisit: withVisit, withoutVisit: withoutVisit,
+    legacyFold: legacyFold, needsFold: needsFold, entryOf: entryOf, cleanEntry: cleanEntry, addVisit: addVisit, setEntry: setEntry, removeVisit: removeVisit, tidy: tidy, allStars: allStars, personStars: personStars, GAP: GAP, wishList: wishList, keyAt: keyAt, rebalance: rebalance, avgStars: avgStars, visitedList: visitedList, starRank: starRank, starFill: starFill, avgText: avgText, fullName: fullName, regionOf: regionOf, search: search, dateText: dateText };
   root.RT = root.RT || {};
   root.RT.places = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

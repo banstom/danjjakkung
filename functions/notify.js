@@ -20,7 +20,8 @@ function prefsOf(doc) {
   // weekly 는 notify 밖(users.weekly)에 있다 — 옛 버전 앱이 notify 를 통째로 저장해도 지워지지 않게
   return { partner: n.partner !== false, remindAt: typeof n.remindAt === 'string' ? n.remindAt : null, hide: n.hide === true, weekly: !(doc && doc.weekly === false),
     todo: !(doc && doc.todoNotify === false), // 함께 할 일 알림 (v38, users.todoNotify — 없으면 켬)
-    miss: !(doc && doc.missNotify === false) }; // 아침 8시 어제 놓친 루틴 알림 (v41, users.missNotify — 없으면 켬)
+    miss: !(doc && doc.missNotify === false), // 아침 8시 어제 놓친 루틴 알림 (v41, users.missNotify — 없으면 켬)
+    map: !(doc && doc.mapNudge === false) }; // 단짝 지도 새 방문 알림 (v54, users.mapNudge — 없으면 켬)
 }
 
 /** 짝꿍이 체크했을 때 문구. 오늘 · 어제 기록만 알린다 (지난 기록을 몰아서 채울 때 알림이 쏟아지지 않게). */
@@ -113,6 +114,18 @@ function todoMessage({ type, who, title, hide }) {
   return { title: TITLE, body: hide || !name ? head : `${head} · ${name}` };
 }
 
+/** 단짝 지도 (v54): places 문서가 바뀌었을 때 새로 생긴 방문 → [{ id, createdBy }] (전에 없던 id 만, 만든 사람이 있는 것만) */
+function newVisits(before, after) {
+  const had = new Set(((before && before.visits) || []).map((v) => v && v.id));
+  return ((after && after.visits) || []).filter((v) => v && typeof v.id === 'string' && v.id && !had.has(v.id) && typeof v.createdBy === 'string' && v.createdBy)
+    .map((v) => ({ id: v.id, createdBy: v.createdBy }));
+}
+/** 새 방문 알림 문구 — 지역 이름을 모르면 「함께 다녀온 곳」 */
+function mapMessage({ place }) {
+  const name = typeof place === 'string' && place.trim() ? place.trim() : '함께 다녀온 곳';
+  return { title: TITLE, body: `📍 ${name} 다녀온 기록이 생겼어요 · 별점을 남겨 주세요` };
+}
+
 /** 한 주(dates: 'YYYY-MM-DD' 7개)에서 모두 해낸 날 수 — 앱 루틴 탭 달력의 「모두」와 같은 규칙 (js/model.js dayLevel).
     그날 하고 있는 루틴이 있고, 그날 참여 중인 사람(그만두지 않은 루틴이 있는 사람)이 각자 자기 루틴을 다 한 날. */
 const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
@@ -155,4 +168,4 @@ function weeklyMessage({ allDays, together }) {
   return { title: TITLE, body: '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?' };
 }
 
-module.exports = { TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };
+module.exports = { newVisits, mapMessage, TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };

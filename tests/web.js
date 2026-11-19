@@ -187,7 +187,7 @@ async function open(browser, name, opts = {}) {
       if (d) { const nu = d.ui || {}, ou = (old && old.ui) || {}; for (const k of new Set([...Object.keys(nu), ...Object.keys(ou)])) if (k !== uid && JSON.stringify(nu[k]) !== JSON.stringify(ou[k])) throw new Error('permission-denied'); } }
     if (p.startsWith('uiLog/')) { if (!d || d.by !== uid || docs.has(p)) throw new Error('permission-denied'); }
     if (p.startsWith('kungs/')) { if (!d || d.from !== uid || docs.has(p) || p !== 'kungs/' + d.date + '_' + uid) throw new Error('permission-denied'); }
-    // 단짝 지도 (v48): 지우기 없음, 별점은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
+    // 단짝 지도 (v48 · v54): 지우기 없음, 기록(entries)은 내 칸만, 가장 이른 방문 ≥ 단짝이 된 날
     // 단짝 식탁: 몸 정보 · 목표는 자기 것만 쓸 수 있다
     if ((p.startsWith('private/') || p.startsWith('goals/')) && p.split('/')[1] !== uid) throw new Error('permission-denied');
     // 규칙 흉내: goals 는 정해진 칸 · 숫자 범위 (validGoal), private 는 정해진 칸 · 몸 정보 범위 (validBody)
@@ -202,7 +202,10 @@ async function open(browser, name, opts = {}) {
       if (d && !(Object.keys(d).every((k) => ['uid', 'date', 'meals', 'updatedAt'].includes(k)) && d.uid === uid && p === 'meals/' + uid + '_' + d.date && Array.isArray(d.meals) && d.meals.length <= 20)) throw new Error('permission-denied'); }
     if (p.startsWith('places/') && failPlaces) { failPlaces = false; throw new Error('unavailable'); } // 저장 실패 흉내 (한 번)
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
-      const ns = d.stars || {}, os = old.stars || {}; for (const k of new Set([...Object.keys(ns), ...Object.keys(os)])) if (k !== uid && ns[k] !== os[k]) throw new Error('permission-denied');
+      // v54: 옛 칸(지역 stars · visits[].note)은 안 받음 · entries 는 내 칸만 (방문을 지우는 쓰기는 예외)
+      if ('stars' in d || (d.visits || []).some((v) => 'note' in v)) throw new Error('permission-denied');
+      const ne = d.entries || {}, oe = old.entries || {}, shrank = (d.visits || []).length < (old.visits || []).length;
+      for (const k of new Set([...Object.keys(ne), ...Object.keys(oe)])) if (k !== uid && !shrank && JSON.stringify(ne[k]) !== JSON.stringify(oe[k])) throw new Error('permission-denied');
       const cs = (docs.get('couple/main') || {}).start || '1950-01-01'; const ov = old.visits || [];
       if ((d.visits || []).length && d.visits[0].date < cs && !(ov.length && JSON.stringify(ov[0]) === JSON.stringify(d.visits[0]))) throw new Error('permission-denied');
       if (d.updatedBy !== uid || d.code !== p.split('/')[1]) throw new Error('permission-denied'); }
@@ -930,46 +933,72 @@ async function tick(page, dateKey, key) {
   await jm.fill('#mp-date', '2025-07-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('.rform__error'), /단짝이 된 날/, '단짝이 된 날보다 이르면 저장 안 됨');
   assert.ok(!docs.get('places/52190'), '저장 안 됨');
-  await jm.fill('#mp-date', '2025-08-15'); await jm.fill('#mp-note', '광한루 산책'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
-  const nw = docs.get('places/52190');
-  assert.strictEqual(nw.visits.length, 1); assert.strictEqual(nw.visits[0].date, '2025-08-15'); assert.strictEqual(nw.visits[0].note, '광한루 산책'); assert.strictEqual(nw.wishRank, null);
+  await jm.fill('#mp-date', '2025-08-15'); await jm.click('[data-act="map-rec-star"][data-v="4"]'); await jm.fill('#mp-note', '광한루 산책');
+  assert.strictEqual(await jm.getAttribute('[data-act="map-rec-star"][data-v="4"]', 'aria-checked'), 'true', '별을 누르면 고른 별 표시 (메모는 그대로)');
+  assert.strictEqual(await jm.inputValue('#mp-note'), '광한루 산책');
+  await jm.screenshot({ path: path.join(OUT, 'map-record.png') });
+  await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  const nw = docs.get('places/52190'), v1 = nw.visits[0].id;
+  assert.strictEqual(nw.visits.length, 1); assert.strictEqual(nw.visits[0].date, '2025-08-15'); assert.ok(!('note' in nw.visits[0]), 'v54: 방문에는 메모 없음'); assert.strictEqual(nw.wishRank, null);
+  assert.deepStrictEqual({ stars: nw.entries[jmUid0][v1].stars, note: nw.entries[jmUid0][v1].note }, { stars: 4, note: '광한루 산책' }, '내 기록 = entries.<내 uid>.<방문 id>');
+  assert.ok(!('stars' in nw), '지역 별점 칸 없음');
   assert.match(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다녀온 곳 = --both 칠함');
   assert.strictEqual(await jm.textContent('.mchip--both'), '함께 다녀온 곳 1');
   assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
-  assert.match(await jm.textContent('.mvisits'), /처음 · 2025년 8월 15일광한루 산책/);
-  // 회귀: 규칙 흉내 — 단짝이 된 날보다 이른 방문은 저장소가 막는다
-  await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2026-10-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(await jm.textContent('.msum__avg'), '4');
+  assert.match(await jm.textContent('.msum__cap'), /별점 1개 평균/);
+  assert.match(await jm.textContent('.mvlist'), /2025년 8월 15일 · 1번째[^]*광한루 산책/);
+  // 또 다녀왔어요 (별점 · 메모 없이도 됨) → 최근 방문이 위, 가장 최근 것만 펼쳐짐
+  await jm.click('[data-act="map-visit"]'); await jm.waitForSelector('#mp-date');
+  assert.match(await jm.textContent('#mapsheet-title'), /전북 남원시 · 또 다녀왔어요/);
+  assert.match(await jm.textContent('.mrec__nudge'), /단짝에게 「별점을 남겨 주세요」 알림이 가요/);
+  await jm.fill('#mp-date', '2026-10-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  const v2 = docs.get('places/52190').visits[1].id;
   assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15', '2026-10-01'], '또 다녀왔어요 = 날짜 순');
-  assert.match(await jm.textContent('.mvisits li'), /2번째 · 10월 1일/, '최근 것이 위');
+  assert.ok(!docs.get('places/52190').entries[jmUid0][v2], '비운 기록은 저장 안 함');
+  assert.match(await jm.textContent('.mvrow'), /10월 1일 · 2번째/, '최근 것이 위');
+  assert.deepStrictEqual(await jm.$$eval('.mvrow', (e) => e.map((x) => x.getAttribute('aria-expanded'))), ['true', 'false'], '가장 최근 방문 하나만 펼침');
+  assert.match(await jm.textContent('.mvnote--mine'), /＋ 별점 · 한 줄 남기기/);
+  assert.match(await jm.textContent('.mvrow'), /—/, '별점이 없으면 —');
   await jm.screenshot({ path: path.join(OUT, 'map-sheet-visited.png') });
-  // (v49) 실수로 두 번 적은 기록: 눌러서 고치기 → 두 번 눌러 지우기
-  await jm.click('.mvisits__row'); await jm.waitForSelector('#mp-date');
-  assert.match(await jm.textContent('.sheet__sub'), /2번째 기록 고치기/);
-  assert.strictEqual(await jm.inputValue('#mp-date'), '2026-10-01');
-  await jm.fill('#mp-date', '2025-07-01'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(150);
-  assert.match(await jm.textContent('.rform__error'), /단짝이 된 날/, '고칠 때도 단짝이 된 날부터');
-  await jm.fill('#mp-date', '2026-09-30'); await jm.fill('#mp-note', '두 번째'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
-  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date + ' ' + v.note), ['2025-08-15 광한루 산책', '2026-09-30 두 번째'], '고친 기록 저장');
-  await jm.click('.mvisits__row'); await jm.waitForSelector('[data-act="map-visit-delete"]');
+  await jm.click(`.mvrow[data-v="${v1}"]`); await jm.waitForTimeout(80);
+  assert.strictEqual(await jm.getAttribute(`.mvrow[data-v="${v1}"]`, 'aria-expanded'), 'true', '접힌 줄을 누르면 펼침');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'map-visit-toggle', '펼친 뒤 포커스 그대로');
+  // 내 칸 → 기록 남기기(고치기): 날짜 없음 · 같은 별 다시 누르면 지움
+  await jm.click(`.mvnote--mine[data-v="${v2}"]`); await jm.waitForSelector('.mrec__stars');
+  assert.match(await jm.textContent('#mapsheet-title'), /전북 남원시 · 2번째 방문/);
+  assert.ok(!(await jm.$('#mp-date')), '고칠 땐 날짜 없음');
+  await jm.click('[data-act="map-rec-star"][data-v="3"]'); await jm.click('[data-act="map-rec-star"][data-v="3"]');
+  assert.strictEqual(await jm.$$eval('.mrec__star.is-on', (e) => e.length), 0, '같은 별을 다시 누르면 지움');
+  await jm.click('[data-act="map-rec-star"][data-v="5"]'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(docs.get('places/52190').entries[jmUid0][v2].stars, 5);
+  assert.strictEqual(await jm.textContent('.msum__avg'), '4.5', '평균 = 모든 별점');
+  // 단짝 기록이 있는 방문을 지우면 두 사람 기록이 함께 사라짐 (규칙: visits 가 줄어든 쓰기만 단짝 칸을 지울 수 있음)
+  const withDj = docs.get('places/52190'); docs.set('places/52190', Object.assign({}, withDj, { entries: Object.assign({}, withDj.entries, { [djUid0]: { [v2]: { stars: 3, note: '바람', at: 'x' } } }) }));
+  await pushAll(['places/52190']); await jm.waitForTimeout(150);
+  assert.match(await jm.textContent('.msum__people'), /4\.5[^]*· 2번[^]*3[^]*· 1번/, '사람별 평균 · 횟수');
+  await jm.click(`.mvnote--mine[data-v="${v2}"]`); await jm.waitForSelector('[data-act="map-visit-delete"]');
   await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(100);
   assert.match(await jm.textContent('[data-act="map-visit-delete"]'), /한 번 더 누르면/, '한 번 누르면 묻기만');
   assert.strictEqual(docs.get('places/52190').visits.length, 2, '아직 안 지움');
   await jm.screenshot({ path: path.join(OUT, 'map-visit-edit.png') });
   await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
-  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15'], '두 번째 기록 지움');
+  assert.deepStrictEqual(docs.get('places/52190').visits.map((v) => v.date), ['2025-08-15'], '두 번째 방문 지움');
+  assert.ok(!docs.get('places/52190').entries[djUid0], '단짝 기록도 함께 지움');
   assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
   // 하나 남은 것도 지우면 칠하기가 빠지고 「아직 함께 가 보지 않은 곳」
-  await jm.click('.mvisits__row'); await jm.click('[data-act="map-visit-delete"]'); await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
+  await jm.click(`.mvnote--mine[data-v="${v1}"]`); await jm.click('[data-act="map-visit-delete"]'); await jm.click('[data-act="map-visit-delete"]'); await jm.waitForTimeout(300);
   assert.strictEqual(docs.get('places/52190').visits.length, 0);
+  assert.deepStrictEqual(docs.get('places/52190').entries, {});
   assert.doesNotMatch(await jm.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '다 지우면 칠하기 빠짐');
   assert.match(await jm.textContent('.sheet__sub'), /아직 함께 가 보지 않은 곳/);
   await jm.click('[data-act="map-visit"]'); await jm.fill('#mp-date', '2025-08-15'); await jm.fill('#mp-note', '광한루 산책'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300); // 뒤 시험을 위해 다시
   // 회귀(사용자 제보): 한글 조합 중에 입력칸이 사라져도(저장) 그 뒤 변경이 바로 보임 — 조합 끝 신호가 안 오던 문제
-  await jm.click('.mvisits__row'); await jm.waitForSelector('#mp-note');
+  await jm.click('.mvnote--mine'); await jm.waitForSelector('#mp-note');
   await jm.$eval('#mp-note', (el) => { el.focus(); el.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })); });
   await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
   const keep52 = docs.get('places/52190');
-  docs.set('places/52190', Object.assign({}, keep52, { visits: keep52.visits.concat([{ id: 'zz', date: '2026-10-20', note: '', createdAt: 'x', createdBy: 'x' }]) })); await pushAll(['places/52190']); await jm.waitForTimeout(150);
+  docs.set('places/52190', Object.assign({}, keep52, { visits: keep52.visits.concat([{ id: 'zz', date: '2026-10-20', createdAt: 'x', createdBy: 'x' }]) })); await pushAll(['places/52190']); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('.sheet .mchip--both'), /함께 2번/, '조합이 남아도 짝꿍 변경이 바로 반영');
   docs.set('places/52190', keep52); await pushAll(['places/52190']); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('.sheet .mchip--both'), /함께 1번/);
@@ -980,7 +1009,7 @@ async function tick(page, dateKey, key) {
   await dj.waitForFunction(() => /\bv\b/.test((document.querySelector('#km [data-code="52190"]') || {}).getAttribute ? document.querySelector('#km [data-code="52190"]').getAttribute('class') : ''), null, { timeout: 3000 }).catch(() => {});
   assert.match(await dj.getAttribute('#km [data-code="52190"]', 'class'), /\bv\b/, '짝꿍 지도도 칠함');
   // 가고 싶은 곳(빗금) · 다녀온 곳을 또 가고 싶은 곳으로(색 위 빗금) — 순위 숫자는 지도에 없음
-  docs.set('places/50110', { code: '50110', wishRank: 1000, wishNote: '', stars: {}, visits: [], updatedBy: 'x', updatedAt: 'x' });
+  docs.set('places/50110', { code: '50110', wishRank: 1000, wishNote: '', entries: {}, visits: [], updatedBy: 'x', updatedAt: 'x' });
   docs.set('places/52190', Object.assign({}, docs.get('places/52190'), { wishRank: 2000 }));
   await pushAll(['places/50110', 'places/52190']); await jm.waitForTimeout(150);
   assert.match(await jm.getAttribute('#km [data-code="50110"]', 'class'), /\bw\b/, '가고 싶은 곳 = 빗금');
@@ -1114,29 +1143,42 @@ async function tick(page, dateKey, key) {
   if (!(await jm.$('#mwish'))) { await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg'); await jm.click('[data-act="map-seg"][data-v="wish"]'); await jm.waitForSelector('#mwish'); }
   docs.set('places/50110', Object.assign({}, docs.get('places/50110'), { wishNote: '바다 보이는 숙소' })); await pushAll(['places/50110']); await jm.waitForTimeout(150);
   assert.match(await jm.textContent('#mwish .mrow[data-code="50110"]'), /바다 보이는 숙소/, '다음 변경이 화면에 반영됨');
-  // 다녀온 곳: 둘이 각자 별점 · 평균 · 정렬
+  // 다녀온 곳 (v54): 방문마다 각자 별점 · 지역 별점 = 모든 별점 평균 · 정렬
   await jm.click('[data-act="map-seg"][data-v="been"]'); await jm.waitForSelector('.msort');
-  await jm.click('.mrow__main[data-v="52190"]'); await jm.waitForSelector('.mstars');
-  await jm.click('[data-act="map-star"][data-v="4"]'); await jm.waitForTimeout(250);
-  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4, '내 별점 저장');
-  assert.match(await jm.textContent('.mstars__avg'), /우리 평균 4 /);
-  // 회귀(점검 AI): 저장이 실패하면 화면 별도 저장된 값으로 돌아감
-  failPlaces = true; await jm.click('[data-act="map-star"][data-v="2"]'); await jm.waitForTimeout(250);
-  assert.match(await jm.textContent('.toast'), /별점을 저장하지 못했어요/);
-  assert.strictEqual(await jm.$$eval('.mstar-btn.is-on', (e) => e.length), 4, '실패하면 4개로 돌아감');
-  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4);
-  // 빨리 여러 번 눌러도 마지막 값이 저장됨
-  await jm.click('[data-act="map-star"][data-v="3"]'); await jm.click('[data-act="map-star"][data-v="5"]'); await jm.click('[data-act="map-star"][data-v="4"]'); await jm.waitForTimeout(500);
-  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4, '마지막에 누른 4');
-  assert.strictEqual(await jm.$$eval('.mstar-btn.is-on', (e) => e.length), 4);
-  assert.strictEqual(await jm.$$eval('.mstars__row:nth-child(2) button', (e) => e.length), 0, '단짝 줄은 버튼이 없음(못 고침)');
+  await jm.click('.mrow__main[data-v="52190"]'); await jm.waitForSelector('.mvlist');
+  assert.match(await jm.textContent('.msum'), /아직 별점이 없어요/, '메모만 남긴 곳은 별점 없음');
+  const v52 = docs.get('places/52190').visits[0].id;
+  await jm.click(`.mvnote--mine[data-v="${v52}"]`); await jm.waitForSelector('.mrec__stars');
+  assert.strictEqual(await jm.inputValue('#mp-note'), '광한루 산책', '고칠 때 내 메모가 들어 있음');
+  await jm.click('[data-act="map-rec-star"][data-v="4"]'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(300);
+  assert.strictEqual(docs.get('places/52190').entries[jmUid0][v52].stars, 4, '내 별점 저장');
+  assert.strictEqual(await jm.textContent('.msum__avg'), '4');
+  // 회귀: 저장이 실패하면 시트에 남아 알려 주고, 저장된 값은 그대로
+  await jm.click(`.mvnote--mine[data-v="${v52}"]`); await jm.waitForSelector('.mrec__stars');
+  failPlaces = true; await jm.click('[data-act="map-rec-star"][data-v="2"]'); await jm.click('[data-act="map-visit-save"]'); await jm.waitForTimeout(250);
+  assert.match(await jm.textContent('.rform__error'), /저장하지 못했어요/);
+  assert.strictEqual(docs.get('places/52190').entries[jmUid0][v52].stars, 4);
+  await jm.click('[data-act="map-visit-cancel"]'); await jm.waitForSelector('.mvlist');
+  // 단짝: 내 칸만 고칠 수 있음 (단짝 칸은 버튼이 아님)
   await toAll(dj); await dj.click('[data-act="all-map"]'); await dj.waitForSelector('#km .rg');
-  await dj.click('[data-act="map-seg"][data-v="been"]'); await dj.click('.mrow__main[data-v="52190"]'); await dj.waitForSelector('.mstars');
-  await dj.click('[data-act="map-star"][data-v="5"]'); await dj.waitForTimeout(300);
-  assert.strictEqual(docs.get('places/52190').stars[jmUid0], 4, '짝꿍이 매겨도 내 별점은 그대로');
-  assert.match(await jm.textContent('.mstars__avg'), /우리 평균 4\.5/);
-  assert.strictEqual(await jm.$$eval('.mstars__row:nth-child(2) .mstar.is-on', (e) => e.length), 5, '단짝 줄 별 5개');
+  await dj.click('[data-act="map-seg"][data-v="been"]'); await dj.click('.mrow__main[data-v="52190"]'); await dj.waitForSelector('.mvlist');
+  assert.match(await dj.textContent('.mvbody'), /광한루 산책/, '단짝 화면에 내 메모');
+  assert.strictEqual(await dj.$$eval('.mvbody button', (e) => e.length), 1, '자기 칸만 버튼');
+  await dj.click('.mvnote--mine'); await dj.waitForSelector('.mrec__stars');
+  await dj.click('[data-act="map-rec-star"][data-v="5"]'); await dj.click('[data-act="map-visit-save"]'); await dj.waitForTimeout(300);
+  assert.strictEqual(docs.get('places/52190').entries[jmUid0][v52].stars, 4, '짝꿍이 매겨도 내 별점은 그대로');
+  assert.strictEqual(docs.get('places/52190').entries[djUid0][v52].stars, 5);
+  await jm.waitForTimeout(150);
+  assert.strictEqual(await jm.textContent('.msum__avg'), '4.5');
+  assert.match(await jm.textContent('.mvrow'), /★4[^]*★5/, '접힌 줄에 두 사람 별점');
+  assert.match(await jm.textContent('.mvbody'), /한 줄은 안 남겼어요/, '단짝이 별점만 남겼을 때');
   await jm.screenshot({ path: path.join(OUT, 'map-sheet-stars.png') });
+  for (const w of [320, 375]) {
+    await jm.setViewportSize({ width: w, height: 760 }); await jm.waitForTimeout(100);
+    assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.sheet .mbtn, .mvrow, .msum')].every((e) => e.getBoundingClientRect().right <= innerWidth + 0.5)), w + 'px 다녀온 곳 시트 넘침 없음');
+    await jm.screenshot({ path: path.join(OUT, 'map-sheet-' + w + '.png') });
+  }
+  await jm.setViewportSize({ width: 390, height: 844 });
   await dj.keyboard.press('Escape'); await dj.click('[data-act="map-close"]');
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
   // 정렬: 별점 순(평균 → 횟수 → 최근, 안 매긴 곳은 뒤) · 최근 순 · 많이 간 순

@@ -7,8 +7,8 @@ test('한국 시간: UTC 15:10 = 다음 날 00:10', () => {
   assert.deepStrictEqual(N.kstParts(new Date('2026-10-27T12:00:00Z')), { dateKey: '2026-10-27', hhmm: '21:00' });
 });
 test('설정 기본값', () => {
-  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true, miss: true });
-  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true, miss: true });
+  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true, miss: true, map: true });
+  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true, miss: true, map: true });
 });
 test('짝꿍 체크 문구: 오늘 · 어제만, 숨김', () => {
   const r = { name: '스쿼트 100개' };
@@ -84,4 +84,23 @@ test('일요일 돌아보기 문구', () => {
   assert.strictEqual(N.weeklyMessage({ allDays: 2, together: 3 }).body, '🎉 이번 주 우리 · 모두 해낸 날 2일 · 함께 끝낸 일 3개 · 한 주를 돌아볼까요?');
   assert.strictEqual(N.weeklyMessage({ allDays: 0, together: 1 }).body, '🎉 이번 주 우리 · 함께 끝낸 일 1개 · 한 주를 돌아볼까요?');
   assert.strictEqual(N.weeklyMessage({ allDays: 0, together: 0 }).body, '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?');
+});
+
+test('v54 단짝 지도 새 방문: 새로 생긴 방문만 · 만든 사람이 있는 것만 · 문구 · 지도 알림 설정(기본 켬)', () => {
+  const before = { visits: [{ id: 'a', createdBy: 'j' }] };
+  const after = { visits: [{ id: 'a', createdBy: 'j' }, { id: 'b', createdBy: 'd' }, { id: 'c' }] };
+  assert.deepEqual(N.newVisits(before, after), [{ id: 'b', createdBy: 'd' }]);
+  assert.deepEqual(N.newVisits(null, { visits: [{ id: 'x', createdBy: 'j' }] }), [{ id: 'x', createdBy: 'j' }], '처음 만든 문서도');
+  assert.deepEqual(N.newVisits(after, before), [], '지우기 · 별점만 고치기는 알리지 않음');
+  assert.equal(N.mapMessage({ place: '서울 종로구' }).body, '📍 서울 종로구 다녀온 기록이 생겼어요 · 별점을 남겨 주세요');
+  assert.match(N.mapMessage({}).body, /함께 다녀온 곳 다녀온 기록/);
+  assert.equal(N.prefsOf(null).map, true);
+  assert.equal(N.prefsOf({ mapNudge: false }).map, false);
+  const regions = require('./regions.json');
+  assert.equal(Object.keys(regions).length, 230); assert.equal(regions['11110'], '서울 종로구');
+  const idx = require('fs').readFileSync(require('path').join(__dirname, 'index.js'), 'utf8');
+  assert.match(idx, /onDocumentWritten\('places\/\{code\}'/);
+  assert.match(idx, /once\(`place_\$\{code\}_\$\{v\.id\}`\)/);
+  assert.match(idx, /!pf\.partner \|\| !pf\.map/);
+  assert.match(idx, /\?tab=all&map=\$\{code\}/);
 });

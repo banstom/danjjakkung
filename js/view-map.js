@@ -62,7 +62,7 @@
     return '<div class="mscreen">' + bar + seg + body + '</div>';
   }
 
-  /** 지역 시트. s = { code, name, place(places.fromDoc | null), startText, mode: 'view' | 'visit', form, visitsView: [{ nth, date, note }], lastText } */
+  /** 지역 시트. s = app.js mapSheetModel() — mode: 'view' | 'record' | 'needstart'. v54: 다녀온 곳 = 요약 카드 + 접힌 방문 목록(C) */
   function sheet(s, entering) {
     var p = s.place, visited = p && p.visits.length > 0, body;
     var head = '<div class="sheet__head"><h2 id="mapsheet-title" class="sheet__title">' + esc(s.name) + '</h2>' +
@@ -72,31 +72,16 @@
         '<p class="mnote">단짝 지도는 단짝이 된 날부터 함께 다녀온 곳을 칠해요. 기념일에서 그날을 정하면 바로 기록할 수 있어요.</p>' +
         '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="open-anniv">기념일 정하기</button>' +
         '<button type="button" class="mbtn" data-act="map-visit-cancel">돌아가기</button></div>';
-    } else if (s.mode === 'visit' || s.mode === 'edit') {
-      var f = s.form, editing = s.mode === 'edit';
-      body = head + '<p class="sheet__sub">' + (editing ? esc(f.nth) + ' 기록 고치기' : visited ? '또 다녀온 날을 적어요' : '함께 다녀온 날을 적어요') + '</p>' +
-        '<div class="mform">' +
-        '<label class="field"><span class="field__label">다녀온 날</span><input id="mp-date" class="field__input" type="date"' + (s.startKey ? ' min="' + esc(s.startKey) + '"' : '') + ' max="' + esc(s.todayKey) + '" value="' + esc(f.date) + '"></label>' +
-        (s.startText ? '<p class="mnote">다녀온 날은 단짝이 된 날(' + esc(s.startText) + ')부터 고를 수 있어요</p>' : '') +
-        '<label class="field"><span class="field__label">메모 (선택)</span><input id="mp-note" class="field__input" type="text" maxlength="' + s.noteMax + '" autocomplete="off" enterkeyhint="done" placeholder="예: 한옥마을 야경" value="' + esc(f.note) + '"></label>' +
-        (f.error ? '<p class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
-        '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="map-visit-cancel">돌아가기</button>' +
-        '<button type="button" class="solid-btn" data-act="map-visit-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div>' +
-        // 지우기는 두 번 눌러야 (실수로 지우지 않게)
-        (editing ? '<div class="mdel"><button type="button" class="text-btn' + (f.confirmDelete ? ' text-btn--warn' : '') + '" data-act="map-visit-delete"' + (f.saving ? ' disabled' : '') + '>' +
-          (f.confirmDelete ? '한 번 더 누르면 이 기록을 지워요' : '이 기록 지우기') + '</button></div>' : '') + '</div>';
+    } else if (s.mode === 'record') {
+      body = recordSheet(s);
     } else if (visited) {
-      var st = s.stars || {};
-      body = head + '<p class="sheet__sub">' + (st.rankNo ? '다녀온 곳 별점 ' + st.rankNo + '위 · ' : '') + '마지막 ' + esc(s.lastText) +
+      body = head + '<p class="sheet__sub">' + (s.summary && s.summary.rankNo ? '다녀온 곳 별점 ' + s.summary.rankNo + '위 · ' : '') + '마지막 ' + esc(s.lastText) +
         (s.wishNo ? ' · 또 가고 싶은 곳 ' + s.wishNo + '위' : '') + '</p>' +
-        starCard(st) +
-        '<div class="mbtns mbtns--col"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button>' +
-        (s.wishNo ? '<button type="button" class="mbtn" data-act="map-rank">순위 바꾸기</button>' : '<button type="button" class="mbtn" data-act="map-wish">또 가고 싶은 곳에 담기</button>') + '</div>' +
+        summaryCard(s.summary) +
+        '<div class="mbtns mbtns--wrap"><button type="button" class="mbtn mbtn--solid" data-act="map-visit">또 다녀왔어요</button>' +
+        (s.wishNo ? '<button type="button" class="mbtn" data-act="map-rank">순위 바꾸기</button>' : '<button type="button" class="mbtn" data-act="map-wish">또 가고 싶어요</button>') + '</div>' +
         (s.wishNo ? '<div class="mdel"><button type="button" class="text-btn" data-act="map-unwish">가고 싶은 곳에서 빼기</button></div>' : '') +
-        '<ul class="mvisits">' + s.visitsView.map(function (v) {
-          return '<li><button type="button" class="mvisits__row" data-act="map-visit-edit" data-v="' + esc(v.id) + '" aria-label="' + esc(v.nth + ' · ' + v.date + ' 고치기') + '">' +
-            '<span class="mvisits__when">' + esc(v.nth) + ' · ' + esc(v.date) + '</span><span class="mvisits__note">' + esc(v.note || '메모 없음') + '</span></button></li>';
-        }).join('') + '</ul><p class="mnote">기록을 누르면 날짜 · 메모를 고치거나 지울 수 있어요</p>';
+        visitList(s);
     } else if (s.wishNo) {
       body = '<div class="mwhead"><span class="mrankno mrankno--big" aria-hidden="true">' + s.wishNo + '</span><div class="mwhead__tx">' +
         '<h2 id="mapsheet-title" class="sheet__title">' + esc(s.name) + '</h2>' +
@@ -121,15 +106,66 @@
     var out = ''; for (var i = 1; i <= 5; i++) out += '<span class="mstar' + (i <= n ? ' is-on' : '') + (size ? ' mstar--' + size : '') + '">' + STAR + '</span>';
     return out;
   }
-  /** 별점 카드: 나는 눌러서 매기고(바로 저장), 단짝 줄은 보기만. st = { me, partner, meSlot, partnerSlot, partnerName, avgText, rankNo } */
-  function starCard(st) {
-    var mine = '';
-    for (var i = 1; i <= 5; i++) mine += '<button type="button" class="mstar-btn' + (i <= (st.me || 0) ? ' is-on' : '') + '" data-act="map-star" data-v="' + i + '" aria-label="별 ' + i + '개" aria-pressed="' + (st.me === i) + '">' + STAR + '</button>';
-    return '<div class="mstars">' +
-      '<div class="mstars__row"><span class="mstars__who"><span class="mdot mdot--' + (st.meSlot || 'me') + '" aria-hidden="true"></span>나</span><span class="mstars__set" role="group" aria-label="내 별점">' + mine + '</span></div>' +
-      '<div class="mstars__row"><span class="mstars__who"><span class="mdot mdot--' + (st.partnerSlot || 'her') + '" aria-hidden="true"></span>' + esc(st.partnerName || '단짝') + '</span>' +
-      '<span class="mstars__set" role="img" aria-label="' + esc((st.partnerName || '단짝') + ' 별점 ' + (st.partner ? st.partner + '개' : '아직 없음')) + '">' + stars(st.partner || 0) + '</span></div>' +
-      '<p class="mstars__avg">' + (st.avgText ? '우리 평균 ' + esc(st.avgText) + ' · 다녀온 곳 순위는 평균으로 매겨요' : '별을 눌러 이곳이 어땠는지 남겨요 · 순위는 둘의 평균으로 매겨요') + '</p></div>';
+  function dot(slot) { return '<span class="mdot mdot--' + esc(slot || 'me') + '" aria-hidden="true"></span>'; }
+  /** v54 요약 카드: 큰 평균 + 별 5개 + 「별점 n개 평균」 | 오른쪽에 사람별 평균 · 매긴 횟수.
+      sm = { avgText, fill, count, me: { slot, name, avgText, n }, partner } */
+  function summaryCard(sm) {
+    if (!sm) return '';
+    if (!sm.count) return '<div class="msum msum--empty"><p class="msum__none">아직 별점이 없어요</p><p class="mnote">방문 기록에서 각자 별점과 한 줄을 남길 수 있어요</p></div>';
+    function row(w) {
+      if (!w) return '';
+      return '<li class="msum__who">' + dot(w.slot) + '<span class="msum__nm">' + esc(w.name) + '</span>' +
+        '<span class="msum__v">' + (w.n ? '<b>' + esc(w.avgText) + '</b><span class="msum__n"> · ' + w.n + '번</span>' : '<span class="msum__n">—</span>') + '</span></li>';
+    }
+    return '<div class="msum"><div class="msum__big"><span class="msum__avg">' + esc(sm.avgText) + '</span>' +
+      '<span class="msum__stars" role="img" aria-label="' + esc('평균 별점 ' + sm.avgText) + '">' + stars(sm.fill, 'sm') + '</span>' +
+      '<span class="msum__cap">별점 ' + sm.count + '개 평균</span></div>' +
+      '<ul class="msum__people">' + row(sm.me) + row(sm.partner) + '</ul></div>';
+  }
+  /** 접힌 줄의 「● ★5」 (없으면 「● —」) */
+  function chipStar(slot, name, e) {
+    var n = e && e.stars;
+    return '<span class="mvchip">' + dot(slot) + (n ? '<span aria-hidden="true">★</span>' + n : '—') + '<span class="sr-only">' + esc(name + ' ' + (n ? '별 ' + n + '개' : '별점 없음')) + '</span></span>';
+  }
+  /** 방문 기록 목록 (C · 접힌 목록). 최근 방문부터, 펼치면 사람별 한 줄 */
+  function visitList(s) {
+    return '<h3 class="mvhead">방문 기록</h3><ul class="mvlist">' + s.visitsView.map(function (v) {
+      var id = esc(v.id);
+      var row = '<button type="button" class="mvrow" data-act="map-visit-toggle" data-v="' + id + '" aria-expanded="' + v.open + '" aria-controls="mv-' + id + '">' +
+        '<span class="mvrow__when"><b>' + esc(v.date) + '</b><span class="mvrow__nth"> · ' + v.nth + '번째</span></span>' +
+        '<span class="mvrow__chips">' + chipStar(s.meSlot, s.meName, v.me) + (s.hasPartner ? chipStar(s.partnerSlot, s.partnerName, v.partner) : '') + '</span>' +
+        '<svg class="mvrow__chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>';
+      var body = '';
+      if (v.open) {
+        var mine = v.me, mineTx = mine && mine.note ? esc(mine.note) : mine && mine.stars ? '<span class="mvnote__add">＋ 한 줄 남기기</span>' : '<span class="mvnote__add">＋ 별점 · 한 줄 남기기</span>';
+        body = '<div class="mvbody" id="mv-' + id + '">' +
+          '<button type="button" class="mvnote mvnote--mine" data-act="map-entry" data-v="' + id + '" aria-label="' + esc(v.date + ' 내 기록 ' + (mine ? '고치기' : '남기기')) + '">' + dot(s.meSlot) + '<b class="mvnote__who">' + esc(s.meName) + '</b><span class="mvnote__tx">' + mineTx + '</span></button>' +
+          (s.hasPartner ? '<div class="mvnote">' + dot(s.partnerSlot) + '<b class="mvnote__who">' + esc(s.partnerName) + '</b><span class="mvnote__tx' + (v.partner && v.partner.note ? '' : ' mvnote__tx--sub') + '">' +
+            (v.partner ? (v.partner.note ? esc(v.partner.note) : '한 줄은 안 남겼어요') : '아직 안 남겼어요') + '</span></div>' : '') + '</div>';
+      }
+      return '<li class="mvitem">' + row + body + '</li>';
+    }).join('') + '</ul><p class="mnote">줄을 누르면 메모가 펼쳐져요 · 내 칸을 누르면 별점과 한 줄을 남기거나 고쳐요</p>';
+  }
+  /** 기록 남기기 시트 (또 다녀왔어요 · 함께 다녀왔어요 · 내 기록 고치기 공통) */
+  function recordSheet(s) {
+    var f = s.form, editing = !!f.vid, starsHtml = '';
+    for (var i = 1; i <= 5; i++) starsHtml += '<button type="button" class="mrec__star' + (i <= (f.stars || 0) ? ' is-on' : '') + '" data-act="map-rec-star" data-v="' + i + '" role="radio" aria-checked="' + (f.stars === i) + '" aria-label="별 ' + i + '개">' + STAR + '</button>';
+    var title = esc(s.name) + ' · ' + (editing ? f.nth + '번째 방문' : (s.place && s.place.visits.length ? '또 다녀왔어요' : '함께 다녀왔어요'));
+    return '<div class="sheet__head"><h2 id="mapsheet-title" class="sheet__title">' + title + '</h2></div>' +
+      '<p class="sheet__sub">' + (editing ? esc(s.dateText) + ' · ' : f.nth + '번째 방문 · ') + '내 별점과 메모만 남겨요. 단짝은 자기 칸을 따로 채워요</p>' +
+      '<div class="mform">' +
+      (editing ? '' : '<label class="field"><span class="field__label">다녀온 날</span><input id="mp-date" class="field__input" type="date"' + (s.startKey ? ' min="' + esc(s.startKey) + '"' : '') + ' max="' + esc(s.todayKey) + '" value="' + esc(f.date) + '"></label>' +
+        (s.startText ? '<p class="mnote">다녀온 날은 단짝이 된 날(' + esc(s.startText) + ')부터 고를 수 있어요</p>' : '')) +
+      '<div class="field"><span class="field__label" id="mrec-label">' + dot(s.meSlot) + '내 별점</span>' +
+      '<div class="mrec__stars" role="radiogroup" aria-labelledby="mrec-label">' + starsHtml + '</div><p class="mnote">같은 별을 다시 누르면 지워져요 · 별점은 선택이에요</p></div>' +
+      '<label class="field"><span class="field__label">한 줄 메모 (선택)</span><input id="mp-note" class="field__input" type="text" maxlength="' + s.noteMax + '" autocomplete="off" enterkeyhint="done" placeholder="예: 익선동 붕어빵 또 먹으러 가자" value="' + esc(f.note) + '"></label>' +
+      (editing || !s.hasPartner ? '' : '<p class="mrec__nudge">' + dot(s.partnerSlot) + '저장하면 단짝에게 「별점을 남겨 주세요」 알림이 가요</p>') +
+      (f.error ? '<p class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
+      '<div class="rform__actions"><button type="button" class="ghost-btn" data-act="map-visit-cancel">돌아가기</button>' +
+      '<button type="button" class="solid-btn" data-act="map-visit-save"' + (f.saving ? ' disabled' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button></div>' +
+      // 방문 지우기는 확인을 받은 뒤 (두 사람 기록이 함께 사라지므로)
+      (editing ? '<div class="mdel"><button type="button" class="text-btn' + (f.confirmDelete ? ' text-btn--warn' : '') + '" data-act="map-visit-delete"' + (f.saving ? ' disabled' : '') + '>' +
+        (f.confirmDelete ? '한 번 더 누르면 이 방문과 두 사람 기록을 모두 지워요' : '방문 지우기') + '</button></div>' : '') + '</div>';
   }
 
   /** 가고 싶은 곳 칸. w = { rows: [{ code, no, name, note, again }] } */
@@ -198,7 +234,7 @@
       '<button type="button" class="close-btn" data-act="map-find-close">닫기</button></section></div>';
   }
 
-  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet, findResults: findResults, wishTab: wishTab, beenTab: beenTab, rankScreen: rankScreen, starCard: starCard };
+  var api = { HOME: HOME, mapSvg: mapSvg, screen: screen, sheet: sheet, findSheet: findSheet, findResults: findResults, wishTab: wishTab, beenTab: beenTab, rankScreen: rankScreen, summaryCard: summaryCard, visitList: visitList, recordSheet: recordSheet };
   root.RT = root.RT || {};
   root.RT.viewMap = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -6,10 +6,11 @@
    - weeklyReview   : 일요일 밤 9시, 이번 주 「모두 해낸 날 · 함께 끝낸 일」을 알리고 누르면 돌아보기 탭 (v37)
    - onTodoCreated · onTodoUpdated : 함께 할 일이 생기거나 끝나면 짝꿍에게 (v38, 누르면 할 일 탭)
    - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
+   - onPlaceWritten : 단짝 지도에 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「별점을 남겨 주세요」 (v54, 누르면 그 지역 시트)
    - parseMeal      : 단짝 식탁 — 적은 끼니 글을 Claude Haiku 로 구조만 정리 (영양 숫자는 앱이 계산, D4). 키는 Secret Manager
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
-const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
@@ -28,6 +29,7 @@ const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으�
 const LOOK_URL = APP_URL + '?tab=look';    // 일요일 돌아보기 알림은 돌아보기 탭으로
 const TODO_URL = APP_URL + '?tab=todo';    // 함께 할 일 알림은 할 일 탭으로
 const ICON = APP_URL + 'icons/icon-192.png';
+const REGIONS = require('./regions.json'); // 시군구코드 → 「서울 종로구」 (data/kr-map.json 에서 만든 표)
 
 /* 짝꿍 찾기 — 지금은 members 전체(두 사람)가 한 짝이다.
    여러 짝으로 넓힐 때는 이 함수만 pairs/<짝> 문서를 보도록 바꾸면 나머지는 그대로 쓴다. */
@@ -277,4 +279,22 @@ exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, m
   }
   logger.info('parseMeal ok', { uid, used, usage: out.usage });
   return { result, used, limit: M.LIMITS.perDay, model: M.MODEL };
+});
+
+// 단짝 지도 (v54): 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「OO 다녀온 기록이 생겼어요 · 별점을 남겨 주세요」 → 누르면 그 지역 시트.
+//  방문 하나에 한 번만 (notifyLog place_<코드>_<방문 id>). 짝꿍 알림 · 지도 알림(users.mapNudge) 둘 다 켜져 있어야.
+//  3일 안에 안 남겼을 때 다시 알리기는 하지 않는다 (나중 후보).
+exports.onPlaceWritten = onDocumentWritten('places/{code}', async (event) => {
+  const before = event.data && event.data.before && event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after) return;
+  const code = event.params.code;
+  for (const v of N.newVisits(before, after)) {
+    if (!(await once(`place_${code}_${v.id}`))) continue;
+    for (const p of await partnersOf(v.createdBy)) {
+      const pf = await prefsFor(p);
+      if (!pf.partner || !pf.map) continue;
+      await sendTo(p, N.mapMessage({ place: REGIONS[code] }), 'map', `map-${code}`, `${APP_URL}?tab=all&map=${code}`);
+    }
+  }
 });

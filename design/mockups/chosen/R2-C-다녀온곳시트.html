@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>C · 접힌 목록 (요약 → 펼치기)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+</head>
+<body>
+<style>
+body{margin:0;background:#E9E6EC}
+[data-theme]{--divider:var(--line);--input-bg:var(--surface);--icon:var(--sub);--tab-bg:var(--surface);--tab-inactive:var(--sub);--switch-knob:#FFFFFF;--strong:var(--primary);--primary-edge:var(--primary);--success:#2E7D4F;--warning:#9A5B00;--scrim:rgba(30,28,40,0.4);--shadow:0 -8px 24px rgba(30,28,40,0.08);--lift:0 1px 3px rgba(30,28,40,0.12);--font:'Pretendard','Tossface',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif}
+[data-theme="soft-pastel"]{color-scheme:light;--bg:#FFF8E7;--surface:#FFFFFF;--raised:#FCF4EE;--line:#EEE8E7;--text:#34313A;--sub:#6D6973;--faint:#C9C2CB;--primary:#F6DDE8;--on-primary:#34313A;--secondary:#DCD9FA;--accent:#BC7897;--tab-active:#94486B;--strong:#B4587F;--primary-edge:var(--accent);--tint:#FBEDF3;--tint-text:#8E4467;--both:#D98E94;--both-ink:#2A2730;--her:#D78EAD;--her-ink:#2A2730;--me:#B0A5E8;--me-ink:#2A2730;--empty:#F1EAE8;--empty-text:#5F5A66;--warn:#C62F3A}
+[data-theme="cosmic-dream"]{color-scheme:dark;--bg:#101426;--surface:#191D33;--raised:#232842;--line:#30334B;--text:#F4F2FF;--sub:#B5B5D0;--faint:#4C506E;--primary:#7557C8;--on-primary:#FFFFFF;--secondary:#292650;--accent:#8F74E0;--tab-active:#6CD8E8;--tint:#292650;--tint-text:#CFC3FF;--both:#A84F88;--both-ink:#FFFFFF;--her:#267C91;--her-ink:#FFFFFF;--me:#7052B8;--me-ink:#FFFFFF;--empty:#2B3050;--empty-text:#C9C9E0;--warn:#FF7B86;--success:#5BD08A;--warning:#F2B84B;--scrim:rgba(5,7,18,0.62);--shadow:0 -8px 24px rgba(0,0,0,0.45);--lift:0 1px 3px rgba(0,0,0,0.4)}
+.scr{box-sizing:border-box;background:var(--bg);color:var(--text);font-family:var(--font);position:relative;overflow:hidden;padding:20px 20px 0}
+.scr button{font:inherit;color:inherit}
+.caption{margin:0;font-size:13px;font-weight:500;color:var(--sub)}
+.title{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.dday{display:inline-flex;align-items:center;min-height:30px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--tint);color:var(--tint-text);font-size:13px;font-weight:700}
+.sec{margin:20px 4px 8px;font-size:13px;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:6px}
+.card{background:var(--surface);border-radius:20px;padding:14px 16px;box-sizing:border-box}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:4px;padding:4px 12px 8px;background:var(--tab-bg);border-top:1px solid var(--divider)}
+.tabbar button{flex:1 1 0;min-height:56px;border:0;background:none;padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--tab-inactive);font-size:12px;font-weight:600}
+.tabbar button[aria-current="page"]{color:var(--tab-active);font-weight:700}
+.seg{display:grid;gap:4px;padding:4px;border-radius:14px;background:var(--raised)}
+.seg button{min-height:40px;border:0;border-radius:10px;background:none;font-size:14px;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:700;box-shadow:var(--lift)}
+.iconbtn{width:44px;height:44px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--text)}
+.mnav{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.mnav b{font-size:17px;font-weight:700}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.d{display:flex;align-items:center;justify-content:center;border-radius:5px;font-weight:600;box-sizing:border-box}
+.d.me{background:var(--me);color:var(--me-ink)}
+.d.her{background:var(--her);color:var(--her-ink)}
+.d.full{background:var(--both);color:var(--both-ink)}
+.d.half{background:color-mix(in srgb,var(--both) 38%,var(--surface));color:var(--text)}
+.d.miss{background:var(--empty);color:var(--empty-text)}
+.d.rest{background:repeating-linear-gradient(135deg,var(--line) 0 2px,transparent 2px 5px);color:var(--sub)}
+.d.fut{background:transparent;color:var(--sub);box-shadow:inset 0 0 0 1px var(--line)}
+.d.today{box-shadow:inset 0 0 0 2px var(--text)}
+.wk{font-size:11px;font-weight:600;color:var(--sub);text-align:center}
+.stat{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:700;margin-top:10px}
+.stat span{color:var(--sub);font-weight:500}
+.lg{display:flex;flex-wrap:wrap;gap:10px 14px;margin:10px 2px 0;font-size:12px;color:var(--sub);font-weight:500}
+.lg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.strip{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:2px}
+.strip .d{height:22px;border-radius:3px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:var(--shadow);padding:8px 20px 28px;box-sizing:border-box}
+.grabber{display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sheet__title{margin:0;font-size:18px;font-weight:700}
+.sheet__sub{margin:4px 0 10px;font-size:13px;color:var(--sub)}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.stars{color:var(--strong);font-size:16px;letter-spacing:1px;white-space:nowrap}
+.stars i{font-style:normal;color:var(--faint)}
+.vh{font-size:13px;font-weight:700;color:var(--sub);margin:0 0 6px}
+.add{border:0;background:none;padding:0;color:var(--strong);font-size:14px;font-weight:700;min-height:32px;text-align:left}
+
+.btnrow{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;min-height:46px;border-radius:14px;border:1.5px solid var(--primary-edge);background:var(--primary);color:var(--on-primary);font-size:15px;font-weight:700;padding:0 12px}
+.btn2{flex:1;min-height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;padding:0 12px}
+</style>
+<div class="scr" data-theme="soft-pastel" style="width: 390px; height: 1000px">
+<div class="scrim"></div><div class="sheet" style="top: 56px"><span class="grabber"></span><div style="display: flex; align-items: center; gap: 8px"><h2 class="sheet__title">서울 종로구</h2><span class="chip" style="background: var(--both); color: var(--both-ink); min-height: 24px; font-size: 12px">함께 4번</span></div><p class="sheet__sub">다녀온 곳 별점 2위 · 마지막 10월 12일</p><div style="background: var(--raised); border-radius: 16px; padding: 12px 14px; display: flex; align-items: center; gap: 14px"><div style="display: flex; flex-direction: column; align-items: center; min-width: 96px"><span style="font-size: 32px; font-weight: 800; line-height: 1">4.1</span><span class="stars" style="font-size: 15px" aria-label="별점 4점">★★★★<i>★</i></span><span style="font-size: 12px; color: var(--sub); margin-top: 2px">별점 7개 평균</span></div><div style="flex: 1; display: flex; flex-direction: column; gap: 6px; border-left: 1px solid var(--line); padding-left: 14px"><div style="display: flex; align-items: center; gap: 6px; font-size: 14px"><span class="dot" style="background: var(--me)"></span><span style="flex: 1; font-weight: 600">준민</span><b>4.2</b><span style="color: var(--sub); font-size: 12px">· 4번</span></div><div style="display: flex; align-items: center; gap: 6px; font-size: 14px"><span class="dot" style="background: var(--her)"></span><span style="flex: 1; font-weight: 600">단짝</span><b>4.0</b><span style="color: var(--sub); font-size: 12px">· 3번</span></div></div></div><div class="btnrow"><button type="button" class="btn">또 다녀왔어요</button><button type="button" class="btn2">또 가고 싶어요</button></div><p class="sec" style="margin-top: 18px">방문 기록</p><div style="display: flex; flex-direction: column"><div style="border-bottom: 1px solid var(--divider);"><button type="button" aria-expanded="true" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; border: 0; background: none; padding: 0; text-align: left"><span style="flex: 1; font-size: 15px; font-weight: 600">10월 12일<span style="font-size: 12px; color: var(--sub); font-weight: 500"> · 4번째</span></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>★ 5</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--her); width: 8px; height: 8px"></span>★ 4</span><span style="color: var(--sub)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg></span></button><div style="display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px"><div style="background: var(--raised); border-radius: 12px; padding: 10px 12px; font-size: 15px; line-height: 22px"><b style="font-size: 12px; display: inline-flex; align-items: center; gap: 5px; margin-right: 6px"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>준민</b>첫 가을 여행 아주 재밌었다</div><div style="background: var(--raised); border-radius: 12px; padding: 10px 12px; font-size: 15px; line-height: 22px"><b style="font-size: 12px; display: inline-flex; align-items: center; gap: 5px; margin-right: 6px"><span class="dot" style="background: var(--her); width: 8px; height: 8px"></span>단짝</b>익선동 붕어빵 또 먹으러 가자</div></div></div><div style="border-bottom: 1px solid var(--divider);"><button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; border: 0; background: none; padding: 0; text-align: left"><span style="flex: 1; font-size: 15px; font-weight: 600">8월 3일<span style="font-size: 12px; color: var(--sub); font-weight: 500"> · 3번째</span></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>★ 3</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--sub)"><span class="dot" style="background: var(--her); width: 8px; height: 8px"></span>—</span><span style="color: var(--sub)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></div><div style="border-bottom: 1px solid var(--divider);"><button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; border: 0; background: none; padding: 0; text-align: left"><span style="flex: 1; font-size: 15px; font-weight: 600">5월 18일<span style="font-size: 12px; color: var(--sub); font-weight: 500"> · 2번째</span></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>★ 4</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--her); width: 8px; height: 8px"></span>★ 5</span><span style="color: var(--sub)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></div><div style=""><button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; border: 0; background: none; padding: 0; text-align: left"><span style="flex: 1; font-size: 15px; font-weight: 600">3월 1일<span style="font-size: 12px; color: var(--sub); font-weight: 500"> · 1번째</span></span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>★ 5</span><span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--text)"><span class="dot" style="background: var(--her); width: 8px; height: 8px"></span>★ 3</span><span style="color: var(--sub)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></button></div></div><p style="margin: 8px 4px 0; font-size: 13px; color: var(--sub)">줄을 누르면 메모가 펼쳐져요 · 비어 있으면 — </p></div>
+
+</div>
+<script>var t=new URLSearchParams(location.search).get("theme");if(t)document.querySelector("[data-theme]").setAttribute("data-theme",t);</script>
+</body>
+</html>
