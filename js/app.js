@@ -52,6 +52,7 @@
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
     todoNotifyOn: true,  // 함께 할 일 알림 (users/<uid>.todoNotify, 없으면 켬, v38)
     mapNudgeOn: true,    // 단짝 지도 새 방문 알림 (users/<uid>.mapNudge, 없으면 켬, v54)
+    reviewMonthView: null, // 돌아보기 달 보기 모양 (users/<uid>.reviewMonthView, v54) — card | strip | null(아직 안 고름 → 루틴 수로)
     routineView: 'time', // 루틴 묶어 보기 (users/<uid>.routineView, v44) — time | kind | manual
     missNotifyOn: true,  // 아침 8시 어제 놓친 루틴 알림 (users/<uid>.missNotify, 없으면 켬, v41)
     prefsReady: false,
@@ -223,7 +224,7 @@
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
-    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null,
+    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
@@ -500,6 +501,9 @@
       setReview(state.review.mode, state.review.page + rvDir);
     }
     else if (act === 'rv-now') { focusAfter = ['[data-act="rv-page"][data-dir="1"]']; setReview(state.review.mode, 0); }
+    else if (act === 'rv-view') setMonthView(btn.getAttribute('data-v'));
+    else if (act === 'rv-row') { state.review.row = btn.getAttribute('data-v'); state.sheetEntering = true; focusAfter = ['[data-act="rv-row-close"]']; focusInSheet = true; render(true); }
+    else if (act === 'rv-row-close') closeRvRow();
     else if (act === 'rv-retry') { state.review.key = null; state.review.kungs = []; render(true); }
     else if (act === 'archive-open') openArchive();
     else if (act === 'archive-more') loadArchive();
@@ -641,7 +645,7 @@
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
-    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null;
+    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.review.row = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaView = null; dropCrop();
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
@@ -715,6 +719,7 @@
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
     if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
+    if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietHomeModel()) : RT.viewAll.tab(allModel());
     if (state.tab === 'all' && state.diet && state.diet.log && !(state.diet.view === 'goal' && state.diet.form)) out.sheet = state.diet.log.step === 'confirm' && state.diet.log.result ? RT.viewDiet.confirmScreen(dietConfirmModel(), state.sheetEntering) : RT.viewDiet.logScreen(dietLogModel(), state.sheetEntering);
     if (state.tab === 'all' && state.diet && state.diet.view === 'goal' && state.diet.form) out.sheet = RT.viewDiet.goalScreen(dietGoalModel(), state.sheetEntering && !state.diet.basis) + (state.diet.basis ? RT.viewDiet.basisSheet({ needAck: state.diet.basis.needAck, notice: RT.dietGoal.NOTICE }, state.sheetEntering) : '');
@@ -742,10 +747,26 @@
     var m = RT.review.build({ mode: rv.mode, page: rv.page, today: state.today, config: fullConfig(), checks: RT.store.mergeChecks(state.server, state.pending),
       persons: planPeople(), todos: RT.review.mergeTodos(state.todoDocs, rv.todos), kungs: kungs, events: eventList(), nowMin: now.getHours() * 60 + now.getMinutes() });
     m.loading = rv.loading; m.error = rv.error;
+    if (m.routine.month) { var pi = partnerInfo(); m.monthView = RT.review.monthView(state.reviewMonthView, m.routine.month.count); m.meName = pi.meName; m.partnerName = pi.partnerName; }
     m.anniv = annivView(true);
     m.quest = rv.mode === 'week' && state.extras && state.extras.quests ? state.extras.quests[RT.review.rangeOf('week', state.today, rv.page).from] || null : null;
     return m;
   }
+  /** 달 보기 모양 고르기 (v54) — 사람마다 저장(users.reviewMonthView): 다른 기기에서도 같은 모양 */
+  function setMonthView(v) {
+    if (v !== 'card' && v !== 'strip') return;
+    state.reviewMonthView = v;
+    focusAfter = ['[data-act="rv-view"][data-v="' + v + '"]'];
+    render(true);
+    if (store && state.uid) store.saveValue(state.uid, 'reviewMonthView', v).catch(function () {}); // 저장이 안 돼도 이 기기에서는 바뀐 채로
+  }
+  /** 띠 줄을 눌렀을 때 시트 값 */
+  function rvRowModel() {
+    var m = reviewModel(), mo = m.routine.month; if (!mo) return null;
+    var row = null; mo.groups.forEach(function (g) { g.rows.forEach(function (r) { if (r.key === state.review.row) row = r; }); });
+    return row ? { row: row, lead: mo.lead, label: m.label } : null;
+  }
+  function closeRvRow() { var k = state.review.row; state.review.row = null; focusAfter = ['[data-act="rv-row"][data-v="' + k + '"]']; render(true); }
   function loadReview(key) {
     var rv = state.review;
     if (!store || !key || rv.key !== key) return; // 그사이 다른 기간으로 넘겼으면 그 기간 것만 불러온다
@@ -825,6 +846,7 @@
     var rv = state.review;
     rv.mode = mode === 'month' ? 'month' : 'week';
     rv.page = Math.max(0, page | 0);
+    rv.row = null;
     render(true);
   }
 
@@ -3072,7 +3094,7 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.review.row || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
@@ -3095,11 +3117,12 @@
     if (state.map) {
       if (state.map.rank) closeRank();
       else if (state.map.find) closeFind();
-      else if (state.map.sheet && ((state.map.sheet.mode === 'visit' && state.map.sheet.back) || state.map.sheet.mode === 'edit')) { state.map.sheet = { mode: 'view' }; render(true); }
+      else if (state.map.sheet && state.map.sheet.mode === 'record' && state.map.sheet.back) { state.map.sheet = { mode: 'view', open: state.map.sheet.open }; render(true); }
       else if (state.map.sel) mapUnsel();
       else closeMap();
       return;
     }
+    if (state.review.row) { closeRvRow(); return; }
     if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }
     if (state.growOpen) { closeGrow(); return; }
     if (state.place) { if (state.place.ask) { state.place.ask = null; render(true); } else closePlace(); return; }
@@ -3178,7 +3201,7 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.review.row && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
@@ -3335,6 +3358,7 @@
         state.missNotifyOn = !(doc && doc.missNotify === false);
         state.mapNudgeOn = !(doc && doc.mapNudge === false);
         if (doc && (doc.routineView === 'time' || doc.routineView === 'kind' || doc.routineView === 'manual')) state.routineView = doc.routineView;
+        if (doc && (doc.reviewMonthView === 'card' || doc.reviewMonthView === 'strip')) { var mvChanged = state.reviewMonthView !== doc.reviewMonthView; state.reviewMonthView = doc.reviewMonthView; if (mvChanged && state.tab === 'look' && state.status === 'ready') render(); }
         var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};
         var colorsChanged = JSON.stringify(colors) !== JSON.stringify(state.colors);
         state.colors = colors;

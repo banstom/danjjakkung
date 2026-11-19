@@ -27,6 +27,7 @@
       '<span class="grid-title"><span class="grid-range">' + esc(m.label) + '</span>' +
       (m.page > 0 ? '<button type="button" class="mini-btn" data-act="rv-now">이번 ' + unit + '</button>' : '') + '</span>' +
       '<button type="button" class="icon-btn" data-act="rv-page" data-dir="-1" aria-label="다음 ' + unit + '"' + (m.canNext ? '' : ' disabled') + '>' + CHEVRON.next + '</button>' +
+      (m.mode === 'month' && m.monthView ? viewSwitch(m.monthView) : '') +
       '</div>' +
       '<h2 class="rv-title">' + esc(m.title) + '</h2>' +
       // 끝낸 일 · 꿍은 기간을 넘길 때마다 새로 불러온다 — 불러오는 동안은 앞 기간 값(대개 0)이 잠깐 보이지 않게 「–」
@@ -41,8 +42,76 @@
     }).join('');
   }
 
-  function routineCard(rt) {
+  // ── v54 R1: 달 보기 = 루틴마다 한 달 (A 카드 · B 띠). 목업 design/mockups/chosen/R1-A-카드 · R1-B-띠 ──
+  var ICON_CARD = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>';
+  var ICON_STRIP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+  var DOWS = ['월', '화', '수', '목', '금', '토', '일'];
+  function viewSwitch(v) {
+    return '<span class="rv-vsw" role="group" aria-label="달 보기 모양">' +
+      '<button type="button" class="rv-vsw__btn" data-act="rv-view" data-v="card" aria-label="카드로 보기" aria-pressed="' + (v === 'card') + '">' + ICON_CARD + '</button>' +
+      '<button type="button" class="rv-vsw__btn" data-act="rv-view" data-v="strip" aria-label="띠로 보기" aria-pressed="' + (v === 'strip') + '">' + ICON_STRIP + '</button></span>';
+  }
+  /** 칸 하나. c = { n, st, today }, slot = 루틴 주인 색(me | her) | null(「모두」), nums = 숫자 보이기 */
+  function dcell(c, slot, nums) {
+    var st = c.st === 'done' ? 'rv-d--' + (slot || 'me') : c.st === 'miss' || c.st === 'none' ? 'rv-d--miss' : c.st === 'full' ? 'rv-d--full' : c.st === 'half' ? 'rv-d--half' : c.st === 'rest' ? 'rv-d--rest' : 'rv-d--fut';
+    return '<span class="rv-d ' + st + (c.today ? ' rv-d--today' : '') + '">' + (nums ? '<span class="rv-d__n">' + c.n + '</span>' : '') + '</span>';
+  }
+  function cal(cells, lead, slot, cls, label, dows) {
+    var out = '<div class="rv-cal ' + cls + '" role="img" aria-label="' + esc(label) + '">';
+    if (dows) out += DOWS.map(function (d) { return '<span class="rv-cal__dow" aria-hidden="true">' + d + '</span>'; }).join('');
+    for (var i = 0; i < lead; i++) out += '<span class="rv-d rv-d--blank" aria-hidden="true"></span>';
+    return out + cells.map(function (c) { return dcell(c, slot, true); }).join('') + '</div>';
+  }
+  function rowLabel(r, month) { return r.name + ' ' + month + ': 해야 했던 ' + r.due + '일 중 ' + r.done + '일 해냄' + (r.due ? ' (' + r.pct + '%)' : ''); }
+  function monthCard(rt, mm, label) {
+    var mo = rt.month;
+    var all = '<section class="card rv-mall" aria-label="모두"><div class="rv-mall__head"><h2 class="rv-title">모두</h2><span class="rv-sub">둘 다 해낸 날 <b>' + mo.bothDays + '일</b> / 지난 날 ' + mo.pastDays + '일</span></div>' +
+      cal(mo.all, mo.lead, null, 'rv-cal--big', '모두 ' + label + ': 지난 ' + mo.pastDays + '일 중 둘 다 해낸 날 ' + mo.bothDays + '일', true) +
+      '<div class="legend rv-lg"><span class="legend__item"><span class="swatch rv-d--full"></span>둘 다 해냄</span><span class="legend__item"><span class="swatch rv-d--half"></span>한 사람만</span><span class="legend__item"><span class="swatch rv-d--miss"></span>둘 다 못 함</span></div></section>';
+    var people = mo.groups.map(function (g) {
+      return '<h3 class="rv-mwho"><span class="dot dot--' + esc(g.slot) + '"></span>' + esc(g.name) + '</h3><div class="rv-mgrid">' + g.rows.map(function (r) {
+        return '<section class="card rv-mcard" aria-label="' + esc(r.name) + '"><h4 class="rv-mcard__name">' + esc(r.name) + '</h4>' +
+          cal(r.cells, mo.lead, g.slot, 'rv-cal--sm', rowLabel(r, label), false) +
+          '<p class="rv-mcard__stat" aria-hidden="true">✓ ' + r.done + '/' + r.due + ' · ' + r.pct + '%</p></section>';
+      }).join('') + '</div>';
+    }).join('');
+    return all + people + legendMonth();
+  }
+  function legendMonth() {
+    return '<div class="legend rv-lg rv-lg--foot"><span class="legend__item"><span class="swatch rv-d--me"></span>해냄(사람 색)</span><span class="legend__item"><span class="swatch rv-d--miss"></span>못 함</span>' +
+      '<span class="legend__item"><span class="swatch rv-d--rest"></span>쉬는 날 · 만들기 전</span><span class="legend__item"><span class="swatch rv-d--fut"></span>오늘 이후</span></div>';
+  }
+  function monthStrip(rt, mm, label) {
+    var mo = rt.month, n = mo.all.length;
+    var scale = '<div class="rv-strip rv-strip--scale" style="--n:' + n + '" aria-hidden="true">' + mo.all.map(function (c) { return '<span>' + (c.mon || c.n === 1 ? c.n : '') + '</span>'; }).join('') + '</div>';
+    function strip(cells, slot) { return '<div class="rv-strip" style="--n:' + n + '" aria-hidden="true">' + cells.map(function (c) { return dcell(c, slot, false); }).join('') + '</div>'; }
+    var rows = '<div class="rv-srow rv-srow--all" role="img" aria-label="' + esc('모두 ' + label + ': 둘 다 해낸 날 ' + mo.bothDays + '일') + '"><span class="rv-srow__head"><b class="rv-srow__name">모두</b><span class="rv-srow__n">둘 다 ' + mo.bothDays + '일</span></span>' + strip(mo.all, null) + '</div>';
+    mo.groups.forEach(function (g) {
+      g.rows.forEach(function (r) {
+        rows += '<button type="button" class="rv-srow" data-act="rv-row" data-v="' + esc(r.key) + '" aria-label="' + esc(rowLabel(r, label) + ' · 한 달 달력 보기') + '">' +
+          '<span class="rv-srow__head"><span class="dot dot--' + esc(g.slot) + '"></span><b class="rv-srow__name">' + esc(r.name) + '</b><span class="rv-srow__n">' + r.done + '/' + r.due + ' · ' + r.pct + '%</span></span>' + strip(r.cells, g.slot) + '</button>';
+      });
+    });
+    return '<section class="card rv-sbox" aria-label="루틴 한 달">' + scale + rows + '</section>' +
+      '<div class="legend rv-lg rv-lg--foot"><span class="legend__item"><span class="swatch rv-d--me"></span>' + esc(mm.meName || '나') + '</span><span class="legend__item"><span class="swatch rv-d--her"></span>' + esc(mm.partnerName || '단짝') + '</span>' +
+      '<span class="legend__item"><span class="swatch rv-d--full"></span>모두</span><span class="legend__item"><span class="swatch rv-d--miss"></span>못 함</span><span class="legend__item"><span class="swatch rv-d--rest"></span>쉬는 날</span></div>' +
+      '<p class="rv-note rv-note--sub">숫자는 월요일 · 줄을 누르면 그 루틴의 한 달 달력</p>';
+  }
+  /** 띠 줄을 누르면: 그 루틴의 한 달 달력 (A 의 작은 카드를 크게). s = { row, lead, label } */
+  function rowSheet(s, entering) {
+    var r = s.row;
+    return '<div class="sheet-layer"><button type="button" class="scrim" data-act="rv-row-close" aria-label="닫기"></button>' +
+      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="rvrow-title"><span class="grabber" aria-hidden="true"></span>' +
+      '<div class="sheet__head"><h2 id="rvrow-title" class="sheet__title"><span class="dot dot--' + esc(r.slot) + '"></span> ' + esc(r.name) + '</h2></div>' +
+      '<p class="sheet__sub">' + esc(s.label) + '</p>' +
+      cal(r.cells, s.lead, r.slot, 'rv-cal--big', rowLabel(r, s.label), true) +
+      '<p class="rv-mcard__stat rv-mcard__stat--big" aria-hidden="true">✓ ' + r.done + '/' + r.due + ' · ' + r.pct + '%</p>' + legendMonth() +
+      '<button type="button" class="close-btn" data-act="rv-row-close">닫기</button></section></div>';
+  }
+
+  function routineCard(rt, mm) {
     if (!rt.groups.length) return '';
+    if (rt.month && mm && mm.monthView) return mm.monthView === 'strip' ? monthStrip(rt, mm, mm.label) : monthCard(rt, mm, mm.label);
     var body;
     if (rt.week) {
       body = '<div class="rv-grid"><span></span>' + rt.dows.map(function (d) { return '<span class="dow">' + d + '</span>'; }).join('');
@@ -166,10 +235,10 @@
     var quest = m.quest && RT.view ? '<section class="card quest quest--review" aria-label="이 주 퀘스트"><span class="quest__head"><span class="quest__title">' +
       (m.page === 0 ? '이번 주 퀘스트' : '이 주 퀘스트') + '</span><span class="quest__hint">' + (m.quest.allDone ? '보너스까지 성공!' : m.quest.done ? '퀘스트 성공 · 토마토 +5' : m.page === 0 ? '일요일까지 둘이 함께' : '이 주는 아쉬웠어요') + '</span></span>' +
       RT.view.questBody(m.quest) + '</section>' : '';
-    return out + quest + routineCard(m.routine) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
+    return out + quest + routineCard(m.routine, m) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
   }
 
-  var api = { tab: tab, annivCard: annivCard, annivSheet: annivSheet };
+  var api = { tab: tab, annivCard: annivCard, annivSheet: annivSheet, rowSheet: rowSheet, viewSwitch: viewSwitch };
   root.RT = root.RT || {};
   root.RT.viewReview = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

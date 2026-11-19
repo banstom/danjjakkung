@@ -704,8 +704,33 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act') + ':' + document.activeElement.getAttribute('data-dir')), 'rv-page:1');
   await jm.click('[data-act="rv-mode"][data-v="month"]'); await jm.waitForTimeout(250);
   assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '이번 달 우리');
-  assert.ok((await jm.$$('.rv-bar--routine')).length > 0, '달 보기는 루틴 막대');
+  // (v54 R1) 달 보기 = 루틴마다 한 달 달력 · 카드 | 띠 · 처음엔 루틴 수로 (4개 이하 카드, 5개 이상 띠)
+  assert.ok(!(await jm.$('.rv-bar--routine')), 'v54: 달 보기는 막대 대신 달력');
+  const rvCount = await jm.evaluate(() => document.querySelectorAll('.rv-mcard, button.rv-srow').length);
+  assert.ok(rvCount > 0, '루틴마다 하나');
+  assert.strictEqual(await jm.getAttribute(`[data-act="rv-view"][data-v="${rvCount >= 5 ? 'strip' : 'card'}"]`, 'aria-pressed'), 'true', '처음 모양 = 루틴 수로 (' + rvCount + '개)');
+  await jm.click('[data-act="rv-view"][data-v="card"]'); await jm.waitForTimeout(150);
+  assert.ok(await jm.$('.rv-mall .rv-cal--big') && (await jm.$$('.rv-mcard')).length === rvCount, '카드: 모두 + 루틴마다 작은 달력');
+  assert.ok(await jm.$('.rv-d--today'), '오늘 테두리');
+  assert.strictEqual(docs.get('users/' + jmUid0).reviewMonthView, 'card', '고르면 사람마다 저장 (users.reviewMonthView)');
+  await jm.screenshot({ path: path.join(OUT, 'review-month-card.png'), fullPage: true });
+  await jm.click('[data-act="rv-view"][data-v="strip"]'); await jm.waitForTimeout(150);
+  assert.strictEqual(docs.get('users/' + jmUid0).reviewMonthView, 'strip');
+  assert.ok(!(await jm.evaluate(() => Object.keys(localStorage).some((k) => /month/i.test(k)))), '기기에는 저장하지 않음');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-v')), 'strip', '고른 뒤 포커스 그대로');
   await jm.screenshot({ path: path.join(OUT, 'review-month.png'), fullPage: true });
+  await jm.click('button.rv-srow'); await jm.waitForSelector('#rvrow-title');
+  assert.ok(await jm.$('.sheet .rv-cal--big .rv-cal__dow'), '줄을 누르면 그 루틴의 한 달 달력 시트');
+  await jm.screenshot({ path: path.join(OUT, 'review-month-row.png') });
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
+  assert.ok(!(await jm.$('#rvrow-title')), 'Esc 로 닫힘');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'rv-row', '닫으면 누른 줄로 포커스');
+  for (const v of ['strip', 'card']) for (const w of [320, 375]) {
+    await jm.click(`[data-act="rv-view"][data-v="${v}"]`); await jm.setViewportSize({ width: w, height: 760 }); await jm.waitForTimeout(100);
+    assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${w}px 달 보기(${v}) 넘침 없음`);
+    await jm.screenshot({ path: path.join(OUT, `review-month-${v}-${w}.png`), fullPage: true });
+  }
+  await jm.setViewportSize({ width: 390, height: 844 });
   await jm.click('[data-act="rv-mode"][data-v="week"]'); await jm.waitForTimeout(250);
   await dj.click('[data-act="tab"][data-tab="look"]'); await dj.waitForSelector('.rv-us'); await dj.waitForTimeout(250);
   assert.strictEqual(await rvNums(dj), await rvNums(jm), '두 사람 화면 숫자가 같다');
@@ -1875,6 +1900,17 @@ async function tick(page, dateKey, key) {
       await jm.click(`[data-act="tab"][data-tab="${tab}"]`);
       await jm.waitForTimeout(120);
       await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });
+      if (tab === 'look') { // v54 R1: 달 보기 카드 · 띠
+        await jm.click('[data-act="rv-mode"][data-v="month"]'); await jm.waitForTimeout(120);
+        for (const v of ['card', 'strip']) { await jm.click(`[data-act="rv-view"][data-v="${v}"]`); await jm.waitForTimeout(80); await jm.screenshot({ path: path.join(OUT, `theme-${id}-month-${v}.png`), fullPage: true }); }
+        await jm.click('[data-act="rv-mode"][data-v="week"]');
+      }
+      if (tab === 'all') { // v54 R2: 다녀온 곳 시트
+        await jm.click('[data-act="all-map"]'); await jm.waitForSelector('#km .rg'); await jm.click('[data-act="map-seg"][data-v="been"]');
+        await jm.click('.mrow__main[data-v="52190"]'); await jm.waitForSelector('.mvlist'); await jm.waitForTimeout(80);
+        await jm.screenshot({ path: path.join(OUT, `theme-${id}-map-been.png`) });
+        await jm.keyboard.press('Escape'); await jm.click('[data-act="map-close"]'); await jm.waitForSelector('.all');
+      }
     }
     // 요일 목록 카드: 화(매주 · 한 번) · 토(함께 · 한 번)
     for (const [i, name] of [[1, 'tue'], [5, 'sat']]) {

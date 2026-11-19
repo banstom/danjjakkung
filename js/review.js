@@ -101,6 +101,40 @@
     });
     var allDays = allCells.filter(function (c) { return c === 'full'; }).length;
 
+    // ── v54 R1: 달 보기 = 루틴마다 한 달 달력 (카드 · 띠). %와 n/m 은 '해야 했던 날' 기준 — 쉬는 요일 · 만들기 전 · 오늘 · 오늘 이후는 뺀다 ──
+    var month = null;
+    if (r.mode === 'month') {
+      var lead = r.from - S.monStart(r.from); // 1일 앞 빈칸 (월요일 시작)
+      var rowCount = 0;
+      var mGroups = groups.map(function (g) {
+        return { key: g.key, name: g.name, slot: g.slot, rows: g.rows.map(function (row) {
+          var x = routines.filter(function (y) { return y.key === row.key; })[0], dn = 0, due = 0;
+          rowCount++;
+          var mc = days.map(function (day) {
+            var st;
+            if (day > today) st = 'future';
+            else if (!M.activeOn(x, day)) st = 'rest'; // 쉬는 요일 · 만들기 전 · 지운 뒤 = 빗금
+            else if (day === today) st = isDone(x, day) ? 'done' : 'open'; // 오늘은 아직 '못 함'으로 치지 않음
+            else { due++; if (isDone(x, day)) { dn++; st = 'done'; } else st = 'miss'; }
+            return { n: D.parts(day).d, st: st, today: day === today, mon: S.weekdayOf(day) === 0 };
+          });
+          return { key: row.key, icon: row.icon, name: row.name, slot: g.slot, cells: mc, done: dn, due: due, pct: due ? Math.round(dn / due * 100) : 0 };
+        }) };
+      });
+      var bothN = 0, pastN = 0;
+      var mAll = days.map(function (day) {
+        var st;
+        if (day > today) st = 'future';
+        else {
+          var lv = M.dayLevel(routines, keys, day, isDone).level; // 루틴 탭 달력의 「모두」와 같은 규칙: full · half · none
+          if (day < today) { pastN++; if (lv === 'full') bothN++; }
+          st = lv === 'pre' || lv === 'rest' ? 'rest' : day === today && lv !== 'full' ? 'open' : lv;
+        }
+        return { n: D.parts(day).d, st: st, today: day === today, mon: S.weekdayOf(day) === 0 };
+      });
+      month = { lead: lead, count: rowCount, groups: mGroups, all: mAll, bothDays: bothN, pastDays: pastN };
+    }
+
     // ── 끝낸 일 ──
     var seen = {};
     var done = (o.todos || []).filter(function (t) {
@@ -143,14 +177,17 @@
       canPrev: r.from > earliest, canNext: r.page > 0,
       us: { allDays: allDays, togetherDone: together, kungs: kungOk ? kungs.length : null, togetherTime: hoursText(togetherMin), togetherMin: togetherMin },
       routine: { week: r.mode === 'week', dows: r.mode === 'week' ? ['월', '화', '수', '목', '금', '토', '일'] : [], groups: groups, all: allCells, done: cellsDone, total: cellsAll,
-        hasRest: allCells.indexOf('rest') >= 0 || groups.some(function (g) { return g.rows.some(function (x) { return x.cells.indexOf('rest') >= 0; }); }) },
+        hasRest: allCells.indexOf('rest') >= 0 || groups.some(function (g) { return g.rows.some(function (x) { return x.cells.indexOf('rest') >= 0; }); }), month: month },
       todos: { total: done.length, quads: QUADS.map(function (q) { return { key: q.key, label: q.label, n: quad[q.key] }; }), plan: quad.plan, unplaced: unplaced, byWho: byWho },
       kung: kungOk ? { n: kungs.length, rescued: rescued } : null,
       empty: !hasAny
     };
   }
 
-  var api = { rangeOf: rangeOf, quadOf: quadOf, hoursText: hoursText, mergeTodos: mergeTodos, build: build, QUADS: QUADS, FIRST_DAY: FIRST_DAY };
+  /** 달 보기 모양: 고른 값(users.reviewMonthView) → 없으면 보이는 루틴이 4개 이하면 카드, 5개 이상이면 띠 */
+  function monthView(saved, count) { return saved === 'card' || saved === 'strip' ? saved : count >= 5 ? 'strip' : 'card'; }
+
+  var api = { monthView: monthView, rangeOf: rangeOf, quadOf: quadOf, hoursText: hoursText, mergeTodos: mergeTodos, build: build, QUADS: QUADS, FIRST_DAY: FIRST_DAY };
   root.RT = root.RT || {};
   root.RT.review = api;
   if (NODE) module.exports = api;

@@ -197,3 +197,95 @@ test('회귀: 기간을 넘겨 불러오는 동안 「함께 끝낸 일」 · �
   // 꿍을 못 불러온 기간은 불러오는 중에도 칸 없음
   assert.equal(val(V.tab(Object.assign({}, m, { us: Object.assign({}, m.us, { kungs: null }), loading: true, error: '' })), '꿍 주고받음'), undefined);
 });
+
+// ── v54 R1: 돌아보기 「달」 — 루틴마다 한 달 (카드 · 띠) ──
+test('v54 달: %와 n/m 은 해야 했던 날 기준 — 만들기 전 · 쉬는 날 · 오늘 · 오늘 이후는 뺌', () => {
+  const t = day(11, 19); // 목요일
+  const rs = [routine('a', JUN, '준민', '2026-11-01'), routine('b', JUN, '준민', '2026-11-10', { rest: [{ from: '2026-11-12', to: '2026-11-13' }] }), routine('c', DAJIN, '다진', '2026-11-01')];
+  const cks = {};
+  for (let d = 1; d <= 19; d++) { const k = '2026-11-' + String(d).padStart(2, '0'); if (d % 3) cks['a|' + k] = true; cks['c|' + k] = true; if (d >= 10) cks['b|' + k] = true; }
+  const m = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: rs }, checks: cks }));
+  const mo = m.routine.month;
+  assert.equal(mo.lead, 6, '11/1 은 일요일 → 앞 빈칸 6 (월요일 시작)');
+  assert.equal(mo.count, 3);
+  const a = mo.groups[1].rows[0], b = mo.groups[1].rows[1];
+  assert.deepEqual([a.done, a.due], [12, 18], '오늘(19일)은 분모에서 뺌');
+  assert.equal(a.pct, 67);
+  assert.equal(a.cells[18].st, 'done', '오늘 한 것은 색으로 (분모에는 안 들어감)'); assert.equal(a.cells[17].st, 'miss', '18일은 못 함');
+  assert.deepEqual([b.done, b.due], [7, 7], '만들기 전 9일 · 쉬는 날 2일 빠짐 (10~18일 중 12·13일 쉼)');
+  assert.equal(b.cells[0].st, 'rest', '만들기 전 = 빗금'); assert.equal(b.cells[11].st, 'rest', '쉬는 날 = 빗금');
+  assert.equal(b.cells[19].st, 'future'); assert.equal(b.cells[29].st, 'future');
+  assert.ok(a.cells[18].today && !a.cells[17].today);
+  assert.deepEqual(mo.groups.map((g) => g.slot), ['her', 'me']);
+});
+
+test('v54 달: 오늘 한 일은 색으로 보이되 분모에 안 들어감 · 지운 루틴은 지운 날 뒤로 빗금', () => {
+  const t = day(11, 19);
+  const rs = [routine('a', JUN, '준민', '2026-11-01', { end: '2026-11-10' })];
+  const m = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: rs }, checks: { 'a|2026-11-19': true, 'a|2026-11-02': true }, persons: [{ key: JUN, name: '준민', slot: 'me' }] }));
+  const a = m.routine.month.groups[0].rows[0];
+  assert.equal(a.cells[10].st, 'rest', '지운 다음 날부터 빗금'); assert.equal(a.due, 10); assert.equal(a.done, 1);
+  const m2 = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: [routine('x', JUN, '준민', '2026-11-01')] }, checks: { 'x|2026-11-19': true }, persons: [{ key: JUN, name: '준민', slot: 'me' }] }));
+  const x = m2.routine.month.groups[0].rows[0];
+  assert.equal(x.cells[18].st, 'done', '오늘 했으면 색'); assert.equal(x.due, 18); assert.equal(x.done, 0);
+});
+
+test('v54 달: 「모두」 칸은 루틴 탭 달력(model.dayLevel)과 같은 날 같은 값 · 둘 다 해낸 날 / 지난 날', () => {
+  const M = require('../js/model.js');
+  const t = day(11, 19);
+  const rs = [routine('a', JUN, '준민', '2026-11-01'), routine('c', DAJIN, '다진', '2026-11-01')];
+  const cks = { 'a|2026-11-02': true, 'c|2026-11-02': true, 'a|2026-11-03': true, 'c|2026-11-19': true, 'a|2026-11-19': true };
+  const m = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: rs }, checks: cks }));
+  const mo = m.routine.month, set = M.routinesFrom({ routines: rs });
+  for (let d = 1; d <= 18; d++) {
+    const lv = M.dayLevel(set, [DAJIN, JUN], day(11, d), (r, x) => !!cks[r.key + '|' + D.toKey(x)]).level;
+    assert.equal(mo.all[d - 1].st, lv, d + '일');
+  }
+  assert.equal(mo.all[1].st, 'full'); assert.equal(mo.all[2].st, 'half'); assert.equal(mo.all[3].st, 'none');
+  assert.equal(mo.all[18].st, 'full', '오늘 다 했으면 색'); assert.equal(mo.all[19].st, 'future');
+  assert.deepEqual([mo.bothDays, mo.pastDays], [1, 18]);
+  assert.equal(R.build(base({ mode: 'week', page: 0, today: t, config: { people: {}, routines: rs }, checks: cks })).routine.month, null, '주 보기는 그대로');
+});
+
+test('v54 달 보기 모양: 처음엔 루틴 4개 이하 카드 · 5개 이상 띠 · 한 번 고르면 그 값', () => {
+  assert.equal(R.monthView(null, 4), 'card');
+  assert.equal(R.monthView(null, 5), 'strip');
+  assert.equal(R.monthView(undefined, 0), 'card');
+  assert.equal(R.monthView('card', 9), 'card');
+  assert.equal(R.monthView('strip', 1), 'strip');
+  assert.equal(R.monthView('weird', 6), 'strip');
+});
+
+test('v54 달 화면: 카드(모두 + 사람별 2칸) · 띠(줄 = 버튼 → 시트) · 전환 버튼 · 규칙', () => {
+  const VR = require('../js/view-review.js');
+  const fs = require('fs'), path = require('path');
+  const t = day(11, 19);
+  const rs = [routine('a', JUN, '준민', '2026-11-01'), routine('c', DAJIN, '다진', '2026-11-01')];
+  const m = R.build(base({ mode: 'month', page: 0, today: t, config: { people: {}, routines: rs }, checks: { 'a|2026-11-02': true } }));
+  const card = VR.tab(Object.assign({}, m, { monthView: 'card', meName: '준민', partnerName: '다진' }));
+  assert.match(card, /data-act="rv-view" data-v="card" aria-label="카드로 보기" aria-pressed="true"/);
+  assert.match(card, /data-act="rv-view" data-v="strip" aria-label="띠로 보기" aria-pressed="false"/);
+  assert.match(card, /<h2 class="rv-title">모두<\/h2><span class="rv-sub">둘 다 해낸 날 <b>0일<\/b> \/ 지난 날 18일/);
+  assert.equal((card.match(/class="card rv-mcard"/g) || []).length, 2);
+  assert.match(card, /rv-cal--sm[^]*rv-d--blank[^]*rv-d--me/, '1일 앞 빈칸 · 해낸 칸 = 사람 색');
+  assert.match(card, /rv-d--fut rv-d--today|rv-d--[a-z]+ rv-d--today/, '오늘 테두리');
+  assert.match(card, /✓ 1\/18 · 6%/);
+  assert.doesNotMatch(card, /rv-bar__track/, '막대 대신 달력');
+  const strip = VR.tab(Object.assign({}, m, { monthView: 'strip', meName: '준민', partnerName: '다진' }));
+  assert.match(strip, /data-act="rv-row" data-v="a"[^]*1\/18 · 6%/);
+  assert.match(strip, /숫자는 월요일 · 줄을 누르면 그 루틴의 한 달 달력/);
+  assert.match(strip, /rv-strip--scale" style="--n:30"/);
+  const row = m.routine.month.groups[1].rows[0];
+  const sh = VR.rowSheet({ row, lead: m.routine.month.lead, label: m.label });
+  assert.match(sh, /role="dialog"[^]*rv-cal--big[^]*rv-cal__dow[^]*✓ 1\/18 · 6%/);
+  const week = VR.tab(Object.assign({}, R.build(base()), { monthView: 'card' }));
+  assert.doesNotMatch(week, /rv-view/, '주 보기에는 전환 없음');
+  const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.match(rules, /request\.resource\.data\.reviewMonthView in \['card', 'strip'\]/);
+  assert.match(rules, /request\.resource\.data\.mapNudge is bool/);
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles/app.css'), 'utf8');
+  assert.match(css, /\.rv-cal--big \.rv-d \{ height: 30px;/); assert.match(css, /\.rv-cal--sm \.rv-d \{ height: 18px; font-size: 10px;/); assert.match(css, /\.rv-strip \.rv-d \{ height: 22px;/);
+  assert.match(css, /@media \(max-width: 359px\) \{\s*\.rv-cal--sm \.rv-d__n \{ display: none; \}/, '320px 에서는 작은 칸 숫자 빼기');
+  const r1 = css.slice(css.indexOf('/* ── v54 돌아보기'));
+  assert.doesNotMatch(r1.replace(/\/\*[^]*?\*\//g, ''), /#[0-9a-fA-F]{3,8}\b/, '색은 토큰만');
+});
