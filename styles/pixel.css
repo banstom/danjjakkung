@@ -1,0 +1,459 @@
+/* 픽셀 스킨 — 도트 테마(겨울 업데이트: winter-snack · merry-xmas, 낮 · 밤 판)에서만 켜진다.
+   켜는 법: <html data-theme="winter-snack" data-skin="pixel"> (js/themes.js 가 단다). 다른 테마는 이 파일의 어떤 규칙에도 걸리지 않는다.
+   명세 docs/themes-winter/spec.md 4 · 5절, 초안 docs/themes-winter/pixel-skin-draft.css 를 앱 부품 이름에 옮긴 것.
+   색은 전부 tokens.css 토큰 (이 파일에도 색 값을 쓰지 않는다 — tests/themes-winter.test.js 가 확인). */
+
+/* 1. 글꼴 — Galmuri (SIL OFL 1.1, fonts/galmuri/OFL.md). 자주 쓰는 글자만 잘라 둠: scripts/galmuri-subset.py
+   글꼴 파일은 이 글꼴을 쓰는 글자가 화면에 있을 때만 내려받는다 → 다른 테마 사용자는 받지 않음 */
+@font-face { font-family: 'Galmuri11'; src: url('../fonts/galmuri/Galmuri11.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Galmuri11'; src: url('../fonts/galmuri/Galmuri11-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Galmuri14'; src: url('../fonts/galmuri/Galmuri14.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+
+[data-skin="pixel"] {
+  --px-font-11: 'Galmuri11', 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --px-font-14: 'Galmuri14', 'Galmuri11', 'Pretendard', 'Tossface', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font: var(--px-font-14);
+  /* 픽셀 테두리 — 네 방향 3px 외곽선(모서리 한 칸이 파여 둥글게 보임) + 아래 각진 그림자 */
+  --px-frame: 0 -3px 0 var(--ol), 0 3px 0 var(--ol), -3px 0 0 var(--ol), 3px 0 0 var(--ol);
+  --px-frame-2: 0 -2px 0 var(--ol), 0 2px 0 var(--ol), -2px 0 0 var(--ol), 2px 0 0 var(--ol);
+  --px-drop: 0 9px 0 var(--sh), 3px 6px 0 var(--sh), -3px 6px 0 var(--sh);
+}
+/* 도트 글꼴은 가짜 굵게 · 부드럽게를 끈다 (Galmuri14 에는 굵은 판이 없어 굵기 대신 크기 · 색으로 위계) */
+[data-skin="pixel"] body { font-synthesis: none; -webkit-font-smoothing: none; text-rendering: optimizeSpeed; }
+
+/* 2. 바탕 · 머리 장식 — 그림은 themes/<테마>/{bg,head}[-night].svg (토큰 --bg-art · --head-art) */
+[data-skin="pixel"] body {
+  background-color: var(--bg);
+  background-image: var(--bg-art), repeating-conic-gradient(var(--checker) 0 25%, transparent 0 50%);
+  background-size: var(--bg-art-size) var(--bg-art-size), 24px 24px;
+  image-rendering: pixelated;
+}
+/* 화면 맨 위 가로 띠: 16칸 타일을 3배(48px)로 가로 반복. 화면과 같이 스크롤된다 */
+[data-skin="pixel"] body::before {
+  content: ''; position: absolute; z-index: 1; left: 0; right: 0; top: env(safe-area-inset-top, 0px); height: var(--head-h);
+  background: var(--head-art) 0 0 / 48px var(--head-h) repeat-x; image-rendering: pixelated; pointer-events: none;
+}
+/* 머리말은 장식 높이만큼 아래로 (C5: 위 여백 ≥ 장식 높이) */
+[data-skin="pixel"] .app { padding-top: calc(var(--head-h) + 22px); }
+
+/* 3. 카드 · 목록 상자 · 시트 */
+[data-skin="pixel"] :is(.card, .tcard, .alist, .mlist, .dlist, .muted--card, .sk, .exit-box) {
+  border-radius: 0; box-shadow: var(--px-frame), var(--px-drop);
+}
+[data-skin="pixel"] .routine--missed { box-shadow: var(--px-frame), var(--px-drop), inset 0 0 0 3px var(--warn); }
+[data-skin="pixel"] .sheet { border-radius: 0; box-shadow: 0 -3px 0 var(--ol), var(--shadow); }
+[data-skin="pixel"] .grabber { border-radius: 0; height: 6px; width: 36px; }
+[data-skin="pixel"] .toast { border-radius: 0; box-shadow: var(--px-frame), var(--toast-shadow); }
+[data-skin="pixel"] :is(.trow, .cpreview, .sstrip__btn, .dgoal, .dbasis, .abox__opt, .pask) { border-radius: 0; }
+
+/* 4. 버튼 — 같은 외곽선 + 안쪽 위 밝은 줄 · 아래 어두운 줄 (게임 버튼). 눌렀을 때 2px 내려감 */
+[data-skin="pixel"] :is(.solid-btn, .kung__btn) {
+  border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary);
+  box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi);
+}
+[data-skin="pixel"] :is(.ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn, .tset__more) {
+  border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--sh);
+}
+[data-skin="pixel"] .close-btn { background: var(--raised); }
+[data-skin="pixel"] .pill-btn.is-done { box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
+[data-skin="pixel"] .pill-btn.is-locked { box-shadow: var(--px-frame-2); }
+[data-skin="pixel"] .add-btn { border-radius: 0; border-width: 3px; }
+[data-skin="pixel"] :is(.solid-btn, .kung__btn, .ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn, .add-btn, .tset__more):active:not(:disabled) { transform: translateY(2px); }
+[data-skin="pixel"] :is(.chip, .dday, .mchip, .uchip, .tag) { border: 0; border-radius: 0; box-shadow: var(--px-frame-2); }
+[data-skin="pixel"] .chip[aria-pressed="true"] { box-shadow: var(--px-frame-2), inset 0 -3px 0 var(--btn-lo); }
+[data-skin="pixel"] :is(.field__input, .nselect, .icon-pick) { border-radius: 0; }
+[data-skin="pixel"] :is(.cell, .emoji-tile, .tcheck, .cpick, .swatch) { border-radius: 0; }
+[data-skin="pixel"] :is(.switch, .switch__knob) { border-radius: 0; }
+
+/* 5. 목록 구분선 — 6px 간격 픽셀 점선 */
+[data-skin="pixel"] :is(.arow, .mrow, .nrow) {
+  border-bottom: 0;
+  background-image: linear-gradient(90deg, var(--line) 50%, transparent 50%);
+  background-size: 6px 3px; background-repeat: repeat-x; background-position: bottom;
+}
+[data-skin="pixel"] :is(.arow, .mrow, .nrow):last-child { background-image: none; }
+[data-skin="pixel"] .arow__ic { border-radius: 0; }
+
+/* 6. 세그먼트 (자동 · 낮 · 밤, 주 | 일 등) — 픽셀 테두리 상자, 칸 사이 3px 선, 고른 칸은 메인 색 + 버튼 줄 */
+[data-skin="pixel"] .seg { border-radius: 0; padding: 0; gap: 0; background: var(--surface); box-shadow: var(--px-frame); }
+[data-skin="pixel"] .seg__btn { border-radius: 0; height: 44px; }
+[data-skin="pixel"] .seg__btn + .seg__btn { box-shadow: inset 3px 0 0 var(--ol); }
+[data-skin="pixel"] .seg__btn[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); box-shadow: inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
+[data-skin="pixel"] .seg__btn + .seg__btn[aria-pressed="true"] { box-shadow: inset 3px 0 0 var(--ol), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
+
+/* 7. 아래 탭 — 위 3px 외곽선, 고른 탭은 --tint 상자 + 테두리(밤은 --btn-lo). 아이콘은 같은 선 SVG 를 끝만 각지게 */
+[data-skin="pixel"] .tabbar { border-top: 0; box-shadow: 0 -3px 0 var(--ol); }
+[data-skin="pixel"] .tabbar__btn[aria-current="page"] { background: var(--tint); box-shadow: var(--px-frame-2); margin: 4px 2px; min-height: 52px; }
+[data-skin="pixel"][data-theme$="-night"] .tabbar__btn[aria-current="page"] { box-shadow: 0 -2px 0 var(--btn-lo), 0 2px 0 var(--btn-lo), -2px 0 0 var(--btn-lo), 2px 0 0 var(--btn-lo); }
+[data-skin="pixel"] .tabbar__btn:focus-visible { border-radius: 0; }
+[data-skin="pixel"] :is(.tabbar, .arow__ic) svg { shape-rendering: crispEdges; }
+[data-skin="pixel"] :is(.tabbar, .arow__ic) svg :is(path, rect, circle, line, polyline) { stroke-linecap: square; stroke-linejoin: miter; }
+
+/* 8. 섹션 제목 앞 작은 점 (장식 — 가이드라인 예외 3) */
+[data-skin="pixel"] :is(.asec, .tset__sec)::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 6px; vertical-align: 2px; background: var(--sec-dot); }
+
+/* 9. 그림 자리 S1~S4 — 정수 배율만 (width · height 는 원본 × 배율, 화면에서 늘리지 않음) */
+.theme-art { display: block; image-rendering: pixelated; flex: none; max-width: none; }
+
+/* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */
+[data-skin="pixel"] body { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .caption { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .chip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .grid-range { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mini-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .cell { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .grid-foot { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .emoji-tile { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .emoji-tile--lg { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .routine__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .routine__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .routine__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .stat__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .stat__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .routine__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .both__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .both__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .both__value { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .sheet__title { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"] .sheet__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .row__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .row__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .row__meta { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .row__by { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pill-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .close-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .exit-box__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .exit-box__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .toast { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .notice__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .notice__body { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mgroup { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mitem__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mitem__status { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .small-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .muted { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .add-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rform__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .field__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .field__input { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .icon-pick { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rform__error { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ghost-btn, [data-skin="pixel"] .solid-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .text-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .auth__info { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .bell-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .nbox__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .nbox__body { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .nbox__info { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .nrow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .nrow__desc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .nselect { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .nfoot { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tabbar__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tcard__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tcard__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tcard__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .trow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .trow--mini .trow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .trow__meta { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .trow__memo { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tempty { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tempty--mini { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .more-btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .add-line { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .add-line--mini { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pick { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .cpreview__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .cnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .drow--head { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .drow__day { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .einfo__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .einfo__line { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .seg__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .scard__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .sday__wd { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sday__date { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .shour { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .shours--day .shour { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sblock--full.sblock--compact .sblock__title { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .sblock__ico { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .slist__title-day { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .slist__item { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .slist__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .slist__time { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sblock:not(.sblock--compact) .sblock__title { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sblock__time { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .slegend { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .shint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sstrip__btn span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sstrip__btn b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .sstatus__now { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sstatus__row { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .slanes-head > span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tpick__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tpick__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tpick__desc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tcolors__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .tcolors__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .tcolors__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .cpick.is-both .cpick__tag { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .cpick__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .skipbox__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .skipbox__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .chip--rest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .uhead__name { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"] .uhead__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .seg--mini .seg__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ul { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .uaxis { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .uempty { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .upt__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .upt__name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .upreview__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ulegend { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .utray { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .uchip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ustat__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ustat__v { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .place__back { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .place__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .place__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pline__top, [data-skin="pixel"] .pline__bottom { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pmark__name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pblock { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .phint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pnote { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .pask__step { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pask__q { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .agroup__day { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .arow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .kung__text { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .umemo__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .umemo__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .uhint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mhead__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mitem__num { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .pick-row--days .pick { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rv-sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-grid .dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-name { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .emoji-tile.rv-tile { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mini-plane__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mini-plane__n { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-note--sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-bar { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .routine__rest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rest__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rest__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rest__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rgroup__head { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rgroup__me { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rgroup__count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .grow__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .grow__title b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .grow__harvest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .grow__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .grow__next { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .quest__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .quest__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .qrow__label { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .qrow__tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .qrow__val { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .qrow--bonus .qrow__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .gbig__stage { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .gbig__line, [data-skin="pixel"] .gbig__next { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .gstats span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .gstats b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .gsub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .gweek__day { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .gstages li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .grules { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .cell.lv-full::after { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .day-sum { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .routine__when { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .miss-tag { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .miss-banner { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .when__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .when__preview { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .chip--sm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .sgroup__head { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .icon-group { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rview__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rview__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rsub__head { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .morder { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mitem--order .mitem__no { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .kind__chips small { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dday { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .anniv__icon { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .anniv__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .anniv__title b { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .anniv__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .anniv__since { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .anniv__by { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abig__label { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .abig__count { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .abig__count span { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abig__since { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abig__today { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .alist li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .anniv-form__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .asec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .afeat__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .afeat__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abadge { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .arow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .arow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .arow__vl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .acct__out { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mbar__title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .mseg__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mchip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mchip--sm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .km .lb { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .mzoom__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mhint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mcredit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mbtn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mvisits__when { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mvisits__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mfind__row { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mlisthead__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mlisthead__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mrow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mrow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mrankno { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mrankno--big { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mchip--xs { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .madd { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .msort__btn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mstars__who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mstars__avg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mrank__sub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dbar__skip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dgoal__n { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dgoal__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsec__t { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dlock { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dbody__l { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dseg__b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dfld { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dfin input { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dfin i { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dpick { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .drow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .drow__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .drow__vl { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dedit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dnote { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dnotes { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsw__n { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dsw__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dbasis { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dbasis__tx b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dbasis__tx span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ddisc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ddisc b { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsteps li { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsteps li::before { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsteps b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dsteps em { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dgc__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dgc__nums { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dgc__nums b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .ubox__ini { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); letter-spacing: 0; }
+[data-skin="pixel"] .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__lab { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .ubox__big small { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__pl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__stub .ubox__lab { font-size: 12px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__stub .ubox__big { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__unit { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox--ticket .ubox__ini { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .ubox__names { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .ubox__nl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__nx b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .ubox__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox--polaroid .ubox__ini { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox--polaroid .ubox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__mid--pol .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__mid--ov .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__mn { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__amp { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .ubox__btitle .ubox__l1 { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__bnm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .ubox__bst { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abox__nm { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .abox__mini--badge::after { font-size: 12px; font-family: var(--px-font-11); }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__ini { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__l2 { font-size: 12px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__stub .ubox__big { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__stub .ubox__big--long { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__names { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox--overlap .ubox__mid--ov .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__btitle .ubox__l1 { font-size: 15px; font-family: var(--px-font-14); } }
+@media (max-width: 360px) { [data-skin="pixel"] .ubox__mn { font-size: 12px; font-family: var(--px-font-11); } }
+[data-skin="pixel"] .aview__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .aview__btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dtoday__sum { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dtoday__sum b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dmeal__at { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dmeal__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dmeal__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dmeal__vl { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dmeal__del { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dmeal__del.is-armed { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dwait { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dlog__sub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dlog__ta { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dlog__hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dsum__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dsum__k { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dsum__k b { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .dsum__m { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dest { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .msum__none { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .msum__avg { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"] .msum__cap { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .msum__who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .msum__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mvhead { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mvrow__when { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mvrow__nth { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mvchip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mvnote { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mvnote__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .mrec__nudge { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-cal__dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-cal--big .rv-d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-cal--sm .rv-d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-lg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-mwho { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-mcard__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rv-mcard__stat { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-mcard__stat--big { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rv-strip--scale span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .rv-srow__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .rv-srow__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dai { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dask__n { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"] .dask__q { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .dask__in { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"] .mvdel .text-btn { font-size: 12px; font-family: var(--px-font-11); }
+/* ── 글씨 크기 표 끝 ── */
