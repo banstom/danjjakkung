@@ -8,7 +8,7 @@ const path = require('path');
 
 const MODEL = 'claude-haiku-5-5';
 const API = 'https://api.anthropic.com/v1/messages';
-const LIMITS = { text: 2000, state: 6000, table: 3000, perDay: 40, maxTokens: 2500 };
+const LIMITS = { text: 2000, state: 6000, table: 3000, perDay: 40, maxTokens: 8000 };
 const PROMPT = fs.readFileSync(path.join(__dirname, 'meal-prompt.md'), 'utf8');
 
 /** 지시문은 고정 (사용자가 보낸 글은 지시문 자리에 넣지 않는다 — 점검 AI). 식품표 이름은 사용자 글의 「식품표:」 줄로 */

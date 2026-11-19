@@ -115,6 +115,7 @@ test('D4 서버 함수: 실패 · 잘림이면 횟수 돌려줌 · 잘림은 따
   const body = src.slice(src.indexOf('exports.parseMeal'));
   assert.equal((body.match(/await refund\(\)/g) || []).length, 3, '모델 오류 · 잘림 · JSON 못 읽음');
   assert.match(body, /out\.stop === 'max_tokens'/);
+  assert.ok(M.LIMITS.maxTokens >= 8000, '회귀(시험 A 2차): 2500 이면 T2 · T3 답이 잘림');
   assert.match(body, /M\.systemPrompt\(\)/, '지시문에 사용자 값 안 넣음');
 });
 

@@ -56,6 +56,14 @@ async function main() {
   const cost = (tokens.in * 0.10 + tokens.out * 0.50) / 1e6;
   console.log('토큰 입력 ' + tokens.in + ' · 출력 ' + tokens.out + ' · 약 $' + cost.toFixed(4) + ' (Haiku 5.5 $0.10/$0.50 per 1M)');
   const runs = Array.from({ length: RUNS }, (_, i) => 'run' + (i + 1));
+  // 질문 고르기를 보려고 모르는 것(폭)을 한 줄씩
+  console.log('— 모르는 것 (폭 80 이상이 질문) —');
+  for (const c of cases) for (const r of runs) {
+    try {
+      const j = JSON.parse(fs.readFileSync(path.join('/tmp/diet-ai', r, c.name + '.json'), 'utf8'));
+      console.log(c.name + ' ' + r + ': ' + (j.unknowns || []).map((u) => (u.path || u.item || u.name || '?') + ' ' + JSON.stringify(u.kcalRange || null)).join(' · '));
+    } catch (e) { console.log(c.name + ' ' + r + ': (읽지 못함)'); }
+  }
   const rep = execFileSync('python3', [path.join(ROOT, 'docs/diet/ai/grade.py')].concat(runs), { encoding: 'utf8' });
   console.log('— 모델이 낸 그대로 —\n' + rep);
   // 서버가 정리한 뒤에도 같은 결과인지 (정리가 필요한 칸을 지우지 않는지)
