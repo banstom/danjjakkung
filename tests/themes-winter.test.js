@@ -160,3 +160,16 @@ test('D4 · D5 테마 그림: 테마마다 낮 · 밤이 같은 s1~s4, 합계 15
     assert.ok(sum <= 150 * 1024, id + ' 그림 합계 ' + sum);
   }
 });
+
+// ── C. 픽셀 스킨 파일 ──
+test('C 픽셀 스킨: 모든 규칙이 data-skin 아래 · 색 값 없음 · 글씨 크기 표가 최신', () => {
+  const px = fs.readFileSync(path.join(ROOT, 'styles/pixel.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(px), 'pixel.css 에 색 값 — 토큰만');
+  const sels = px.replace(/@font-face\s*\{[^}]*\}/g, '').replace(/@media[^{]*\{/g, '').match(/[^{}]+(?=\{)/g).map((x) => x.trim()).filter(Boolean);
+  const top = (x) => { const out = []; let d = 0, cur = ''; for (const ch of x) { if (ch === '(') d++; if (ch === ')') d--; if (ch === ',' && !d) { out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out; };
+  for (const sel of sels) for (const part of top(sel)) assert.ok(/data-skin="pixel"|^\.theme-art$/.test(part.trim()), '픽셀 스킨 밖 규칙: ' + part.trim());
+  const sizes = new Set((px.match(/font-size:\s*\d+px/g) || []).map((x) => x.replace(/\D/g, '')));
+  assert.deepStrictEqual([...sizes].sort(), ['12', '15', '24', '36'], '글씨 크기는 표의 네 값만');
+  const r = require('child_process').spawnSync('python3', [path.join(ROOT, 'scripts/pixel-fonts.py'), '--check']);
+  assert.strictEqual(r.status, 0, 'app.css 글씨 크기가 바뀌었어요 — python3 scripts/pixel-fonts.py');
+});
