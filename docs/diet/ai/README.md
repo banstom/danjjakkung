@@ -12,3 +12,7 @@
 | T7-1 | 2/3 | 3/3 |
 
 D4에서 이 파일들로 `npm run test:ai`(실제 API, 3번 돌려 3번 맞기)를 만든다.
+
+## D4 (2026-11-19)
+- 서버 함수 `parseMeal` = `functions/index.js` + `functions/meal.js`, 지시문은 `functions/meal-prompt.md` (이 폴더의 parse-prompt.md와 같은 내용인지 `npm test`가 확인)
+- 실제 API 시험: Cloud Shell에서 `ANTHROPIC_API_KEY=$(gcloud secrets versions access latest --secret=ANTHROPIC_API_KEY --project jjakkung-grid) npm run test:ai`

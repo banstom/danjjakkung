@@ -6,11 +6,16 @@
    - weeklyReview   : 일요일 밤 9시, 이번 주 「모두 해낸 날 · 함께 끝낸 일」을 알리고 누르면 돌아보기 탭 (v37)
    - onTodoCreated · onTodoUpdated : 함께 할 일이 생기거나 끝나면 짝꿍에게 (v38, 누르면 할 일 탭)
    - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
+   - parseMeal      : 단짝 식탁 — 적은 끼니 글을 Claude Haiku 로 구조만 정리 (영양 숫자는 앱이 계산, D4). 키는 Secret Manager
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
+const M = require('./meal');
+const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const admin = require('firebase-admin');
 const N = require('./notify');
 
@@ -224,4 +229,39 @@ exports.weeklyReview = onSchedule({ schedule: '0 21 * * 0', timeZone: 'Asia/Seou
       logger.error('돌아보기 알림 실패', { uid, err: String(e) });
     }
   }
+});
+
+/* 단짝 식탁 · 끼니 정리 (D4). 앱이 { text, today, state, table? } 를 보내면 정리한 구조를 돌려준다.
+   - 두 사람(members)만 · 한 사람 하루 LIMITS.perDay 번까지 (aiUse/{uid_날짜}, 앱 규칙엔 없어 앱은 못 읽고 못 씀)
+   - 몸 정보는 받지 않는다. 영양 숫자는 답에서 지운다 (meal.sanitize) */
+exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '256MiB', maxInstances: 3 }, async (req) => {
+  const uid = req.auth && req.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
+  const mem = await db.doc(`members/${uid}`).get();
+  if (!mem.exists) throw new HttpsError('permission-denied', '단짝꿍 멤버만 쓸 수 있어요');
+  const bad = M.badInput(req.data);
+  if (bad) throw new HttpsError('invalid-argument', bad);
+  const useRef = db.doc(`aiUse/${M.dayKey(uid)}`);
+  const used = await db.runTransaction(async (tx) => {
+    const d = await tx.get(useRef);
+    const n = (d.exists && d.data().n) || 0;
+    if (n >= M.LIMITS.perDay) return -1;
+    tx.set(useRef, { n: n + 1, uid, at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return n + 1;
+  });
+  if (used < 0) throw new HttpsError('resource-exhausted', '오늘은 정리를 많이 했어요. 내일 다시 해 주세요');
+  let out;
+  try {
+    out = await M.callModel(ANTHROPIC_API_KEY.value(), M.systemPrompt(req.data.table), M.userMessage(req.data.today, req.data.state, req.data.text));
+  } catch (e) {
+    logger.error('parseMeal model', { status: e.status, msg: String(e.message).slice(0, 200) });
+    throw new HttpsError('unavailable', '지금은 정리하지 못했어요. 잠시 뒤 다시 해 주세요');
+  }
+  const result = M.sanitize(M.extractJson(out.text));
+  if (!result) {
+    logger.warn('parseMeal json', { len: out.text.length });
+    throw new HttpsError('internal', '정리 결과를 읽지 못했어요. 다시 해 주세요');
+  }
+  logger.info('parseMeal ok', { uid, used, usage: out.usage });
+  return { result, used, limit: M.LIMITS.perDay, model: M.MODEL };
 });
