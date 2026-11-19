@@ -107,6 +107,7 @@
       return '<li class="dmeal"><span class="dmeal__at">' + esc(m.at || '') + '</span><span class="dmeal__tx"><span class="dmeal__nm">' + esc(mealName(m)) + (m.together ? ' <span class="abadge">함께</span>' : '') + (m.pending && m.pending.length ? ' <span class="dwait">정리 대기 ' + m.pending.length + '</span>' : '') + '</span>' +
         '<span class="dmeal__ds">' + esc((m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(' · ')) + '</span></span>' +
         '<span class="dmeal__vl">' + comma(m.total ? m.total.kcal : 0) + '</span>' +
+        (m.pending && m.pending.length && !del ? '<button type="button" class="dmeal__fix" data-act="dm-fix" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + ' 정리 대기 지금 정리하기') + '">정리</button>' : '') +
         '<button type="button" class="dmeal__del' + (del ? ' is-armed' : '') + '" data-act="dm-del" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + (del ? ' 정말 지우기' : ' 지우기')) + '">' + (del ? '지우기' : '×') + '</button></li>';
     }).join('') + '</ul>' : '<p class="dnote">' + (t.off ? '기록을 불러오지 못했어요 · 저장 규칙 배포 전이거나 연결이 끊겼어요' : '아직 오늘 기록이 없어요') + '</p>';
     var sum = t.total ? '<p class="dtoday__sum"><b>' + comma(t.total.kcal) + '</b> kcal' + (t.goal ? ' / ' + comma(t.goal.kcal) : '') + ' · 탄 ' + grams(t.total.carb) + ' · 단 ' + grams(t.total.protein) + ' · 지 ' + grams(t.total.fat) + '</p>' : '';

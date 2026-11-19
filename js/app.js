@@ -226,7 +226,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
-    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -629,6 +629,7 @@
     else if (act === 'dl-chip') { var lc = state.diet && state.diet.log; if (lc) { dietLogTake(lc); lc.text = (lc.text ? lc.text.replace(/\s+$/, '') + '\n' : '') + btn.getAttribute('data-v'); focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
     else if (act === 'dl-who') { var lw = state.diet && state.diet.log; if (lw) { dietLogTake(lw); lw.together = btn.getAttribute('data-v') === 'both'; focusAfter = ['[data-act="dl-who"][data-v="' + (lw.together ? 'both' : 'me') + '"]']; focusInSheet = true; render(true); } }
     else if (act === 'dm-del') dietMealDelete(btn.getAttribute('data-v'));
+    else if (act === 'dm-fix') dietMealFix(btn.getAttribute('data-v'));
     else if (act === 'dl-retry') { if (state.diet && state.diet.log) { dietLogTake(state.diet.log); dietLoadTab(); render(true); } }
     else if (act === 'dg-open') { if (state.diet) { dietGoalForm(false); focusAfter = ['[data-act="dg-close"]']; focusInSheet = true; render(true); } }
     else if (act === 'dg-close') { if (state.diet) { if (myGoal()) { state.diet.view = 'home'; state.diet.form = null; focusAfter = ['[data-act="dg-open"]']; render(true); } else closeDiet(); } }
@@ -2314,6 +2315,18 @@
     return { title: l.when.y + '년 ' + l.when.m + '월', prev: first > min, next: last < now, cells: cells,
       quick: [[now, '오늘'], [now - 1, '어제'], [now - 2, '그저께']].map(function (x) { return { key: D.toKey(x[0]), name: x[1], on: x[0] === pick }; }) };
   }
+  /** 정리 대기 끼니를 지금 정리: 적었던 글로 다시 맞춰 보고(AI 포함) 확인 카드 → 저장하면 그 끼니를 바꿔 끼움 */
+  function dietMealFix(id) {
+    var uid = state.uid || state.me, cur = state.mealDocs && state.mealDocs[uid], m = cur && (cur.meals || []).filter(function (x) { return x.id === id; })[0];
+    if (!state.diet || !m) return;
+    var text = m.text || [].concat((m.items || []).map(function (i) { return i.name + (i.amount != null ? ' ' + i.amount + (i.unit || '') : ''); }), (m.pending || []).map(function (x) { return x.raw; })).join('\n');
+    if (m.at && !/\d{1,2}:\d{2}/.test(text)) text = (m.label || (m.kind === 'snack' ? '간식' : '식사')) + ' ' + m.at + '\n' + text; // 시각이 글에 없으면 붙여서 같은 시각으로
+    state.diet.log = { step: 'input', dayKey: state.mealDay, text: text, together: !!m.together, replaceId: id, result: null, saving: false, error: '' };
+    state.sheetEntering = true; focusInSheet = true; render(true);
+    loadFoodTab().then(function () { if (state.diet && state.diet.log && state.diet.log.replaceId === id) dietLogGo(); }, function () {
+      if (state.diet && state.diet.log) { state.diet.log.tabFail = true; render(true); }
+    });
+  }
   function dietLogClose() { aiSeq++; if (state.diet) { state.diet.log = null; focusAfter = ['[data-act="dl-open"]']; render(true); } }
   function nowAt() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function dietLogModel() {
@@ -2426,10 +2439,10 @@
     });
     var day = l.day || dietDayKey(), cur = state.mealDocs && state.mealDocs[uid], nPend = add.reduce(function (a, m) { return a + m.pending.length; }, 0);
     var draft = l.text, close = function (msg) { state.diet.log = null; showToast(msg); focusAfter = ['[data-act="dl-open"]']; render(true); };
-    var done = (add.length > 1 ? '끼니 ' + add.length + '개 ' : '') + '저장했어요' + (nPend ? ' · 정리 대기 ' + nPend + '줄' : '');
+    var done = (add.length > 1 ? '끼니 ' + add.length + '개 ' : '') + (l.replaceId ? '다시 정리해 저장했어요' : '저장했어요') + (nPend ? ' · 정리 대기 ' + nPend + '줄' : '');
     if (day === state.mealDay) {
       // 오늘: 가진 목록에 더해 통째로 — 오프라인이어도 바로 반영 (먼저 저장, 나중에 정리)
-      var list = ((cur && cur.meals) || []).concat(add).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); });
+      var list = ((cur && cur.meals) || []).filter(function (m) { return !l.replaceId || m.id !== l.replaceId; }).concat(add).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); }); // 다시 정리면 예전 끼니를 바꿔 끼움
       if (list.length > 20) { l.error = '하루에 20끼까지 저장할 수 있어요'; focusInSheet = true; render(true); return; }
       aiSeq++; // 기다리지 않고 저장하면 늦게 온 AI 답은 버림 (저장이 확정된 뒤에만)
       var before = cur;

@@ -474,4 +474,5 @@
 [data-skin="pixel"]:not([data-font="plain"]) .tdone__s { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .recap-cover__when { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .recap-cover__title { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmeal__fix { font-size: 12px; font-family: var(--px-font-11); }
 /* ── 글씨 크기 표 끝 ── */

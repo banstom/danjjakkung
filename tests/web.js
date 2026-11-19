@@ -1453,6 +1453,14 @@ async function tick(page, dateKey, key) {
   await jm.waitForFunction(() => /많이 했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
   await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
   assert.ok(docs.get('meals/' + jmUid0 + '_' + today).meals.some((m) => m.pending.some((x) => x.raw === '우리집 특제 덮밥')));
+  // 정리 대기 끼니 「정리」 → 다시 정리해 바꿔 끼움 (끼니 수 그대로, 정리 대기 없어짐)
+  const nFix = docs.get('meals/' + jmUid0 + '_' + today).meals.length;
+  aiReplies.push({ body: { result: { result: { meals: [{ at: '12:00', kind: 'meal', items: [{ name: '덮밥 밥', amount: 1, unit: '공기', match: { kind: 'table', key: '쌀밥' } }] }], unknowns: [] } } } });
+  await jm.click('.dmeal:has-text("우리집 특제 덮밥") .dmeal__fix'); await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
+  assert.match(aiCalls[aiCalls.length - 1].data.text, /우리집 특제 덮밥/, '적었던 글로 다시');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  const fixed = docs.get('meals/' + jmUid0 + '_' + today).meals;
+  assert.strictEqual(fixed.length, nFix, '바꿔 끼움'); assert.ok(!fixed.some((m) => m.pending.some((x) => x.raw === '우리집 특제 덮밥')), '정리 대기 없어짐');
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
   await dj.route('**/data/foods-kr.json', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.continue(); });
