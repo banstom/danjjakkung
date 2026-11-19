@@ -73,8 +73,9 @@ async function main() {
   }
   const rep2 = execFileSync('python3', [path.join(ROOT, 'docs/diet/ai/grade.py')].concat(runs.map((r) => r + 'c')), { encoding: 'utf8' });
   console.log('— 서버가 정리한 뒤 —\n' + rep2);
-  const fails = (rep.match(/❌/g) || []).length + (rep2.match(/❌/g) || []).length;
-  console.log(fails ? '시험 A 실패 ' + fails + '개 (위 X 줄)' : '시험 A 통과 ✅ (' + RUNS + '번 모두)');
+  // 통과 기준 = 서버가 정리한 뒤(앱에 실제로 들어가는 결과) 7문제 모두 3/3. 모델이 낸 그대로는 참고 (레시피 재료 learn 은 서버가 채우기로 함 · plan.md)
+  const fails = (rep2.match(/❌/g) || []).length, rawFails = (rep.match(/❌/g) || []).length;
+  console.log(fails ? '시험 A 실패 ' + fails + '개 (서버가 정리한 뒤의 X 줄)' : '시험 A 통과 ✅ (' + RUNS + '번 모두 · 서버가 정리한 뒤 기준)' + (rawFails ? ' · 참고: 모델 그대로 X ' + rawFails + '개' : ''));
   process.exit(fails ? 1 : 0);
 }
 
