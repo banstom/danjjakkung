@@ -1431,3 +1431,17 @@ button.rv-srow { cursor: pointer; }
   .rv-mcard { padding: 10px 8px; }
   .rv-vsw__btn { width: 32px; height: 32px; }
 }
+/* ── 단짝 식탁 · AI 정리 연결 (D4 연결) — 확인 카드 안내 · 질문 (목업 05) ── */
+.dai { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--raised); font-size: 13px; font-weight: 600; color: var(--sub); }
+.dai--ok { background: var(--tint); color: var(--tint-text); }
+.dai__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: dai-pulse 1s ease-in-out infinite; flex: none; }
+@keyframes dai-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dai__dot { animation: none; } }
+.dasks { margin-top: 4px; }
+.dask { background: var(--tint); border-radius: 20px; padding: 14px 16px; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.dask__n { margin: 0; font-size: 12px; font-weight: 700; color: var(--tint-text); }
+.dask__q { font-size: 15px; font-weight: 700; color: var(--text); }
+.dask__in { min-height: 44px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--input-bg); padding: 0 12px; font: inherit; font-size: 16px; color: var(--text); }
+.dask__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dask__row { display: flex; gap: 8px; margin-top: 10px; }
+.dask__row .mbtn { min-height: 48px; }

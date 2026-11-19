@@ -196,7 +196,7 @@
     return { date: parsed.date, more: parsed.more || 0, at: parsed.at, kind: parsed.kind, label: parsed.label, items: items, pending: pending, total: sum, foods: foodsMap };
   }
 
-  var api = { DEFAULT_UNITS: DEFAULT_UNITS, parse: parse, parseItem: parseItem, takeTime: takeTime, index: index, findTable: findTable, match: match, EACH_G: EACH_G, ALIAS: ALIAS };
+  var api = { DEFAULT_UNITS: DEFAULT_UNITS, gramsFor: gramsFor, parse: parse, parseItem: parseItem, takeTime: takeTime, index: index, findTable: findTable, match: match, EACH_G: EACH_G, ALIAS: ALIAS };
   root.RT = root.RT || {};
   root.RT.dietMatch = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

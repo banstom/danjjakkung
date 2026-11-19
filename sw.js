@@ -34,7 +34,7 @@ var FILES = [
   './', 'index.html', 'manifest.webmanifest',
   'styles/tokens.css', 'styles/app.css',
   'js/firebase-config.js', 'js/firebase.js', 'js/dates.js', 'js/seasons.js', 'js/themes.js', 'js/streak.js', 'js/icons.js',
-  'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/todos.js', 'js/uni.js', 'js/cats.js', 'js/schedule.js', 'js/review.js', 'js/quest.js', 'js/grow.js', 'js/tomato.js', 'js/view-plan.js', 'js/anniv.js', 'js/view-review.js', 'js/view-all.js', 'js/avatar-crop.js', 'js/view-avatar.js', 'js/places.js', 'js/map-zoom.js', 'js/view-map.js', 'js/diet-calc.js', 'js/diet-goal.js', 'js/diet-ask.js', 'js/diet-match.js', 'js/view-diet.js', 'js/store.js', 'js/app.js',
+  'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/todos.js', 'js/uni.js', 'js/cats.js', 'js/schedule.js', 'js/review.js', 'js/quest.js', 'js/grow.js', 'js/tomato.js', 'js/view-plan.js', 'js/anniv.js', 'js/view-review.js', 'js/view-all.js', 'js/avatar-crop.js', 'js/view-avatar.js', 'js/places.js', 'js/map-zoom.js', 'js/view-map.js', 'js/diet-calc.js', 'js/diet-goal.js', 'js/diet-ask.js', 'js/diet-match.js', 'js/diet-ai.js', 'js/view-diet.js', 'js/store.js', 'js/app.js',
   'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/push.js',
   'fonts/PretendardVariable.woff2', 'fonts/tossface-00.woff2', 'fonts/tossface-02.woff2', 'fonts/tossface-04.woff2', 'fonts/tossface-05.woff2',
   'fonts/tossface-06.woff2', 'fonts/tossface-07.woff2', 'fonts/tossface-08.woff2', 'fonts/tossface-09.woff2',

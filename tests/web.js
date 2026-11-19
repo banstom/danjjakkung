@@ -17,6 +17,7 @@ process.on('exit', () => server.kill());
 // ── 공용 가짜 저장소 (node 쪽) ──
 const docs = new Map();
 let failPlaces = false; // true 면 다음 places 저장 한 번을 실패시킨다
+const aiReplies = [], aiCalls = []; // 단짝 식탁 AI(parseMeal) 가짜 답 · 받은 요청
 const accounts = new Map(); // email → { uid, password }
 const pages = [];
 async function pushAll(changed) {
@@ -176,6 +177,14 @@ async function open(browser, name, opts = {}) {
   await page.route('**/vendor/firebase/firebase-firestore-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: '' }));
   await page.route('**/vendor/firebase/firebase-messaging-compat.js', (r) => r.fulfill({ contentType: 'text/javascript', body: FAKE_MESSAGING }));
   await page.route('**/js/firebase-config.js', (r) => r.fulfill({ contentType: 'text/javascript', body: 'window.DANJJAKKUNG_FIREBASE_CONFIG={apiKey:"test"};window.DANJJAKKUNG_PUSH_READY=true;' }));
+  await page.route(/cloudfunctions\.net\/parseMeal/, async (r) => {
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization', 'access-control-allow-methods': 'POST, OPTIONS' };
+    if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
+    const body = JSON.parse(r.request().postData() || '{}'); aiCalls.push({ data: body.data, auth: r.request().headers().authorization });
+    const rep = aiReplies.shift() || { status: 503, body: { error: { status: 'UNAVAILABLE', message: 'x' } } };
+    if (rep.delay) await new Promise((ok) => setTimeout(ok, rep.delay));
+    return r.fulfill({ status: rep.status || 200, headers: cors, contentType: 'application/json', body: JSON.stringify(rep.body) });
+  });
   await page.exposeFunction('__set', async (p, v, uid) => {
     // 규칙 흉내: 루틴 · 체크는 자기 것만
     const d = v === null ? null : JSON.parse(v);
@@ -1320,7 +1329,7 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(ml.at, '12:40'); assert.strictEqual(ml.label, '점심'); assert.strictEqual(ml.together, true); assert.strictEqual(ml.status, 'pending');
   assert.deepStrictEqual(ml.pending.map((x) => x.raw), ['우리집 특제 볶음']);
   assert.deepStrictEqual(ml.items.map((x) => x.ref.key), ['사과_생것', '달걀_생것', '쌀밥']);
-  assert.strictEqual(ml.items[2].est, '공기'); assert.strictEqual(ml.items[2].grams, 315);
+  assert.strictEqual(ml.items[2].est, '공기 기본값 210g'); assert.strictEqual(ml.items[2].grams, 315);
   assert.match(await jm.textContent('.dtoday'), /12:40[^]*점심[^]*함께[^]*정리 대기 1/);
   await jm.screenshot({ path: path.join(OUT, 'diet-today.png') });
   await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('.dtoday');
@@ -1338,7 +1347,7 @@ async function tick(page, dateKey, key) {
   // 회귀(점검 AI): 두 끼니는 한 끼씩 안내 · 지난 날짜는 그날 문서로
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
   await jm.fill('#dl-text', '아침 08:20\n사과 1개\n점심 12:40\n김밥'); await jm.click('[data-act="dl-go"]'); await jm.waitForTimeout(80);
-  assert.match(await jm.textContent('.dscreen .rform__error'), /한 끼씩[^]*2개/);
+  await jm.waitForSelector('#dl-text'); assert.match(await jm.textContent('.dscreen .rform__error'), /한 끼씩[^]*AI 정리를 못 해서/, 'AI 가 안 되면 한 끼씩 안내');
   const yKey = await jm.evaluate(() => { const D = RT.dates, n = D.fromLocal(new Date()) - 1, p = D.parts(n); return [D.toKey(n), p.m + '.' + p.d + '.']; });
   await jm.fill('#dl-text', yKey[1] + '\n저녁 19:00\n사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
   assert.match(await jm.textContent('.dscreen .caption'), /기록이에요/, '지난 날짜라고 알려 줌');
@@ -1353,6 +1362,50 @@ async function tick(page, dateKey, key) {
   await jm.setViewportSize({ width: 320, height: 640 }); await jm.waitForTimeout(100);
   assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 첫 화면 넘치지 않음');
   await jm.setViewportSize({ width: 390, height: 844 });
+  await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
+  // (D4 연결) 못 맞춘 줄 → AI 정리 → 숫자는 식품표 · 질문 · 답하고 다시 정리 · 여러 끼니 · AI 실패
+  const T1AI = { meals: [{ at: '08:20', kind: 'meal', label: '아침', items: [
+    { name: '달걀스크램블', amount: 3, unit: '개', match: { kind: 'table', key: '달걀' } },
+    { name: '셀프메이드 브라우니', portion: { num: 9, den: 16 }, match: { kind: 'new_recipe' }, ingredients: [{ name: '바나나', amount: 2, unit: '개', match: { kind: 'table', key: '바나나' } }, { name: '무당초콜릿', amount: 2, unit: '줌', match: { kind: 'new_product' } }] }] }],
+    unknowns: [{ path: '아침/셀프메이드 브라우니/무당초콜릿', what: 'product_and_grams', kcalRange: [150, 300] }, { path: '아침/달걀스크램블', what: 'cooking_oil', kcalRange: [0, 120] }], corrections: [], learn: [] };
+  aiReplies.push({ delay: 400, body: { result: { result: T1AI, used: 1, limit: 40, model: 'claude-haiku-5-5' } } });
+  await jm.click('[data-act="all-diet"]'); await jm.waitForSelector('[data-act="dl-open"]');
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '아침 08:20\n달걀스크램블 3개\n셀프메이드 브라우니 9조각/16조각\n:(바나나2개+무당초콜릿2줌)');
+  await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('.dai');
+  assert.match(await jm.textContent('.dai'), /AI가 정리하는 중/, '정리하는 동안 알림');
+  assert.match(await jm.textContent('[data-act="dl-save"]'), /기다리지 않고 저장/);
+  await jm.waitForFunction(() => /AI가 정리했어요/.test(document.querySelector('.dai').textContent));
+  const call = aiCalls[aiCalls.length - 1];
+  assert.match(call.auth, /^Bearer /); assert.strictEqual(call.data.today, today); assert.match(call.data.text, /무당초콜릿2줌/);
+  assert.doesNotMatch(call.data.state, /체중|kg|cm|세\b|목표/, '몸 정보 · 목표는 안 보냄');
+  const ct = await jm.textContent('.dconf');
+  assert.match(ct, /달걀스크램블[^]*셀프메이드 브라우니 \(무당초콜릿\)[^]*재료 중 모르는 것/, 'AI 구조 + 모르는 재료는 정리 대기');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'dq-0', '질문에 바로');
+  assert.match(await jm.textContent('.dasks'), /1 \/ 2[^]*무당초콜릿 · 어떤 제품이고 몇 g쯤이에요\?[^]*2 \/ 2[^]*달걀스크램블 · 기름/);
+  await jm.screenshot({ path: path.join(OUT, 'diet-ai-ask.png') });
+  aiReplies.push({ body: { result: { result: { meals: [{ at: '08:20', kind: 'meal', label: '아침', items: [{ name: '달걀스크램블', amount: 3, unit: '개', match: { kind: 'table', key: '달걀' }, ingredients: [{ name: '카놀라유', amount: 1, unit: '스푼', match: { kind: 'table', key: '카놀라유' } }] }] }], unknowns: [] } } } });
+  await jm.fill('#dq-1', '카놀라유 1스푼'); await jm.click('[data-act="dq-send"]');
+  await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || '') && !document.querySelector('.dasks'));
+  assert.match(aiCalls[aiCalls.length - 1].data.state, /달걀스크램블\(cooking_oil\) → "카놀라유 1스푼"/, '답은 상태로 보냄');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  const lastMeal = docs.get('meals/' + jmUid0 + '_' + today).meals.find((m) => m.at === '08:20');
+  assert.ok(lastMeal && lastMeal.ai === true && lastMeal.items[0].name === '달걀스크램블');
+  // 여러 끼니 한 번에 (AI) → 끼니 2개 저장
+  aiReplies.push({ body: { result: { result: { meals: [{ at: '07:00', kind: 'meal', label: '아침', items: [{ name: '사과', amount: 1, unit: '개', match: { kind: 'table', key: '사과' } }] }, { at: '15:00', kind: 'snack', items: [{ name: '바나나', amount: 1, unit: '개', match: { kind: 'table', key: '바나나' } }] }], unknowns: [] } } } });
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '아침 07:00 사과 1개\n간식 15:00 바나나 1개'); await jm.click('[data-act="dl-go"]');
+  await jm.waitForFunction(() => /끼니 2개 저장/.test((document.querySelector('[data-act="dl-save"]') || {}).textContent || ''));
+  assert.match(await jm.textContent('#dc-title'), /끼니 2개/);
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.map((m) => m.at), ['07:00', '08:20', '12:40', '15:00']);
+  // AI 실패 → 정리 대기로 저장할 수 있음
+  aiReplies.push({ status: 429, body: { error: { status: 'RESOURCE_EXHAUSTED', message: 'x' } } });
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '우리집 특제 덮밥'); await jm.click('[data-act="dl-go"]');
+  await jm.waitForFunction(() => /많이 했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  assert.ok(docs.get('meals/' + jmUid0 + '_' + today).meals.some((m) => m.pending.some((x) => x.raw === '우리집 특제 덮밥')));
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
   await dj.route('**/data/foods-kr.json', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.continue(); });

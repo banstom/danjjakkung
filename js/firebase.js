@@ -57,6 +57,22 @@
       });
     },
     reset: function (email) { return auth.sendPasswordResetEmail(email); },
+    /** 서버 함수(onCall) 부르기 — SDK 없이 callable 약속대로 (서울, Bearer 토큰). 성공하면 result, 실패하면 { code, message } */
+    callFn: function (name, data) {
+      var u = auth.currentUser;
+      if (!u) return Promise.reject({ code: 'unauthenticated', message: '로그인해 주세요' });
+      return u.getIdToken().then(function (tok) {
+        return fetch('https://asia-northeast3-' + cfg.projectId + '.cloudfunctions.net/' + name, {
+          method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tok }, body: JSON.stringify({ data: data })
+        });
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (j) {
+          if (res.ok && j && 'result' in j) return j.result;
+          var e = (j && j.error) || {};
+          throw { code: String(e.status || res.status || 'unavailable').toLowerCase().replace(/_/g, '-'), message: e.message || '' };
+        });
+      }, function () { throw { code: 'unavailable', message: '' }; });
+    },
     // 로그아웃: 이 기기에 남은 기록까지 지우고 처음 화면으로
     signOut: function () {
       return auth.signOut()

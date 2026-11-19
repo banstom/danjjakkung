@@ -139,26 +139,42 @@
         : '<button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-go"' + (e.loading ? ' disabled' : '') + '>' + (e.loading ? '식품표 불러오는 중…' : '정리하기') + '</button>') + '</div>';
   }
 
-  /** ⑤ 확인 카드 (목업 05, 질문은 D4 다음). c = { at, name, total, items: [{ name, sub, kcal, est }], pending: [{ raw }], together, partnerName, saving, error } */
-  function confirmScreen(c, entering) {
-    var n = c.items.length + c.pending.length;
-    var rows = c.items.map(function (i) {
+  var WAIT_WHY = { complex: '재료를 함께 적은 줄', unknown: '식품표에 없는 음식', unit: '모르는 단위', amount: '양이 이상해요', calc: '계산 못 함', ingredient: '재료 중 모르는 것', recipe: '재료를 몰라요', product: '처음 보는 제품 · 제품 등록이 생기면 채워요', food: '저장된 레시피가 아직 없어요' };
+  function section(m, many) {
+    var n = m.items.length + m.pending.length, est = m.pending.length || m.items.some(function (i) { return i.est; });
+    var rows = m.items.map(function (i) {
       return '<li class="drow"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.est ? ' <span class="dest">· 추정</span>' : '') + '</span>' + (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span></li>';
-    }).concat(c.pending.map(function (x) {
-      return '<li class="drow drow--wait"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">아직 계산 못 함 · 저장해 두고 나중에 정리해요</span></span><span class="dwait">정리 대기</span></li>';
+    }).concat(m.pending.map(function (x) {
+      return '<li class="drow drow--wait"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">' + esc(WAIT_WHY[x.reason] || '아직 계산 못 함') + ' · 저장해 두고 나중에 정리해요</span></span><span class="dwait">정리 대기</span></li>';
     })).join('');
+    var head = esc((m.at || '') + ' ' + m.name + ' · ' + n + '가지');
+    return '<section class="card dsum">' + (many ? '<h3 class="dsum__t">' + head + '</h3>' : '<h2 id="dc-title" class="dsum__t">' + head + '</h2>') +
+        '<p class="dsum__k">' + (est ? '약 ' : '') + '<b>' + comma(m.total.kcal) + '</b> kcal</p>' +
+        '<div class="dsum__m"><span>탄수 <b>' + grams(m.total.carb) + '</b></span><span>단백질 <b>' + grams(m.total.protein) + '</b></span><span>지방 <b>' + grams(m.total.fat) + '</b></span></div>' +
+        (m.pending.length ? '<p class="dnote">정리 대기 ' + m.pending.length + '줄은 합계에 아직 빠져 있어요</p>' : '') + '</section>' +
+      '<ul class="dlist dconf">' + rows + '</ul>';
+  }
+  function askCard(q, i, n) {
+    return '<div class="dask"><p class="dask__n">' + (i + 1) + ' / ' + n + '</p><label class="dask__q" for="dq-' + i + '">' + esc(q.label) + ' · ' + esc(q.ask) + '</label>' +
+      '<input id="dq-' + i + '" class="dask__in" type="text" maxlength="80" autocomplete="off" value="' + esc(q.answer || '') + '" placeholder="모르면 비워 두세요"></div>';
+  }
+  /** ⑤ 확인 카드 (목업 05). c = { meals: [{ at, name, total, items: [{ name, sub, kcal, est }], pending }], ai: idle|busy|done|fail, aiNote, questions, together, partnerName, saving, error, dayLabel } */
+  function confirmScreen(c, entering) {
+    var many = c.meals.length > 1, nAll = c.meals.reduce(function (a, m) { return a + m.items.length + m.pending.length; }, 0);
+    var aiBox = c.ai === 'busy' ? '<p class="dai" role="status"><span class="dai__dot" aria-hidden="true"></span>모르는 줄을 AI가 정리하는 중이에요…</p>'
+      : c.aiNote ? '<p class="dai dai--' + (c.ai === 'fail' ? 'fail' : 'ok') + '" role="status">' + esc(c.aiNote) + '</p>' : '';
+    var qs = c.questions && c.questions.length && c.ai !== 'busy' ? '<section class="dasks" aria-labelledby="dq-title"><h3 class="dsec" id="dq-title">꼭 필요한 것만 물어볼게요 · 한 번 정하면 다음부터 덜 물어요</h3>' +
+      c.questions.map(function (q, i) { return askCard(q, i, c.questions.length); }).join('') +
+      '<div class="dask__row"><button type="button" class="mbtn mbtn--solid" data-act="dq-send">답하고 다시 정리</button><button type="button" class="mbtn" data-act="dq-skip">건너뛰기</button></div></section>' : '';
     return '<div class="sheet-layer sheet-layer--full">' +
       '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dc-title">' +
       '<div class="dbar"><button type="button" class="mbar__btn" data-act="dl-back" aria-label="고치러 돌아가기">' + svg(BACK) + '</button></div>' +
       '<p class="caption">' + (c.dayLabel ? esc(c.dayLabel) + ' 기록이에요 · 확인하고 저장해요' : '확인하고 저장해요') + '</p>' +
-      '<section class="card dsum"><h2 id="dc-title" class="dsum__t">' + esc((c.at || '') + ' ' + c.name + ' · ' + n + '가지') + '</h2>' +
-        '<p class="dsum__k">' + (c.pending.length || c.items.some(function (i) { return i.est; }) ? '약 ' : '') + '<b>' + comma(c.total.kcal) + '</b> kcal</p>' +
-        '<div class="dsum__m"><span>탄수 <b>' + grams(c.total.carb) + '</b></span><span>단백질 <b>' + grams(c.total.protein) + '</b></span><span>지방 <b>' + grams(c.total.fat) + '</b></span></div>' +
-        (c.pending.length ? '<p class="dnote">정리 대기 ' + c.pending.length + '줄은 합계에 아직 빠져 있어요</p>' : '') + '</section>' +
-      '<ul class="dlist dconf">' + rows + '</ul>' +
+      (many ? '<h2 id="dc-title" class="title">끼니 ' + c.meals.length + '개</h2>' : '') +
+      aiBox + c.meals.map(function (m) { return section(m, many); }).join('') + qs +
       (c.together && c.partnerName ? '<p class="dnote">' + esc(c.partnerName) + ' 님과 함께 먹은 끼니로 표시해요</p>' : '') +
       (c.error ? '<p class="rform__error" role="alert">' + esc(c.error) + '</p>' : '') +
-      '<div class="dfoot"><button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-save"' + (c.saving || !n ? ' disabled' : '') + '>' + (c.saving ? '저장 중…' : '저장') + '</button></div>' +
+      '<div class="dfoot"><button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-save"' + (c.saving || !nAll ? ' disabled' : '') + '>' + (c.saving ? '저장 중…' : c.ai === 'busy' ? '기다리지 않고 저장' : many ? '끼니 ' + c.meals.length + '개 저장' : '저장') + '</button></div>' +
       '</section></div>';
   }
 

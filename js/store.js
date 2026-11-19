@@ -227,12 +227,13 @@
       },
       /** 끼니 하나 더하기 / 바꾸기(같은 id) — 시각 순으로 (지난 날짜처럼 앱에 그날 목록이 없을 때) */
       saveMeal: function (uid, date, meal) {
-        var ref = db.doc('meals/' + uid + '_' + date);
+        var ref = db.doc('meals/' + uid + '_' + date), add = Array.isArray(meal) ? meal : [meal];
+        var ids = add.map(function (m) { return m.id; });
         return db.runTransaction(function (tx) {
           return tx.get(ref).then(function (snap) {
-            var list = ((snap.exists && snap.data().meals) || []).filter(function (m) { return m.id !== meal.id; });
-            if (list.length >= 20) throw new Error('too-many');
-            list.push(meal);
+            var list = ((snap.exists && snap.data().meals) || []).filter(function (m) { return ids.indexOf(m.id) < 0; });
+            if (list.length + add.length > 20) throw new Error('too-many');
+            list = list.concat(add);
             list.sort(function (a, b) { return String(a.at || '').localeCompare(String(b.at || '')); });
             tx.set(ref, { uid: uid, date: date, meals: list, updatedAt: new Date().toISOString() });
           });
