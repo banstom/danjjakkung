@@ -117,7 +117,7 @@
       goalCard('내 목표', h.mine, true) + (h.partner ? goalCard(h.partner.name + ' 님 목표', h.partner.goal, false) : '') + '</div>';
   }
 
-  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error } */
+  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, days: [{ key, name }], dayKey, minKey, maxKey, dayNote } */
   function logScreen(e, entering) {
     return '<div class="sheet-layer sheet-layer--full">' +
       '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dl-title">' +
@@ -126,6 +126,10 @@
       '<p class="dlog__sub">평소 말투로 적으면 정리해 드려요</p>' +
       '<label class="sr-only" for="dl-text">먹은 것</label><textarea id="dl-text" class="dlog__ta" rows="5" maxlength="2000" placeholder="예) 2230에 식사: 밥 1.5공기 / 조기 1개 / 김치꽁치찌개">' + esc(e.text) + '</textarea>' +
       '<p class="dlog__hint">시각을 안 적으면 지금 시각으로 넣어요</p>' +
+      '<h3 class="dsec" id="dl-day-l">언제 먹었나요</h3><div class="dday" role="group" aria-labelledby="dl-day-l">' +
+        e.days.map(function (d) { return '<button type="button" class="dpick" data-act="dl-day" data-v="' + esc(d.key) + '" aria-pressed="' + (d.key === e.dayKey) + '">' + esc(d.name) + '</button>'; }).join('') +
+        '<label class="dday__other"><span class="sr-only">다른 날 고르기</span><input id="dl-date" class="dday__in" type="date" min="' + esc(e.minKey) + '" max="' + esc(e.maxKey) + '" value="' + esc(e.dayKey) + '"></label></div>' +
+      (e.dayNote ? '<p class="dlog__hint">' + esc(e.dayNote) + '</p>' : '') +
       (e.chips && e.chips.length ? '<h3 class="dsec">자주 먹는 것 · 누르면 위에 붙어요</h3><div class="dpicks">' + e.chips.map(function (c) { return '<button type="button" class="dpick" data-act="dl-chip" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
       (e.partnerName ? '<h3 class="dsec" id="dl-who-l">누구의 끼니</h3><div class="dseg dseg--wide" role="group" aria-labelledby="dl-who-l">' +
         [['me', '나'], ['both', '단짝과 함께']].map(function (x) { return '<button type="button" class="dseg__b" data-act="dl-who" data-v="' + x[0] + '" aria-pressed="' + ((x[0] === 'both') === !!e.together) + '">' + x[1] + '</button>'; }).join('') + '</div>' : '') +

@@ -225,7 +225,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
-    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null,
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dl-day': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -614,6 +614,7 @@
     else if (act === 'dl-go') dietLogGo();
     else if (act === 'dl-back') { var lb = state.diet && state.diet.log; if (lb) { aiSeq++; lb.step = 'input'; lb.meals = null; lb.error = ''; focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
     else if (act === 'dq-send') dietAskSend();
+    else if (act === 'dl-day') { var ld = state.diet && state.diet.log; if (ld) { dietLogTake(ld); ld.dayKey = btn.getAttribute('data-v'); ld.error = ''; focusAfter = ['[data-act="dl-day"][data-v="' + ld.dayKey + '"]']; focusInSheet = true; render(true); } }
     else if (act === 'dq-skip') { var lq = state.diet && state.diet.log; if (lq) { lq.questions = []; focusAfter = ['[data-act="dl-save"]']; focusInSheet = true; render(true); } }
     else if (act === 'dl-save') dietLogSave();
     else if (act === 'dl-chip') { var lc = state.diet && state.diet.log; if (lc) { dietLogTake(lc); lc.text = (lc.text ? lc.text.replace(/\s+$/, '') + '\n' : '') + btn.getAttribute('data-v'); focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
@@ -2281,7 +2282,7 @@
   function dietLogTake(l) { var ta = document.getElementById('dl-text'); if (ta) l.text = ta.value; }
   function dietLogOpen() {
     if (!state.diet) return;
-    state.diet.log = { step: 'input', text: state.dietDraft || '', together: false, result: null, saving: false, error: '' }; state.dietDraft = '';
+    state.diet.log = { step: 'input', dayKey: RT.dates.toKey(RT.dates.fromLocal(new Date())), text: state.dietDraft || '', together: false, result: null, saving: false, error: '' }; state.dietDraft = '';
     state.sheetEntering = true; focusAfter = ['#dl-text']; focusInSheet = true;
     render(true);
     dietLoadTab();
@@ -2298,7 +2299,11 @@
   function nowAt() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function dietLogModel() {
     var l = state.diet.log, pi = partnerInfo();
-    return { dateLabel: RT.dates.full(state.today), text: l.text, together: l.together, chips: [], partnerName: pi.partner ? pi.partnerName : '', loading: !state.foodTab && !l.tabFail, retry: !state.foodTab && !!l.tabFail, error: l.tabFail && !state.foodTab ? '식품표를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 불러와 주세요' : l.error };
+    // 날짜 고르기: 오늘 · 어제 · 그저께 + 다른 날(한 달 전까지). 글에 「11.17.」을 적으면 그 날짜가 먼저
+    var D = RT.dates, now = D.fromLocal(new Date()), pick = D.parse(l.dayKey || '') || now;
+    var days = [[now, '오늘'], [now - 1, '어제'], [now - 2, '그저께']].map(function (x) { return { key: D.toKey(x[0]), name: x[1] }; });
+    var dayNote = pick !== now && pick !== now - 1 && pick !== now - 2 ? D.full(pick) + ' 기록으로 넣어요' : '';
+    return { dateLabel: D.full(pick), days: days, dayKey: D.toKey(pick), minKey: D.toKey(now - 31), maxKey: D.toKey(now), dayNote: dayNote, text: l.text, together: l.together, chips: [], partnerName: pi.partner ? pi.partnerName : '', loading: !state.foodTab && !l.tabFail, retry: !state.foodTab && !!l.tabFail, error: l.tabFail && !state.foodTab ? '식품표를 불러오지 못했어요. 인터넷 연결을 확인하고 다시 불러와 주세요' : l.error };
   }
   /** 정리하기: 먼저 앱 코드로 맞춰 보고(저장된 레시피 · 내 식품은 D6, 지금은 식품표) → 확인 카드.
       못 맞춘 줄이 있거나 끼니가 여럿이면 AI(parseMeal)에게 구조를 맡기고, 숫자는 식품표로 다시 계산 (docs/diet/plan.md 「AI 처리」) */
@@ -2312,7 +2317,7 @@
     var r = RT.dietMatch.match(RT.dietMatch.parse(text, nowAt()), { foods: {}, recipes: [], table: state.foodTab, units: units });
     if (!r.more && !r.items.length && !r.pending.length) { l.error = '먹은 것을 찾지 못했어요. 음식 이름을 적어 주세요'; focusAfter = ['#dl-text']; focusInSheet = true; render(true); return; }
     // 날짜: 적은 날짜(「11.17.」)가 있으면 그날, 없으면 정리하기를 누른 때의 날짜 (자정 넘김 — 점검 AI)
-    var today = RT.dates.fromLocal(new Date()), day = today;
+    var today = RT.dates.fromLocal(new Date()), picked = RT.dates.parse(l.dayKey || ''), day = picked != null && picked <= today && today - picked <= 31 ? picked : today;
     if (r.date) {
       var y = r.date[0] || RT.dates.parts(today).y, dd = RT.dates.fromYMD(y, r.date[1], r.date[2]);
       if (!r.date[0] && dd > today) dd = RT.dates.fromYMD(y - 1, r.date[1], r.date[2]);
@@ -2953,6 +2958,12 @@
   }
   appEl.addEventListener('change', function (ev) {
     if (ev.target.id === 'ava-file') { avaPicked(ev.target.files && ev.target.files[0]); ev.target.value = ''; return; }
+    if (ev.target.id === 'dl-date' && state.diet && state.diet.log) { // 다른 날 고르기 (한 달 전 ~ 오늘)
+      var lg = state.diet.log, D = RT.dates, v = D.parse(ev.target.value || ''), now = D.fromLocal(new Date());
+      dietLogTake(lg);
+      if (v != null && v <= now && now - v <= 31) { lg.dayKey = D.toKey(v); lg.error = ''; } else lg.error = '오늘부터 한 달 전까지 고를 수 있어요';
+      focusAfter = ['#dl-date']; focusInSheet = true; render(true); return;
+    }
     // 언제 할지 시각: 고르면 「알려 주기」 스위치가 나오도록 다시 그린다 (v41)
     if (ev.target.id === 'rt-at' && state.manage && state.manage.form) {
       var af = state.manage.form; af.when = af.when || RT.model.whenEdit(null); af.when.at = ev.target.value; if (!af.when.at) af.when.remind = false; render(true); return;
