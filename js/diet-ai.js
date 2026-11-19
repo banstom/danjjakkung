@@ -21,7 +21,7 @@
     if (!g && it.grams > 0) g = { g: it.grams, est: 'AI가 읽은 양 ' + Math.round(it.grams) + 'g' };
     if (!g || !(g.g > 0) || g.g > 3000) return null;
     var t = addTo(zero(), e, g.g / 100);
-    return { total: t, grams: g.g, est: g.est || null, dflt: g.dflt || null, ref: { kind: 'table', key: e.name, base: e.base } };
+    return { total: t, grams: g.g, est: g.est || null, dflt: g.dflt || null, ref: { kind: 'table', key: e.name, base: e.base, dish: e.kind === 'd' } };
   }
 
   function convert(it, ctx) {
@@ -67,7 +67,18 @@
       var total = zero(); items.forEach(function (i) { addTo(total, i.total); });
       return { at: m.at, kind: m.kind === 'snack' ? 'snack' : 'meal', label: m.label || null, items: items, pending: pending, total: total };
     }).filter(function (m) { return m.items.length || m.pending.length; });
-    return { meals: meals, questions: A.pick((res && res.unknowns) || []).map(question) };
+    // 앱이 이미 아는 것은 묻지 않는다 (사용자: 「멸치볶음 기름을 썼나요」는 왜 묻냐) — 식품표의 음식(반찬 · 요리)은 기름 · 양념이 이미 들어 있고, 계산된 항목의 양도 다시 묻지 않음
+    var known = {};
+    meals.forEach(function (m) { m.items.forEach(function (i) { known[i.name] = i; }); });
+    var unk = ((res && res.unknowns) || []).filter(function (u) {
+      var seg = String(u.path || '').split('/').filter(Boolean), it = known[seg[seg.length - 1]] || known[seg[1]];
+      if (!it || seg.length > 2 && !known[seg[seg.length - 1]]) return true; // 레시피 재료 등은 그대로
+      if (/oil|기름/.test(String(u.what)) && it.ref && it.ref.dish) return false;
+      if (u.what === 'amount' && it.amount != null) return false;
+      if (u.what === 'unit_size' && it.ref && it.ref.kind === 'table' && !it.defaultUnit) return false;
+      return true;
+    });
+    return { meals: meals, questions: A.pick(unk).map(question) };
   }
 
   /** AI 에 보내는 상태 — 지금은 저장된 레시피 · 내 식품이 없고(D6) 내 단위는 기본값 */

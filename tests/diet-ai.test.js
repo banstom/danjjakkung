@@ -52,3 +52,14 @@ test('회귀(점검 AI): AI 가 낸 g 은 단위로 못 할 때만 · 추정 · 
   assert.ok(ap2.total.kcal > 100, '식품표 음식은 보충제로 붙어도 계산');
   assert.match(eg.est, /빠진 재료: 이상한기름/);
 });
+
+test('사용자 요청: 앱이 아는 건 안 물음 — 식품표 반찬의 기름 · 양을 적은 항목의 양 · 햇반 같은 흔한 이름', () => {
+  const r = AI.fromAi({ meals: [{ at: '22:30', items: [
+    { name: '멸치볶음', match: { kind: 'table', key: '멸치볶음' } },
+    { name: '햇반', amount: 1, unit: '개', match: { kind: 'table', key: '햇반' } },
+    { name: '달걀스크램블', amount: 3, unit: '개', match: { kind: 'table', key: '달걀' } }] }],
+    unknowns: [{ path: '22:30/멸치볶음', what: 'cooking_oil', kcalRange: [20, 110] }, { path: '22:30/햇반', what: 'amount', kcalRange: [200, 400] }, { path: '22:30/달걀스크램블', what: 'cooking_oil', kcalRange: [0, 120] }] }, { table: TAB });
+  assert.deepEqual(r.meals[0].pending, [], '햇반 = 쌀밥 1개 210g');
+  assert.equal(r.meals[0].items.find((i) => i.name === '햇반').calc.grams, 210);
+  assert.deepEqual(r.questions.map((q) => q.label), ['달걀스크램블'], '직접 만든 스크램블의 기름만 물음');
+});

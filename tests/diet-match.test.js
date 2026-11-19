@@ -94,3 +94,11 @@ test('D3 내 식품 · 보충제 · 제품 단위', () => {
   near(r.items[0].total.kcal, 478 * 0.2, '1줌 = 20g');
   near(r.items[2].total.kcal, 630, '햇반 2개');
 });
+
+test('사용자 요청: 흔한 이름은 식품표로 (햇반 · 김치 · 닭가슴살 · 삶은계란 · 아메리카노 · 우유 팩)', () => {
+  const r = M.match(M.parse('햇반 1개\n김치\n닭가슴살 1개\n삶은계란 2개\n아메리카노 1잔\n우유 1팩'), { table: TAB });
+  assert.deepEqual(r.pending, []);
+  const g = Object.fromEntries(r.items.map((i) => [i.name, [i.ref.key, i.calc.grams]]));
+  assert.deepEqual(g['햇반'], ['쌀밥', 210]); assert.equal(g['김치'][0], '배추김치'); assert.deepEqual(g['닭가슴살'], ['닭고기_가슴(껍질 제거)_삶은것', 100]);
+  assert.deepEqual(g['삶은계란'], ['달걀_삶은것', 100], '1개 50g 이 1인분보다 먼저'); assert.equal(g['우유'][1], 200);
+});

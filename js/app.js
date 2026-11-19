@@ -2407,7 +2407,7 @@
         var label = String(x.name || x.raw).slice(0, 40), path = (m.label || m.at || '') + '/' + label;
         if (asked(label, path) || qs.some(function (q) { return q.label === label || label.indexOf(q.label) >= 0; })) return;
         qs.push({ path: path, what: x.reason === 'product' ? 'product_and_grams' : 'describe', label: label,
-          ask: x.reason === 'product' ? '어떤 제품이고 몇 g쯤이에요? (제품 등록이 생기기 전엔 정리 대기로 남을 수 있어요)' : '어떤 음식이고 얼마나 먹었나요? (예: 제육볶음 1인분 · 200g)' });
+          ask: x.reason === 'product' ? '어떤 제품이고 몇 g쯤이에요? (제품 등록이 생기기 전엔 정리 대기로 남을 수 있어요)' : x.reason === 'unit' ? '한 번에 몇 g쯤 먹었나요?' : '식품표에서 못 찾았어요 · 비슷한 음식 이름으로 알려 주세요 (예: 제육볶음 1인분)' });
       });
     });
     return qs.slice(0, 3);

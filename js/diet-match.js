@@ -17,7 +17,12 @@
   var EACH_G = { '달걀': 50, '바나나': 120, '사과': 200, '귤': 80, '고구마': 130, '감자': 150, '토마토': 150, '키위': 90, '오렌지': 200, '복숭아': 200, '배': 400, '방울토마토': 15, '딸기': 15 }; // 식품표 이름의 어느 토막이든 (토마토_방울토마토_생것)
   var SPOON_G = { '스푼': 10, '큰술': 10, '작은술': 5, '꼬집': 0.5, '컵': 200 };
   var DEFAULT_UNITS = { '공기': { g: 210, set: 'default' } }; // tests.md T1 시작 상태 (사용자가 정하면 그 값)
-  var ALIAS = { '계란': '달걀', '밥': '쌀밥', '공기밥': '쌀밥', '흰밥': '쌀밥', '흰쌀밥': '쌀밥', '오뎅': '어묵', '오뎅국': '어묵국' };
+  // 흔히 부르는 이름 → 식품표 이름 (사용자: 「햇반 어떤 음식이에요?」 같은 질문은 하지 말 것)
+  var ALIAS = { '계란': '달걀', '밥': '쌀밥', '공기밥': '쌀밥', '흰밥': '쌀밥', '흰쌀밥': '쌀밥', '햇반': '쌀밥', '즉석밥': '쌀밥', '오뎅': '어묵', '오뎅국': '어묵국',
+    '김치': '배추김치', '삶은계란': '달걀_삶은것', '삶은달걀': '달걀_삶은것', '구운계란': '달걀_삶은것', '계란후라이': '달걀후라이', '계란프라이': '달걀후라이', '달걀프라이': '달걀후라이',
+    '닭가슴살': '닭고기_가슴(껍질 제거)_삶은것', '아메리카노': '커피_아메리카노', '커피': '커피_아메리카노', '치킨': '닭튀김_간편조리세트_후라이드치킨', '후라이드치킨': '닭튀김_간편조리세트_후라이드치킨' };
+  // 식품표 이름으로 정한 1개 무게 (제품 · 포장 단위)
+  var EACH_BY_NAME = { '쌀밥': 210, '닭고기_가슴(껍질 제거)_삶은것': 100, '우유': 200 };
 
   function norm(s) { return String(s || '').replace(/\s+/g, '').toLowerCase(); }
 
@@ -174,9 +179,9 @@
     if (u && DEFAULT_UNITS[u]) return { g: a * DEFAULT_UNITS[u].g, est: u + ' 기본값 ' + DEFAULT_UNITS[u].g + 'g', dflt: u };
     if (!u && e.name === '쌀밥') return { g: a * DEFAULT_UNITS['공기'].g, est: '공기 기본값 ' + DEFAULT_UNITS['공기'].g + 'g', dflt: '공기' }; // 양 없는 밥 = 한 공기
     if (SPOON_G[u]) return { g: a * SPOON_G[u], est: u + ' ≈ ' + SPOON_G[u] + 'g' };
-    if (e.kind === 'd' && e.serve && (!u || u === '그릇' || u === '인분' || u === '접시')) return { g: a * e.serve, est: '1인분 ' + e.serve + e.base + ' (식품표)' };
-    var each = null; e.name.split('_').reverse().forEach(function (seg) { if (each == null && EACH_G[seg]) each = EACH_G[seg]; }); // 뒤 토막이 더 구체적 (토마토_방울토마토)
-    if (each && (!u || u === '개' || u === '알')) return { g: a * each, est: '1개 ≈ ' + each + 'g' };
+    var each = EACH_BY_NAME[e.name] || null; if (each == null) e.name.split('_').reverse().forEach(function (seg) { if (each == null && EACH_G[seg]) each = EACH_G[seg]; }); // 뒤 토막이 더 구체적 (토마토_방울토마토)
+    if (each && (!u || u === '개' || u === '알' || u === '팩' || u === '봉지')) return { g: a * each, est: '1' + (u || '개') + ' ≈ ' + each + 'g' }; // 1개 무게가 정해진 건 1인분보다 먼저 (삶은계란 2개 = 100g)
+    if (e.kind === 'd' && e.serve && (!u || u === '그릇' || u === '인분' || u === '접시' || u === '잔' || u === '개' || u === '줄')) return { g: a * e.serve, est: '1인분 ' + e.serve + e.base + ' (식품표)' };
     return null;
   }
 
