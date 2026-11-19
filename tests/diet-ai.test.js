@@ -37,3 +37,18 @@ test('AI 결과: 재료를 다 알면 새 레시피를 몫만큼 · 이상한 �
   assert.deepEqual(AI.fromAi(null, { table: TAB }), { meals: [], questions: [] });
   assert.doesNotMatch(AI.stateText({ units: {} }), /체중|키|나이|목표|kcal/, '몸 정보 · 목표는 안 보냄');
 });
+
+test('회귀(점검 AI): AI 가 낸 g 은 단위로 못 할 때만 · 추정 · 몫 · 합계 상한 · 음식을 보충제로 붙여도 0 아님 · 빠진 재료 알림', () => {
+  const r = AI.fromAi({ meals: [{ at: '09:00', items: [
+    { name: '사과', amount: 1, unit: '개', grams: 999, match: { kind: 'table', key: '사과' } },
+    { name: '바나나', grams: 300, unit: '송이', amount: 1, match: { kind: 'table', key: '바나나' } },
+    { name: '바나나빵', portion: { num: 160, den: 16 }, match: { kind: 'new_recipe' }, ingredients: [{ name: '바나나', amount: 2, unit: '개', match: { kind: 'table', key: '바나나' } }] },
+    { name: '사과', amount: 1, unit: '개', match: { kind: 'supplement', key: '사과' } },
+    { name: '달걀', amount: 2, unit: '개', match: { kind: 'table', key: '달걀' }, ingredients: [{ name: '이상한기름', amount: 1, unit: '스푼', match: { kind: 'table', key: '이상한기름' } }] }] }] }, { table: TAB });
+  const [ap, ba, ap2, eg] = r.meals[0].items;
+  assert.equal(ap.calc.grams, 200, '개수로 계산 (AI 의 999g 무시)');
+  assert.equal(ba.calc.grams, 300); assert.match(ba.est, /AI가 읽은 양 300g/);
+  assert.deepEqual(r.meals[0].pending.map((x) => x.reason), ['amount'], '10배 몫은 계산 안 함');
+  assert.ok(ap2.total.kcal > 100, '식품표 음식은 보충제로 붙어도 계산');
+  assert.match(eg.est, /빠진 재료: 이상한기름/);
+});

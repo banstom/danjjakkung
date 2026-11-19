@@ -1434,6 +1434,7 @@ button.rv-srow { cursor: pointer; }
 /* ── 단짝 식탁 · AI 정리 연결 (D4 연결) — 확인 카드 안내 · 질문 (목업 05) ── */
 .dai { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--raised); font-size: 13px; font-weight: 600; color: var(--sub); }
 .dai--ok { background: var(--tint); color: var(--tint-text); }
+.dai--fail { background: var(--raised); color: var(--text); border: 1.5px solid var(--line); }
 .dai__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: dai-pulse 1s ease-in-out infinite; flex: none; }
 @keyframes dai-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .dai__dot { animation: none; } }

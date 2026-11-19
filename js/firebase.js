@@ -61,17 +61,24 @@
     callFn: function (name, data) {
       var u = auth.currentUser;
       if (!u) return Promise.reject({ code: 'unauthenticated', message: '로그인해 주세요' });
-      return u.getIdToken().then(function (tok) {
-        return fetch('https://asia-northeast3-' + cfg.projectId + '.cloudfunctions.net/' + name, {
-          method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tok }, body: JSON.stringify({ data: data })
-        });
-      }).then(function (res) {
-        return res.json().catch(function () { return {}; }).then(function (j) {
-          if (res.ok && j && 'result' in j) return j.result;
-          var e = (j && j.error) || {};
-          throw { code: String(e.status || res.status || 'unavailable').toLowerCase().replace(/_/g, '-'), message: e.message || '' };
-        });
-      }, function () { throw { code: 'unavailable', message: '' }; });
+      if (root.navigator && root.navigator.onLine === false) return Promise.reject({ code: 'unavailable', message: 'offline' }); // 오프라인이면 바로
+      var url = 'https://asia-northeast3-' + cfg.projectId + '.cloudfunctions.net/' + name;
+      var once = function (fresh) {
+        return u.getIdToken(fresh).then(function (tok) {
+          var ctl = root.AbortController ? new root.AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, 30000) : null; // 30초면 포기 (점검 AI)
+          return fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + tok }, body: JSON.stringify({ data: data }), signal: ctl ? ctl.signal : undefined })
+            .then(function (res) { if (timer) clearTimeout(timer); return res; }, function (e) { if (timer) clearTimeout(timer); throw e; });
+        }).then(function (res) {
+          return res.json().catch(function () { return null; }).then(function (j) {
+            if (res.ok && j && typeof j === 'object' && 'result' in j) return j.result;
+            var e = (j && j.error) || {};
+            var code = e.status ? String(e.status).toLowerCase().replace(/_/g, '-')
+              : res.status === 401 ? 'unauthenticated' : res.status === 403 ? 'permission-denied' : res.status === 429 ? 'resource-exhausted' : res.ok ? 'internal' : 'unavailable';
+            throw { code: code, message: e.message || '' };
+          });
+        }, function () { throw { code: 'unavailable', message: '' }; });
+      };
+      return once(false).catch(function (e) { if (e && e.code === 'unauthenticated') return once(true); throw e; }); // 토큰이 막 만료됐으면 새로 받아 한 번 더
     },
     // 로그아웃: 이 기기에 남은 기록까지 지우고 처음 화면으로
     signOut: function () {

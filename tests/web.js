@@ -1385,12 +1385,26 @@ async function tick(page, dateKey, key) {
   assert.match(await jm.textContent('.dasks'), /1 \/ 2[^]*무당초콜릿 · 어떤 제품이고 몇 g쯤이에요\?[^]*2 \/ 2[^]*달걀스크램블 · 기름/);
   await jm.screenshot({ path: path.join(OUT, 'diet-ai-ask.png') });
   aiReplies.push({ body: { result: { result: { meals: [{ at: '08:20', kind: 'meal', label: '아침', items: [{ name: '달걀스크램블', amount: 3, unit: '개', match: { kind: 'table', key: '달걀' }, ingredients: [{ name: '카놀라유', amount: 1, unit: '스푼', match: { kind: 'table', key: '카놀라유' } }] }] }], unknowns: [] } } } });
-  await jm.fill('#dq-1', '카놀라유 1스푼'); await jm.click('[data-act="dq-send"]');
+  aiReplies[aiReplies.length - 1].delay = 300;
+  await jm.fill('#dq-1', '카놀라유 "1스푼"'); await jm.click('[data-act="dq-send"]');
+  assert.match(await jm.textContent('.dai'), /정리하는 중/, '회귀(점검 AI): 답하고 다시 정리하면 바로 「정리 중」');
   await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || '') && !document.querySelector('.dasks'));
-  assert.match(aiCalls[aiCalls.length - 1].data.state, /달걀스크램블\(cooking_oil\) → "카놀라유 1스푼"/, '답은 상태로 보냄');
+  assert.ok(aiCalls[aiCalls.length - 1].data.state.includes('{"대상":"달걀스크램블","물은것":"cooking_oil","답":"카놀라유 \\"1스푼\\""}'), '답은 JSON 으로 (따옴표 그대로)');
+  assert.match(await jm.textContent('.dconf'), /\+ 카놀라유/, '새 답이 반영됨');
   await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
   const lastMeal = docs.get('meals/' + jmUid0 + '_' + today).meals.find((m) => m.at === '08:20');
   assert.ok(lastMeal && lastMeal.ai === true && lastMeal.items[0].name === '달걀스크램블');
+  assert.ok(lastMeal.items[0].total.kcal > 204 + 50, '기름까지 더한 값이 저장됨');
+  // 회귀(점검 AI): AI 정리 중에 닫고 다시 열어 다른 글을 정리하면 늦은 답이 덮지 않음
+  aiReplies.push({ delay: 500, body: { result: { result: { meals: [{ at: '01:00', items: [{ name: '사과', amount: 9, unit: '개', match: { kind: 'table', key: '사과' } }] }], unknowns: [] } } } });
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '우리집 비밀 요리'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('.dai');
+  await jm.click('[data-act="dl-back"]'); await jm.click('[data-act="dl-close"]');
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '점심 13:00 사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
+  await jm.waitForTimeout(700);
+  assert.strictEqual(await jm.textContent('#dc-title'), '13:00 점심 · 1가지', '늦은 AI 답(01:00 사과 9개)이 덮지 않음');
+  await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
   // 여러 끼니 한 번에 (AI) → 끼니 2개 저장
   aiReplies.push({ body: { result: { result: { meals: [{ at: '07:00', kind: 'meal', label: '아침', items: [{ name: '사과', amount: 1, unit: '개', match: { kind: 'table', key: '사과' } }] }, { at: '15:00', kind: 'snack', items: [{ name: '바나나', amount: 1, unit: '개', match: { kind: 'table', key: '바나나' } }] }], unknowns: [] } } } });
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });

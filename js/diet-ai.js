@@ -16,8 +16,10 @@
   function tableItem(it, ctx) {
     var key = it.match && it.match.key, e = (key && M.findTable(ctx.table, key)) || M.findTable(ctx.table, it.name);
     if (!e) return null;
-    var g = it.grams > 0 ? { g: it.grams } : M.gramsFor(e, { amount: it.amount, unit: it.unit }, ctx.units || {});
-    if (!g || !(g.g > 0) || g.g > 5000) return null;
+    // 양은 앱이 단위로 계산. 단위로 못 할 때만 AI 가 읽은 g 을 쓰고 「추정」으로 (점검 AI)
+    var g = M.gramsFor(e, { amount: it.amount, unit: it.unit }, ctx.units || {});
+    if (!g && it.grams > 0) g = { g: it.grams, est: 'AI가 읽은 양 ' + Math.round(it.grams) + 'g' };
+    if (!g || !(g.g > 0) || g.g > 3000) return null;
     var t = addTo(zero(), e, g.g / 100);
     return { total: t, grams: g.g, est: g.est || null, dflt: g.dflt || null, ref: { kind: 'table', key: e.name, base: e.base } };
   }
@@ -25,7 +27,7 @@
   function convert(it, ctx) {
     var kind = it.match && it.match.kind;
     var out = { raw: it.name, name: it.name, amount: it.amount == null ? null : it.amount, unit: it.unit || null };
-    if (kind === 'supplement') return Object.assign(out, { ref: { kind: 'supplement', key: (it.match && it.match.key) || it.name }, calc: {}, total: zero(), est: null });
+    if (kind === 'supplement' && !M.findTable(ctx.table, (it.match && it.match.key) || it.name)) return Object.assign(out, { ref: { kind: 'supplement', key: (it.match && it.match.key) || it.name }, calc: {}, total: zero(), est: null });
     if (kind === 'new_recipe' || (it.ingredients && it.ingredients.length && kind !== 'table')) {
       var sum = zero(), miss = [], ests = [];
       (it.ingredients || []).forEach(function (x) {
@@ -34,16 +36,18 @@
       });
       if (!it.ingredients || !it.ingredients.length || miss.length) return { pending: { raw: it.name + (miss.length ? ' (' + miss.join(' · ') + ')' : ''), name: it.name, reason: miss.length ? 'ingredient' : 'recipe' } };
       var p = it.portion && it.portion.den ? it.portion.num / it.portion.den : 1;
+      if (!(p > 0 && p <= 4) || (it.portion && it.portion.den > 100) || sum.kcal * p > 5000) return { pending: { raw: it.name, name: it.name, reason: 'amount' } }; // 몫 · 합계가 터무니없으면 계산 안 함
       return Object.assign(out, { ref: { kind: 'new_recipe', key: it.name }, calc: { portion: it.portion ? [it.portion.num, it.portion.den] : null }, total: addTo(zero(), sum, p),
         est: ests.length ? '어림한 재료: ' + ests.join(' · ') : null, ingredients: (it.ingredients || []).map(function (x) { return x.name; }) });
     }
-    if (kind === 'table' || !kind) {
+    if (kind === 'table' || !kind || kind === 'supplement') { // 보충제로 붙었어도 식품표 음식이면 계산
       var r = tableItem(it, ctx);
       if (!r) return { pending: { raw: it.name + (it.amount != null ? ' ' + it.amount + (it.unit || '') : ''), name: it.name, reason: 'unknown' } };
       // 함께 넣은 재료(스크램블 기름 등)
-      var extra = [];
-      (it.ingredients || []).forEach(function (x) { var rx = tableItem(x, ctx); if (rx) { addTo(r.total, rx.total); extra.push(x.name); } });
-      return Object.assign(out, { ref: r.ref, calc: { grams: r.grams }, total: r.total, est: r.est, defaultUnit: r.dflt, extras: extra });
+      var extra = [], lost = [];
+      (it.ingredients || []).forEach(function (x) { var rx = tableItem(x, ctx); if (rx) { addTo(r.total, rx.total); extra.push(x.name); } else lost.push(x.name); });
+      var est = [r.est, lost.length ? '빠진 재료: ' + lost.join(' · ') : ''].filter(Boolean).join(' · ') || null; // 못 찾은 재료는 조용히 빼지 않고 알림
+      return Object.assign(out, { ref: r.ref, calc: { grams: r.grams }, total: r.total, est: est, defaultUnit: r.dflt, extras: extra });
     }
     // 처음 보는 제품 · 저장 안 된 레시피는 등록 화면(D6) 뒤에 — 지금은 정리 대기
     return { pending: { raw: it.name + (it.amount != null ? ' ' + it.amount + (it.unit || '') : ''), name: it.name, reason: kind === 'new_product' ? 'product' : 'food' } };

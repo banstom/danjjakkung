@@ -9,6 +9,11 @@
 """
 import csv, json, sys, os, collections
 
+EXTRA = [  # [kcal, carb, protein, fat]
+    ('카놀라유', [884, 0, 0, 100]), ('올리브유', [884, 0, 0, 100]), ('식용유', [884, 0, 0, 100]), ('콩기름', [884, 0, 0, 100]),
+    ('해바라기유', [884, 0, 0, 100]), ('코코넛오일', [892, 0, 0, 99.1]), ('버터', [717, 0.1, 0.9, 81.1]), ('마가린', [717, 0.7, 0.2, 80.7]),
+]
+
 def f(x):
     try: return float(str(x).strip())
     except Exception: return None
@@ -40,8 +45,12 @@ def main(paths):
         v = [round(x / g['n'], 1) for x in g['v']]
         serve = round(sorted(g['serve'])[len(g['serve']) // 2]) if g['serve'] else 0
         items.append([name, kind, base] + v + [serve])
+    # 식약처 음식 · 원재료 표에 없는 흔한 기름 (가공식품이라 빠짐) — 100g 당 표준값 (USDA FoodData Central). 이름이 이미 있으면 넣지 않음
+    have = {x[0] for x in items}
+    for n, v in EXTRA:
+        if n not in have: items.append([n, 'r', 'g'] + v + [0])
     items.sort(key=lambda x: (x[1], x[0]))
-    out = {'v': 1, 'source': '식품의약품안전처 전국통합식품영양성분정보 (원재료성식품 · 음식) 표준데이터',
+    out = {'v': 1, 'source': '식품의약품안전처 전국통합식품영양성분정보 (원재료성식품 · 음식) 표준데이터 + 흔한 기름 8가지 (USDA 표준값)',
            'cols': ['name', 'kind', 'base', 'kcal', 'carb', 'protein', 'fat', 'serve'], 'items': items}
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'foods-kr.json')
     with open(root, 'w', encoding='utf-8') as w:
