@@ -30,7 +30,7 @@
     var per = kind === 'year' ? '올해' : '이번 달';
     switch (card.id) {
       case 'cover':
-        return { kick: card.dateLabel, title: card.title, sub: '단짝이 된 지 ' + L.comma(card.daysTogether) + '일' };
+        return { kick: card.dateLabel, title: card.title, sub: typeof card.daysTogether === 'number' && card.daysTogether > 0 ? '단짝이 된 지 ' + L.comma(card.daysTogether) + '일' : null };
       case 'together':
         return {
           kick: '함께 해낸 날', big: card.fullDays, unit: '일',

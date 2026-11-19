@@ -172,9 +172,7 @@ test('S7 저장 직전 나눔 정리', () => {
 });
 
 // ── 저장소에서 더한 시험 ──
-test('L1 서버 사본(functions/ledger-sum.js)이 js/ledger-sum.js 와 글자 하나까지 같다', () => {
-  assert.equal(fs.readFileSync(path.join(ROOT, 'functions/ledger-sum.js'), 'utf8'), fs.readFileSync(path.join(ROOT, 'js/ledger-sum.js'), 'utf8'));
-});
+// (서버 사본이 같은지는 tests/shared.test.js)
 
 test('L2 「N일」이 지난달에 없는 날이면 날짜로 읽지 않음 (3월 31일에 「31일」은 그날, 3월 1일에 「30일」은 없음)', () => {
   assert.equal(parseLine('31일 저녁 4만', { meName: '준민', partnerName: '단짝', today: new Date(2027, 2, 31) }).date, '2027-03-31');

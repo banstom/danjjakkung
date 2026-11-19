@@ -19,7 +19,7 @@
    prevData = 바로 앞 기간의 같은 모양 (없으면 null → 비교 숫자 없음) */
 'use strict';
 const N = require('./notify');
-const L = require('./ledger-sum');
+const L = require('./shared/ledger-sum');
 
 // ── 날짜 ──
 const D = (s) => new Date(s + 'T00:00:00Z');
@@ -271,7 +271,8 @@ function computeRecap(rawData, rawPrev) {
     id: 'cover',
     dateLabel: p.kind === 'month' ? `${y}년 ${m}월` : `${y}년`,
     title: p.kind === 'month' ? '이번 달의 단짝꿍' : '이번 해의 단짝꿍',
-    daysTogether: daysBetween(data.coupleSince, range.end) + 1 // 기간 마지막 날 기준, 단짝이 된 날 = 1일
+    // 기간 마지막 날 기준, 단짝이 된 날 = 1일 (단짝이 된 날을 아직 안 정했으면 null → 표지에서 그 줄만 빠짐)
+    daysTogether: data.coupleSince ? daysBetween(data.coupleSince, range.end) + 1 : null
   }];
   const together = togetherCard(p, data);
   if (together) {

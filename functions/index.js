@@ -7,6 +7,8 @@
    - onTodoCreated · onTodoUpdated : 함께 할 일이 생기거나 끝나면 짝꿍에게 (v38, 누르면 할 일 탭)
    - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
    - onPlaceWritten : 단짝 지도에 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「별점을 남겨 주세요」 (v54, 누르면 그 지역 시트)
+   - monthlyRecap   : 매달 1일 03:00 지난달 결산(1월 1일엔 작년 한 해도) → recaps/{key} (docs/recap)
+   - recapNotify    : 매달 1일 09:00 「11월의 단짝꿍이 나왔어요」 (1월 1일엔 연말결산 하나만, users.recap=false 면 안 보냄)
    - parseMeal      : 단짝 식탁 — 적은 끼니 글을 Claude Haiku 로 구조만 정리 (영양 숫자는 앱이 계산, D4). 키는 Secret Manager
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
@@ -19,6 +21,7 @@ const M = require('./meal');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const admin = require('firebase-admin');
 const N = require('./notify');
+const RJ = require('./recap-job');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -233,6 +236,15 @@ exports.weeklyReview = onSchedule({ schedule: '0 21 * * 0', timeZone: 'Asia/Seou
   }
 });
 
+// 월말 · 연말결산 (docs/recap): 1일 새벽에 숫자를 계산해 두고(카드 화면은 이 문서만 읽음), 아침 9시에 알린다
+exports.monthlyRecap = onSchedule({ schedule: '0 3 1 * *', timeZone: 'Asia/Seoul', timeoutSeconds: 300, memory: '512MiB' }, async () => {
+  const out = await RJ.runMonthly(db, new Date());
+  logger.info('결산 만듦', Object.keys(out).map((k) => k + (out[k] ? '' : '(건너뜀)')).join(' '));
+});
+exports.recapNotify = onSchedule({ schedule: '0 9 1 * *', timeZone: 'Asia/Seoul' }, async () => {
+  const sent = await RJ.runNotify(db, new Date(), { send: sendTo, once, appUrl: APP_URL });
+  logger.info('결산 알림', sent.length);
+});
 /* 단짝 식탁 · 끼니 정리 (D4). 앱이 { text, today, state, table? } 를 보내면 정리한 구조를 돌려준다.
    - state 에 넣는 것(D3 앱 코드): 저장된 레시피 · 내 식품 이름과 재료, 내 단위(정했는지), 오늘 기록, 물은 질문 — 몸 정보 · 목표는 넣지 않는다
    - 두 사람(members)만 · 한 사람 하루 LIMITS.perDay 번까지 (aiUse/{uid_날짜}, 앱 규칙엔 없어 앱은 못 읽고 못 씀)

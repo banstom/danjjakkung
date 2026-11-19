@@ -68,7 +68,7 @@ recapNotify    (매달 1일 09:00) — recaps 문서가 있고 users.recap != fa
 - 결산 뒤에 기록을 고쳐도 숫자는 그대로. 「다시 계산」은 나중 후보
 - `prevData`: 앞 기간 데이터를 같이 읽어 계산(앞 기간 recaps 문서는 비교용으로 쓰지 않음 — 루틴별 비교가 필요해서)
 - 입력 모양(`compose.js` 맨 위 주석)으로 바꾸는 일은 서버 함수의 '읽기' 모듈 한 곳에서만. 저장소 컬렉션 이름 · 필드가 다르면 거기서 맞춰요
-- 읽는 양: 커플 하나에 한 달치 컬렉션 9개 × 두 달(이번 + 지난). Spark 한도 안
+- 읽는 양: 커플 하나에 한 달치 컬렉션 9개 × 두 달(이번 + 지난). Blaze (정해진 일 2개 추가 — Cloud Scheduler 무료 3개를 넘으면 한 개에 월 약 0.1달러)
 - 단짝이 된 날보다 이른 달은 만들지 않음. 단짝이 된 달은 만들되 비교 없음
 - `firestore.rules`: `couples/{cid}/recaps/{key}` 읽기는 members만, 쓰기는 아무도(서버 함수만)
 - 알림 스위치: 알림 시트에 「매달 1일 결산 알림」(`users/{uid}.recap`, 기본 켬)
@@ -115,3 +115,13 @@ spends     단짝 영수증 기록 (영수증이 아직 없으면 [])
 - 11-19 R1: 카드 9 문구에 「· n건」(2절대로, 참조 구현엔 없었음) — 서버가 `topCatCount`를 저장. 제목 「11월의 단짝 영수증」, 카드 8 안내 「몸 정보 · 체중은 결산에 넣지 않아요」도 문구 모듈에서
 - 11-19 R1: 저장소에는 `couples/{cid}`가 없음 → R2에서 `/recaps/{key}` (맨 위), 규칙은 `isMember()` 읽기 · 쓰기 없음
 - 11-19 R1: 시험 `tests/recap.test.js` 18개 (참조 14 + R1~R4), `npm test`에 포함
+- 11-19 R2: 서버 `functions/recap-read.js`(저장소 문서 → 입력 모양, 읽기는 여기 한 곳) · `functions/recap-job.js`(runMonthly · runNotify — 시각 · 보내기를 밖에서 받아 시험) · `index.js`의 `monthlyRecap`(1일 03:00, 512MiB · 300초) · `recapNotify`(1일 09:00)
+- 11-19 R2: 서버가 앱 모듈을 함께 쓰려고 `functions/shared/`에 사본: `ledger-sum.js` · `dates.js` · `cats.js` · `schedule.js`. 고친 뒤 `bash scripts/sync-shared.sh`, `tests/shared.test.js`가 같은지 확인. (R1의 `functions/ledger-sum.js`는 `functions/shared/`로 옮김)
+- 11-19 R2: 함께 일정 = 시간표 일정 중 owner `both`를 앱과 같은 규칙(`schedule.on`)으로 날마다 펼침 — 매주 · 요일마다 시간 · 쉬는 날 · 옮긴 날 그대로
+- 11-19 R2: 함께 먹은 끼니 = 하루마다 두 사람 문서의 「함께」(`together`) 끼니 수 중 큰 쪽 (각자 같은 끼니를 적어도 두 번 세지 않게)
+- 11-19 R2: **「목표 맞춘 날」(가정, 사용자 확인 필요)** — 앱에 정의가 없어서: 그날 끼니 기록이 있고 하루 칼로리 합(끼니 `total.kcal`)이 `goals/{uid}.kcal`의 90~110%. 탄단지는 안 봄. 몸 정보(`private/*`)는 읽지 않음
+- 11-19 R2: 지역 이름 = `functions/regions.json`에서 시 · 도를 뺀 것(「서울 성동구」 → 「성동구」)
+- 11-19 R2: 알림 주소 = `?tab=look&recap=2026-11` (저장소의 돌아보기 탭 주소 꼴, 「/review?recap=」 대신). 같은 결산 알림은 사람마다 한 번(`notifyLog recap_<uid>_<key>`)
+- 11-19 R2: 단짝이 된 날(`couple/main.start`)을 안 정했으면 결산은 만들되 표지의 「단짝이 된 지」 줄만 빠짐
+- 11-19 R2: 규칙 — `recaps/{key}` 읽기 `isMember()`, 쓰기 없음 · `users.recap`(bool) 칸 추가
+- 11-19 R2: 시험 — `tests/recap-server.test.js` 12개(가짜 저장소로 F1~F6 + 읽기 모듈, 시험 자료를 저장소 문서로 펼쳐도 목업 숫자 그대로) · 에뮬레이터는 Cloud Shell에서 `bash scripts/emu-recap.sh`(F1~F7, `functions/emu/recap.emu.js`, 배포에서 뺌)

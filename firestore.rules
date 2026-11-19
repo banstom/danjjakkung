@@ -389,9 +389,10 @@ service cloud.firestore {
       allow read: if isMember() && request.auth.uid == uid;
       // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'mapNudge', 'routineView', 'reviewMonthView', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'mapNudge', 'routineView', 'reviewMonthView', 'recap', 'updatedAt'])
         && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
         && (!('weekly' in request.resource.data) || request.resource.data.weekly is bool)
+        && (!('recap' in request.resource.data) || request.resource.data.recap is bool) // 매달 1일 결산 알림 (없으면 켬)
         && (!('todoNotify' in request.resource.data) || request.resource.data.todoNotify is bool)
         && (!('missNotify' in request.resource.data) || request.resource.data.missNotify is bool)
         && (!('routineView' in request.resource.data) || request.resource.data.routineView in ['time', 'kind', 'manual'])
@@ -414,6 +415,11 @@ service cloud.firestore {
         allow create: if isMember() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['at'])
           && request.resource.data.at is string && request.resource.data.at.size() <= 40;
       }
+    }
+    // 월말 · 연말결산 (docs/recap): recaps/<YYYY-MM | YYYY> — 서버 함수(monthlyRecap)만 쓴다. 둘 다 읽기만
+    match /recaps/{key} {
+      allow read: if isMember();
+      allow write: if false;
     }
     // notifyLog: 서버만 쓴다 (규칙에 없으므로 앱에서는 읽기 · 쓰기 모두 막힘)
   }
