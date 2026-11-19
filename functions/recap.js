@@ -276,8 +276,9 @@ function computeRecap(rawData, rawPrev) {
   }];
   const together = togetherCard(p, data);
   if (together) {
+    // 비교는 앞 기간에도 그 카드가 있었을 때만 (기록이 아예 없던 달 — 기능을 쓰기 전 — 을 0으로 치지 않게)
     const pt = prev ? togetherCard(prev.period, prev) : null;
-    together.diffPrev = prev ? diff(together.fullDays, pt ? pt.fullDays : 0) : null;
+    together.diffPrev = pt ? diff(together.fullDays, pt.fullDays) : null;
     cards.push(together);
   }
   const routines = routinesCard(p, data, prev);
@@ -286,7 +287,7 @@ function computeRecap(rawData, rawPrev) {
     const c = fn(p, data);
     if (!c) continue;
     const pc = prev ? fn(prev.period, prev) : null;
-    c.diffPrev = prev ? diff(c[key], pc ? pc[key] : 0) : null;
+    c.diffPrev = pc ? diff(c[key], pc[key]) : null;
     cards.push(c);
   }
   for (const fn of [placesCard, mealsCard, spendsCard]) {
@@ -297,7 +298,7 @@ function computeRecap(rawData, rawPrev) {
   const pick = (id) => cards.find((c) => c.id === id);
   const tiles = [];
   if (pick('together')) tiles.push({ id: 'together', value: pick('together').fullDays, unit: '일', label: '둘 다 해낸 날' });
-  if (pick('todos')) tiles.push({ id: 'todos', value: pick('todos').total, unit: '개', label: '함께 끝낸 일' });
+  if (pick('todos')) tiles.push({ id: 'todos', value: pick('todos').total, unit: '개', label: '끝낸 일' });
   if (pick('kungs')) tiles.push({ id: 'kungs', value: pick('kungs').total, unit: '번', label: '주고받은 꿍' });
   if (pick('time')) tiles.push({ id: 'time', value: pick('time').hours, unit: '시간', label: '함께 보낸 시간' });
   const pl = pick('places');

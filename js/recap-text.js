@@ -49,7 +49,7 @@
         };
       case 'todos':
         return {
-          kick: '함께 끝낸 일', big: card.total, unit: '개',
+          kick: '끝낸 일', big: card.total, unit: '개',
           lead: card.shared ? '그중 함께 할 일이 ' + card.shared + '개예요.' : per + ' 끝낸 할 일이에요.',
           rows: people.map(function (p) { return { uid: p.uid, name: p.name, value: card.byPerson[p.uid] + '개' }; }),
           more: card.busiest && card.busiest.count >= 2 ? ['가장 많이 끝낸 날 ' + dayLabel(card.busiest.date) + ' · ' + card.busiest.count + '개'] : [],

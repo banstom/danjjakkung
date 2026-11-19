@@ -110,7 +110,7 @@ test('C9 영수증 — 단짝 영수증 모듈과 같은 숫자', () => {
 
 test('C10 마무리 타일', () => {
   const t = cardText(card('final'), recap, 'jm');
-  assert.deepEqual(t.tiles.map((x) => `${x.big} ${x.label}`), ['15일 둘 다 해낸 날', '23개 함께 끝낸 일', '153번 주고받은 꿍', '50시간 함께 보낸 시간', '2곳 새로 칠한 곳', '18번 함께 먹은 끼니']);
+  assert.deepEqual(t.tiles.map((x) => `${x.big} ${x.label}`), ['15일 둘 다 해낸 날', '23개 끝낸 일', '153번 주고받은 꿍', '50시간 함께 보낸 시간', '2곳 새로 칠한 곳', '18번 함께 먹은 끼니']);
   assert.equal(t.spends.line, '준민 50% · 단짝 50%');
 });
 
@@ -186,4 +186,20 @@ test('R4 앞 기간이 없으면(단짝이 된 달) 비교 문구가 없음', ()
   const r = computeRecap(nov, null);
   assert.equal(cardText(r.cards.find((c) => c.id === 'together'), r, 'jm').cmp, null);
   assert.equal(cardText(r.cards.find((c) => c.id === 'kungs'), r, 'jm').cmp, null);
+});
+
+test('R5 앞 달에 그 카드 기록이 없으면 비교 없음 (기능을 쓰기 전 달을 0으로 치지 않음) · 있으면 0개였어도 비교', () => {
+  const empty = { ...oct, routines: [], checks: [], todos: [], kungs: [], events: [] };
+  const r = computeRecap(nov, empty);
+  for (const id of ['together', 'todos', 'kungs', 'time']) assert.equal(card(id, r).diffPrev, null, id);
+  // 앞 달 루틴은 있었지만 하나도 못 해낸 경우 → 「모두」 0일과 비교
+  const none = computeRecap(nov, { ...oct, checks: [] });
+  assert.equal(card('together', none).diffPrev, 15);
+});
+
+test('R6 할 일 카드는 「끝낸 일」 (각자 끝낸 일도 셈) · 함께 할 일이 없으면 「이번 달 끝낸 할 일이에요.」', () => {
+  const t = cardText(card('todos'), recap, 'jm');
+  assert.equal(t.kick, '끝낸 일');
+  const solo = computeRecap({ ...nov, todos: nov.todos.map((x) => ({ ...x, shared: false })) }, oct);
+  assert.equal(cardText(card('todos', solo), solo, 'jm').lead, '이번 달 끝낸 할 일이에요.');
 });

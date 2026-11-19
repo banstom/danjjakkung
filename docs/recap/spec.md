@@ -125,3 +125,6 @@ spends     단짝 영수증 기록 (영수증이 아직 없으면 [])
 - 11-19 R2: 단짝이 된 날(`couple/main.start`)을 안 정했으면 결산은 만들되 표지의 「단짝이 된 지」 줄만 빠짐
 - 11-19 R2: 규칙 — `recaps/{key}` 읽기 `isMember()`, 쓰기 없음 · `users.recap`(bool) 칸 추가
 - 11-19 R2: 시험 — `tests/recap-server.test.js` 12개(가짜 저장소로 F1~F6 + 읽기 모듈, 시험 자료를 저장소 문서로 펼쳐도 목업 숫자 그대로) · 에뮬레이터는 Cloud Shell에서 `bash scripts/emu-recap.sh`(F1~F7, `functions/emu/recap.emu.js`, 배포에서 뺌)
+- 11-19 R2-1 (실제 10월 데이터로 돌려 본 뒤): **비교는 앞 기간에도 그 카드가 있었을 때만** — 기능을 쓰기 전 달을 0으로 쳐서 「지난달보다 +11시간」이 나오던 것. 앞 달에 루틴은 있었는데 「모두」 0일이면 비교함
+- 11-19 R2-1: 카드 4 · 마무리 타일 이름 「함께 끝낸 일」 → 「끝낸 일」(각자 끝낸 일도 세므로, 2절 표대로). 함께 할 일 수는 lead 「그중 함께 할 일이 n개예요.」
+- 11-19 R2-1: 「끝났다는 기준」의 에뮬레이터는 선택 — 배포 뒤 `gcloud scheduler jobs run firebase-schedule-monthlyRecap-asia-northeast3 …`로 실제 데이터 결산을 한 번 만들어 확인(11-19 `recaps/2026-10` 확인함). `scripts/emu-recap.sh`는 남겨 둠
