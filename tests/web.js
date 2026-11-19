@@ -1358,23 +1358,34 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(300);
   assert.deepStrictEqual(docs.get('meals/' + jmUid0 + '_' + yKey[0]).meals.map((m) => m.at), ['19:00'], '어제 문서에');
   assert.strictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.length, 1, '오늘 문서는 그대로');
-  // 날짜 고르기: 어제 버튼 · 다른 날 · 한 달 넘으면 안 됨
-  const d2 = await jm.evaluate(() => { const D = RT.dates, n = D.fromLocal(new Date()); return { y: D.toKey(n - 1), w: D.toKey(n - 5), old: D.toKey(n - 40) }; });
+  // 날짜 고르기: 「언제 먹었나요」 줄 → 시트(오늘 · 어제 · 그저께 + 달력) · 한 달 넘으면 누를 수 없음
+  const d2 = await jm.evaluate(() => { const D = RT.dates, n = D.fromLocal(new Date()); return { y: D.toKey(n - 1), w: D.toKey(n - 5), old: D.toKey(n - 40), fut: D.toKey(n + 1) }; });
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
-  assert.strictEqual(await jm.getAttribute('[data-act="dl-day"][aria-pressed="true"]', 'data-v'), today, '처음엔 오늘');
-  await jm.fill('#dl-text', '저녁 20:00 사과 1개'); await jm.click('[data-act="dl-day"][data-v="' + d2.y + '"]');
+  assert.match(await jm.textContent('.dwhen__v'), /^오늘 · /, '처음엔 오늘');
+  await jm.fill('#dl-text', '저녁 20:00 사과 1개');
+  await jm.click('[data-act="dl-when"]'); await jm.waitForSelector('#dw-title');
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.className), 'dcal__d is-on is-today', '열면 고른 날에 포커스');
+  assert.ok(await jm.$('.dcal__d[aria-label*="' + (await jm.evaluate((k) => RT.dates.full(RT.dates.parse(k)), d2.fut)) + '"]:disabled') || (await jm.evaluate(() => !document.querySelector('[data-act="dl-when-month"][data-v="1"]').disabled)) === false, '내일은 못 누름');
+  await jm.screenshot({ path: path.join(OUT, 'diet-when.png') });
+  await jm.click('.dwhen__quick [data-act="dl-when-pick"][data-v="' + d2.y + '"]'); await jm.waitForTimeout(60);
+  assert.ok(!(await jm.$('#dw-title')), '고르면 닫힘'); assert.match(await jm.textContent('.dwhen__v'), /^어제 · /);
   assert.strictEqual(await jm.inputValue('#dl-text'), '저녁 20:00 사과 1개', '날짜를 골라도 글 그대로');
   await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
   assert.match(await jm.textContent('.dscreen .caption'), /기록이에요/); await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(300);
   assert.ok(docs.get('meals/' + jmUid0 + '_' + d2.y).meals.some((m) => m.at === '20:00'), '어제 문서에');
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
-  await jm.fill('#dl-date', d2.w); await jm.dispatchEvent('#dl-date', 'change'); await jm.waitForTimeout(60);
-  assert.match(await jm.textContent('.dscreen'), /기록으로 넣어요/, '다른 날 안내');
+  await jm.click('[data-act="dl-when"]'); await jm.waitForSelector('#dw-title');
+  if (!(await jm.$('.dcal__d[data-v="' + d2.w + '"]'))) await jm.click('[data-act="dl-when-month"][data-v="-1"]');
+  await jm.click('.dcal__d[data-v="' + d2.w + '"]'); await jm.waitForTimeout(60);
+  assert.doesNotMatch(await jm.textContent('.dwhen__v'), /오늘|어제|그저께/, '다른 날은 날짜로');
   await jm.fill('#dl-text', '바나나 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title'); await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(300);
   assert.ok(docs.get('meals/' + jmUid0 + '_' + d2.w), '5일 전 문서에');
-  await jm.click('[data-act="dl-open"]'); await jm.waitForSelector('#dl-date');
-  await jm.evaluate((v) => { const i = document.getElementById('dl-date'); i.removeAttribute('min'); i.value = v; i.dispatchEvent(new Event('change', { bubbles: true })); }, d2.old); await jm.waitForTimeout(60);
-  assert.match(await jm.textContent('.dscreen .rform__error'), /한 달 전까지/);
+  await jm.click('[data-act="dl-open"]'); await jm.click('[data-act="dl-when"]'); await jm.waitForSelector('#dw-title');
+  await jm.click('[data-act="dl-when-month"][data-v="-1"]'); await jm.waitForTimeout(40);
+  assert.ok(await jm.evaluate(() => [...document.querySelectorAll('.dcal__d')].some((b) => b.disabled)), '한 달 넘은 날은 못 누름');
+  assert.notStrictEqual(await jm.evaluate(() => document.activeElement.tagName), 'BODY', '달을 넘겨도 포커스가 시트 안에');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
+  assert.ok(!(await jm.$('#dw-title')) && await jm.$('#dl-text'), 'Esc 는 날짜 시트만 닫음');
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
   // Esc: 확인 카드 → 기록하기 → 닫기
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });

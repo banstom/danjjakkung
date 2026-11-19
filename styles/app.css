@@ -1449,8 +1449,23 @@ button.rv-srow { cursor: pointer; }
 .mvdel { display: flex; justify-content: flex-end; margin-top: -2px; }
 .mvdel .text-btn { min-height: 44px; font-size: 13px; color: var(--sub); }
 .mvdel .text-btn--warn { color: var(--warn); }
-/* 기록하기 · 언제 먹었나요 (오늘 · 어제 · 그저께 · 다른 날) */
-.dday { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.dday__other { display: inline-flex; }
-.dday__in { min-height: 40px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); padding: 0 12px; font: inherit; font-size: 14px; font-weight: 600; color: var(--text); }
-.dday__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 기록하기 · 언제 먹었나요 — 목록 한 줄 → 날짜 시트(빠른 고르기 + 달력, 목업 03-1) */
+.dwhen { margin-top: 16px; }
+.dwhen__row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; border: 0; background: none; padding: 0; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.dwhen__l { flex: 1; font-size: 16px; font-weight: 600; }
+.dwhen__v { font-size: 15px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+.dwhen__row svg { color: var(--faint); flex: none; }
+.dwhen__row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.dwhen__title { margin-bottom: 14px; }
+.dwhen__quick { margin-bottom: 14px; }
+.dcal__head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+.dcal__m { flex: 1; margin: 0; font-size: 16px; font-weight: 700; }
+.dcal__head .mbar__btn:first-child { margin-left: 0; }
+.dcal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.dcal__w { font-size: 12px; font-weight: 600; color: var(--sub); padding: 4px 0; }
+.dcal__d { min-height: 44px; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 14px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; cursor: pointer; }
+.dcal__d:disabled { color: var(--faint); cursor: default; }
+.dcal__d.is-today { box-shadow: inset 0 0 0 1.5px var(--primary-edge); }
+.dcal__d.is-on { background: var(--primary); color: var(--on-primary); }
+.dcal__d:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dcal__note { margin-top: 10px; }

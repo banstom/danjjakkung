@@ -117,7 +117,7 @@
       goalCard('내 목표', h.mine, true) + (h.partner ? goalCard(h.partner.name + ' 님 목표', h.partner.goal, false) : '') + '</div>';
   }
 
-  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, days: [{ key, name }], dayKey, minKey, maxKey, dayNote } */
+  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, whenLabel } */
   function logScreen(e, entering) {
     return '<div class="sheet-layer sheet-layer--full">' +
       '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dl-title">' +
@@ -126,10 +126,7 @@
       '<p class="dlog__sub">평소 말투로 적으면 정리해 드려요</p>' +
       '<label class="sr-only" for="dl-text">먹은 것</label><textarea id="dl-text" class="dlog__ta" rows="5" maxlength="2000" placeholder="예) 2230에 식사: 밥 1.5공기 / 조기 1개 / 김치꽁치찌개">' + esc(e.text) + '</textarea>' +
       '<p class="dlog__hint">시각을 안 적으면 지금 시각으로 넣어요</p>' +
-      '<h3 class="dsec" id="dl-day-l">언제 먹었나요</h3><div class="dday" role="group" aria-labelledby="dl-day-l">' +
-        e.days.map(function (d) { return '<button type="button" class="dpick" data-act="dl-day" data-v="' + esc(d.key) + '" aria-pressed="' + (d.key === e.dayKey) + '">' + esc(d.name) + '</button>'; }).join('') +
-        '<label class="dday__other"><span class="sr-only">다른 날 고르기</span><input id="dl-date" class="dday__in" type="date" min="' + esc(e.minKey) + '" max="' + esc(e.maxKey) + '" value="' + esc(e.dayKey) + '"></label></div>' +
-      (e.dayNote ? '<p class="dlog__hint">' + esc(e.dayNote) + '</p>' : '') +
+      '<div class="dlist dwhen"><button type="button" class="dwhen__row" data-act="dl-when" aria-haspopup="dialog"><span class="dwhen__l">언제 먹었나요</span><span class="dwhen__v">' + esc(e.whenLabel) + '</span>' + svg(CHEV, 18) + '</button></div>' +
       (e.chips && e.chips.length ? '<h3 class="dsec">자주 먹는 것 · 누르면 위에 붙어요</h3><div class="dpicks">' + e.chips.map(function (c) { return '<button type="button" class="dpick" data-act="dl-chip" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
       (e.partnerName ? '<h3 class="dsec" id="dl-who-l">누구의 끼니</h3><div class="dseg dseg--wide" role="group" aria-labelledby="dl-who-l">' +
         [['me', '나'], ['both', '단짝과 함께']].map(function (x) { return '<button type="button" class="dseg__b" data-act="dl-who" data-v="' + x[0] + '" aria-pressed="' + ((x[0] === 'both') === !!e.together) + '">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
@@ -162,6 +159,28 @@
     return '<div class="dask"><p class="dask__n">' + (i + 1) + ' / ' + n + '</p><label class="dask__q" for="dq-' + i + '">' + esc(q.label) + ' · ' + esc(q.ask) + '</label>' +
       '<input id="dq-' + i + '" class="dask__in" type="text" maxlength="80" autocomplete="off" value="' + esc(q.answer || '') + '" placeholder="모르면 비워 두세요"></div>';
   }
+  /** 날짜 고르기 시트 (목업 03-1 달력 모양). w = { title, prev, next, quick: [{ key, name, on }], weeks: [[{ key, d, on, today, off } | null]], note } */
+  function whenSheet(w, entering) {
+    var cells = ['월', '화', '수', '목', '금', '토', '일'].map(function (x) { return '<span class="dcal__w" aria-hidden="true">' + x + '</span>'; }).join('') +
+      w.cells.map(function (c) {
+        if (!c) return '<span></span>';
+        return '<button type="button" class="dcal__d' + (c.on ? ' is-on' : '') + (c.today ? ' is-today' : '') + '"' + (c.off ? ' disabled' : ' data-act="dl-when-pick" data-v="' + esc(c.key) + '"') +
+          ' aria-pressed="' + !!c.on + '" aria-label="' + esc(c.label) + (c.today ? ', 오늘' : '') + '">' + c.d + '</button>';
+      }).join('');
+    return '<div class="sheet-layer sheet-layer--top">' +
+      '<button type="button" class="scrim" data-act="dl-when-close" aria-label="닫기"></button>' +
+      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dw-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<h2 id="dw-title" class="sheet__title dwhen__title">언제 먹었나요?</h2>' +
+      '<div class="dseg dseg--wide dwhen__quick" role="group" aria-label="빠르게 고르기">' + w.quick.map(function (q) { return '<button type="button" class="dseg__b" data-act="dl-when-pick" data-v="' + esc(q.key) + '" aria-pressed="' + !!q.on + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' +
+      '<div class="dcal__head"><p class="dcal__m" aria-live="polite">' + esc(w.title) + '</p>' +
+        '<button type="button" class="mbar__btn" data-act="dl-when-month" data-v="-1" aria-label="이전 달"' + (w.prev ? '' : ' disabled') + '>' + svg(BACK) + '</button>' +
+        '<button type="button" class="mbar__btn" data-act="dl-when-month" data-v="1" aria-label="다음 달"' + (w.next ? '' : ' disabled') + '>' + svg(CHEV) + '</button></div>' +
+      '<div class="dcal">' + cells + '</div>' +
+      '<p class="sheet__sub dcal__note">테두리 = 오늘 · 한 달 전까지 고를 수 있어요</p>' +
+      '</section></div>';
+  }
+
   /** ⑤ 확인 카드 (목업 05). c = { meals: [{ at, name, total, items: [{ name, sub, kcal, est }], pending }], ai: idle|busy|done|fail, aiNote, questions, together, partnerName, saving, error, dayLabel } */
   function confirmScreen(c, entering) {
     var many = c.meals.length > 1, nAll = c.meals.reduce(function (a, m) { return a + m.items.length + m.pending.length; }, 0);
@@ -182,7 +201,7 @@
       '</section></div>';
   }
 
-  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
+  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
