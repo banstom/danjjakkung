@@ -78,11 +78,12 @@ function toInput(raw, period) {
   const meals = [];
   Object.keys(togetherByDay).sort().forEach((d) => { for (let i = 0; i < togetherByDay[d]; i++) meals.push({ date: d, shared: true }); });
 
+  const spendCats = (raw.spendCats || []).filter((c) => typeof c.name === 'string' && /^c[a-z0-9]{2,23}$/.test(c.id)).map((c) => ({ id: c.id, label: c.name }));
   const spends = (raw.spends || []).filter((s) => inRange(s.date, range) && Number.isInteger(s.amount)).map((s) => ({
     date: s.date, amount: s.amount, paidBy: s.paidBy, shares: s.shares || undefined, cat: s.cat
   }));
 
-  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, meals, goalDays, spends };
+  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, meals, goalDays, spends, spendCats };
 }
 
 const docs = (q) => q.docs.map((d) => Object.assign({ id: d.id }, d.data()));
@@ -94,7 +95,7 @@ async function fetchRaw(db, range) {
   const startIso = new Date(range.start + 'T00:00:00+09:00').toISOString();
   const endIso = new Date(R.addDays(range.end, 1) + 'T00:00:00+09:00').toISOString();
   const couple = await db.doc('couple/main').get();
-  const [members, routines, checks, todos, kungs, events, places, meals, goals, spends] = await Promise.all([
+  const [members, routines, checks, todos, kungs, events, places, meals, goals, spends, spendCats] = await Promise.all([
     getAll(db.collection('members')),
     getAll(db.collection('routines')),
     getAll(between('checks', 'date')),
@@ -104,9 +105,10 @@ async function fetchRaw(db, range) {
     getAll(db.collection('places')),
     getAll(between('meals', 'date')),
     getAll(db.collection('goals')),
-    getAll(between('spends', 'date'))
+    getAll(between('spends', 'date')),
+    getAll(db.collection('spendCats'))
   ]);
-  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, meals, goals, spends };
+  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, meals, goals, spends, spendCats };
 }
 
 async function loadPeriod(db, period) { return toInput(await fetchRaw(db, R.periodRange(period)), period); }

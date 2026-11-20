@@ -40,14 +40,15 @@
   function screenModel(spends, ctx) {
     var me = { uid: ctx.viewer, name: ctx.names[ctx.viewer] || '나' };
     var pt = { uid: ctx.partner, name: ctx.names[ctx.partner] || '단짝' };
-    var s = L.monthSummary(spends, { me: me, partner: pt });
-    var list = ctx.cat ? spends.filter(function (x) { return (L.CATS.indexOf(x.cat) >= 0 ? x.cat : 'etc') === ctx.cat; }) : spends;
+    var extra = ctx.cats || [], labels = L.catLabels(extra);
+    var s = L.monthSummary(spends, { me: me, partner: pt }, extra);
+    var list = ctx.cat ? spends.filter(function (x) { return L.catOf(x.cat, extra) === ctx.cat; }) : spends;
     list = list.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : (String(a.createdAt) < String(b.createdAt) ? 1 : -1); });
     var days = [];
     list.forEach(function (x) {
       var d = days[days.length - 1];
       if (!d || d.date !== x.date) { d = { date: x.date, label: dayLabel(x.date), rows: [] }; days.push(d); }
-      var cat = L.CAT_LABEL[x.cat] || '기타';
+      var cat = labels[L.catOf(x.cat, extra)];
       var row = { id: x.id, what: x.what, amount: L.won(x.amount) };
       if (x.paidBy === 'both' && x.shares) {
         var a = x.shares[me.uid] || 0, b = x.shares[pt.uid] || 0, pc = L.percents(a, b) || [50, 50];
@@ -64,7 +65,7 @@
     var filt = null;
     if (ctx.cat) {
       var tot = list.reduce(function (n, x) { return n + x.amount; }, 0);
-      filt = { label: (L.CAT_LABEL[ctx.cat] || '기타') + '만', total: L.won(tot), count: list.length + '건' };
+      filt = { label: (labels[ctx.cat] || '기타') + '만', total: L.won(tot), count: list.length + '건' };
     }
     return {
       month: ctx.month, title: monthTitle(ctx.month),
@@ -155,19 +156,30 @@
     var box = '';
     if (f.amount !== null && f.mode === 'add') {
       if (f.payer === 'both' && f.shares) box = shareBox(f, ctx, true);
-      else box = '<div class="lg-pv"><div class="lg-pv__top"><span>' + esc(f.what || L.CAT_LABEL[f.cat]) + '</span><span>' + esc(L.won(f.amount)) + '</span></div></div>';
+      else box = '<div class="lg-pv"><div class="lg-pv__top"><span>' + esc(f.what || labels0(f, ctx)) + '</span><span>' + esc(L.won(f.amount)) + '</span></div></div>';
     } else if (f.mode === 'edit' && f.payer === 'both' && f.shares) box = shareBox(f, ctx, false);
-    var cats = '<p class="field__label">분류</p><div class="pick-row" role="group" aria-label="분류"' + (msg.cat ? ' aria-describedby="lg-ask-cat"' : '') + '>' + L.CATS.map(function (c) {
-      return '<button type="button" class="pick' + (c === 'etc' && f.ask.cat && msg.cat && f.cat === 'etc' ? ' pick--ask' : '') + '" data-act="lg-catpick" data-v="' + c + '" aria-pressed="' + (f.cat === c) + '">' + esc(L.CAT_LABEL[c]) + '</button>';
-    }).join('') + '</div>' + (msg.cat ? '<p id="lg-ask-cat" class="lg-hint lg-hint--ask">' + esc(msg.cat) + '</p>' : '');
+    var extra = ctx.cats || [], labels = L.catLabels(extra), mine = {};
+    extra.forEach(function (c) { mine[c.id] = true; });
+    var cats = '<div class="lg-cathead"><p class="field__label">분류</p>' + (extra.length ? '<button type="button" class="text-btn lg-catedit" data-act="lg-cat-edit" aria-pressed="' + !!f.catEdit + '">' + (f.catEdit ? '완료' : '편집') + '</button>' : '') + '</div>' +
+      '<div class="pick-row" role="group" aria-label="분류"' + (msg.cat ? ' aria-describedby="lg-ask-cat"' : '') + '>' + L.catOrder(extra).map(function (c) {
+        if (f.catEdit && mine[c]) return '<button type="button" class="pick pick--del" data-act="lg-cat-del" data-v="' + esc(c) + '" aria-label="' + esc(labels[c] + ' 분류 지우기') + '">' + esc(labels[c]) + ' ×</button>';
+        return '<button type="button" class="pick' + (c === 'etc' && f.ask.cat && msg.cat && f.cat === 'etc' ? ' pick--ask' : '') + '" data-act="lg-catpick" data-v="' + esc(c) + '" aria-pressed="' + (f.cat === c) + '"' + (f.catEdit ? ' disabled' : '') + '>' + esc(labels[c]) + '</button>';
+      }).join('') +
+      (!f.catNew && !f.catEdit && extra.length < 12 ? '<button type="button" class="pick pick--edit" data-act="lg-cat-new">＋ 분류</button>' : '') + '</div>' +
+      (f.catNew ? '<div class="lg-catnew"><input id="lg-cat-name" class="field__input" type="text" maxlength="8" autocomplete="off" enterkeyhint="done" placeholder="새 분류 이름 (8자까지)" value="' + esc(f.catNew.name) + '" aria-label="새 분류 이름"' +
+        (f.catNew.error ? ' aria-invalid="true" aria-describedby="lg-cat-err"' : '') + '><button type="button" class="solid-btn lg-catnew__add" data-act="lg-cat-add"' + (f.catNew.busy ? ' disabled' : '') + '>추가</button><button type="button" class="ghost-btn lg-catnew__no" data-act="lg-cat-new-cancel">취소</button></div>' +
+        (f.catNew.error ? '<p id="lg-cat-err" class="lg-hint lg-hint--err">' + esc(f.catNew.error) + '</p>' : '') : '') +
+      (f.catEdit ? '<p class="lg-hint">직접 만든 분류만 지울 수 있어요 · 지운 분류의 기록은 기타로 보여요</p>' : '') +
+      (msg.cat ? '<p id="lg-ask-cat" class="lg-hint lg-hint--ask">' + esc(msg.cat) + '</p>' : '');
     var raw = f.mode === 'edit' && f.raw ? '<p class="lg-hint">적은 한 줄: 「' + esc(f.raw) + '」</p>' : '';
     var save = '<button type="button" class="lg-save" data-act="lg-save"' + (F.canSave(f) ? '' : ' disabled') + (f.saving ? ' aria-busy="true"' : '') + '>' + (f.saving ? '저장 중…' : '저장') + '</button>';
     return (f.mode === 'add' ? '<div class="lg-pills">' + datePill + '</div>' : '') + who + box + cats + raw + save;
   }
+  function labels0(f, ctx) { return L.catLabels(ctx.cats)[f.cat] || '기타'; }
   function shareBox(f, ctx, top) {
     var pc = L.percents(f.shares.me, f.shares.partner) || [50, 50];
     var msg = F.messages(f, ctx.names);
-    return '<div class="lg-pv">' + (top ? '<div class="lg-pv__top"><span>' + esc(f.what || L.CAT_LABEL[f.cat]) + '</span><span>' + esc(L.won(f.amount)) + '</span></div>' : '') +
+    return '<div class="lg-pv">' + (top ? '<div class="lg-pv__top"><span>' + esc(f.what || labels0(f, ctx)) + '</span><span>' + esc(L.won(f.amount)) + '</span></div>' : '') +
       '<div id="lg-sh-bar">' + ratio([{ slot: ctx.slots.me, pct: pc[0] }, { slot: ctx.slots.partner, pct: pc[1] }], 'lg-ratio--box') + '</div>' +
       '<div class="lg-shares">' + [['me', ctx.names.me, ctx.slots.me], ['partner', ctx.names.partner, ctx.slots.partner]].map(function (x) {
         return '<label class="lg-share"><span>' + dot(x[2]) + esc(x[1]) + '</span><input id="lg-sh-' + x[0] + '" class="field__input" type="text" inputmode="numeric" autocomplete="off" value="' + esc(L.comma(f.shares[x[0]])) + '" aria-label="' + esc(x[1] + ' 몫 (원)') + '"></label>';

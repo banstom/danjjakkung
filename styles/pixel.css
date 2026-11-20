@@ -548,4 +548,5 @@
 [data-skin="pixel"]:not([data-font="plain"]) .lg-del { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-confirm__box h3 { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-confirm__box p { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-catedit { font-size: 12px; font-family: var(--px-font-11); }
 /* ── 글씨 크기 표 끝 ── */

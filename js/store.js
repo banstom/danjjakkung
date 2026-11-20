@@ -315,18 +315,24 @@
       /** 돌아보기: [fromKey, toKey) 날짜의 꿍 (둘이 보낸 것 모두) */
       /** 단짝 영수증 (docs/ledger) — 그 달 기록. 날짜 문자열 범위 한 칸 조건이라 색인 추가 없음. 이번 달은 구독, 지난달은 한 번 읽기 */
       watchSpends: function (month, next, fail) {
-        return db.collection('spends').where('date', '>=', month + '-01').where('date', '<=', month + '-31').onSnapshot(function (q) {
+        return db.collection('spends').where('date', '>=', month + '-01').where('date', '<', month + '-32').onSnapshot(function (q) {
           next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); }));
         }, fail);
       },
       loadSpends: function (month) {
-        return db.collection('spends').where('date', '>=', month + '-01').where('date', '<=', month + '-31').get().then(function (q) {
+        return db.collection('spends').where('date', '>=', month + '-01').where('date', '<', month + '-32').get().then(function (q) {
           return q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); });
         });
       },
       /** 통째로 쓴다 (나눔 → 혼자로 바꾸면 shares 가 지워지게). id 가 없으면 새 기록 */
       saveSpend: function (id, data) { return db.doc('spends/' + (id || newKey())).set(data); },
       deleteSpend: function (id) { return db.doc('spends/' + id).delete(); },
+      /** 직접 만든 영수증 분류 spendCats/<c…> = { name, order, createdBy, createdAt } — 둘이 같은 목록 */
+      watchSpendCats: function (next, fail) {
+        return db.collection('spendCats').onSnapshot(function (q) { next(q.docs.map(function (doc) { return Object.assign({}, doc.data(), { id: doc.id }); })); }, fail);
+      },
+      addSpendCat: function (id, data) { return db.doc('spendCats/' + id).set(data); },
+      deleteSpendCat: function (id) { return db.doc('spendCats/' + id).delete(); },
       /** 월말 · 연말결산 (docs/recap) — recaps/<YYYY-MM | YYYY> 전부 (한 해에 13개 정도). 서버만 쓰고 앱은 읽기만 */
       loadRecaps: function () {
         return db.collection('recaps').get().then(function (q) {

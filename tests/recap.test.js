@@ -208,3 +208,9 @@ test('R7 각자의 루틴: 이번 기간에 시작한 루틴은 isNew (「이번
   const rows = cardText(card('routines'), recap, 'jm').rows;
   assert.deepEqual(rows.map((r) => [r.routine, r.isNew]), [['영어 단어 30개', false], ['감사 일기', true]]);
 });
+
+test('R8 영수증 카드: 직접 만든 분류가 가장 많으면 그 이름', () => {
+  const r = computeRecap({ ...nov, spendCats: [{ id: 'cdate01', label: '데이트' }], spends: [{ date: '2026-11-03', amount: 900000, paidBy: 'jm', cat: 'cdate01' }].concat(nov.spends) }, oct);
+  const t = cardText(card('spends', r), r, 'jm');
+  assert.match(t.more[0], /^가장 많이 쓴 곳은 데이트 · 90만 원 · 1건$/);
+});

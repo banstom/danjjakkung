@@ -132,3 +132,32 @@ test('S5 시트 HTML: 입력칸 아래만 다시 그리는 칸 · 오류는 aria
   assert.match(h2, /단짝 화면에서도 함께 사라져요/);
   assert.match(h2, /data-act="lg-del-yes"/);
 });
+
+test('S6 직접 만든 분류: 합계 · 칩 · 이름이 한 줄에 있으면 그 분류 · 이름 확인 · 지운 분류는 기타', () => {
+  const L = require('../js/ledger-sum.js');
+  const extra = [{ id: 'cdate01', label: '데이트' }];
+  const sp = [{ amount: 30000, paidBy: 'jm', cat: 'cdate01' }, { amount: 5000, paidBy: 'dj', cat: 'cafe' }, { amount: 1000, paidBy: 'dj', cat: 'cgone99' }];
+  const s = L.monthSummary(sp, fx.people, extra);
+  assert.deepEqual(s.cats.map((c) => c.text), ['데이트 3만 원', '카페 5,000원', '기타 1,000원']);
+  assert.deepEqual(L.catOrder(extra), ['meal', 'cafe', 'move', 'stay', 'play', 'shop', 'cdate01', 'etc']);
+  const w = Object.assign({}, who, { cats: extra });
+  const f = F.newAdd(w, '2026-11-19');
+  F.applyLine(f, '데이트 영화 3만 반반', w);
+  assert.equal(f.cat, 'cdate01');
+  assert.equal(f.ask.cat, false);
+  assert.equal(F.catNameError('데이트', extra), '이미 있는 분류예요');
+  assert.equal(F.catNameError('식사', extra), '이미 있는 분류예요');
+  assert.equal(F.catNameError('', extra), '이름을 적어 주세요');
+  assert.equal(F.catNameError('아주아주긴분류이름', extra), '8자까지 적을 수 있어요');
+  assert.equal(F.catNameError('여행', Array.from({ length: 12 }, (_, i) => ({ id: 'c' + i + 'x', label: 'x' + i }))), '분류는 12개까지 더할 수 있어요');
+  assert.equal(P.toDoc(F.toForm(f), { me: 'jm', partner: 'dj' }, { now: 'n', by: 'jm' }).cat, 'cdate01');
+  assert.equal(P.fromDoc({ date: 'd', amount: 1, paidBy: 'jm', what: 'x', cat: 'cgone99' }, { me: 'jm', partner: 'dj' }, extra).cat, 'etc');
+  const m = V.screenModel(sp, ctx('jm', { cats: extra }));
+  assert.equal(m.days[0].rows.find((r) => r.what === undefined || true).ds.split(' · ')[0].length > 0, true);
+  assert.ok(m.days.flatMap((d) => d.rows).some((r) => r.ds === '데이트 · 준민'));
+  const html = V.parsed(f, Object.assign({}, sctx, { cats: extra }));
+  assert.match(html, /data-act="lg-cat-new">＋ 분류/);
+  assert.match(html, /data-act="lg-cat-edit"/);
+  f.catEdit = true;
+  assert.match(V.parsed(f, Object.assign({}, sctx, { cats: extra })), /data-act="lg-cat-del" data-v="cdate01"/);
+});

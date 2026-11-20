@@ -50,21 +50,37 @@
     return [pa, 100 - pa];
   }
 
+  /** 직접 만든 분류 (spendCats) 아이디 모양 */
+  var CUSTOM_RE = /^c[a-z0-9]{2,23}$/;
+  /** 분류 순서: 기본 6개 → 직접 만든 분류 → 기타. extra = [{ id, label }] */
+  function catOrder(extra) {
+    return CATS.slice(0, -1).concat((extra || []).map(function (c) { return c.id; })).concat(['etc']);
+  }
+  function catLabels(extra) {
+    var out = {};
+    CATS.forEach(function (c) { out[c] = CAT_LABEL[c]; });
+    (extra || []).forEach(function (c) { out[c.id] = c.label; });
+    return out;
+  }
+  /** 기록의 분류 → 지금 있는 분류 (지운 분류 · 모르는 값은 기타) */
+  function catOf(cat, extra) { return catLabels(extra)[cat] ? cat : 'etc'; }
+
   /**
    * @param spends 그 달 기록
    * @param people { me: {uid, name}, partner: {uid, name} } — me = 화면을 보는 사람(왼쪽)
+   * @param extra  직접 만든 분류 [{ id, label }] (없으면 기본 7개만)
    */
-  function monthSummary(spends, people) {
+  function monthSummary(spends, people, extra) {
     var ua = people.me.uid, ub = people.partner.uid;
     var a = 0, b = 0, total = 0;
+    var order = catOrder(extra), labels = catLabels(extra);
     var byCat = {};
-    CATS.forEach(function (c) { byCat[c] = 0; });
+    order.forEach(function (c) { byCat[c] = 0; });
     spends.forEach(function (s) {
       total += s.amount;
       var p = paidByPerson(s, [ua, ub]);
       a += p[ua]; b += p[ub];
-      var c = byCat[s.cat] !== undefined ? s.cat : 'etc';
-      byCat[c] += s.amount;
+      byCat[catOf(s.cat, extra)] += s.amount;
     });
     var pct = percents(a, b);
     var diff = a - b;
@@ -75,9 +91,9 @@
       var who = diff > 0 ? people.me.name : people.partner.name;
       line = '이번 달은 ' + who + iGa(who) + ' ' + won(Math.abs(diff)) + ' 더 냈어요';
     }
-    var cats = CATS.filter(function (c) { return byCat[c] > 0; })
-      .sort(function (x, y) { return byCat[y] - byCat[x] || CATS.indexOf(x) - CATS.indexOf(y); })
-      .map(function (c) { return { cat: c, label: CAT_LABEL[c], amount: byCat[c], text: CAT_LABEL[c] + ' ' + manWon(byCat[c]) }; });
+    var cats = order.filter(function (c) { return byCat[c] > 0; })
+      .sort(function (x, y) { return byCat[y] - byCat[x] || order.indexOf(x) - order.indexOf(y); })
+      .map(function (c) { return { cat: c, label: labels[c], amount: byCat[c], text: labels[c] + ' ' + manWon(byCat[c]) }; });
     return {
       total: total, totalText: won(total),
       me: { amount: a, pct: pct ? pct[0] : 0, text: manWon(a) },
@@ -87,7 +103,7 @@
     };
   }
 
-  var api = { CATS: CATS, CAT_LABEL: CAT_LABEL, comma: comma, won: won, manWon: manWon, iGa: iGa, paidByPerson: paidByPerson, percents: percents, monthSummary: monthSummary };
+  var api = { CATS: CATS, CAT_LABEL: CAT_LABEL, CUSTOM_RE: CUSTOM_RE, catOrder: catOrder, catLabels: catLabels, catOf: catOf, comma: comma, won: won, manWon: manWon, iGa: iGa, paidByPerson: paidByPerson, percents: percents, monthSummary: monthSummary };
   root.RT = root.RT || {};
   root.RT.ledgerSum = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

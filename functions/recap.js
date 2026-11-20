@@ -245,13 +245,14 @@ function spendsCard(period, data) {
   const list = (data.spends || []).filter((s) => inRange(s.date, r));
   if (!list.length) return null;
   const [a, b] = data.people;
-  const s = L.monthSummary(list, { me: a, partner: b });
+  const extra = data.spendCats || []; // 직접 만든 분류 [{ id, label }]
+  const s = L.monthSummary(list, { me: a, partner: b }, extra);
   const top = s.cats[0];
   return {
     id: 'spends', total: s.total, count: list.length,
     byPerson: { [a.uid]: { amount: s.me.amount, pct: s.me.pct }, [b.uid]: { amount: s.partner.amount, pct: s.partner.pct } },
-    topCat: s.topCat, topCatAmount: top ? top.amount : 0,
-    topCatCount: top ? list.filter((x) => (L.CATS.indexOf(x.cat) >= 0 ? x.cat : 'etc') === top.cat).length : 0
+    topCat: s.topCat, topCatLabel: top ? top.label : null, topCatAmount: top ? top.amount : 0,
+    topCatCount: top ? list.filter((x) => L.catOf(x.cat, extra) === top.cat).length : 0
   };
 }
 

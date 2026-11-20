@@ -30,7 +30,11 @@
     if (!t.what) f.what = p.what;
     if (!t.date) f.date = p.date;
     if (!t.payer) { f.payer = p.payer; f.ask.payer = p.payerGuessed; }
-    if (!t.cat) { f.cat = p.cat; f.ask.cat = !p.catGuessed; }
+    if (!t.cat) {
+      f.cat = p.cat; f.ask.cat = !p.catGuessed;
+      var own = customHit(line, who.cats); // 직접 만든 분류 이름이 한 줄에 있으면 그 분류
+      if (own) { f.cat = own; f.ask.cat = false; }
+    }
     if (f.payer === 'both') {
       if (!t.shares || !f.shares || f.amount === null || f.shares.me + f.shares.partner !== f.amount) {
         f.shares = p.payer === 'both' && p.shares ? p.shares : (f.amount !== null ? P.splitHalf(f.amount) : null);
@@ -40,6 +44,27 @@
     var half = p.amount !== null ? P.splitHalf(p.amount) : null;
     f.readSplit = !t.shares && p.payer === 'both' && !!p.shares && !!half && (p.shares.me !== half.me || p.shares.partner !== half.partner);
     return f;
+  }
+
+  /** 직접 만든 분류 이름이 한 줄에 있나 (긴 이름부터, 한 글자 이름은 낱말 전체일 때만) */
+  function customHit(line, cats) {
+    var low = String(line).toLowerCase(), toks = low.split(/\s+/);
+    var list = (cats || []).slice().sort(function (a, b) { return b.label.length - a.label.length; });
+    for (var i = 0; i < list.length; i++) {
+      var w = String(list[i].label).toLowerCase();
+      if (w && (w.length === 1 ? toks.indexOf(w) >= 0 : low.indexOf(w) >= 0)) return list[i].id;
+    }
+    return null;
+  }
+  /** 새 분류 이름 확인 → 오류 문구 또는 null */
+  function catNameError(name, cats) {
+    var n = String(name || '').trim();
+    if (!n) return '이름을 적어 주세요';
+    if (n.length > 8) return '8자까지 적을 수 있어요';
+    var all = L.catLabels(cats);
+    if (Object.keys(all).some(function (k) { return all[k] === n; })) return '이미 있는 분류예요';
+    if ((cats || []).length >= 12) return '분류는 12개까지 더할 수 있어요';
+    return null;
   }
 
   function setPayer(f, payer) {
@@ -90,7 +115,7 @@
     return { date: f.date, amount: f.amount, payer: f.payer, shares: f.payer === 'both' ? f.shares : null, what: f.what, cat: f.cat, raw: f.mode === 'add' ? f.raw : f.raw || null };
   }
 
-  var api = { newAdd: newAdd, newEdit: newEdit, applyLine: applyLine, setPayer: setPayer, setCat: setCat, setDate: setDate, setShare: setShare, setAmount: setAmount, setWhat: setWhat, canSave: canSave, messages: messages, toForm: toForm };
+  var api = { customHit: customHit, catNameError: catNameError, newAdd: newAdd, newEdit: newEdit, applyLine: applyLine, setPayer: setPayer, setCat: setCat, setDate: setDate, setShare: setShare, setAmount: setAmount, setWhat: setWhat, canSave: canSave, messages: messages, toForm: toForm };
   root.RT = root.RT || {};
   root.RT.ledgerForm = api;
   if (NODE) module.exports = api;

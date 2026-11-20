@@ -92,7 +92,7 @@
         return {
           kick: '단짝 영수증', title: recap.cards[0].dateLabel.replace(/^\d+년 /, '') + '의 단짝 영수증', bigText: L.won(card.total), lead: per + ' 함께 쓴 돈이에요.',
           rows: people.map(function (p) { return { uid: p.uid, name: p.name, pct: card.byPerson[p.uid].pct, value: L.manWon(card.byPerson[p.uid].amount) }; }),
-          more: ['가장 많이 쓴 곳은 ' + L.CAT_LABEL[card.topCat] + ' · ' + L.manWon(card.topCatAmount) + (card.topCatCount ? ' · ' + card.topCatCount + '건' : '')]
+          more: ['가장 많이 쓴 곳은 ' + (card.topCatLabel || L.CAT_LABEL[card.topCat] || '기타') + ' · ' + L.manWon(card.topCatAmount) + (card.topCatCount ? ' · ' + card.topCatCount + '건' : '')]
         };
       case 'final':
         return {

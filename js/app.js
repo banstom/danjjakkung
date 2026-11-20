@@ -29,7 +29,7 @@
     review: { mode: 'week', page: 0, key: null, todos: [], kungs: [], loading: false, error: '' }, // 돌아보기: 주 · 달, page = 몇 칸 전, 기간 안에 끝낸 일 · 꿍 (열 때 불러옴)
     recap: { list: null, loading: false, error: '', open: null, idx: 0, pending: null, saving: false }, // 결산(R3): 지난 결산 목록 · 넘기는 중인 결산 key · 장
     ledger: null,        // 단짝 영수증 화면 { month, cat, rows, loading, error, sheet } (docs/ledger)
-    spendDocs: null, spendsOff: false, spendMonth: '', // 이번 달 영수증 기록 (구독 — 전체 탭 카드 · 영수증 화면이 같이 씀)
+    spendDocs: null, spendsOff: false, spendMonth: '', spendCatDocs: [], // 직접 만든 영수증 분류 (spendCats) // 이번 달 영수증 기록 (구독 — 전체 탭 카드 · 영수증 화면이 같이 씀)
     recapOn: true,       // 매달 1일 결산 알림 (users/<uid>.recap, 없으면 켬)
     todoDocs: [], todoErr: '', eventDocs: [], eventErr: '',
     todoUi: { expanded: {}, showDone: {} },  // 묶음마다 「더 보기」 · 「완료 보기」
@@ -100,7 +100,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['dl-text', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -232,7 +232,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
-    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'lg-cat-new': null, 'lg-cat-new-cancel': null, 'lg-cat-add': null, 'lg-cat-edit': null, 'lg-cat-del': 'data-v', 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -643,6 +643,11 @@
     else if (act === 'lg-del') { if (state.ledger && state.ledger.sheet) { state.ledger.sheet.confirmDelete = true; focusAfter = ['[data-act="lg-del-no"]']; focusInSheet = true; render(true); } }
     else if (act === 'lg-del-no') { if (state.ledger && state.ledger.sheet) { state.ledger.sheet.confirmDelete = false; focusAfter = ['[data-act="lg-del"]']; focusInSheet = true; render(true); } }
     else if (act === 'lg-del-yes') deleteLedger();
+    else if (act === 'lg-cat-new') ledgerEdit(function (f) { f.catNew = { name: '', error: '', busy: false }; f.catEdit = false; }, true), focusId('lg-cat-name');
+    else if (act === 'lg-cat-new-cancel') ledgerEdit(function (f) { f.catNew = null; }, true), focusSel('[data-act="lg-cat-new"]');
+    else if (act === 'lg-cat-add') addLedgerCat();
+    else if (act === 'lg-cat-edit') ledgerEdit(function (f) { f.catEdit = !f.catEdit; f.catNew = null; }, true), focusSel('[data-act="lg-cat-edit"]');
+    else if (act === 'lg-cat-del') delLedgerCat(btn.getAttribute('data-v'));
     else if (act === 'diet-close') closeDiet();
     else if (act === 'dl-open') dietLogOpen();
     else if (act === 'dl-close') dietLogClose();
@@ -2859,7 +2864,7 @@
     var sm = slotMap(), me = state.me;
     var start = state.couple && /^\d{4}-\d{2}-\d{2}$/.test(String(state.couple.start || '')) ? state.couple.start.slice(0, 7) : null;
     return Object.assign({ month: month, nowMonth: curMonth(), minMonth: start, viewer: me, partner: ledgerPartner(), names: ledgerNames(),
-      slotOf: function (u) { return sm[u] || (u === me ? 'me' : 'her'); } }, extra || {});
+      slotOf: function (u) { return sm[u] || (u === me ? 'me' : 'her'); }, cats: ledgerCats() }, extra || {});
   }
   function watchSpends() {
     var m = curMonth();
@@ -2885,9 +2890,10 @@
   }
   function ledgerSheetCtx() {
     var me = state.me, pt = ledgerPartner(), sm = slotMap();
-    return { names: { me: nameOf(me), partner: pt ? nameOf(pt) : '단짝' }, slots: { me: sm[me] || 'me', partner: (pt && sm[pt]) || 'her' }, todayKey: D.toKey(state.today) };
+    return { names: { me: nameOf(me), partner: pt ? nameOf(pt) : '단짝' }, slots: { me: sm[me] || 'me', partner: (pt && sm[pt]) || 'her' }, todayKey: D.toKey(state.today), cats: ledgerCats() };
   }
-  function ledgerWho() { var c = ledgerSheetCtx(); return { meName: c.names.me, partnerName: c.names.partner, today: state.today }; }
+  // state.today 는 날 번호(숫자)라 한 줄 읽기에는 Date 로 바꿔서 넘긴다 (숫자를 넘기면 읽기가 멈춰 저장이 잠기던 문제)
+  function ledgerWho() { var c = ledgerSheetCtx(), p = D.parts(state.today); return { meName: c.names.me, partnerName: c.names.partner, today: new Date(p.y, p.m - 1, p.d), cats: ledgerCats() }; }
   function openLedger() {
     if (!store || !RT.viewLedger || !state.me) return;
     state.account = false; state.anniv = null;
@@ -2919,7 +2925,7 @@
       var uids = { me: state.me, partner: ledgerPartner() };
       var meta = nameOf(doc.createdBy) + L_iGa(nameOf(doc.createdBy)) + ' ' + RT.viewLedger.dayLabel(String(doc.createdAt || '').slice(0, 10) || doc.date).replace(/ \(.\)$/, '') + '에 적었어요 · 둘 다 고칠 수 있어요' +
         (doc.updatedAt && doc.updatedAt !== doc.createdAt && doc.updatedBy ? ' · ' + nameOf(doc.updatedBy) + L_iGa(nameOf(doc.updatedBy)) + ' 고쳤어요' : '');
-      lg.sheet = RT.ledgerForm.newEdit(id, RT.ledgerParse.fromDoc(doc, uids), meta);
+      lg.sheet = RT.ledgerForm.newEdit(id, RT.ledgerParse.fromDoc(doc, uids, ledgerCats()), meta);
       lg.sheet.prev = doc;
       focusAfter = ['#lg-what'];
     } else {
@@ -2930,6 +2936,37 @@
     render(true);
   }
   function L_iGa(name) { return RT.ledgerSum.iGa(name); }
+  function focusId(id) { var el = document.getElementById(id); if (el) el.focus(); }
+  function focusSel(s) { var el = appEl.querySelector(s); if (el) el.focus(); }
+  /** 직접 만든 분류 [{ id, label }] — 만든 순서 */
+  function ledgerCats() {
+    return (state.spendCatDocs || []).filter(function (c) { return c && typeof c.name === 'string' && RT.ledgerSum.CUSTOM_RE.test(c.id); })
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0) || (a.id < b.id ? -1 : 1); }).map(function (c) { return { id: c.id, label: c.name }; });
+  }
+  function addLedgerCat() {
+    var f = state.ledger && state.ledger.sheet; if (!f || !f.catNew || f.catNew.busy) return;
+    var name = String(f.catNew.name || '').trim(), err = RT.ledgerForm.catNameError(name, ledgerCats());
+    if (err) { ledgerEdit(function (x) { x.catNew.error = err; }, true); focusId('lg-cat-name'); return; }
+    var id = 'c' + Math.random().toString(36).slice(2, 10).replace(/[^a-z0-9]/g, '0');
+    var doc = { name: name, order: Date.now() % 2000000000, createdBy: state.uid, createdAt: new Date().toISOString() };
+    f.catNew.busy = true;
+    state.spendCatDocs = (state.spendCatDocs || []).concat([Object.assign({ id: id }, doc)]); // 바로 보이게 (구독이 곧 같은 값으로)
+    ledgerEdit(function (x) { x.catNew = null; RT.ledgerForm.setCat(x, id); }, true);
+    focusSel('[data-act="lg-catpick"][data-v="' + id + '"]');
+    store.addSpendCat(id, doc).then(function () { showToast('「' + name + '」 분류를 만들었어요'); }, function () {
+      state.spendCatDocs = (state.spendCatDocs || []).filter(function (c) { return c.id !== id; });
+      if (state.ledger && state.ledger.sheet) ledgerEdit(function (x) { if (x.cat === id) RT.ledgerForm.setCat(x, 'etc'); }, true);
+      pushFail('분류를 만들지 못했어요. 저장 규칙 배포 뒤 다시 해 주세요');
+    });
+  }
+  function delLedgerCat(id) {
+    var c = ledgerCats().filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    var keep = state.spendCatDocs;
+    state.spendCatDocs = (keep || []).filter(function (x) { return x.id !== id; });
+    ledgerEdit(function (x) { if (x.cat === id) RT.ledgerForm.setCat(x, 'etc'); if (!ledgerCats().length) x.catEdit = false; }, true);
+    store.deleteSpendCat(id).then(function () { showToast('「' + c.label + '」 분류를 지웠어요 · 그 분류의 기록은 기타로 보여요'); },
+      function () { state.spendCatDocs = keep; if (state.ledger && state.ledger.sheet) ledgerEdit(function () {}, true); pushFail('분류를 지우지 못했어요. 잠시 뒤 다시 해 주세요'); });
+  }
   function closeLedgerSheet() {
     var lg = state.ledger; if (!lg || !lg.sheet) return;
     var id = lg.sheet.id;
@@ -2958,7 +2995,7 @@
     var uids = { me: state.me, partner: ledgerPartner() };
     if (!uids.partner) { showToast('짝꿍이 들어온 뒤에 적을 수 있어요'); return; }
     var doc;
-    try { doc = RT.ledgerParse.toDoc(RT.ledgerForm.toForm(f), uids, { now: new Date().toISOString(), by: state.uid, prev: f.prev }); }
+    try { doc = RT.ledgerParse.toDoc(RT.ledgerForm.toForm(f), uids, { now: new Date().toISOString(), by: state.uid, prev: f.prev, catLabel: RT.ledgerSum.catLabels(ledgerCats())[f.cat] }); }
     catch (e) { showToast('금액을 다시 확인해 주세요'); return; }
     f.saving = true; ledgerEdit(function () {});
     var month = doc.date.slice(0, 7), edit = f.mode === 'edit';
@@ -3447,6 +3484,7 @@
       var lf = state.ledger.sheet;
       if (id === 'lg-line') { ledgerEdit(function (f) { RT.ledgerForm.applyLine(f, ev.target.value, ledgerWho()); }, true); return; }
       if (id === 'lg-what') { RT.ledgerForm.setWhat(lf, ev.target.value); return; }
+      if (id === 'lg-cat-name') { if (lf.catNew) { lf.catNew.name = ev.target.value; lf.catNew.error = ''; } return; }
       if (id === 'lg-amount') { ledgerEdit(function (f) { RT.ledgerForm.setAmount(f, ev.target.value); }, true); return; }
       if (id === 'lg-sh-me' || id === 'lg-sh-partner') {
         // 다른 쪽 칸 · 막대만 바꾼다 (지금 칸을 다시 그리면 숫자 입력이 끊김)
@@ -3636,6 +3674,7 @@
   appEl.addEventListener('keydown', function (ev) {
     if ((state.sheetDay === null && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
+    if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && ev.target.id === 'lg-cat-name' && !ev.isComposing) { ev.preventDefault(); addLedgerCat(); return; }
     if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && (ev.target.id === 'lg-line' || ev.target.id === 'lg-what' || ev.target.id === 'lg-amount') && !ev.isComposing) { ev.preventDefault(); saveLedger(); return; }
     if (state.recap.open && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
@@ -3823,6 +3862,7 @@
     ];
     watchKungs();
     watchSpends();
+    if (store.watchSpendCats) subs.push(store.watchSpendCats(function (list) { state.spendCatDocs = list; if (state.status === 'ready' && state.ledger) render(); }, function () { state.spendCatDocs = []; }));
   }
   var caughtUpOnce = false;
   function runCatchUpOnce() { if (!caughtUpOnce && checksDefinitive && state.me) { caughtUpOnce = true; runCatchUp(); } }

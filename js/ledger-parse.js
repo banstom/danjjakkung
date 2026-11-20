@@ -262,11 +262,11 @@
       var n = normalizeShares(amount, form.shares || splitHalf(amount)); // 한쪽이 0 이면 그 사람이 다 낸 것으로
       payer = n.paidBy; shares = n.shares;
     }
-    var what = String(form.what || '').trim().slice(0, 40) || L.CAT_LABEL[form.cat] || '기타';
+    var what = String(form.what || '').trim().slice(0, 40) || (meta.catLabel) || L.CAT_LABEL[form.cat] || '기타';
     var d = {
       date: form.date, amount: amount,
       paidBy: payer === 'both' ? 'both' : uids[payer],
-      what: what, cat: L.CATS.indexOf(form.cat) >= 0 ? form.cat : 'etc',
+      what: what, cat: L.CATS.indexOf(form.cat) >= 0 || L.CUSTOM_RE.test(String(form.cat)) ? form.cat : 'etc', // 직접 만든 분류도 (규칙이 있는지 확인)
       createdAt: meta.prev ? meta.prev.createdAt : meta.now, createdBy: meta.prev ? meta.prev.createdBy : meta.by,
       updatedAt: meta.now, updatedBy: meta.by
     };
@@ -276,10 +276,10 @@
     return d;
   }
   /** 저장 문서 → 화면 값 (고치기 시트) */
-  function fromDoc(doc, uids) {
+  function fromDoc(doc, uids, extra) {
     var payer = doc.paidBy === 'both' ? 'both' : doc.paidBy === uids.me ? 'me' : 'partner';
     var shares = payer === 'both' && doc.shares ? { me: doc.shares[uids.me] || 0, partner: doc.shares[uids.partner] || 0 } : null;
-    return { date: doc.date, amount: doc.amount, payer: payer, shares: shares, what: doc.what, cat: doc.cat, raw: doc.raw || '' };
+    return { date: doc.date, amount: doc.amount, payer: payer, shares: shares, what: doc.what, cat: L.catOf(doc.cat, extra), raw: doc.raw || '' }; // 지운 분류는 기타로
   }
 
   var api = { AMOUNT_MAX: AMOUNT_MAX, amountOf: amountOf, payerOf: payerOf, guessCategory: guessCategory, splitHalf: splitHalf, rebalance: rebalance, normalizeShares: normalizeShares, parseLine: parseLine, toDoc: toDoc, fromDoc: fromDoc };

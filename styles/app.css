@@ -1698,3 +1698,11 @@ button.rv-srow { cursor: pointer; }
 .lg-confirm__box h3 { margin: 0 0 6px; font-size: 17px; }
 .lg-confirm__box p { margin: 0 0 16px; font-size: 14px; color: var(--sub); }
 .lg-del-yes { flex: 1; background: var(--warn); border: 0; color: var(--on-primary); }
+/* 영수증 분류 직접 만들기 */
+.lg-cathead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 6px; }
+.lg-sheet .lg-cathead .field__label { margin: 0; }
+.lg-catedit { min-height: 32px; padding: 0 4px; font-size: 13px; }
+.lg-catnew { display: flex; gap: 6px; margin-top: 8px; }
+.lg-catnew .field__input { flex: 1; min-width: 0; }
+.lg-catnew__add, .lg-catnew__no { flex: none; height: 44px; padding: 0 14px; }
+.pick--del { border-color: var(--warn); color: var(--warn); }
