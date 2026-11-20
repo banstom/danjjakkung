@@ -100,7 +100,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -232,7 +232,7 @@
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
     'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
-    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'lg-cat-new': null, 'lg-cat-new-cancel': null, 'lg-cat-add': null, 'lg-cat-edit': null, 'lg-cat-del': 'data-v', 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
+    'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'lg-cat-new': null, 'lg-cat-new-cancel': null, 'lg-cat-add': null, 'lg-cat-edit': null, 'lg-cat-del': 'data-v', 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v', 'dp-open': 'data-v', 'dp-close': null, 'dp-go': null, 'dp-pick': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
   function focusOf(el) {
@@ -659,11 +659,15 @@
     else if (act === 'dl-when-pick') { var lw2 = state.diet && state.diet.log, k2 = btn.getAttribute('data-v'), v2 = RT.dates.parse(k2), n2 = RT.dates.fromLocal(new Date()); if (lw2 && isFinite(v2) && v2 <= n2 && n2 - v2 <= 31) { lw2.dayKey = k2; lw2.when = null; lw2.error = ''; focusAfter = ['[data-act="dl-when"]']; focusInSheet = true; render(true); } }
     else if (act === 'dl-when-month') { var lw3 = state.diet && state.diet.log; if (lw3 && lw3.when) { var mm = lw3.when.m + (+btn.getAttribute('data-v')), yy = lw3.when.y; if (mm < 1) { mm = 12; yy--; } if (mm > 12) { mm = 1; yy++; } lw3.when = { y: yy, m: mm }; focusAfter = ['[data-act="dl-when-month"][data-v="' + btn.getAttribute('data-v') + '"]:not(:disabled)', '[data-act="dl-when-month"]:not(:disabled)', '.dcal__d:not(:disabled)']; focusInSheet = true; render(true); } } // 끝 달이라 버튼이 꺼지면 다른 칸으로 (포커스가 body 로 빠지면 Esc 가 안 먹음)
     else if (act === 'dq-skip') { var lq = state.diet && state.diet.log; if (lq) { lq.questions = []; focusAfter = ['[data-act="dl-save"]']; focusInSheet = true; render(true); } }
-    else if (act === 'dl-save') dietLogSave();
+    else if (act === 'dl-save') { if (Date.now() - findShut > 400) dietLogSave(); } // 후보를 두 번 탭해 아래 단추가 눌리는 일 막기
     else if (act === 'dl-chip') { var lc = state.diet && state.diet.log; if (lc) { dietLogTake(lc); lc.text = (lc.text ? lc.text.replace(/\s+$/, '') + '\n' : '') + btn.getAttribute('data-v'); focusAfter = ['#dl-text']; focusInSheet = true; render(true); } }
     else if (act === 'dl-who') { var lw = state.diet && state.diet.log; if (lw) { dietLogTake(lw); lw.together = btn.getAttribute('data-v') === 'both'; focusAfter = ['[data-act="dl-who"][data-v="' + (lw.together ? 'both' : 'me') + '"]']; focusInSheet = true; render(true); } }
     else if (act === 'dm-del') dietMealDelete(btn.getAttribute('data-v'));
     else if (act === 'dm-fix') dietMealFix(btn.getAttribute('data-v'));
+    else if (act === 'dp-open') dietFindOpen(btn.getAttribute('data-v'));
+    else if (act === 'dp-close') dietFindClose(false, true);
+    else if (act === 'dp-go') dietFindGo();
+    else if (act === 'dp-pick') dietFindPick(+btn.getAttribute('data-v'));
     else if (act === 'dl-retry') { if (state.diet && state.diet.log) { dietLogTake(state.diet.log); dietLoadTab(); render(true); } }
     else if (act === 'dg-open') { if (state.diet) { dietGoalForm(false); focusAfter = ['[data-act="dg-close"]']; focusInSheet = true; render(true); } }
     else if (act === 'dg-close') { if (state.diet) { if (myGoal()) { state.diet.view = 'home'; state.diet.form = null; focusAfter = ['[data-act="dg-open"]']; render(true); } else closeDiet(); } }
@@ -773,7 +777,7 @@
     if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietHomeModel()) : state.ledger ? RT.viewLedger.screen(ledgerModel()) : RT.viewAll.tab(allModel());
     if (state.tab === 'all' && state.ledger && state.ledger.sheet) out.sheet = RT.viewLedger.sheet(state.ledger.sheet, ledgerSheetCtx(), state.sheetEntering);
-    if (state.tab === 'all' && state.diet && state.diet.log && !(state.diet.view === 'goal' && state.diet.form)) out.sheet = state.diet.log.step === 'confirm' && state.diet.log.meals ? RT.viewDiet.confirmScreen(dietConfirmModel(), state.sheetEntering) : RT.viewDiet.logScreen(dietLogModel(), state.sheetEntering && !state.diet.log.when) + (state.diet.log.when ? RT.viewDiet.whenSheet(dietWhenModel(), state.sheetEntering) : '');
+    if (state.tab === 'all' && state.diet && state.diet.log && !(state.diet.view === 'goal' && state.diet.form)) out.sheet = state.diet.log.step === 'confirm' && state.diet.log.meals ? RT.viewDiet.confirmScreen(dietConfirmModel(), state.sheetEntering && !state.diet.log.find) + (state.diet.log.find ? RT.viewDiet.findSheet(state.diet.log.find, state.sheetEntering) : '') : RT.viewDiet.logScreen(dietLogModel(), state.sheetEntering && !state.diet.log.when) + (state.diet.log.when ? RT.viewDiet.whenSheet(dietWhenModel(), state.sheetEntering) : '');
     if (state.tab === 'all' && state.diet && state.diet.view === 'goal' && state.diet.form) out.sheet = RT.viewDiet.goalScreen(dietGoalModel(), state.sheetEntering && !state.diet.basis) + (state.diet.basis ? RT.viewDiet.basisSheet({ needAck: state.diet.basis.needAck, notice: RT.dietGoal.NOTICE }, state.sheetEntering) : '');
     if (state.tab === 'all' && state.map && state.map.rank && mapReady()) out.sheet = RT.viewMap.rankScreen(rankModel(), state.sheetEntering);
     else if (state.tab === 'all' && state.map && state.map.find) out.sheet = RT.viewMap.findSheet(mapFindModel(), state.sheetEntering);
@@ -2389,7 +2393,7 @@
   /** 내 식품 → 맞춰 보기용 { 이름: { unit, unitG, kcal, carb, protein, fat, src, user } } (1단위 값) */
   function myFoodsCtx() {
     var out = {}, d = state.myFoods || {};
-    Object.keys(d).forEach(function (k) { var f = d[k]; if (f && f.unit && typeof f.kcal === 'number') out[k] = { type: f.type, unit: f.unit, unitG: f.unitG || null, kcal: f.kcal, carb: f.carb || 0, protein: f.protein || 0, fat: f.fat || 0, src: f.src, user: f.user || [] }; });
+    Object.keys(d).forEach(function (k) { var f = d[k]; if (f && f.unit && typeof f.kcal === 'number') out[k] = { type: f.type, unit: f.unit, unitG: f.unitG || null, base: f.base || null, kcal: f.kcal, carb: f.carb || 0, protein: f.protein || 0, fat: f.fat || 0, src: f.src, user: f.user || [], product: f.product || null }; });
     return out;
   }
   function foodId(name) { // 이름이 같으면 같은 문서 (띄어쓰기 · 대소문자 무시)
@@ -2537,6 +2541,7 @@
         lx.meals = conv.meals; lx.ai = 'done';
         lx.questions = dietNextQuestions(conv, lx.answers);
         var left = conv.meals.reduce(function (a, m) { return a + m.pending.length; }, 0);
+        if (lx.find) dietFindClose(true); // AI 답으로 줄이 바뀌면 열어 둔 제품 찾기는 닫음 (점검 AI)
         var guess = conv.meals.reduce(function (a, m) { return a + m.items.filter(function (i) { return i.ai; }).length; }, 0);
         lx.aiNote = 'AI가 정리했어요 · 숫자는 식품표로 계산했어요' + (guess ? ' · AI 추정이 들어간 것 ' + guess + '개' : '') + (left ? ' · 정리 대기 ' + left + '줄' : '');
       }
@@ -2581,18 +2586,103 @@
     dietAiRun(l.text.trim()); // 먼저 「정리 중」으로 바꾸고 그린다 (점검 AI: 예전 결과가 그대로 보여 저장되던 것)
     focusAfter = ['[data-act="dl-back"]']; focusInSheet = true; render(true);
   }
+  /* 제품 찾기 (식약처 가공식품 32만 건 · 서버 findProduct). 고르면 그 줄을 바꾸고 내 식품(src: kr)으로 저장 — 다음부터 바로 계산 */
+  var FIND_WHY = ['unknown', 'product', 'unit', 'calc'], findSeq = 0, findShut = 0;
+  var MASS = { g: 1, ml: 1, cc: 1, kg: 1000, l: 1000, L: 1000, '리터': 1000 }; // 무게 · 부피 단위 → g(ml)
+  var WHOLE = /^(병|캔|팩|봉지|봉|통)$/; // 통째로 먹는 단위 → 내용량
+  function canFind(l) { return !!(RT.firebase && RT.firebase.callFn && store && store.setFood) && !(l && l.ai === 'busy'); } // AI 정리 중엔 줄이 바뀔 수 있어 숨김 (점검 AI)
+  function findTarget(l, f) { // 고칠 줄: { name, amount, unit, raw }
+    var m = l.meals && l.meals[f.mi]; if (!m) return null;
+    if (f.kind === 'i') { var it = m.items[f.idx]; return it ? { name: it.name, amount: it.amount, unit: it.unit, raw: it.name } : null; }
+    var x = m.pending[f.idx]; if (!x) return null;
+    var q = RT.dietMatch.parseItem(String(x.raw || ''));
+    if (q && !q.complex && q.name) return { name: q.name, amount: q.amount, unit: q.unit, raw: x.raw };
+    var nm = String(x.name || x.raw || '').replace(/[\d.]+\s*[가-힣a-zA-Z]{0,3}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); // 「라면 1봉지랑…」 → 양을 빼고 찾기
+    return { name: nm || String(x.raw || '').slice(0, 40), amount: null, unit: null, raw: x.raw };
+  }
+  function findMode(unit) { return MASS[unit] ? 'mass' : WHOLE.test(unit) ? 'whole' : 'serve'; }
+  function dietFindOpen(v) {
+    var l = state.diet && state.diet.log, p = String(v || '').split(':'); if (!l || !l.meals || p.length !== 3 || !canFind(l) || Date.now() - findShut < 400) return;
+    var f = { mi: +p[0], kind: p[1], idx: +p[2], items: null, busy: false, error: '', back: v };
+    var t = findTarget(l, f); if (!t) return;
+    f.name = t.name; f.raw = t.raw; f.q = t.name.slice(0, 40); f.unit = String(t.unit || '개'); f.mode = findMode(f.unit);
+    l.find = f; state.sheetEntering = true; focusAfter = ['#dp-q']; focusInSheet = true;
+    dietFindGo();
+  }
+  function dietFindClose(keep, tap) { // tap: 눌러서 닫음 (그 탭이 아래 단추로 새지 않게 잠깐 막음 — Esc 는 안 막음)
+    var l = state.diet && state.diet.log; if (!l || !l.find) return;
+    findSeq++; if (tap) findShut = Date.now(); var back = l.find.back; l.find = null;
+    if (keep) return;
+    focusAfter = ['[data-act="dp-open"][data-v="' + back + '"]', '[data-act="dl-save"]']; focusInSheet = true; render(true);
+  }
+  function findKeepQ(f) { var inp = document.getElementById('dp-q'); if (inp && f) f.q = inp.value.slice(0, 40); } // 다시 그려도 적던 글 그대로
+  function dietFindGo() {
+    var l = state.diet && state.diet.log, f = l && l.find; if (!f || f.busy) return; // 찾는 중엔 Enter 연타 무시
+    findKeepQ(f); f.q = String(f.q || '').trim();
+    if (!f.q) { f.error = '찾을 이름을 적어 주세요'; f.items = null; focusAfter = ['#dp-q']; focusInSheet = true; render(true); return; }
+    var seq = ++findSeq; f.busy = true; f.error = ''; render(true);
+    RT.firebase.callFn('findProduct', { q: f.q }).then(function (out) {
+      if (seq !== findSeq || l.find !== f) return;
+      findKeepQ(f); f.busy = false; f.items = (out && out.items || []).slice(0, 10);
+      focusAfter = f.items.length ? ['[data-act="dp-pick"][data-v="0"]'] : ['#dp-q']; focusInSheet = true; render(true);
+    }, function (e) {
+      if (seq !== findSeq || l.find !== f) return;
+      findKeepQ(f); f.busy = false; f.items = null;
+      var off = root.navigator && root.navigator.onLine === false, c = e && e.code;
+      f.error = off ? '인터넷에 연결되면 찾을 수 있어요' : c === 'permission-denied' ? '단짝꿍 멤버만 찾을 수 있어요' : c === 'invalid-argument' ? '찾을 말은 40자까지예요'
+        : c === 'not-found' || c === 'unavailable' ? '지금은 찾지 못했어요 · 제품 찾기가 아직 준비 중일 수 있어요' : '지금은 찾지 못했어요. 잠시 뒤 다시 해 주세요';
+      focusAfter = ['#dp-q']; focusInSheet = true; render(true);
+    });
+  }
+  function noteCounts(l) { // AI 안내의 「정리 대기 · AI 추정」 수를 지금 줄로
+    if (!l.aiNote || l.ai !== 'done') return;
+    var left = 0, guess = 0; l.meals.forEach(function (m) { left += m.pending.length; guess += m.items.filter(function (i) { return i.ai; }).length; });
+    l.aiNote = 'AI가 정리했어요 · 숫자는 식품표로 계산했어요' + (guess ? ' · AI 추정이 들어간 것 ' + guess + '개' : '') + (left ? ' · 정리 대기 ' + left + '줄' : '');
+  }
+  /** 고른 제품으로 그 줄을 계산. 1단위 무게: g · ml · kg · L 은 그 단위, 병 · 캔 · 봉지처럼 통째로 먹는 단위는 내용량, 나머지는 1회 제공량 */
+  function dietFindPick(i) {
+    var l = state.diet && state.diet.log, f = l && l.find, p = f && f.items && f.items[i]; if (!p) return;
+    var t = findTarget(l, f), m = l.meals[f.mi];
+    if (!t || !m || t.raw !== f.raw) { dietFindClose(); showToast('줄이 바뀌어서 다시 골라 주세요'); return; } // 그사이 줄이 바뀌면 엉뚱한 줄을 고치지 않음
+    var unit = String(t.unit || '개').slice(0, 20), mode = findMode(unit);
+    var ug = mode === 'mass' ? MASS[unit] : mode === 'whole' ? (p.size || p.serve) : (p.serve || p.size), guess = !ug;
+    ug = ug || 100;
+    var r4 = function (x) { return Math.round((+x || 0) * 10000) / 10000; }, per = function (x, g) { return r4(x * g / 100); }, amt = t.amount == null ? 1 : t.amount;
+    var uid = state.uid || state.me, nm = String(t.name).slice(0, 60), old = (state.myFoods || {})[nm];
+    var food = { type: 'product', name: nm, unit: unit, unitG: r4(ug), base: p.base, kcal: per(p.kcal, ug), carb: per(p.carb, ug), protein: per(p.protein, ug), fat: per(p.fat, ug), src: 'kr', maker: String(p.maker || '').slice(0, 60), product: String(p.name).slice(0, 80), by: uid, updatedAt: new Date().toISOString() };
+    if (food.kcal > 5000 || food.unitG > 5000) { f.error = '1' + unit + '이 너무 커요 (' + Math.round(ug) + p.base + ') · 먹은 양을 g으로 적어 주세요'; focusAfter = ['#dp-q']; focusInSheet = true; render(true); return; }
+    var tot = { kcal: food.kcal * amt, carb: food.carb * amt, protein: food.protein * amt, fat: food.fat * amt };
+    var note = mode === 'mass' ? '' : guess ? '1회 양을 몰라 100' + p.base + '으로 어림' : '1' + unit + ' = ' + Math.round(ug * 10) / 10 + p.base + (mode === 'whole' && p.size ? ' (내용량)' : ' (1회 제공량)');
+    var item = { raw: nm, name: nm, amount: t.amount, unit: t.unit || null, ref: { kind: 'food', key: nm, base: p.base }, product: food.product, calc: { grams: ug * amt }, total: tot,
+      est: guess ? note : null, note: guess ? '' : note, ai: false };
+    if (f.kind === 'i') m.items[f.idx] = item; else { m.pending.splice(f.idx, 1); m.items.push(item); }
+    m.total = m.items.reduce(function (a, x) { ['kcal', 'carb', 'protein', 'fat'].forEach(function (k) { a[k] += x.total[k] || 0; }); return a; }, { kcal: 0, carb: 0, protein: 0, fat: 0 });
+    l.questions = (l.questions || []).filter(function (q) { var lb = String(q.label || ''); return lb !== nm && lb !== t.raw && lb.indexOf(nm) !== 0; });
+    noteCounts(l);
+    // 내 식품으로: 짝꿍이 저장한 것 · 해시가 겹치는 것은 덮지 않음. 이미 다른 단위로 저장해 둔 건 그 단위를 지킴 (예전 기록이 다시 정리 대기로 빠지지 않게)
+    var id = foodId(nm), clash = Object.keys(state.myFoods || {}).some(function (k) { return k !== nm && foodId(k) === id; });
+    if ((old && old.by && old.by !== uid) || clash) { showToast('이번 끼니에만 반영했어요 · 같은 이름을 짝꿍이 저장해 뒀어요'); }
+    else {
+      if (old && old.unit && old.unit !== unit && MASS[unit] && old.unitG > 0 && !MASS[old.unit]) { food.unit = old.unit; food.unitG = old.unitG; ['kcal', 'carb', 'protein', 'fat'].forEach(function (k) { food[k] = per(p[k], old.unitG); }); }
+      state.myFoods = Object.assign({}, state.myFoods || {}); state.myFoods[nm] = food;
+      store.setFood(id, food).catch(function () { if (state.myFoods && state.myFoods[nm] === food) { state.myFoods = Object.assign({}, state.myFoods); if (old) state.myFoods[nm] = old; else delete state.myFoods[nm]; } showToast('내 식품에 저장하지 못했어요 · 이번 끼니에는 반영했어요'); });
+    }
+    dietFindClose(true, true);
+    focusAfter = ['[data-act="dl-save"]']; focusInSheet = true; render(true);
+  }
   function itemSub(i) {
     var g = i.calc && i.calc.grams != null ? Math.round(i.calc.grams * 10) / 10 + 'g' : '';
     var q = i.amount != null ? i.amount + (i.unit || '') : '';
     if (g && i.ref.base === 'ml') g = g.replace(/g$/, 'ml'); // ml 기준 줄은 ml 로
-    var src = i.ref.kind === 'table' ? '식품표 ' + i.ref.key.replace(/_/g, ' ') : i.ref.kind === 'recipe' ? '내 레시피' : i.ref.kind === 'user' ? (i.est ? '' : '알려 준 값') : i.ref.kind === 'est' ? '' : i.ref.kind === 'new_recipe' ? '재료 ' + ((i.ingredients || []).length) + '가지로 계산' + (i.calc && i.calc.portion ? ' · ' + i.calc.portion[0] + '/' + i.calc.portion[1] : '') : i.ref.kind === 'supplement' ? '보충제 · 먹었는지만' : '내 식품';
-    return [q && g && q !== g ? q + ' = ' + g : q || g, src, i.extras && i.extras.length ? '+ ' + i.extras.join(' · ') : '', i.est || ''].filter(Boolean).join(' · ');
+    var src = i.ref.kind === 'table' ? '식품표 ' + i.ref.key.replace(/_/g, ' ') : i.ref.kind === 'recipe' ? '내 레시피' : i.ref.kind === 'user' ? (i.est ? '' : '알려 준 값') : i.ref.kind === 'est' ? '' : i.ref.kind === 'new_recipe' ? '재료 ' + ((i.ingredients || []).length) + '가지로 계산' + (i.calc && i.calc.portion ? ' · ' + i.calc.portion[0] + '/' + i.calc.portion[1] : '') : i.ref.kind === 'supplement' ? '보충제 · 먹었는지만' : i.product ? '식약처 ' + i.product : '내 식품';
+    return [q && g && q !== g ? q + ' = ' + g : q || g, src, i.extras && i.extras.length ? '+ ' + i.extras.join(' · ') : '', i.note || '', i.est || ''].filter(Boolean).join(' · ');
   }
   function mealTitle(m) { return m.label || (m.kind === 'snack' ? '간식' : '식사'); }
   function dietConfirmModel() {
     var l = state.diet.log, pi = partnerInfo();
     return { meals: l.meals.map(function (m) { return { at: m.at, name: mealTitle(m), total: m.total,
-        items: m.items.map(function (i) { return { name: i.name, sub: itemSub(i), kcal: i.total.kcal, est: !!i.est, ai: !!i.ai }; }), pending: m.pending }; }),
+        items: m.items.map(function (i) { return { name: i.name, sub: itemSub(i), kcal: i.total.kcal, est: !!i.est, ai: !!i.ai, find: canFind(l) && !!i.ref && (i.ref.kind === 'est' || i.ref.kind === 'user' || (i.ref.kind === 'food' && !!(state.myFoods || {})[i.ref.key] && state.myFoods[i.ref.key].src === 'kr')) }; }), // 고른 제품도 다시 찾을 수 있게
+        pending: m.pending.map(function (x) { return { raw: x.raw, reason: x.reason, find: canFind(l) && FIND_WHY.indexOf(x.reason) >= 0 }; }) }; }),
       ai: l.ai, aiNote: l.aiNote, questions: l.ai === 'busy' ? [] : l.questions, round: Math.floor(l.answers.length / 3) + 1,
       together: l.together, partnerName: pi.partner ? pi.partnerName : '', saving: l.saving, error: l.error, dayLabel: l.dayLabel };
   }
@@ -2604,7 +2694,7 @@
       return {
         id: 'm' + stamp + k + Math.random().toString(36).slice(2, 5), at: r.at || nowAt(), kind: r.kind, label: r.label || null,
         text: l.text.trim().slice(0, 2000), together: !!l.together, status: r.pending.length ? 'pending' : 'done', ai: !!l.aiUsed,
-        items: r.items.slice(0, 40).map(function (i) { return { name: String(i.name).slice(0, 60), amount: i.amount == null ? null : i.amount, unit: i.unit || null, ref: i.ref, grams: i.calc && i.calc.grams != null ? i.calc.grams : null, portion: (i.calc && i.calc.portion) || null, est: i.est || null, ai: !!i.ai, total: round(i.total) }; }),
+        items: r.items.slice(0, 40).map(function (i) { return { name: String(i.name).slice(0, 60), amount: i.amount == null ? null : i.amount, unit: i.unit || null, ref: i.ref, grams: i.calc && i.calc.grams != null ? i.calc.grams : null, portion: (i.calc && i.calc.portion) || null, est: i.est || null, ai: !!i.ai, product: i.product ? String(i.product).slice(0, 80) : null, total: round(i.total) }; }),
         pending: r.pending.slice(0, 40).map(function (x) { return { raw: String(x.raw).slice(0, 200), reason: x.reason }; }),
         total: round(r.total), createdAt: now
       };
@@ -3613,6 +3703,7 @@
     if (state.avaView) { closeAvaView(); return; }
     if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
+    if (state.diet && state.diet.log && state.diet.log.find) { dietFindClose(); return; }
     if (state.diet && state.diet.log && state.diet.log.when) { state.diet.log.when = null; focusAfter = ['[data-act="dl-when"]']; focusInSheet = true; render(true); return; }
     if (state.diet && state.diet.log) {
       if (state.diet.log.step === 'confirm') { aiSeq++; state.diet.log.step = 'input'; state.diet.log.meals = null; focusAfter = ['#dl-text']; focusInSheet = true; render(true); }
@@ -3721,6 +3812,7 @@
     if (state.recap.open && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
+    if (ev.key === 'Enter' && ev.target.id === 'dp-q' && !ev.isComposing && !composing) { ev.preventDefault(); dietFindGo(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
     if (ev.key === 'Tab') {
       // 시트가 열려 있으면 포커스를 시트 안에서만 돈다

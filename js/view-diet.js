@@ -142,12 +142,16 @@
   }
 
   var WAIT_WHY = { complex: '재료를 함께 적은 줄', unknown: '식품표에 없는 음식', unit: '모르는 단위', amount: '양이 이상해요', calc: '계산 못 함', ingredient: '재료 중 모르는 것', recipe: '재료를 몰라요', product: '처음 보는 제품 · 제품 등록이 생기면 채워요', food: '저장된 레시피가 아직 없어요' };
-  function section(m, many) {
+  /** 「제품 찾기」 단추 (AI 추정 · 정리 대기 줄) — 식약처 가공식품에서 골라 바꿈 */
+  function findBtn(v, name) { return '<button type="button" class="dfind" data-act="dp-open" data-v="' + esc(v) + '" aria-label="' + esc(name) + ' 제품 찾기">제품 찾기</button>'; }
+  function section(m, many, mi) {
     var n = m.items.length + m.pending.length, est = m.pending.length || m.items.some(function (i) { return i.est; });
-    var rows = m.items.map(function (i) {
-      return '<li class="drow"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.est ? ' <span class="dest">· ' + (i.ai ? 'AI 추정' : '추정') + '</span>' : '') + '</span>' + (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span></li>';
-    }).concat(m.pending.map(function (x) {
-      return '<li class="drow drow--wait"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">' + esc(WAIT_WHY[x.reason] || '아직 계산 못 함') + ' · 저장해 두고 나중에 정리해요</span></span><span class="dwait">정리 대기</span></li>';
+    var rows = m.items.map(function (i, k) {
+      return '<li class="drow"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.est ? ' <span class="dest">· ' + (i.ai ? 'AI 추정' : '추정') + '</span>' : '') + '</span>' + (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') +
+        (i.find ? findBtn(mi + ':i:' + k, i.name) : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span></li>';
+    }).concat(m.pending.map(function (x, k) {
+      return '<li class="drow drow--wait"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">' + esc(WAIT_WHY[x.reason] || '아직 계산 못 함') + ' · 저장해 두고 나중에 정리해요</span>' +
+        (x.find ? findBtn(mi + ':p:' + k, x.raw) : '') + '</span><span class="dwait">정리 대기</span></li>';
     })).join('');
     var head = esc((m.at || '') + ' ' + m.name + ' · ' + n + '가지');
     return '<section class="card dsum">' + (many ? '<h3 class="dsum__t">' + head + '</h3>' : '<h2 id="dc-title" class="dsum__t">' + head + '</h2>') +
@@ -195,14 +199,37 @@
       '<div class="dbar"><button type="button" class="mbar__btn" data-act="dl-back" aria-label="고치러 돌아가기">' + svg(BACK) + '</button></div>' +
       '<p class="caption">' + (c.dayLabel ? esc(c.dayLabel) + ' 기록이에요 · 확인하고 저장해요' : '확인하고 저장해요') + '</p>' +
       (many ? '<h2 id="dc-title" class="title">끼니 ' + c.meals.length + '개</h2>' : '') +
-      aiBox + c.meals.map(function (m) { return section(m, many); }).join('') + qs +
+      aiBox + c.meals.map(function (m, mi) { return section(m, many, mi); }).join('') + qs +
       (c.together && c.partnerName ? '<p class="dnote">' + esc(c.partnerName) + ' 님과 함께 먹은 끼니로 표시해요</p>' : '') +
       (c.error ? '<p class="rform__error" role="alert">' + esc(c.error) + '</p>' : '') +
       '<div class="dfoot"><button type="button" class="mbtn mbtn--solid dfoot__go" data-act="dl-save"' + (c.saving || !nAll ? ' disabled' : '') + '>' + (c.saving ? '저장 중…' : c.ai === 'busy' ? '기다리지 않고 저장' : many ? '끼니 ' + c.meals.length + '개 저장' : '저장') + '</button></div>' +
       '</section></div>';
   }
 
-  var api = { goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
+  /** 제품 찾기 시트 (확인 카드 위). f = { name, q, unit, mode: mass|whole|serve, busy, error, items: [{ name, maker, base, kcal, serve, size }] | null } */
+  function findSheet(f, entering) {
+    var st = f.busy ? '찾는 중이에요…' : f.error ? f.error : f.items ? (f.items.length ? '식약처 가공식품 ' + f.items.length + '개 · 고르면 내 식품에 저장돼요' : '찾지 못했어요 · 이름을 줄이거나 제조사를 넣어 보세요') : '';
+    var list = f.items && f.items.length && !f.busy ? '<ul class="dlist dfind__list">' + f.items.map(function (p, i) {
+      // 계산에 쓸 양을 그대로 보여 줌 (점검 AI: 목록은 1회 200ml 인데 1팩 = 900ml 로 계산되던 것)
+      var use = f.mode === 'mass' ? '' : f.mode === 'whole' ? (p.size ? '1' + f.unit + ' = 내용량 ' + p.size + p.base : p.serve ? '1' + f.unit + ' = 1회 ' + p.serve + p.base : '양 정보 없음')
+        : (p.serve ? '1' + f.unit + ' = 1회 ' + p.serve + p.base : p.size ? '1' + f.unit + ' = 내용량 ' + p.size + p.base : '양 정보 없음');
+      var meta = [p.maker, use].filter(Boolean).join(' · ');
+      return '<li><button type="button" class="dfind__row" data-act="dp-pick" data-v="' + i + '"><span class="drow__tx"><span class="drow__nm">' + esc(p.name) + '</span>' + (meta ? '<span class="drow__ds">' + esc(meta) + '</span>' : '') + '</span>' +
+        '<span class="drow__vl">' + comma(p.kcal) + '<small class="dfind__per"> kcal/100' + p.base + '</small></span></button></li>';
+    }).join('') + '</ul>' : '';
+    return '<div class="sheet-layer sheet-layer--top">' +
+      '<button type="button" class="scrim" data-act="dp-close" aria-label="닫기"></button>' +
+      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dp-title">' +
+      '<span class="grabber" aria-hidden="true"></span>' +
+      '<h2 id="dp-title" class="sheet__title">제품 찾기</h2>' +
+      '<p class="sheet__sub">「' + esc(f.name) + '」을(를) 식약처 가공식품에서 골라요</p>' +
+      '<div class="dfind__bar"><label class="sr-only" for="dp-q">찾을 제품 이름</label><input id="dp-q" class="dfind__in" type="search" maxlength="40" autocomplete="off" enterkeyhint="search" value="' + esc(f.q) + '" placeholder="예) 신라면, 농심 새우깡">' +
+        '<button type="button" class="mbtn mbtn--solid dfind__go" data-act="dp-go"' + (f.busy ? ' disabled' : '') + '>찾기</button></div>' +
+      '<p class="dfind__st' + (f.error ? ' dfind__st--err' : '') + '" role="' + (f.error ? 'alert' : 'status') + '">' + esc(st) + '</p>' + list +
+      '</section></div>';
+  }
+
+  var api = { findSheet: findSheet, goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

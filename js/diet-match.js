@@ -199,6 +199,11 @@
     return matchTable(line, ctx, foodsMap);
   }
   function matchFood(line, f, fk) {
+    var r = matchFood0(line, f, fk);
+    if (r.ref && r.ref.kind === 'food') { if (f.base) r.ref.base = f.base; if (f.product) r.product = f.product; } // 고른 가공식품: ml 표시 · 식약처 이름
+    return r;
+  }
+  function matchFood0(line, f, fk) {
     if (f.type === 'supplement') return { ref: { kind: 'supplement', key: fk }, calc: { food: fk, qty: line.amount == null ? 1 : line.amount } };
     if (line.unit === 'g' || line.unit === 'ml' || line.unit === 'kg') {
       var g = line.unit === 'kg' ? line.amount * 1000 : line.amount;
@@ -245,7 +250,7 @@
       if (!m.calc) { pending.push({ raw: line.raw, name: line.name, reason: m.reason }); return; }
       var total;
       try { total = C.itemTotal(foodsMap, ctx.recipes || [], m.calc); } catch (err) { pending.push({ raw: line.raw, name: line.name, reason: 'calc' }); return; }
-      items.push({ raw: line.raw, name: line.name, amount: line.amount, unit: line.unit, ref: m.ref, calc: m.calc, total: total, est: m.est || null, ai: !!m.ai, defaultUnit: m.defaultUnit || null });
+      items.push({ raw: line.raw, name: line.name, amount: line.amount, unit: line.unit, ref: m.ref, calc: m.calc, total: total, est: m.est || null, ai: !!m.ai, product: m.product || null, defaultUnit: m.defaultUnit || null });
     });
     var sum = { kcal: 0, carb: 0, protein: 0, fat: 0 };
     items.forEach(function (it) { C.KEYS.forEach(function (k) { sum[k] += it.total[k]; }); });

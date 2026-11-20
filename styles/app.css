@@ -1706,3 +1706,17 @@ button.rv-srow { cursor: pointer; }
 .lg-catnew .field__input { flex: 1; min-width: 0; }
 .lg-catnew__add, .lg-catnew__no { flex: none; height: 44px; padding: 0 14px; }
 .pick--del { border-color: var(--warn); color: var(--warn); }
+
+/* 단짝 식탁 · 제품 찾기 (식약처 가공식품) */
+.dfind { align-self: flex-start; margin-top: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.dfind:focus-visible, .dfind__row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dfind__bar { display: flex; gap: 8px; margin-top: 4px; }
+.dfind__in { flex: 1; min-width: 0; min-height: 48px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 14px; background: var(--input-bg); padding: 0 14px; font: inherit; font-size: 16px; color: var(--text); }
+.dfind__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dfind__go { flex: none; }
+.dfind__st { margin: 10px 2px 4px; min-height: 18px; font-size: 13px; font-weight: 600; color: var(--sub); }
+.dfind__st--err { color: var(--text); }
+.dfind__list { max-height: 52vh; overflow-y: auto; }
+.dfind__row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; border: 0; border-bottom: 1px solid var(--divider); background: none; padding: 6px 2px; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.dfind__list li:last-child .dfind__row { border-bottom: 0; }
+.dfind__per { font-size: 11px; font-weight: 600; color: var(--sub); }

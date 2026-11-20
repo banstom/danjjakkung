@@ -18,6 +18,7 @@ const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const M = require('./meal');
+const P = require('./products');
 const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const admin = require('firebase-admin');
 const N = require('./notify');
@@ -291,6 +292,18 @@ exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, m
   }
   logger.info('parseMeal ok', { uid, used, usage: out.usage });
   return { result, used, limit: M.LIMITS.perDay, model: M.MODEL };
+});
+
+/* 단짝 식탁 · 가공식품 찾기: { q } → 식약처 가공식품 후보 10개 (100g·ml당 값 · 1회 제공량 · 내용량). 두 사람(members)만.
+   32만 건을 함수 메모리에 들고 찾는다 (products.js) — 처음 부를 때 1초쯤 읽음 */
+exports.findProduct = onCall({ timeoutSeconds: 30, memory: '1GiB', maxInstances: 2 }, async (req) => {
+  const uid = req.auth && req.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
+  const mem = await db.doc(`members/${uid}`).get();
+  if (!mem.exists) throw new HttpsError('permission-denied', '단짝꿍 멤버만 쓸 수 있어요');
+  const bad = P.badQuery(req.data);
+  if (bad) throw new HttpsError('invalid-argument', bad);
+  return { items: P.search(req.data.q.trim(), 10) };
 });
 
 // 단짝 지도 (v54): 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「OO 다녀온 기록이 생겼어요 · 별점을 남겨 주세요」 → 누르면 그 지역 시트.

@@ -362,7 +362,7 @@ service cloud.firestore {
 
     // 단짝 식탁 내 식품 (D6 일부): foods/f_<이름 해시> = 1단위 값. 알려 준 영양 숫자 · 고른 가공식품을 저장해 다음부터 바로 계산. 둘이 함께 씀 (plan.md 데이터 절)
     function validFood(f) {
-      return f.keys().hasOnly(['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'by', 'updatedAt'])
+      return f.keys().hasOnly(['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'product', 'base', 'by', 'updatedAt'])
         && f.type in ['product', 'food']
         && f.name is string && f.name.size() >= 1 && f.name.size() <= 60
         && f.unit is string && f.unit.size() >= 1 && f.unit.size() <= 20
@@ -371,6 +371,8 @@ service cloud.firestore {
         && (!('user' in f) || (f.user is list && f.user.size() <= 4))
         && f.src in ['user', 'kr']
         && (!('maker' in f) || (f.maker is string && f.maker.size() <= 60))
+        && (!('product' in f) || (f.product is string && f.product.size() <= 80))
+        && (!('base' in f) || f.base in ['g', 'ml'])
         && f.by == request.auth.uid && dietAt(f, 'updatedAt');
     }
     match /foods/{id} {

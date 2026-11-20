@@ -17,7 +17,7 @@ process.on('exit', () => server.kill());
 // ── 공용 가짜 저장소 (node 쪽) ──
 const docs = new Map();
 let failPlaces = false; // true 면 다음 places 저장 한 번을 실패시킨다
-const aiReplies = [], aiCalls = []; // 단짝 식탁 AI(parseMeal) 가짜 답 · 받은 요청
+const aiReplies = [], aiCalls = [], findReplies = [], findCalls = []; // 단짝 식탁 AI(parseMeal) 가짜 답 · 받은 요청
 const accounts = new Map(); // email → { uid, password }
 const pages = [];
 async function pushAll(changed) {
@@ -185,6 +185,14 @@ async function open(browser, name, opts = {}) {
     if (rep.delay) await new Promise((ok) => setTimeout(ok, rep.delay));
     return r.fulfill({ status: rep.status || 200, headers: cors, contentType: 'application/json', body: JSON.stringify(rep.body) });
   });
+  await page.route(/cloudfunctions\.net\/findProduct/, async (r) => { // 제품 찾기 가짜 답
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization', 'access-control-allow-methods': 'POST, OPTIONS' };
+    if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
+    findCalls.push(JSON.parse(r.request().postData() || '{}').data);
+    const rep = findReplies.shift() || { status: 503, body: { error: { status: 'UNAVAILABLE', message: 'x' } } };
+    if (rep.delay) await new Promise((ok) => setTimeout(ok, rep.delay));
+    return r.fulfill({ status: rep.status || 200, headers: cors, contentType: 'application/json', body: JSON.stringify(rep.body) });
+  });
   await page.exposeFunction('__set', async (p, v, uid) => {
     // 규칙 흉내: 루틴 · 체크는 자기 것만
     const d = v === null ? null : JSON.parse(v);
@@ -210,7 +218,7 @@ async function open(browser, name, opts = {}) {
     if (p.startsWith('meals/')) { if (p.split('/')[1].split('_')[0] !== uid) throw new Error('permission-denied');
       if (d && !(Object.keys(d).every((k) => ['uid', 'date', 'meals', 'updatedAt'].includes(k)) && d.uid === uid && p === 'meals/' + uid + '_' + d.date && Array.isArray(d.meals) && d.meals.length <= 20)) throw new Error('permission-denied'); }
     // 내 식품: foods/f_<해시> · 정해진 칸 · by = 나 (validFood)
-    if (p.startsWith('foods/') && d) { const ok = /^foods\/f_[a-z0-9]{1,24}$/.test(p) && Object.keys(d).every((k) => ['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'by', 'updatedAt'].includes(k))
+    if (p.startsWith('foods/') && d) { const ok = /^foods\/f_[a-z0-9]{1,24}$/.test(p) && Object.keys(d).every((k) => ['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'product', 'base', 'by', 'updatedAt'].includes(k))
         && ['product', 'food'].includes(d.type) && typeof d.name === 'string' && d.name.length && typeof d.unit === 'string' && d.unit.length && d.by === uid && ['user', 'kr'].includes(d.src)
         && [['kcal', 5000], ['carb', 1000], ['protein', 1000], ['fat', 1000]].every(([k, hi]) => typeof d[k] === 'number' && d[k] >= 0 && d[k] <= hi);
       if (!ok) throw new Error('permission-denied'); }
@@ -1517,6 +1525,47 @@ async function tick(page, dateKey, key) {
   await jm.fill('#dl-text', '임팩트웨이프로틴 2스쿱'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('[data-act="dl-save"]');
   assert.strictEqual(aiCalls.length, nAi, '다음부터는 AI 없이');
   assert.match(await jm.textContent('.drow'), /내 식품/); assert.match(await jm.textContent('.drow__vl'), /206/);
+  await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
+  // 제품 찾기: 정리 대기 줄 · AI 추정 줄에서 식약처 가공식품을 골라 바꿈 → 내 식품(src: kr)
+  const RAMEN = { name: '신라면', maker: '(주)농심', base: 'g', kcal: 417, carb: 63, protein: 9, fat: 14, serve: 120, size: 120 };
+  aiReplies.push({ body: { result: { result: { meals: [{ at: '19:00', kind: 'meal', label: '저녁', items: [
+    { name: '라면', amount: 1, unit: '봉지', match: { kind: 'new_product' } },
+    { name: '오레오오즈', amount: 1, unit: '그릇', match: { kind: 'new_product' }, nutrition: { amount: 1, unit: '그릇', kcal: 160, carb: 34, protein: 2, fat: 2, user: [] } }] }], unknowns: [] } } } });
+  findReplies.push({ delay: 200, body: { result: { items: [RAMEN, Object.assign({}, RAMEN, { name: '신라면컵', serve: null, size: 65, kcal: 462 })] } } });
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '19:00 저녁\n라면 1봉지\n오레오오즈 1그릇'); await jm.click('[data-act="dl-go"]');
+  await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
+  assert.strictEqual((await jm.$$('[data-act="dp-open"]')).length, 2, '정리 대기 줄 · AI 추정 줄에 제품 찾기');
+  await jm.click('.drow--wait [data-act="dp-open"]');
+  await jm.waitForSelector('#dp-q'); assert.strictEqual(await jm.inputValue('#dp-q'), '라면', '적은 이름으로 바로 찾음');
+  assert.match(await jm.textContent('.dfind__st'), /찾는 중/);
+  await jm.waitForSelector('[data-act="dp-pick"]'); assert.deepStrictEqual(findCalls[findCalls.length - 1], { q: '라면' });
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'dp-pick', '첫 후보로 포커스');
+  // 다시 찾기 (Enter)
+  findReplies.push({ body: { result: { items: [RAMEN] } } });
+  await jm.fill('#dp-q', '농심 신라면'); await jm.press('#dp-q', 'Enter'); await jm.waitForFunction(() => document.querySelectorAll('[data-act="dp-pick"]').length === 1);
+  assert.deepStrictEqual(findCalls[findCalls.length - 1], { q: '농심 신라면' });
+  await jm.click('[data-act="dp-pick"][data-v="0"]'); await jm.waitForFunction(() => !document.querySelector('#dp-q'));
+  const rowsF = await jm.$$eval('.drow:not(.drow--wait)', (e) => e.map((x) => x.textContent));
+  assert.ok(rowsF.some((t) => /라면/.test(t) && /식약처 신라면/.test(t) && /1봉지 = 120g \(내용량\)/.test(t) && /500/.test(t)), '1봉지 = 내용량 120g → 417×1.2: ' + rowsF.join(' | '));
+  assert.strictEqual((await jm.$$('.drow--wait')).length, 0, '정리 대기 없어짐');
+  const kr = [...docs.entries()].find(([k, v]) => k.startsWith('foods/') && v.name === '라면');
+  assert.ok(kr && kr[1].src === 'kr' && kr[1].product === '신라면' && kr[1].unit === '봉지' && kr[1].unitG === 120 && Math.abs(kr[1].kcal - 500.4) < 0.01, '내 식품(src: kr)으로 저장');
+  // AI 추정 줄도 바꿀 수 있음 · 찾기 실패 · Esc 로 닫으면 그 단추로
+  findReplies.push({ status: 404, body: { error: { status: 'NOT_FOUND', message: 'x' } } });
+  await jm.click('[data-act="dp-open"]'); await jm.waitForTimeout(100);
+  assert.ok(!(await jm.$('#dp-q')), '고른 바로 뒤(0.4초 안) 탭은 무시 — 두 번 탭이 아래 단추로 새지 않게');
+  await jm.waitForTimeout(400); await jm.click('[data-act="dp-open"]'); await jm.waitForSelector('.dfind__st--err');
+  assert.match(await jm.textContent('.dfind__st'), /준비되지 않았어요|찾지 못했어요/);
+  await jm.keyboard.press('Escape'); await jm.waitForFunction(() => !document.querySelector('#dp-q'));
+  assert.strictEqual(await jm.evaluate(() => document.activeElement.getAttribute('data-act')), 'dp-open', 'Esc → 그 단추로');
+  assert.ok(await jm.$('[data-act="dl-save"]'), '확인 카드는 그대로');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  // 다음부터는 「라면 2봉지」를 AI 없이
+  const nAi2 = aiCalls.length;
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '라면 2봉지'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('[data-act="dl-save"]');
+  assert.strictEqual(aiCalls.length, nAi2); assert.match(await jm.textContent('.drow__vl'), /1,001/);
   await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
