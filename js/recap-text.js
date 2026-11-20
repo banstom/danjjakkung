@@ -44,7 +44,7 @@
           kick: '각자의 루틴',
           rows: people.map(function (p) { return card.people.filter(function (x) { return x && x.uid === p.uid; })[0]; }).filter(Boolean).map(function (x) {
             return { uid: x.uid, name: name(x.uid), routine: x.name, pct: x.pct, sub: x.done + '/' + x.due + '일',
-              cmp: x.diff === null ? null : (signed(x.diff, '%p') || '그대로') };
+              cmp: x.diff === null ? null : (signed(x.diff, '%p') || '그대로'), isNew: !!x.isNew };
           })
         };
       case 'todos':

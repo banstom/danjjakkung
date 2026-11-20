@@ -203,3 +203,8 @@ test('R6 할 일 카드는 「끝낸 일」 (각자 끝낸 일도 셈) · 함께
   const solo = computeRecap({ ...nov, todos: nov.todos.map((x) => ({ ...x, shared: false })) }, oct);
   assert.equal(cardText(card('todos', solo), solo, 'jm').lead, '이번 달 끝낸 할 일이에요.');
 });
+
+test('R7 각자의 루틴: 이번 기간에 시작한 루틴은 isNew (「이번 달에 새로 만든 루틴」)', () => {
+  const rows = cardText(card('routines'), recap, 'jm').rows;
+  assert.deepEqual(rows.map((r) => [r.routine, r.isNew]), [['영어 단어 30개', false], ['감사 일기', true]]);
+});

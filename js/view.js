@@ -77,6 +77,7 @@
       switchRow('pref-todo', p.todo !== false && p.partner, '함께 할 일 알림', '짝꿍이 함께 할 일을 추가하거나 끝내면 알려 줘요' + (p.partner ? '' : ' · 짝꿍 알림을 켜야 와요'), off || !p.partner) +
       switchRow('pref-map', p.map !== false && p.partner, '단짝 지도 별점 알림', '짝꿍이 함께 다녀온 곳을 기록하면 「별점을 남겨 주세요」 하고 알려 줘요' + (p.partner ? '' : ' · 짝꿍 알림을 켜야 와요'), off || !p.partner) +
       switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
+      switchRow('pref-recap', p.recap !== false, '매달 1일 결산 알림', '아침 9시에 지난달 결산이 나오면 알려 줘요 · 누르면 결산 카드', off) +
       switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요 · 함께 할 일 이름도 숨겨요', off) +
       '</div>' +
       '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +

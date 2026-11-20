@@ -475,4 +475,48 @@
 [data-skin="pixel"]:not([data-font="plain"]) .recap-cover__when { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .recap-cover__title { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .dmeal__fix { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-banner__kick { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-banner__title { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-banner__sub { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-row__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-row__vl { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-kick { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-title { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-big small { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-lead { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-lead--h { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-more { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-cmp { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-prow__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-prow__vl { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-cal__dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-lg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-rt__who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-rt__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct b { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct span { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-best__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-best__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-memo { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-memo__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-stars { letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-receipt__t { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-receipt__more { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-ld { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-ld__total { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-final__t { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-tile b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-tile span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-btn, [data-skin="pixel"]:not([data-font="plain"]) .rc-btn2 { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-tap { font-size: 12px; font-family: var(--px-font-11); }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-big { font-size: 36px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-big small { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-title { font-size: 36px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-lead--h { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct b { font-size: 36px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-final__t { font-size: 24px; font-family: var(--px-font-11); } }
+@media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-tile b { font-size: 24px; font-family: var(--px-font-11); } }
 /* ── 글씨 크기 표 끝 ── */

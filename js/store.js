@@ -313,6 +313,12 @@
       // ── 꿍 보내기 ──
       // kungs/<날짜>_<보낸 사람 uid> : { from, to, date, at } — 하루 한 번 (같은 이름이라 두 번째는 규칙이 막음), 남기기만
       /** 돌아보기: [fromKey, toKey) 날짜의 꿍 (둘이 보낸 것 모두) */
+      /** 월말 · 연말결산 (docs/recap) — recaps/<YYYY-MM | YYYY> 전부 (한 해에 13개 정도). 서버만 쓰고 앱은 읽기만 */
+      loadRecaps: function () {
+        return db.collection('recaps').get().then(function (q) {
+          return q.docs.map(function (doc) { return { key: doc.id, doc: doc.data() }; });
+        });
+      },
       loadKungs: function (fromKey, toKey) {
         return db.collection('kungs').where('date', '>=', fromKey).where('date', '<', toKey).get().then(function (q) {
           return q.docs.map(function (doc) { return doc.data(); });

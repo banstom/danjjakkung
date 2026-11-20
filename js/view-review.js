@@ -18,9 +18,11 @@
 
   function head(m) {
     var unit = m.mode === 'week' ? '주' : '달';
-    return '<div class="plan__bar"><div class="seg" role="group" aria-label="돌아볼 기간">' +
+    // 결산(R3): 「주 · 달 · 결산」 세 칸 — 결산 칸 화면은 js/view-recap.js
+    return '<div class="plan__bar"><div class="seg seg--3" role="group" aria-label="돌아볼 기간">' +
       '<button type="button" class="seg__btn" data-act="rv-mode" data-v="week" aria-pressed="' + (m.mode === 'week') + '">주</button>' +
-      '<button type="button" class="seg__btn" data-act="rv-mode" data-v="month" aria-pressed="' + (m.mode === 'month') + '">월</button></div></div>' +
+      '<button type="button" class="seg__btn" data-act="rv-mode" data-v="month" aria-pressed="' + (m.mode === 'month') + '">달</button>' +
+      '<button type="button" class="seg__btn" data-act="rv-mode" data-v="recap" aria-pressed="false">결산</button></div></div>' +
       '<section class="card rv-us" aria-label="' + esc(m.title) + '"' + (m.loading ? ' aria-busy="true"' : '') + '>' +
       '<div class="grid-head">' +
       '<button type="button" class="icon-btn" data-act="rv-page" data-dir="1" aria-label="이전 ' + unit + '"' + (m.canPrev ? '' : ' disabled') + '>' + CHEVRON.prev + '</button>' +

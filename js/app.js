@@ -27,6 +27,8 @@
     manage: null,        // 「내 루틴」 시트 { open, form: { key, name, icon, start, error, saving, confirmDelete } }
     tab: 'routine',      // 아래 탭: routine | schedule | todo | look(돌아보기)
     review: { mode: 'week', page: 0, key: null, todos: [], kungs: [], loading: false, error: '' }, // 돌아보기: 주 · 달, page = 몇 칸 전, 기간 안에 끝낸 일 · 꿍 (열 때 불러옴)
+    recap: { list: null, loading: false, error: '', open: null, idx: 0, pending: null, saving: false }, // 결산(R3): 지난 결산 목록 · 넘기는 중인 결산 key · 장
+    recapOn: true,       // 매달 1일 결산 알림 (users/<uid>.recap, 없으면 켬)
     todoDocs: [], todoErr: '', eventDocs: [], eventErr: '',
     todoUi: { expanded: {}, showDone: {} },  // 묶음마다 「더 보기」 · 「완료 보기」
     todoForm: null,      // 할 일 추가 · 고치기 시트
@@ -107,11 +109,13 @@
   (function () {
     var q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(root.location.search || '');
     var mq = /[?&]map=(\d{5})/.exec(root.location.search || ''); // v54 단짝 지도 알림 → 그 지역 시트
+    var rq = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(root.location.search || ''); // 결산 알림 → 그 결산 카드
+    if (rq) { state.recap.pending = rq[1]; state.review.mode = 'recap'; if (!q) q = [null, 'look']; }
     if (mq) { state.pendingMap = mq[1]; if (!q) q = [null, 'all']; }
     var t = q ? q[1] : lsGet(LS_TAB);
     if (TAB_IDS.indexOf(t) >= 0) state.tab = t;
     // 돌아보기는 언제나 이번 주부터 (주소로 열어도 · 다시 열어도)
-    if (q) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
+    if (q || rq) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
   })();
   function typing() {
     var el = document.activeElement;
@@ -225,7 +229,7 @@
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
-    'rv-mode': 'data-v', 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
+    'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v',
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
@@ -498,6 +502,15 @@
     else if (act === 'place-next') placeNext();
     else if (act === 'place-back') placeBack();
     else if (act === 'rv-mode') { if (btn.getAttribute('data-v') !== state.review.mode) setReview(btn.getAttribute('data-v'), 0); }
+    else if (act === 'rc-open') openRecap(btn.getAttribute('data-v'));
+    else if (act === 'rc-close') closeRecap();
+    else if (act === 'rc-tap') { if (Date.now() >= rcNoTapUntil) { var rb = btn.getBoundingClientRect(); recapStep(RT.viewRecap.tapDir(ev.clientX - rb.left, rb.width)); } }
+    else if (act === 'rc-prev') recapStep(-1);
+    else if (act === 'rc-next') recapStep(1);
+    else if (act === 'rc-restart') { state.recap.idx = 0; render(true); }
+    else if (act === 'rc-save') saveRecapImage();
+    else if (act === 'rc-retry') { state.recap.list = null; state.recap.error = ''; render(true); }
+    else if (act === 'pref-recap') setRecapPref(!state.recapOn);
     else if (act === 'rv-page') {
       var rvDir = Number(btn.getAttribute('data-dir'));
       focusAfter = ['[data-act="rv-page"][data-dir="' + rvDir + '"]:not([disabled])', '[data-act="rv-page"][data-dir="' + (-rvDir) + '"]:not([disabled])'];
@@ -657,9 +670,9 @@
     if (state.map) stopMap();
     if (state.diet) stopDiet();
     state.tab = t; lsSet(LS_TAB, t);
-    if (t === 'look') state.review.key = null; // 돌아보기를 열 때마다 새로 불러온다
+    if (t === 'look') { state.review.key = null; if (!state.recap.loading) state.recap.list = null; } // 돌아보기를 열 때마다 새로 불러온다 (결산 목록도)
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
-    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.review.row = null;
+    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.review.row = null; state.recap.open = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaView = null; dropCrop();
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
@@ -732,7 +745,8 @@
     var V = RT.viewPlan, out = {};
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
-    if (state.tab === 'look' && other) out.tab = RT.viewReview.tab(reviewModel());
+    if (state.tab === 'look' && other) out.tab = state.review.mode === 'recap' ? RT.viewRecap.tab(recapEntryModel()) : RT.viewReview.tab(reviewModel());
+    if (state.tab === 'look' && state.recap.open) { var dmRc = recapDeckModel(); if (dmRc) out.sheet = RT.viewRecap.deck(dmRc, state.sheetEntering); else state.recap.open = null; }
     if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietHomeModel()) : RT.viewAll.tab(allModel());
     if (state.tab === 'all' && state.diet && state.diet.log && !(state.diet.view === 'goal' && state.diet.form)) out.sheet = state.diet.log.step === 'confirm' && state.diet.log.meals ? RT.viewDiet.confirmScreen(dietConfirmModel(), state.sheetEntering) : RT.viewDiet.logScreen(dietLogModel(), state.sheetEntering && !state.diet.log.when) + (state.diet.log.when ? RT.viewDiet.whenSheet(dietWhenModel(), state.sheetEntering) : '');
@@ -858,10 +872,72 @@
   function resetReview() { state.review.mode = 'week'; state.review.page = 0; state.review.key = null; }
   function setReview(mode, page) {
     var rv = state.review;
-    rv.mode = mode === 'month' ? 'month' : 'week';
+    rv.mode = mode === 'month' || mode === 'recap' ? mode : 'week';
     rv.page = Math.max(0, page | 0);
     rv.row = null;
     render(true);
+  }
+
+  // ── 결산 (docs/recap R3) ── 목록은 「결산」 칸을 열 때 한 번 불러온다. 카드는 서버가 계산해 둔 문서만 읽음
+  var rcNoTapUntil = 0; // 밀어서 넘긴 직후의 클릭은 넘기기로 치지 않음
+  function loadRecaps() {
+    var rc = state.recap;
+    if (!store || rc.loading) return;
+    rc.loading = true; rc.error = '';
+    store.loadRecaps().then(function (list) {
+      rc.list = list; rc.loading = false;
+      if (rc.pending) { var k = rc.pending; rc.pending = null; if (list.some(function (r) { return r.key === k; })) { openRecap(k); return; } }
+      render();
+    }, function () { rc.loading = false; rc.list = rc.list || []; rc.error = '결산을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 불러와 주세요.'; render(); });
+  }
+  function recapEntryModel() {
+    var rc = state.recap;
+    if (rc.list === null && !rc.loading && !rc.error) setTimeout(loadRecaps, 0);
+    var p = D.parts(state.today);
+    return RT.viewRecap.entryModel(rc.list || [], { y: p.y, m: p.m, d: p.d }, { loading: rc.list === null || rc.loading, error: rc.error });
+  }
+  function recapDeckModel() {
+    var rc = state.recap, row = (rc.list || []).filter(function (r) { return r.key === rc.open; })[0];
+    if (!row || !row.doc || !row.doc.cards) return null;
+    var sm = slotMap();
+    var m = RT.viewRecap.deckModel(row.doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
+      { saving: rc.saving, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
+    rc.idx = m.idx;
+    return m;
+  }
+  function openRecap(key) {
+    if (!key) return;
+    state.tab = 'look'; state.review.mode = 'recap'; state.review.row = null;
+    state.recap.open = key; state.recap.idx = 0; state.sheetEntering = true;
+    focusAfter = ['[data-act="rc-close"]']; focusInSheet = true;
+    render(true);
+  }
+  function closeRecap() {
+    var k = state.recap.open; state.recap.open = null; state.recap.idx = 0;
+    focusAfter = ['[data-act="rc-open"][data-v="' + k + '"]']; render(true);
+  }
+  function recapStep(dir) {
+    var m = recapDeckModel(); if (!m) return;
+    var i = RT.viewRecap.step(m.idx, m.n, dir);
+    if (i === m.idx) return;
+    state.recap.idx = i; render(true);
+  }
+  function saveRecapImage() {
+    var m = recapDeckModel(); if (!m || state.recap.saving || !RT.recapImage) return;
+    state.recap.saving = true; render(true);
+    RT.recapImage.save(m, appEl).then(function (how) {
+      state.recap.saving = false; render(true);
+      showToast(how === 'share' ? '공유할 곳을 골라 주세요' : '이미지를 저장했어요');
+    }, function (e) {
+      state.recap.saving = false; render(true);
+      if (!(e && e.name === 'AbortError')) showToast('이미지를 만들지 못했어요. 잠시 뒤 다시 해 주세요');
+    });
+  }
+  function setRecapPref(on) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    var before = state.recapOn;
+    state.recapOn = on; render(true);
+    store.saveValue(state.uid, 'recap', !!on).catch(function () { state.recapOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
 
   function openPlanSheet(kind, form) {
@@ -1328,6 +1404,18 @@
   // 꾹 누를 때 뜨는 메뉴(안드로이드) 막기
   appEl.addEventListener('contextmenu', function (ev) { if (ev.target.closest && ev.target.closest('[data-uni-pt]')) ev.preventDefault(); });
   appEl.addEventListener('click', function (ev) { if (Date.now() < noClickUntil && ev.target.closest && ev.target.closest('[data-uni-pt]')) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+
+  // 결산 카드 밀어서 넘기기 — 가로로 40px 넘게 밀면 (왼쪽으로 = 다음), 바로 뒤 클릭은 넘기기로 치지 않음
+  var rcTouch = null;
+  appEl.addEventListener('touchstart', function (ev) {
+    rcTouch = state.recap.open && ev.touches.length === 1 && ev.target.closest && ev.target.closest('.sheet.recap') ? { x: ev.touches[0].clientX, y: ev.touches[0].clientY } : null;
+  }, { passive: true });
+  appEl.addEventListener('touchend', function (ev) {
+    if (!rcTouch || !state.recap.open) { rcTouch = null; return; }
+    var t0 = ev.changedTouches[0], dx = t0.clientX - rcTouch.x, dy = t0.clientY - rcTouch.y;
+    rcTouch = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { rcNoTapUntil = Date.now() + 400; recapStep(dx < 0 ? 1 : -1); }
+  }, { passive: true });
 
   // 루틴 카드 꾹 눌러 끌어 순서 바꾸기 (v44) — 내 루틴, 「종류」 · 「내 순서」 보기에서, 같은 묶음 안에서만
   // 꾹 누르면(LIFT_MS) 카드가 들리고, 끄는 대로 같은 묶음 안 자리를 바꿔 보여 준다. 손을 떼면 그 순서로 저장
@@ -1817,7 +1905,7 @@
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
   var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
-  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn }); }
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn, recap: state.recapOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn }); }
   function notifyModel() {
     var P = RT.push;
     return {
@@ -3258,7 +3346,7 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.review.row || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!state.review.row || !!state.recap.open || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
@@ -3287,6 +3375,7 @@
       else closeMap();
       return;
     }
+    if (state.recap.open) { closeRecap(); return; }
     if (state.review.row) { closeRvRow(); return; }
     if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }
     if (state.growOpen) { closeGrow(); return; }
@@ -3366,8 +3455,9 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.review.row && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !state.review.row && !state.recap.open && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
+    if (state.recap.open && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'rt-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveRoutine(); return; }
@@ -3519,6 +3609,7 @@
       store.watchUser(state.uid, function (doc, fromCache) {
         state.prefs = doc && doc.notify ? doc.notify : null;
         state.weeklyOn = !(doc && doc.weekly === false);
+        state.recapOn = !(doc && doc.recap === false);
         state.todoNotifyOn = !(doc && doc.todoNotify === false);
         state.missNotifyOn = !(doc && doc.missNotify === false);
         state.mapNudgeOn = !(doc && doc.mapNudge === false);

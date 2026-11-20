@@ -123,7 +123,7 @@ function bestRoutine(period, data, uid) {
   const range = periodRange(period);
   const done = doneSet(data.checks);
   const rows = N.cleanRoutines(data.routines).filter((r) => r.owner === uid)
-    .map((r) => Object.assign({ key: r.key, name: String(r.name || '') }, routineScore(r, range, done)))
+    .map((r) => Object.assign({ key: r.key, name: String(r.name || ''), isNew: r.start >= range.start && r.start <= range.end }, routineScore(r, range, done)))
     .filter((x) => x.due >= 4);
   rows.sort((a, b) => b.pct - a.pct || b.due - a.due || a.name.localeCompare(b.name, 'ko'));
   return rows[0] || null;
