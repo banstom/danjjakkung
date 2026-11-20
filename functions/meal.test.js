@@ -14,7 +14,9 @@ test('D4 지시문: docs/diet/ai/parse-prompt.md 와 같은 내용 · 사용자 
   assert.equal(M.systemPrompt.length, 0, '받는 값 없음 (회귀: 사용자 table 이 지시문 자리에 들어가던 것)');
   const u = M.userMessage('2026-11-17', '상태', '입력', "달걀(=계란), $` $& 사과");
   assert.match(u, /^오늘은 2026-11-17\.\n식품표: 달걀\(=계란\), \$` \$& 사과\n상태: 상태\n입력:\n입력$/, '식품표는 사용자 글에 · $ 기호 그대로');
-  assert.match(M.PROMPT, /영양 숫자\(kcal · 탄수 · 단백질 · 지방\)를 절대 내지 않는다/);
+  assert.match(M.PROMPT, /식품표 · 내 식품에 있는 음식은 영양 숫자\(kcal · 탄수 · 단백질 · 지방\)를 내지 않는다/);
+  assert.match(M.PROMPT, /추정한 칸을 `user` 에 넣지 않는다/);
+  assert.match(M.TABLE_RULE, /군밤 → 밤_구운것/);
 });
 
 test('D4 받은 값 확인: 글 · 날짜 필수 · 길이 상한 · 몸 정보 칸 없음', () => {
@@ -96,9 +98,11 @@ test('D4 하루 횟수 키는 서울 날짜', () => {
   assert.equal(M.dayKey('u', Date.parse('2026-11-18T14:59:00Z')), 'u_2026-11-18');
 });
 
-test('D4 시험 A 문제 읽기: cases.md 7문제 · 상태 · 입력', () => {
+test('D4 시험 A 문제 읽기: cases.md 9문제 · 상태 · 입력 · 문제별 식품표', () => {
   const cs = parseCases(fs.readFileSync(path.join(__dirname, '..', 'docs', 'diet', 'ai', 'cases.md'), 'utf8'));
-  assert.deepEqual(cs.map((c) => c.name), ['T1', 'T2', 'T3', 'T4', 'T6', 'T7-1', 'T7-2']);
+  assert.deepEqual(cs.map((c) => c.name), ['T1', 'T2', 'T3', 'T4', 'T6', 'T7-1', 'T7-2', 'T8', 'T9']);
+  assert.equal(cs[0].table, null); assert.match(cs[7].table, /^임팩트웨이프로틴 → \(후보 없음\); 군밤 → 밤_구운것/);
+  assert.doesNotMatch(cs[7].state, /식품표/, '식품표 줄은 상태에 안 섞임'); assert.equal(cs[8].state, cs[7].state);
   assert.match(cs[0].input, /^11\.17\.\n아침 08:20/); assert.match(cs[0].input, /:\(바나나2개/);
   assert.match(cs[2].state, /앱이 물은 질문 3개/); assert.match(cs[2].input, /^스크램블 할 때/);
   assert.match(cs[4].input, /^1815 저녁/);
@@ -139,4 +143,30 @@ test('D4 모델이 적은 레시피 재료 learn 에 기준이 빠지면 정정�
   const r = M.sanitize({ corrections: [{ path: '점심/특 간계밥/밥', set: { name: '밥', amount: 3, unit: '개', match: { kind: 'table', key: '햇반' } } }],
     learn: [{ type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', amount: 3, unit: '개' }] });
   assert.deepEqual(r.learn, [{ type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', amount: 3, unit: '개', food: '햇반' }]);
+});
+
+test('11-19 원칙 바꿈: 식품표에 없는 음식만 nutrition — 사용자가 적은 숫자만 user, 나머지는 추정 · 터무니없는 값 버림', () => {
+  const text = '간식 15:00\n임팩트웨이프로틴 1스쿱 (1스쿱에 단백질 21g, 1,030kcal 아님 103kcal)\n군밤 1봉지';
+  const r = M.sanitize({ meals: [{ at: '15:00', kind: 'snack', items: [
+    { name: '임팩트웨이프로틴', amount: 1, unit: '스쿱', match: { kind: 'new_product', key: '임팩트웨이프로틴' }, nutrition: { amount: 1, unit: '스쿱', grams: 25, kcal: 103, carb: 2, protein: 21, fat: 1.5, user: ['protein', 'kcal', 'fat', 'sugar', 'protein'] } },
+    { name: '군밤', amount: 1, unit: '봉지', match: { kind: 'table', key: '밤_구운것' } },
+    { name: '이상한 것', nutrition: { kcal: 99999, protein: 10, user: [] } },
+    { name: '빈 것', nutrition: { user: ['kcal'] } },
+    { name: '탄단지만', nutrition: { carb: 10, protein: 5, fat: 2 } },
+    { name: '레시피', match: { kind: 'new_recipe' }, ingredients: [{ name: '초코칩', amount: 2, unit: '줌', nutrition: { amount: 1, unit: '줌', kcal: 100, user: ['kcal'] } }] }
+  ] }] }, text, '내 단위: 공기 210g. 질문 100개 [{"대상":"초코칩","답":"한 줌에 열량 100"}]');
+  const [pr, gb, odd, empty, mac, rc] = r.meals[0].items;
+  assert.deepEqual(pr.nutrition, { amount: 1, unit: '스쿱', grams: 25, kcal: 103, carb: 2, protein: 21, fat: 1.5, user: ['protein', 'kcal'] }, '글에 있는 21 · 103 만 user (1.5 는 글에 없어 추정), 모르는 칸 · 겹침 버림');
+  assert.equal(gb.nutrition, undefined);
+  assert.deepEqual(odd.nutrition, { amount: 1, unit: null, grams: null, kcal: 40, carb: null, protein: 10, fat: null, user: [] }, '열량이 터무니없으면 버리고 탄단지로');
+  assert.equal(empty.nutrition, undefined, '숫자가 없으면 칸 없음');
+  assert.equal(mac.nutrition.kcal, 10 * 4 + 5 * 4 + 2 * 9);
+  assert.deepEqual(rc.ingredients[0].nutrition.user, ['kcal'], '답에 「열량 100」 → 사용자 값 (상태의 「질문 100개」가 아니라)');
+  const fake = M.sanitize({ meals: [{ items: [{ name: 'o', nutrition: { kcal: 210, carb: 21, protein: 0, fat: 1, user: ['kcal', 'carb', 'protein', 'fat'] } }] }] }, text, '공기 210g');
+  assert.deepEqual(fake.meals[0].items[0].nutrition.user, [], '점검 AI: 숫자 값만 같다고 안 됨 — 칸 이름 옆이어야 (21 은 단백질 · 210 은 상태 · 0/1 은 시각 · 스쿱)');
+  assert.deepEqual(M.sanitize({ meals: [{ items: [{ name: 'a', nutrition: { kcal: 103, user: ['kcal'] } }] }] }).meals[0].items[0].nutrition.user, [], '사용자 글을 안 주면 user 없음');
+  const cs = M.sanitize({ corrections: [{ path: '간식/임팩트', set: { name: '임팩트', nutrition: { kcal: 103, user: ['kcal'] } } }] }, text);
+  assert.deepEqual(cs.corrections[0].set.nutrition.user, ['kcal'], '정정에도');
+  const src = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+  assert.match(src, /M\.sanitize\(M\.extractJson\(out\.text\), req\.data\.text, req\.data\.state\)/, '서버는 글 · 상태(답)를 함께 넘김');
 });

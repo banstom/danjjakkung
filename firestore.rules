@@ -360,6 +360,25 @@ service cloud.firestore {
       allow delete: if isMember() && resource.data.uid == request.auth.uid;
     }
 
+    // 단짝 식탁 내 식품 (D6 일부): foods/f_<이름 해시> = 1단위 값. 알려 준 영양 숫자 · 고른 가공식품을 저장해 다음부터 바로 계산. 둘이 함께 씀 (plan.md 데이터 절)
+    function validFood(f) {
+      return f.keys().hasOnly(['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'by', 'updatedAt'])
+        && f.type in ['product', 'food']
+        && f.name is string && f.name.size() >= 1 && f.name.size() <= 60
+        && f.unit is string && f.unit.size() >= 1 && f.unit.size() <= 20
+        && (!('unitG' in f) || f.unitG == null || (dietNum(f.unitG, 5000) && f.unitG > 0))
+        && dietNum(f.kcal, 5000) && dietNum(f.carb, 1000) && dietNum(f.protein, 1000) && dietNum(f.fat, 1000)
+        && (!('user' in f) || (f.user is list && f.user.size() <= 4))
+        && f.src in ['user', 'kr']
+        && (!('maker' in f) || (f.maker is string && f.maker.size() <= 60))
+        && f.by == request.auth.uid && dietAt(f, 'updatedAt');
+    }
+    match /foods/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && id.matches('^f_[a-z0-9]{1,24}$') && validFood(request.resource.data);
+      allow delete: if isMember();
+    }
+
     // 프로필 사진 (v51): avatars/<uid> — 256px JPEG 를 data URL 글자로 (Storage 없이). 둘 다 읽고 본인만 올리고 지움
     match /avatars/{uid} {
       allow read: if isMember();

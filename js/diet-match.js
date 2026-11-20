@@ -124,6 +124,41 @@
     return null;
   }
 
+  /** 식품표 후보 (AI 에 보내 고르게 함 — 사용자: 「군밤도 몰라」). 같은 이름 · 끝 글자가 이름(군밤 → 밤) · 앞부분 · 토막 순.
+      n 개까지 { name } 의 이름 배열 */
+  function candidates(tab, name, n) {
+    if (!tab || !tab.by) return [];
+    var raw = String(name || '').replace(/\(.*?\)|[0-9.]+\s*(개|g|ml|인분|그릇|공기|봉지|스쿱|조각)?/g, ' ').trim();
+    var q = norm(ALIAS[raw] || raw); if (!q) return [];
+    var mk = q + '|' + (n || 6); tab._cmemo = tab._cmemo || {}; if (tab._cmemo[mk]) return tab._cmemo[mk].slice();
+    if (!tab._rows) { // 한 번만: 이름 토막을 미리 (점검 AI: 이름마다 2만 줄을 다시 쪼개 휴대폰에서 멈춤)
+      var rs = {}; tab._rows = [];
+      Object.keys(tab.by).forEach(function (k) { tab.by[k].forEach(function (e) { if (!rs[e.name]) { rs[e.name] = 1; tab._rows.push({ e: e, segs: e.name.split('_').map(norm), full: norm(e.name), odd: /[()\s]/.test(e.name) }); } }); });
+    }
+    var hit = findTable(tab, raw), out = [];
+    tab._rows.forEach(function (row) {
+      {
+        var e = row.e, segs = row.segs, f = segs[0], sc = 0;
+        if (f === q) sc = 100;
+        else if (q.length > f.length && q.slice(-f.length) === f && (f.length >= 2 || q.length <= 3)) sc = 70; // 군밤 → 밤 · 찹쌀떡 → 떡
+        else if (f.indexOf(q) === 0) sc = 60;
+        else if (q.length >= 2 && (f.indexOf(q) >= 0 || (f.length >= 2 && q.indexOf(f) >= 0))) sc = 50;
+        else if (q.length >= 2 && segs.slice(1).some(function (x) { return x === q || (x.length >= 2 && (x.indexOf(q) >= 0 || q.indexOf(x) >= 0)); })) sc = 45;
+        if (!sc) return;
+        if (segs.slice(1).some(function (x) { return x === q || (q.length >= 2 && x.indexOf(q) >= 0); })) sc += 8; // 떡_찹쌀떡
+        if (/(구운|볶은|삶은|찐)것$/.test(e.name) && /^(군|구운)/.test(q) && /구운것$/.test(e.name)) sc += 10; // 군밤 → 구운것
+        if (row.full === q) sc += 30;
+        if (row.odd) sc -= 3; // 가게 · 제품 이름이 붙은 줄은 뒤로
+        out.push({ e: e, sc: sc - segs.length - e.name.length / 100 - (e.kind === 'd' && e.base === 'ml' ? 2 : 0) });
+      }
+    });
+    out.sort(function (a, b) { return b.sc - a.sc; });
+    var names = out.slice(0, n || 6).map(function (x) { return x.e.name; });
+    if (hit && names.indexOf(hit.name) < 0) names.unshift(hit.name);
+    tab._cmemo[mk] = names.slice(0, n || 6);
+    return tab._cmemo[mk].slice();
+  }
+
   function findRecipe(recipes, name) {
     var q = norm(name); if (q.length < 2) return null;
     var hits = (recipes || []).filter(function (r) { var k = norm(r.recipe); return k === q || k.indexOf(q) >= 0 || q.indexOf(k) >= 0; });
@@ -135,7 +170,8 @@
     var keys = Object.keys(foods);
     var ex = keys.filter(function (k) { return norm(k) === q || (foods[k].aliases || []).some(function (a) { return norm(a) === q; }); });
     if (ex.length) return ex[0];
-    var part = keys.filter(function (k) { return norm(k).indexOf(q) >= 0; });
+    // 일부만 적었을 때: 3글자 이상이고, 이름의 앞부분이거나 절반 이상일 때만 (점검 AI: 「우유」가 내 식품 「매일 저지방우유」로, 「프로틴」이 「임팩트웨이프로틴」으로 잡힘)
+    var part = keys.filter(function (k) { var n = norm(k); return q.length >= 3 && (n.indexOf(q) === 0 || (q.length * 2 >= n.length && n.indexOf(q) >= 0)); });
     return part.length === 1 ? part[0] : null;
   }
 
@@ -155,18 +191,26 @@
     }
     var fk = findFood(ctx.foods, line.name);
     if (fk) {
-      var f = ctx.foods[fk];
-      if (f.type === 'supplement') return { ref: { kind: 'supplement', key: fk }, calc: { food: fk, qty: line.amount == null ? 1 : line.amount } };
-      if (line.unit === 'g' || line.unit === 'ml' || line.unit === 'kg') {
-        var g = line.unit === 'kg' ? line.amount * 1000 : line.amount;
-        if (!f.unitG) return { reason: 'unit' };
-        return { ref: { kind: 'food', key: fk }, calc: { food: fk, grams: g } };
-      }
-      var fu = f.foodUnits && line.unit && f.foodUnits[line.unit];
-      if (fu && f.unitG) return { ref: { kind: 'food', key: fk }, calc: { food: fk, grams: fu * (line.amount == null ? 1 : line.amount) } };
-      if (line.unit && line.unit !== f.unit) return { reason: 'unit' };
-      return { ref: { kind: 'food', key: fk }, calc: { food: fk, qty: line.amount == null ? 1 : line.amount } };
+      var f = ctx.foods[fk], part = f.src === 'user' && ['kcal', 'carb', 'protein', 'fat'].some(function (k) { return (f.user || []).indexOf(k) < 0; });
+      var r0 = matchFood(line, f, fk);
+      if (r0.calc && part) { r0.est = '내 식품 · 일부 AI 추정'; r0.ai = true; } // 알려 준 칸 말고는 처음에 AI 가 추정한 값
+      return r0;
     }
+    return matchTable(line, ctx, foodsMap);
+  }
+  function matchFood(line, f, fk) {
+    if (f.type === 'supplement') return { ref: { kind: 'supplement', key: fk }, calc: { food: fk, qty: line.amount == null ? 1 : line.amount } };
+    if (line.unit === 'g' || line.unit === 'ml' || line.unit === 'kg') {
+      var g = line.unit === 'kg' ? line.amount * 1000 : line.amount;
+      if (!f.unitG) return { reason: 'unit' };
+      return { ref: { kind: 'food', key: fk }, calc: { food: fk, grams: g } };
+    }
+    var fu = f.foodUnits && line.unit && f.foodUnits[line.unit];
+    if (fu && f.unitG) return { ref: { kind: 'food', key: fk }, calc: { food: fk, grams: fu * (line.amount == null ? 1 : line.amount) } };
+    if (line.unit && line.unit !== f.unit) return { reason: 'unit' };
+    return { ref: { kind: 'food', key: fk }, calc: { food: fk, qty: line.amount == null ? 1 : line.amount } };
+  }
+  function matchTable(line, ctx, foodsMap) {
     var e = findTable(ctx.table, line.name);
     if (!e) return { reason: 'unknown' };
     var gq = gramsFor(e, line, ctx.units);
@@ -201,14 +245,14 @@
       if (!m.calc) { pending.push({ raw: line.raw, name: line.name, reason: m.reason }); return; }
       var total;
       try { total = C.itemTotal(foodsMap, ctx.recipes || [], m.calc); } catch (err) { pending.push({ raw: line.raw, name: line.name, reason: 'calc' }); return; }
-      items.push({ raw: line.raw, name: line.name, amount: line.amount, unit: line.unit, ref: m.ref, calc: m.calc, total: total, est: m.est || null, defaultUnit: m.defaultUnit || null });
+      items.push({ raw: line.raw, name: line.name, amount: line.amount, unit: line.unit, ref: m.ref, calc: m.calc, total: total, est: m.est || null, ai: !!m.ai, defaultUnit: m.defaultUnit || null });
     });
     var sum = { kcal: 0, carb: 0, protein: 0, fat: 0 };
     items.forEach(function (it) { C.KEYS.forEach(function (k) { sum[k] += it.total[k]; }); });
     return { date: parsed.date, more: parsed.more || 0, at: parsed.at, kind: parsed.kind, label: parsed.label, items: items, pending: pending, total: sum, foods: foodsMap };
   }
 
-  var api = { DEFAULT_UNITS: DEFAULT_UNITS, gramsFor: gramsFor, parse: parse, parseItem: parseItem, takeTime: takeTime, index: index, findTable: findTable, match: match, EACH_G: EACH_G, ALIAS: ALIAS };
+  var api = { DEFAULT_UNITS: DEFAULT_UNITS, candidates: candidates, findFood: findFood, gramsFor: gramsFor, parse: parse, parseItem: parseItem, takeTime: takeTime, index: index, findTable: findTable, match: match, EACH_G: EACH_G, ALIAS: ALIAS };
   root.RT = root.RT || {};
   root.RT.dietMatch = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

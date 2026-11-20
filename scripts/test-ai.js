@@ -23,7 +23,9 @@ function parseCases(md) {
     const name = lines[0].split(/\s/)[0];
     const st = lines.findIndex((l) => l.startsWith('상태:'));
     const inp = lines.findIndex((l) => l.startsWith('입력'));
-    return { name, state: lines.slice(st, inp).join('\n').replace(/^상태:\s*/, '').trim(), input: lines.slice(inp + 1).join('\n').trim() };
+    const tb = lines.findIndex((l) => l.startsWith('식품표:')); // 문제마다 앱이 보내는 식품표 줄 (없으면 아래 TABLE)
+    const stEnd = tb > st && tb < inp ? tb : inp;
+    return { name, state: lines.slice(st, stEnd).join('\n').replace(/^상태:\s*/, '').trim(), input: lines.slice(inp + 1).join('\n').trim(), table: tb >= 0 ? lines[tb].replace(/^식품표:\s*/, '').trim() : null };
   }).filter((c) => c.name && c.input).map((c, i, all) => {
     // 「T1과 같음」 「T4와 같음. …」 → 그 문제의 상태를 펼쳐 넣는다 (문제마다 따로 부르므로 모델은 앞 문제를 모름 — 점검 AI)
     const m = /^(T[\w-]+)(?:과|와) 같음\.?\s*(.*)$/s.exec(c.state);
@@ -42,10 +44,10 @@ async function main() {
     const dir = path.join('/tmp/diet-ai', 'run' + r);
     fs.mkdirSync(dir, { recursive: true });
     for (const c of cases) {
-      const out = await M.callModel(key, sys, M.userMessage(TODAY, c.state, c.input, TABLE));
+      const out = await M.callModel(key, sys, M.userMessage(TODAY, c.state, c.input, c.table || TABLE));
       if (out.usage) { tokens.in += out.usage.input_tokens || 0; tokens.out += out.usage.output_tokens || 0; }
-      // 채점은 모델이 낸 그대로(정리 전)로 — 「영양 숫자를 안 냄」은 모델 자체를 봐야 함 (점검 AI). 서버가 정리한 것도 같이 남김
-      const raw = M.extractJson(out.text), clean = M.sanitize(raw);
+      // 채점은 모델이 낸 그대로(정리 전)로 — 「식품표 항목에 영양 숫자를 안 냄」은 모델 자체를 봐야 함 (점검 AI). 서버가 정리한 것도 같이 남김
+      const raw = M.extractJson(out.text), clean = M.sanitize(raw, c.input, c.state); // 서버와 같이 (사용자 글 · 상태로 user 숫자 확인)
       fs.writeFileSync(path.join(dir, c.name + '.json'), raw ? JSON.stringify(raw, null, 2) : out.text);
       fs.writeFileSync(path.join(dir, c.name + '.clean.json'), clean ? JSON.stringify(clean, null, 2) : '');
       process.stdout.write('run' + r + ' ' + c.name + (raw ? (out.stop === 'max_tokens' ? ' (잘림) ' : ' ✓ ') : ' (JSON 아님) '));

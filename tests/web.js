@@ -209,6 +209,11 @@ async function open(browser, name, opts = {}) {
     // 단짝 식탁 D3: 하루 기록은 자기 것만 (meals/<uid>_<날짜>, 정해진 칸 · 20끼까지)
     if (p.startsWith('meals/')) { if (p.split('/')[1].split('_')[0] !== uid) throw new Error('permission-denied');
       if (d && !(Object.keys(d).every((k) => ['uid', 'date', 'meals', 'updatedAt'].includes(k)) && d.uid === uid && p === 'meals/' + uid + '_' + d.date && Array.isArray(d.meals) && d.meals.length <= 20)) throw new Error('permission-denied'); }
+    // 내 식품: foods/f_<해시> · 정해진 칸 · by = 나 (validFood)
+    if (p.startsWith('foods/') && d) { const ok = /^foods\/f_[a-z0-9]{1,24}$/.test(p) && Object.keys(d).every((k) => ['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'by', 'updatedAt'].includes(k))
+        && ['product', 'food'].includes(d.type) && typeof d.name === 'string' && d.name.length && typeof d.unit === 'string' && d.unit.length && d.by === uid && ['user', 'kr'].includes(d.src)
+        && [['kcal', 5000], ['carb', 1000], ['protein', 1000], ['fat', 1000]].every(([k, hi]) => typeof d[k] === 'number' && d[k] >= 0 && d[k] <= hi);
+      if (!ok) throw new Error('permission-denied'); }
     if (p.startsWith('places/') && failPlaces) { failPlaces = false; throw new Error('unavailable'); } // 저장 실패 흉내 (한 번)
     if (p.startsWith('places/')) { const old = docs.get(p) || {}; if (!d) throw new Error('permission-denied');
       // v54: 옛 칸(지역 stars · visits[].note)은 안 받음 · entries 는 내 칸만 (방문을 지우는 쓰기는 예외)
@@ -1487,6 +1492,32 @@ async function tick(page, dateKey, key) {
     await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
     assert.strictEqual(docs.get('meals/' + jmUid0 + '_' + today).meals.length, mealCnt, (round + 1) + '번째 정리에도 끼니 수 그대로');
   }
+  // 11-19 (사용자: 「군밤도 몰라」 「21g 이라고 알려 줘도 물어봄」): 식품표 후보를 보내고, 알려 준 숫자 · AI 추정으로 계산, 알려 준 제품은 내 식품으로
+  aiReplies.push({ body: { result: { result: { meals: [{ at: '15:00', kind: 'snack', label: '간식', items: [
+    { name: '임팩트웨이프로틴', amount: 1, unit: '스쿱', match: { kind: 'new_product', key: '임팩트웨이프로틴' }, nutrition: { amount: 1, unit: '스쿱', grams: 25, kcal: 103, carb: 2, protein: 21, fat: 1.5, user: ['protein', 'kcal'] } },
+    { name: '군밤', amount: 1, unit: '봉지', grams: 100, match: { kind: 'table', key: '밤_구운것' } },
+    { name: '오레오오즈', amount: 1, unit: '그릇', match: { kind: 'new_product' }, nutrition: { amount: 1, unit: '그릇', kcal: 160, carb: 34, protein: 2, fat: 2, user: [] } }] }],
+    unknowns: [{ path: '간식/임팩트웨이프로틴', what: 'product_and_grams', kcalRange: [50, 300] }] } } } });
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '15:00 간식\n임팩트웨이프로틴 1스쿱 (1스쿱에 단백질 21g, 103kcal)\n군밤 1봉지\n오레오오즈 1그릇'); await jm.click('[data-act="dl-go"]');
+  await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
+  assert.match(aiCalls[aiCalls.length - 1].data.table, /군밤 → 밤_구운것 \|/, '식품표 후보를 함께 보냄');
+  assert.match(aiCalls[aiCalls.length - 1].data.table, /임팩트웨이프로틴 → \(후보 없음\)/, '후보 없는 것도 그렇다고');
+  assert.match(await jm.textContent('.dai'), /AI 추정이 들어간 것 \d개/);
+  const rowsT = await jm.$$eval('.drow:not(.drow--wait)', (e) => e.map((x) => x.textContent));
+  assert.ok(rowsT.some((t) => /임팩트웨이프로틴 · AI 추정/.test(t) && /알려 준 값: (단백질 · 열량|열량 · 단백질)/.test(t)), '알려 준 값 · 나머지 추정: ' + rowsT.join(' | '));
+  assert.ok(rowsT.some((t) => /군밤 · AI 추정.*AI 추정 양 100g/.test(t)) && rowsT.some((t) => /오레오오즈 · AI 추정/.test(t)));
+  assert.strictEqual((await jm.$$('.dask__q')).length, 0, '알려 준 프로틴은 안 물음');
+  await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
+  const fdoc = [...docs.entries()].find(([k, v]) => k.startsWith('foods/') && v.name === '임팩트웨이프로틴');
+  assert.ok(fdoc && fdoc[1].protein === 21 && fdoc[1].kcal === 103 && fdoc[1].unit === '스쿱' && fdoc[1].unitG === 25 && fdoc[1].src === 'user' && fdoc[1].by === jmUid0, '내 식품으로 저장');
+  assert.ok(![...docs.keys()].some((k) => k.startsWith('foods/') && /오레오/.test(docs.get(k).name)), 'AI 추정만 한 건 저장 안 함');
+  const nAi = aiCalls.length;
+  await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
+  await jm.fill('#dl-text', '임팩트웨이프로틴 2스쿱'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('[data-act="dl-save"]');
+  assert.strictEqual(aiCalls.length, nAi, '다음부터는 AI 없이');
+  assert.match(await jm.textContent('.drow'), /내 식품/); assert.match(await jm.textContent('.drow__vl'), /206/);
+  await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
   await dj.route('**/data/foods-kr.json', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.continue(); });

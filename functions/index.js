@@ -248,7 +248,7 @@ exports.recapNotify = onSchedule({ schedule: '0 9 1 * *', timeZone: 'Asia/Seoul'
 /* 단짝 식탁 · 끼니 정리 (D4). 앱이 { text, today, state, table? } 를 보내면 정리한 구조를 돌려준다.
    - state 에 넣는 것(D3 앱 코드): 저장된 레시피 · 내 식품 이름과 재료, 내 단위(정했는지), 오늘 기록, 물은 질문 — 몸 정보 · 목표는 넣지 않는다
    - 두 사람(members)만 · 한 사람 하루 LIMITS.perDay 번까지 (aiUse/{uid_날짜}, 앱 규칙엔 없어 앱은 못 읽고 못 씀)
-   - 몸 정보는 받지 않는다. 영양 숫자는 답에서 지운다 (meal.sanitize) */
+   - 몸 정보는 받지 않는다. 영양 숫자는 nutrition 칸만 남기고, 사용자가 적었다는 숫자는 글에 있는지 확인 (meal.sanitize) */
 exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '256MiB', maxInstances: 3 }, async (req) => {
   const uid = req.auth && req.auth.uid;
   if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
@@ -283,7 +283,7 @@ exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, m
     await refund();
     throw new HttpsError('out-of-range', '한 번에 적은 게 많아요. 끼니를 나눠서 적어 주세요');
   }
-  const result = M.sanitize(M.extractJson(out.text));
+  const result = M.sanitize(M.extractJson(out.text), req.data.text, req.data.state);
   if (!result) {
     logger.warn('parseMeal json', { len: out.text.length, stop: out.stop });
     await refund();

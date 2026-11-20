@@ -145,7 +145,7 @@
   function section(m, many) {
     var n = m.items.length + m.pending.length, est = m.pending.length || m.items.some(function (i) { return i.est; });
     var rows = m.items.map(function (i) {
-      return '<li class="drow"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.est ? ' <span class="dest">· 추정</span>' : '') + '</span>' + (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span></li>';
+      return '<li class="drow"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.est ? ' <span class="dest">· ' + (i.ai ? 'AI 추정' : '추정') + '</span>' : '') + '</span>' + (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span></li>';
     }).concat(m.pending.map(function (x) {
       return '<li class="drow drow--wait"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">' + esc(WAIT_WHY[x.reason] || '아직 계산 못 함') + ' · 저장해 두고 나중에 정리해요</span></span><span class="dwait">정리 대기</span></li>';
     })).join('');

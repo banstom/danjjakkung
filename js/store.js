@@ -218,6 +218,11 @@
         return b.commit();
       },
       // meals/<uid>_<YYYY-MM-DD> = { uid, date, meals: [끼니], updatedAt } — 단짝 식탁 하루 기록 (D3). 둘 다 읽고 본인만 고침
+      /** 내 식품 (foods/*) — 둘이 함께 씀. 이름 → 1단위 값 */
+      watchFoods: function (next, fail) {
+        return db.collection('foods').onSnapshot(function (q) { var out = {}; q.docs.forEach(function (doc) { var d = doc.data(); if (d && d.name) out[d.name] = d; }); next(out); }, fail);
+      },
+      setFood: function (id, food) { return db.doc('foods/' + id).set(food); },
       watchMealDay: function (uid, date, next, fail) {
         return db.doc('meals/' + uid + '_' + date).onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
       },

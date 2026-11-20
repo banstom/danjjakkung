@@ -16,7 +16,9 @@ def num(x):
     try: return float(x)
     except Exception: return None
 def key(it): return ((it.get('match') or {}).get('key') or '')
-def kind(it): return ((it.get('match') or {}).get('kind') or '')
+def kind(it):
+    m = it.get('match') if isinstance(it, dict) else None
+    return (m.get('kind') or '') if isinstance(m, dict) else ''
 def find(items, pat): return [i for i in items if re.search(pat, i.get('name', ''))]
 def width(u):
     r = u.get('kcalRange') or [0, 0]
@@ -27,12 +29,22 @@ def asked(d):  # 앱의 질문 고르기: 폭 80 이상, 최대 3개
     return us[:3]
 def nums_in(o):  # 영양 숫자를 냈는지
     return re.search(r'"(kcal|carb|protein|fat|calories|탄수|단백질|지방)"\s*:', S(o))
+KNOWN = set('달걀 카놀라유 사과 바나나 카카오파우더 햇반 진간장 깨 참기름 오뎅국 갓김치 조기구이 김치꽁치찌개 멸치볶음 크레아틴 밤_구운것 밤_대보_구운것 밤_생것 밤_말린것 밤_삶은것 찹쌀떡 찹쌀떡_팥 우유'.split()) | {'마이프로틴 임팩트 웨이'}
+def strip_nut(o, bad):  # nutrition 칸을 떼어 내고, 식품표 · 내 식품 항목에 붙은 nutrition 은 bad 에 (11-19: 식품표에 없는 음식만 nutrition)
+    if isinstance(o, list): return [strip_nut(x, bad) for x in o]
+    if not isinstance(o, dict): return o
+    # 「식품표:」 줄의 이름으로 짝지은 table · food 항목만 (줄에 없는 흔한 이름은 nutrition 을 내도 됨 — TABLE_RULE)
+    if 'nutrition' in o and (kind(o) == 'food' or (kind(o) == 'table' and str((o.get('match') or {}).get('key') or '') in KNOWN)): bad.append(o.get('name'))
+    return {k: strip_nut(v, bad) for k, v in o.items() if k != 'nutrition'}
+def nut(it): return it.get('nutrition') or {}
 
 def checks(case, d):
     c = []
     def ok(name, cond): c.append((name, bool(cond)))
     if '_error' in d: return [('JSON 읽기', False)]
-    ok('영양 숫자를 안 냄', not nums_in({k: v for k, v in d.items() if k != 'unknowns'}))
+    bad = []
+    rest = strip_nut({k: v for k, v in d.items() if k != 'unknowns'}, bad)
+    ok('식품표 · 내 식품 항목엔 영양 숫자 없음 (nutrition 칸 밖에도 없음)', not bad and not nums_in(rest))
     meals = d.get('meals') or []
     m = meals[0] if meals else {}
     items = m.get('items') or []
@@ -127,9 +139,29 @@ def checks(case, d):
         cs = S(d.get('corrections'))
         ok('22:30 밥 → 472.5g (또는 햇반 2.25개 · 1.5공기 그대로 + 공기 315g)', '472.5' in cs or not cs or cs == '[]' or '22:30' in cs or ('2.25' in cs and '햇반' in cs))
         ok('이전 기록(점심 · 18:15)은 안 바꿈', not re.search('점심|12:40|18:15|저녁', cs))
+    elif case == 'T8':
+        ok('끼니 15:00 snack', len(meals) == 1 and m.get('at') == '15:00' and m.get('kind') == 'snack')
+        ok('항목 3개', len(items) == 3)
+        g = lambda p: (find(items, p) or [{}])[0]
+        pr = g('프로틴|임팩트')
+        n = nut(pr)
+        ok('프로틴: 알려 준 단백질 21 · 103kcal 를 user 로', num(n.get('protein')) == 21 and num(n.get('kcal')) == 103 and 'protein' in (n.get('user') or []) and 'kcal' in (n.get('user') or []))
+        ok('프로틴: 1스쿱 기준 · 탄수 · 지방은 추정으로 채움 (user 아님)', num(n.get('amount') or 1) == 1 and '스쿱' in str(n.get('unit') or pr.get('unit')) and n.get('carb') is not None and n.get('fat') is not None and 'carb' not in (n.get('user') or []))
+        ok('프로틴은 안 물음', not any(re.search('프로틴|임팩트', S(u)) for u in asked(d)))
+        ok('learn: 제품 등록 (임팩트)', re.search('임팩트', S(d.get('learn'))))
+        ok('군밤 → table:밤_구운것', kind(g('군밤')) == 'table' and key(g('군밤')) == '밤_구운것')
+        ok('찹쌀떡 → table:찹쌀떡 (후보에서 그대로)', kind(g('찹쌀떡')) == 'table' and key(g('찹쌀떡')) in ('찹쌀떡', '찹쌀떡_팥') and num(g('찹쌀떡').get('amount')) == 2)
+    elif case == 'T9':
+        ok('끼니 07:30 meal 아침', len(meals) == 1 and m.get('at') == '07:30' and m.get('label') == '아침')
+        ok('항목 2개', len(items) == 2)
+        g = lambda p: (find(items, p) or [{}])[0]
+        oz = g('오레오')
+        n = nut(oz)
+        ok('오레오오즈: nutrition 추정 (user 없음 · 1그릇 100~500kcal · 탄단지)', n and not (n.get('user') or []) and 100 <= (num(n.get('kcal')) or 0) <= 500 and all(n.get(k) is not None for k in ('carb', 'protein', 'fat')))
+        ok('우유 200ml → table:우유', kind(g('우유')) == 'table' and key(g('우유')) == '우유' and num(g('우유').get('amount')) == 200)
     return c
 
-cases = ['T1', 'T2', 'T3', 'T4', 'T6', 'T7-1', 'T7-2']
+cases = ['T1', 'T2', 'T3', 'T4', 'T6', 'T7-1', 'T7-2', 'T8', 'T9']
 runs = sys.argv[1:] or ['run1', 'run2', 'run3']
 table = {}
 for case in cases:
