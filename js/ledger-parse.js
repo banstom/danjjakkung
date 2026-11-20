@@ -249,7 +249,40 @@
     };
   }
 
-  var api = { AMOUNT_MAX: AMOUNT_MAX, amountOf: amountOf, payerOf: payerOf, guessCategory: guessCategory, splitHalf: splitHalf, rebalance: rebalance, normalizeShares: normalizeShares, parseLine: parseLine };
+  // ── 저장 모양 ↔ 화면 모양 ── 'me' · 'partner' ↔ uid 바꾸기는 여기 한 곳에서만 (docs/ledger/spec.md 4절)
+  /**
+   * 화면 값 → 저장 문서. form = { date, amount, payer: 'me'|'partner'|'both', shares?: { me, partner }, what, cat, raw? }
+   * uids = { me, partner }, meta = { now: ISO, by: uid, prev?: 원래 문서(고치기) }
+   */
+  function toDoc(form, uids, meta) {
+    var amount = Math.round(Number(form.amount));
+    if (!(amount >= 1 && amount < AMOUNT_MAX)) throw new Error('bad-amount');
+    var payer = form.payer, shares = null;
+    if (payer === 'both') {
+      var n = normalizeShares(amount, form.shares || splitHalf(amount)); // 한쪽이 0 이면 그 사람이 다 낸 것으로
+      payer = n.paidBy; shares = n.shares;
+    }
+    var what = String(form.what || '').trim().slice(0, 40) || L.CAT_LABEL[form.cat] || '기타';
+    var d = {
+      date: form.date, amount: amount,
+      paidBy: payer === 'both' ? 'both' : uids[payer],
+      what: what, cat: L.CATS.indexOf(form.cat) >= 0 ? form.cat : 'etc',
+      createdAt: meta.prev ? meta.prev.createdAt : meta.now, createdBy: meta.prev ? meta.prev.createdBy : meta.by,
+      updatedAt: meta.now, updatedBy: meta.by
+    };
+    if (shares) { d.shares = {}; d.shares[uids.me] = shares.me; d.shares[uids.partner] = shares.partner; }
+    var raw = form.raw != null ? String(form.raw).trim().slice(0, 80) : (meta.prev && meta.prev.raw) || '';
+    if (raw) d.raw = raw;
+    return d;
+  }
+  /** 저장 문서 → 화면 값 (고치기 시트) */
+  function fromDoc(doc, uids) {
+    var payer = doc.paidBy === 'both' ? 'both' : doc.paidBy === uids.me ? 'me' : 'partner';
+    var shares = payer === 'both' && doc.shares ? { me: doc.shares[uids.me] || 0, partner: doc.shares[uids.partner] || 0 } : null;
+    return { date: doc.date, amount: doc.amount, payer: payer, shares: shares, what: doc.what, cat: doc.cat, raw: doc.raw || '' };
+  }
+
+  var api = { AMOUNT_MAX: AMOUNT_MAX, amountOf: amountOf, payerOf: payerOf, guessCategory: guessCategory, splitHalf: splitHalf, rebalance: rebalance, normalizeShares: normalizeShares, parseLine: parseLine, toDoc: toDoc, fromDoc: fromDoc };
   root.RT = root.RT || {};
   root.RT.ledgerParse = api;
   if (NODE) module.exports = api;

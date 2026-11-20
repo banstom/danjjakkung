@@ -66,6 +66,8 @@
           '<span class="afeat__ico">' + ((root.RT && root.RT.themes && root.RT.themes.artHtml('s2', 'afeat__art')) || svg(36, ICON.bowl)) + '</span>' +
           '<span class="afeat__ds">' + esc(line) + '</span></button></div>';
       })(m.diet);
+    // 단짝 영수증 (docs/ledger L11) — 기능 그리드 아래 가로 꽉 찬 카드
+    if (m.ledger && root.RT && root.RT.viewLedger) feats += root.RT.viewLedger.entryCard(m.ledger);
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
       // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)
       (m.notify ? row('open-notify', 'bell', '알림', '', m.notify, '알림 설정 (' + m.notify + ')') : '') +

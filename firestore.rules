@@ -16,6 +16,25 @@ service cloud.firestore {
         && request.auth.token.email.lower() in ['__EMAIL_1__', '__EMAIL_2__'];
     }
 
+    function validSpend(d) {
+      return d.keys().hasOnly(['date', 'amount', 'paidBy', 'shares', 'what', 'cat', 'raw', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.amount is int && d.amount >= 1 && d.amount < 100000000
+        && isDate(d.date)
+        && d.cat in ['meal', 'cafe', 'move', 'stay', 'play', 'shop', 'etc']
+        && d.what is string && d.what.size() >= 1 && d.what.size() <= 40
+        && (!('raw' in d) || (d.raw is string && d.raw.size() <= 80))
+        && d.createdAt is string && d.createdAt.size() <= 40 && d.updatedAt is string && d.updatedAt.size() <= 40
+        && d.createdBy is string && d.updatedBy is string
+        && validPayer(d);
+    }
+    function validPayer(d) {
+      return (d.paidBy is string && d.paidBy != 'both' && !('shares' in d) && exists(/databases/$(database)/documents/members/$(d.paidBy)))
+        || (d.paidBy == 'both' && d.shares is map && d.shares.size() == 2 && validShares(d.shares, d.shares.keys(), d.amount));
+    }
+    function validShares(s, k, amount) {
+      return exists(/databases/$(database)/documents/members/$(k[0])) && exists(/databases/$(database)/documents/members/$(k[1]))
+        && s[k[0]] is int && s[k[1]] is int && s[k[0]] >= 1 && s[k[1]] >= 1 && s[k[0]] + s[k[1]] == amount;
+    }
     function isDate(v) {
       return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
@@ -415,6 +434,17 @@ service cloud.firestore {
         allow create: if isMember() && request.auth.uid == uid && request.resource.data.keys().hasOnly(['at'])
           && request.resource.data.at is string && request.resource.data.at.size() <= 40;
       }
+    }
+    // 단짝 영수증 (docs/ledger): spends/<id> — 함께 쓴 돈. 둘 다 적고 · 고치고 · 지울 수 있다
+    //   paidBy = 낸 사람 uid, 또는 'both' + shares { uid: 몫, uid: 몫 } (두 몫 합 = amount, 둘 다 1원 이상)
+    match /spends/{id} {
+      allow read, delete: if isMember();
+      allow create: if isMember() && validSpend(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid && request.resource.data.updatedBy == request.auth.uid;
+      allow update: if isMember() && validSpend(request.resource.data)
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
     }
     // 월말 · 연말결산 (docs/recap): recaps/<YYYY-MM | YYYY> — 서버 함수(monthlyRecap)만 쓴다. 둘 다 읽기만
     match /recaps/{key} {

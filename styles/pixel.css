@@ -519,4 +519,33 @@
 @media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct b { font-size: 36px; font-family: var(--px-font-11); } }
 @media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-final__t { font-size: 24px; font-family: var(--px-font-11); } }
 @media (max-height: 680px) { [data-skin="pixel"]:not([data-font="plain"]) .rc-tile b { font-size: 24px; font-family: var(--px-font-11); } }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-mnav b { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-sum__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-sum__total { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-who { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-who small { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-tint { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-chip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-filter { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-dh { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-row__nm { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-row__ds { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-row__am { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-row__am small { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-empty__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-empty__ex { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-empty__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-firstbtn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-entry__mo { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-entry__total { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-entry__line { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-sheet .field__label { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-hint { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-pill { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-pv__top { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-share { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-save { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-del { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-confirm__box h3 { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-confirm__box p { font-size: 15px; font-family: var(--px-font-14); }
 /* ── 글씨 크기 표 끝 ── */
