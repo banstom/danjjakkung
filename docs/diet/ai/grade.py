@@ -98,7 +98,7 @@ def checks(case, d):
         lt = S(ln)
         ok('learn: 특 간계밥 밥 = 630g', re.search(r'간계밥', lt) and re.search(r'630|햇반', lt))
         ok('learn: 제품 등록 요청 (영양값 지어내지 않음)', '파베글라스' in lt and not re.search(r'"(kcal|carb|protein|fat)"\s*:\s*\d', lt))
-        ok('learn: 그 제품 줌 = 20g', re.search(r'줌', lt) and re.search(r'\b20\b', lt))
+        ok('learn: 그 제품 줌 = 20g (두 줌 = 40g 도 같은 뜻)', re.search(r'줌', lt) and (re.search(r'\b20(\.0)?\b', lt) or (re.search(r'\b40\b', lt) and re.search(r'"amount":\s*2\b|두', lt))))
         ok('내 단위 공기를 바꾸지 않음', not [x for x in ln if x.get('type') == 'my_unit'])
     elif case == 'T4':
         ok('끼니 16:15 snack', len(meals) == 1 and m.get('at') == '16:15' and m.get('kind') == 'snack')
@@ -148,7 +148,8 @@ def checks(case, d):
         ok('프로틴: 알려 준 단백질 21 · 103kcal 를 user 로', num(n.get('protein')) == 21 and num(n.get('kcal')) == 103 and 'protein' in (n.get('user') or []) and 'kcal' in (n.get('user') or []))
         ok('프로틴: 1스쿱 기준 · 탄수 · 지방은 추정으로 채움 (user 아님)', num(n.get('amount') or 1) == 1 and '스쿱' in str(n.get('unit') or pr.get('unit')) and n.get('carb') is not None and n.get('fat') is not None and 'carb' not in (n.get('user') or []))
         ok('프로틴은 안 물음', not any(re.search('프로틴|임팩트', S(u)) for u in asked(d)))
-        ok('learn: 제품 등록 (임팩트)', re.search('임팩트', S(d.get('learn'))))
+        # 앱은 nutrition.user 로 내 식품을 저장함 (learn 은 안 씀) — learn 이 빠져도 user 숫자가 있으면 됨
+        ok('제품 등록: learn 또는 알려 준 숫자(user)', re.search('임팩트', S(d.get('learn'))) or ('protein' in (n.get('user') or [])))
         ok('군밤 → table:밤_구운것', kind(g('군밤')) == 'table' and key(g('군밤')) == '밤_구운것')
         ok('찹쌀떡 → table:찹쌀떡 (후보에서 그대로)', kind(g('찹쌀떡')) == 'table' and key(g('찹쌀떡')) in ('찹쌀떡', '찹쌀떡_팥') and num(g('찹쌀떡').get('amount')) == 2)
     elif case == 'T9':

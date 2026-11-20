@@ -170,3 +170,9 @@ test('11-19 원칙 바꿈: 식품표에 없는 음식만 nutrition — 사용자
   const src = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
   assert.match(src, /M\.sanitize\(M\.extractJson\(out\.text\), req\.data\.text, req\.data\.state\)/, '서버는 글 · 상태(답)를 함께 넘김');
 });
+
+test('시험 A T3: 제품 단위 learn 은 1단위로 (두 줌 = 40g → 줌 = 20g) · 레시피 재료 양은 그대로', () => {
+  const r = M.sanitize({ learn: [{ type: 'product_unit', product: '파베글라스', unit: '줌', amount: 2, grams: 40 }, { type: 'recipe_ingredient', recipe: '특 간계밥', ingredient: '밥', unit: '공기', amount: 3, grams: 630 }] });
+  assert.deepEqual([r.learn[0].amount, r.learn[0].grams], [1, 20]);
+  assert.deepEqual([r.learn[1].amount, r.learn[1].grams], [3, 630]);
+});

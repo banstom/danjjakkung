@@ -150,6 +150,8 @@ function learnOf(x) {
   const o = {};
   LEARN_STR.forEach((k) => { if (typeof x[k] === 'string') o[k] = str(x[k]); });
   LEARN_NUM.forEach((k) => { if (x[k] != null && numv(x[k]) != null) o[k] = numv(x[k]); });
+  // 단위 무게는 1단위로 (모델이 「두 줌 = 40g」을 amount 2 · grams 40 으로 내는 일 — 시험 A T3)
+  if (o.unit && o.unit !== 'g' && o.amount > 1 && o.grams > 0 && !o.recipe && !o.ingredient) { o.grams = Math.round(o.grams / o.amount * 10) / 10; o.amount = 1; }
   // 「다른 음식 기준」 내 단위: equals (또는 means) = { amount, unit, food } (T7-2 — 정리하다 지워지던 것)
   const eq = x.equals && typeof x.equals === 'object' ? x.equals : x.means && typeof x.means === 'object' ? x.means : null;
   if (eq) {
