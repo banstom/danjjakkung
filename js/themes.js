@@ -97,10 +97,10 @@
       s1: { w: 32, h: 40, x: 2, alt: '작은 트리' }, s2: { w: 37, h: 38, x: 2, alt: '진저브레드 쿠키 둘' },
       s3: { w: 28, h: 41, x: 3, alt: '눈사람' }, s4: { w: 40, h: 40, x: 3, alt: '선물 더미' }
     },
-    // 봄소풍: 기획 계정의 임시 그림(크림 테두리 포함). Gemini 그림으로 바꾸면 w · h · x 를 고친다 (docs/themes-spring/spec.md 4절)
+    // 봄소풍: Gemini 그림(11/20, 크림 테두리 포함, docs/themes-spring/spec.md 4절)
     'spring-picnic': {
-      s1: { w: 18, h: 16, x: 4, alt: '피크닉 바구니' }, s2: { w: 20, h: 10, x: 4, alt: '딸기 샌드위치 둘' },
-      s3: { w: 17, h: 17, x: 8, alt: '벚꽃 한 송이' }, s4: { w: 26, h: 20, x: 6, alt: '도시락 한 상' }
+      s1: { w: 29, h: 29, x: 2, alt: '피크닉 바구니' }, s2: { w: 35, h: 30, x: 2, alt: '딸기 샌드위치 둘' },
+      s3: { w: 30, h: 28, x: 4, alt: '벚꽃 한 송이' }, s4: { w: 42, h: 35, x: 4, alt: '도시락 한 상' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

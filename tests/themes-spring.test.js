@@ -88,7 +88,7 @@ test('SP4 봄소풍 그림은 봄소풍 판에서만 — 토큰 블록 밖 · �
 
 test('SP5 그림 S1~S4: 정수 배율 · 보이는 크기가 명세 표 ±16px · PNG 크기 = 표의 w × h', () => {
   const T = boot({}, false).T;
-  const SPEC = { s1: [72, 64], s2: [80, 40], s3: [136, 136], s4: [156, 120] };
+  const SPEC = { s1: [58, 58], s2: [70, 60], s3: [120, 112], s4: [168, 140] }; // 11-20 Gemini 그림으로 바꾸며 표도 고침
   const dir = path.join(ROOT, 'themes/spring-picnic');
   for (const k of Object.keys(SPEC)) {
     const png = fs.readFileSync(path.join(dir, k + '.png'));
