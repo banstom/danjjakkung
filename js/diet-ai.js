@@ -174,7 +174,7 @@
     return line;
   }
 
-  var api = { fromAi: fromAi, convert: convert, question: question, stateText: stateText, tableLine: tableLine, nutItem: nutItem };
+  var api = { tableItem: tableItem, fromAi: fromAi, convert: convert, question: question, stateText: stateText, tableLine: tableLine, nutItem: nutItem };
   root.RT = root.RT || {};
   root.RT.dietAi = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

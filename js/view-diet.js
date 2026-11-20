@@ -102,14 +102,14 @@
   /** 첫 화면: 내 목표 · 단짝 목표 · 오늘 먹은 것 (짝꿍 식탁 그래프는 D5). h = { mine, partner, today: { meals, total, goal, delId }, partnerToday: { name, total, n } | null } */
   function home(h) {
     var t = h.today || { meals: [], total: null };
+    // 끼니 한 줄 = 누르는 단추 → 끼니 상세 (정리 · 지우기는 상세 안으로 — 11-20 목업 ①)
     var list = t.meals.length ? '<ul class="dmeals">' + t.meals.map(function (m) {
-      var del = h.today.delId === m.id;
-      return '<li class="dmeal"><span class="dmeal__at">' + esc(m.at || '') + '</span><span class="dmeal__tx"><span class="dmeal__nm">' + esc(mealName(m)) + (m.together ? ' <span class="abadge">함께</span>' : '') + (m.pending && m.pending.length ? ' <span class="dwait">정리 대기 ' + m.pending.length + '</span>' : '') + '</span>' +
+      var np = m.pending && m.pending.length ? m.pending.length : 0;
+      return '<li class="dmeal"><button type="button" class="dmeal__btn" data-act="dm-open" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + (m.together ? ', 함께' : '') + (np ? ', 정리 대기 ' + np + '줄' : '') + ', ' + comma(m.total ? m.total.kcal : 0) + 'kcal, ' + (m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(', ') + ' 열기') + '">' +
+        '<span class="dmeal__at">' + esc(m.at || '') + '</span><span class="dmeal__tx"><span class="dmeal__nm">' + esc(mealName(m)) + (m.together ? ' <span class="abadge">함께</span>' : '') + (np ? ' <span class="dwait">정리 대기 ' + np + '</span>' : '') + '</span>' +
         '<span class="dmeal__ds">' + esc((m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(' · ')) + '</span></span>' +
-        '<span class="dmeal__vl">' + comma(m.total ? m.total.kcal : 0) + '</span>' +
-        (m.pending && m.pending.length && !del ? '<button type="button" class="dmeal__fix" data-act="dm-fix" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + ' 정리 대기 지금 정리하기') + '">정리</button>' : '') +
-        '<button type="button" class="dmeal__del' + (del ? ' is-armed' : '') + '" data-act="dm-del" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + (del ? ' 정말 지우기' : ' 지우기')) + '">' + (del ? '지우기' : '×') + '</button></li>';
-    }).join('') + '</ul>' : '<p class="dnote">' + (t.off ? '기록을 불러오지 못했어요 · 저장 규칙 배포 전이거나 연결이 끊겼어요' : '아직 오늘 기록이 없어요') + '</p>';
+        '<span class="dmeal__vl">' + comma(m.total ? m.total.kcal : 0) + '</span>' + svg(CHEV, 18) + '</button></li>';
+    }).join('') + '</ul><p class="dmeals__hint">끼니를 누르면 무엇을 얼마나 먹었는지 보고 고칠 수 있어요</p>' : '<p class="dnote">' + (t.off ? '기록을 불러오지 못했어요 · 저장 규칙 배포 전이거나 연결이 끊겼어요' : '아직 오늘 기록이 없어요') + '</p>';
     var sum = t.total ? '<p class="dtoday__sum"><b>' + comma(t.total.kcal) + '</b> kcal' + (t.goal ? ' / ' + comma(t.goal.kcal) : '') + ' · 탄 ' + grams(t.total.carb) + ' · 단 ' + grams(t.total.protein) + ' · 지 ' + grams(t.total.fat) + '</p>' : '';
     var pt = h.partnerToday ? '<p class="dnote">' + esc(h.partnerToday.name) + ' 님 오늘 ' + (h.partnerToday.n ? comma(h.partnerToday.total.kcal) + 'kcal · ' + h.partnerToday.n + '끼' : '아직 기록 없음') + '</p>' : '';
     return '<div class="mscreen"><div class="mbar"><button type="button" class="mbar__btn" data-act="diet-close" aria-label="전체로 돌아가기">' + svg(BACK) + '</button><h1 class="mbar__title">단짝 식탁</h1></div>' +
@@ -118,16 +118,16 @@
       goalCard('내 목표', h.mine, true) + (h.partner ? goalCard(h.partner.name + ' 님 목표', h.partner.goal, false) : '') + '</div>';
   }
 
-  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, whenLabel } */
+  /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, whenLabel, fixing: 고치는 끼니 이름 | '' } */
   function logScreen(e, entering) {
     return '<div class="sheet-layer sheet-layer--full">' +
       '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dl-title">' +
       '<div class="dbar"><button type="button" class="mbar__btn" data-act="dl-close" aria-label="돌아가기">' + svg(BACK) + '</button></div>' +
-      '<p class="caption">' + esc(e.dateLabel) + '</p><h2 id="dl-title" class="title">무엇을 먹었나요?</h2>' +
-      '<p class="dlog__sub">평소 말투로 적으면 정리해 드려요</p>' +
+      '<p class="caption">' + esc(e.dateLabel) + '</p><h2 id="dl-title" class="title">' + (e.fixing ? esc(e.fixing) + ' 고치기' : '무엇을 먹었나요?') + '</h2>' +
+      (e.fixing ? '<p class="dfixing" role="status">적은 글을 고쳐 다시 정리해요 · 저장하면 이 끼니가 바뀌어요 (새로 늘지 않아요)</p>' : '<p class="dlog__sub">평소 말투로 적으면 정리해 드려요</p>') +
       '<label class="sr-only" for="dl-text">먹은 것</label><textarea id="dl-text" class="dlog__ta" rows="5" maxlength="2000" placeholder="예) 2230에 식사: 밥 1.5공기 / 조기 1개 / 김치꽁치찌개">' + esc(e.text) + '</textarea>' +
       '<p class="dlog__hint">시각을 안 적으면 지금 시각으로 넣어요</p>' +
-      '<div class="dlist dwhen"><button type="button" class="dwhen__row" data-act="dl-when" aria-haspopup="dialog"><span class="dwhen__l">언제 먹었나요</span><span class="dwhen__v">' + esc(e.whenLabel) + '</span>' + svg(CHEV, 18) + '</button></div>' +
+      (e.fixing ? '' : '<div class="dlist dwhen"><button type="button" class="dwhen__row" data-act="dl-when" aria-haspopup="dialog"><span class="dwhen__l">언제 먹었나요</span><span class="dwhen__v">' + esc(e.whenLabel) + '</span>' + svg(CHEV, 18) + '</button></div>') + // 고칠 때는 날짜를 끼니 상세의 「언제 먹었나요」에서
       (e.chips && e.chips.length ? '<h3 class="dsec">자주 먹는 것 · 누르면 위에 붙어요</h3><div class="dpicks">' + e.chips.map(function (c) { return '<button type="button" class="dpick" data-act="dl-chip" data-v="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
       (e.partnerName ? '<h3 class="dsec" id="dl-who-l">누구의 끼니</h3><div class="dseg dseg--wide" role="group" aria-labelledby="dl-who-l">' +
         [['me', '나'], ['both', '단짝과 함께']].map(function (x) { return '<button type="button" class="dseg__b" data-act="dl-who" data-v="' + x[0] + '" aria-pressed="' + ((x[0] === 'both') === !!e.together) + '">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
@@ -166,23 +166,27 @@
   }
   /** 날짜 고르기 시트 (목업 03-1 달력 모양). w = { title, prev, next, quick: [{ key, name, on }], weeks: [[{ key, d, on, today, off } | null]], note } */
   function whenSheet(w, entering) {
+    var A = w.act || 'dl-when'; // 끼니 상세에서도 씀 (dd-when: 날짜는 골라 두고 시각과 함께 「바꾸기」)
     var cells = ['월', '화', '수', '목', '금', '토', '일'].map(function (x) { return '<span class="dcal__w" aria-hidden="true">' + x + '</span>'; }).join('') +
       w.cells.map(function (c) {
         if (!c) return '<span></span>';
-        return '<button type="button" class="dcal__d' + (c.on ? ' is-on' : '') + (c.today ? ' is-today' : '') + '"' + (c.off ? ' disabled' : ' data-act="dl-when-pick" data-v="' + esc(c.key) + '"') +
+        return '<button type="button" class="dcal__d' + (c.on ? ' is-on' : '') + (c.today ? ' is-today' : '') + '"' + (c.off ? ' disabled' : ' data-act="' + A + '-pick" data-v="' + esc(c.key) + '"') +
           ' aria-pressed="' + !!c.on + '" aria-label="' + esc(c.label) + (c.today ? ', 오늘' : '') + '">' + c.d + '</button>';
       }).join('');
     return '<div class="sheet-layer sheet-layer--top">' +
-      '<button type="button" class="scrim" data-act="dl-when-close" aria-label="닫기"></button>' +
+      '<button type="button" class="scrim" data-act="' + A + '-close" aria-label="닫기"></button>' +
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dw-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<h2 id="dw-title" class="sheet__title dwhen__title">언제 먹었나요?</h2>' +
-      '<div class="dseg dseg--wide dwhen__quick" role="group" aria-label="빠르게 고르기">' + w.quick.map(function (q) { return '<button type="button" class="dseg__b" data-act="dl-when-pick" data-v="' + esc(q.key) + '" aria-pressed="' + !!q.on + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' +
+      '<div class="dseg dseg--wide dwhen__quick" role="group" aria-label="빠르게 고르기">' + w.quick.map(function (q) { return '<button type="button" class="dseg__b" data-act="' + A + '-pick" data-v="' + esc(q.key) + '" aria-pressed="' + !!q.on + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' +
       '<div class="dcal__head"><p class="dcal__m" aria-live="polite">' + esc(w.title) + '</p>' +
-        '<button type="button" class="mbar__btn" data-act="dl-when-month" data-v="-1" aria-label="이전 달"' + (w.prev ? '' : ' disabled') + '>' + svg(BACK) + '</button>' +
-        '<button type="button" class="mbar__btn" data-act="dl-when-month" data-v="1" aria-label="다음 달"' + (w.next ? '' : ' disabled') + '>' + svg(CHEV) + '</button></div>' +
+        '<button type="button" class="mbar__btn" data-act="' + A + '-month" data-v="-1" aria-label="이전 달"' + (w.prev ? '' : ' disabled') + '>' + svg(BACK) + '</button>' +
+        '<button type="button" class="mbar__btn" data-act="' + A + '-month" data-v="1" aria-label="다음 달"' + (w.next ? '' : ' disabled') + '>' + svg(CHEV) + '</button></div>' +
       '<div class="dcal">' + cells + '</div>' +
       '<p class="sheet__sub dcal__note">테두리 = 오늘 · 한 달 전까지 고를 수 있어요</p>' +
+      (w.time != null ? '<div class="dwtime"><label class="dwtime__l" for="dw-time">시각</label><input id="dw-time" class="dwtime__in" type="time" value="' + esc(w.time) + '"></div>' +
+        (w.error ? '<p class="rform__error" role="alert">' + esc(w.error) + '</p>' : '') +
+        '<button type="button" class="mbtn mbtn--solid dwtime__go" data-act="' + A + '-save"' + (w.saving ? ' disabled' : '') + '>' + (w.saving ? '옮기는 중…' : '바꾸기') + '</button>' : '') +
       '</section></div>';
   }
 
@@ -206,6 +210,58 @@
       '</section></div>';
   }
 
+  /** 끼니 상세 (목업 ②). d = { title, caption, together, total, est, items: [{ name, sub, kcal, badge }], pending: [{ raw, why, find }], text, whenLabel, del, busy, error, canAi } */
+  function mealScreen(d, entering) {
+    var rows = d.items.map(function (i, k) {
+      return '<li><button type="button" class="ddrow" data-act="dd-item" data-v="' + k + '" aria-label="' + esc(i.name + ', ' + (i.sub ? i.sub + ', ' : '') + comma(i.kcal) + 'kcal' + (i.badge ? ', ' + i.badge : '') + ' 고치기') + '"><span class="drow__tx"><span class="drow__nm">' + esc(i.name) + (i.badge ? ' <span class="ddbadge">' + esc(i.badge) + '</span>' : '') + '</span>' +
+        (i.sub ? '<span class="drow__ds">' + esc(i.sub) + '</span>' : '') + '</span><span class="drow__vl">' + comma(i.kcal) + '</span>' + svg(CHEV, 16) + '</button></li>';
+    }).concat(d.pending.map(function (x, k) {
+      return '<li class="ddwait"><div class="ddwait__top"><span class="drow__tx"><span class="drow__nm">' + esc(x.raw) + '</span><span class="drow__ds">' + esc(x.why) + ' · 아직 계산 못 했어요</span></span><span class="dwait">정리 대기</span></div>' +
+        '<div class="ddwait__acts">' + (x.find ? '<button type="button" class="dfind" data-act="dd-pfind" data-v="' + k + '" aria-label="' + esc(x.raw) + ' 제품 찾기">제품 찾기</button>' : '') + (d.canAi ? '<button type="button" class="dfind" data-act="dd-ai" aria-label="' + esc(x.raw) + ' 끼니를 AI로 정리">AI로 정리</button>' : '') + '</div></li>';
+    })).join('');
+    return '<div class="sheet-layer sheet-layer--full">' +
+      '<section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dd-title">' +
+      '<div class="dbar"><button type="button" class="mbar__btn" data-act="dd-close" aria-label="오늘 먹은 것으로 돌아가기">' + svg(BACK) + '</button></div>' +
+      '<p class="caption">' + esc(d.caption) + '</p><h2 id="dd-title" class="title">' + esc(d.title) + (d.together ? ' <span class="abadge">함께</span>' : '') + '</h2>' +
+      '<section class="card dsum"><p class="dsum__k">' + (d.est ? '약 ' : '') + '<b>' + comma(d.total.kcal) + '</b> kcal</p>' +
+        '<div class="dsum__m"><span>탄수 <b>' + grams(d.total.carb) + '</b></span><span>단백질 <b>' + grams(d.total.protein) + '</b></span><span>지방 <b>' + grams(d.total.fat) + '</b></span></div>' +
+        (d.pending.length ? '<p class="dsum__n">정리 대기 ' + d.pending.length + '줄은 합계에 아직 빠져 있어요</p>' : '') + '</section>' +
+      '<div class="card ddcard"><button type="button" class="dwhen__row" data-act="dd-when" aria-haspopup="dialog"><span class="dwhen__l">언제 먹었나요</span><span class="dwhen__v">' + esc(d.whenLabel) + '</span>' + svg(CHEV, 18) + '</button></div>' +
+      (rows ? '<ul class="card dlist ddlist">' + rows + '</ul>' : '') +
+      (d.items.length ? '<p class="dnote ddnote">줄을 누르면 그 항목만 고칠 수 있어요</p>' : '') +
+      (d.text ? '<section class="ddtext" aria-labelledby="dd-text-l"><h3 class="ddtext__l" id="dd-text-l">처음 적은 글</h3><p class="ddtext__t">' + esc(d.text) + '</p></section>' : '') +
+      (d.error ? '<p class="rform__error" role="alert">' + esc(d.error) + '</p>' : '') +
+      '<div class="dfoot ddfoot"><button type="button" class="mbtn ddfoot__del' + (d.del ? ' is-armed' : '') + '" data-act="dd-del"' + (d.busy ? ' disabled' : '') + '>' + (d.del ? '정말 지우기' : '지우기') + '</button>' +
+        '<button type="button" class="mbtn mbtn--solid ddfoot__go" data-act="dd-text"' + (d.busy ? ' disabled' : '') + '>글로 고치기</button></div>' +
+      '</section></div>';
+  }
+  /** 바꾼 양 미리보기 — 적는 동안 이 부분만 바꿈 (입력칸은 그대로) */
+  function itemPrev(p) {
+    if (!p) return '<div class="diprev" id="di-prev" aria-live="polite"><p class="diprev__m">양을 숫자로 적어 주세요</p></div>';
+    return '<div class="diprev" id="di-prev" aria-live="polite"><p class="diprev__k">' + esc(p.line) + (p.before !== p.after ? ' · <s>' + comma(p.before) + '</s> →' : ' ·') + ' <b>' + comma(p.after) + '</b> kcal</p><p class="diprev__m">' + esc(p.macros) + ' · 끼니 합계 ' + comma(p.meal) + 'kcal</p></div>';
+  }
+  /** 한 항목만 고치기 (목업 ③). e = { name, src, amount, unit, units: [단위, 'g'] | null, quick, canAmount, preview: { line, before, after, macros, meal } | null, error, del } */
+  function itemSheet(e, entering) {
+    var amt = e.canAmount ? '<div class="diamt"><label class="diamt__l" for="di-amt">얼마나 먹었나요</label>' +
+      '<div class="diamt__row"><button type="button" class="diamt__pm" data-act="di-step" data-v="-1" aria-label="줄이기">−</button>' +
+      '<input id="di-amt" class="diamt__in" type="text" inputmode="decimal" autocomplete="off" maxlength="7" value="' + esc(e.amount) + '" aria-describedby="di-prev">' +
+      '<button type="button" class="diamt__pm" data-act="di-step" data-v="1" aria-label="늘리기">+</button>' +
+      (e.units ? '<div class="dseg diamt__u" role="group" aria-label="단위">' + e.units.map(function (u) { return '<button type="button" class="dseg__b" data-act="di-unit" data-v="' + esc(u) + '" aria-pressed="' + (u === e.unit) + '">' + esc(u) + '</button>'; }).join('') + '</div>' : '<span class="diamt__one">' + esc(e.unit) + '</span>') + '</div>' +
+      (e.quick && e.quick.length ? '<div class="diamt__q">' + e.quick.map(function (q) { return '<button type="button" class="diamt__qb" data-act="di-quick" data-v="' + q + '" aria-pressed="' + (String(q) === String(e.amount)) + '" aria-label="' + q + esc(e.unit) + '">' + (q === 0.5 ? '½' : q) + '</button>'; }).join('') + '</div>' : '') + '</div>'
+      : '<p class="dnote">이 항목은 양을 여기서 못 바꿔요 · 글로 고치거나 다른 음식으로 바꿔 주세요</p>';
+    var p = e.preview;
+    return '<div class="sheet-layer sheet-layer--top">' +
+      '<button type="button" class="scrim" data-act="di-close" aria-label="닫기"></button>' +
+      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="di-title">' +
+      '<span class="grabber" aria-hidden="true"></span><h2 id="di-title" class="sheet__title">' + esc(e.name) + '</h2>' + (e.src ? '<p class="sheet__sub">' + esc(e.src) + '</p>' : '') + amt +
+      (e.canAmount ? itemPrev(p) : '') +
+      (e.canSwap ? '<button type="button" class="dwhen__row diswap" data-act="di-swap"><span class="dwhen__l">다른 음식으로 바꾸기<span class="diswap__d">식품표 후보 · 식약처 가공식품에서 골라요</span></span>' + svg(CHEV, 16) + '</button>' : '') +
+      (e.error ? '<p class="rform__error" role="alert">' + esc(e.error) + '</p>' : '') +
+      '<div class="ddfoot difoot"><button type="button" class="mbtn ddfoot__del' + (e.del ? ' is-armed' : '') + '" data-act="di-remove">' + (e.del ? '정말 빼기' : '빼기') + '</button><button type="button" class="mbtn mbtn--solid ddfoot__go" data-act="di-save">저장</button></div>' +
+      '<p class="sheet__sub dinote">AI를 부르지 않고 바로 저장해요</p>' +
+      '</section></div>';
+  }
+
   /** 제품 찾기 시트 (확인 카드 위). f = { name, q, unit, mode: mass|whole|serve, busy, error, items: [{ name, maker, base, kcal, serve, size }] | null } */
   function findSheet(f, entering) {
     var st = f.busy ? '찾는 중이에요…' : f.error ? f.error : f.items ? (f.items.length ? '식약처 가공식품 ' + f.items.length + '개 · 고르면 내 식품에 저장돼요' : '찾지 못했어요 · 이름을 줄이거나 제조사를 넣어 보세요') : '';
@@ -217,19 +273,24 @@
       return '<li><button type="button" class="dfind__row" data-act="dp-pick" data-v="' + i + '"><span class="drow__tx"><span class="drow__nm">' + esc(p.name) + '</span>' + (meta ? '<span class="drow__ds">' + esc(meta) + '</span>' : '') + '</span>' +
         '<span class="drow__vl">' + comma(p.kcal) + '<small class="dfind__per"> kcal/100' + p.base + '</small></span></button></li>';
     }).join('') + '</ul>' : '';
+    // 식품표 후보 (앱이 가진 식약처 음식 · 원재료 — 바로, 서버 없이). 끼니 상세의 「다른 음식으로 바꾸기」에서만
+    var tab = f.table && f.table.length ? '<h3 class="dsec dfind__h">식품표</h3><ul class="dlist dfind__list dfind__list--tab">' + f.table.map(function (e, i) {
+      return '<li><button type="button" class="dfind__row" data-act="dp-tpick" data-v="' + i + '"><span class="drow__tx"><span class="drow__nm">' + esc(e.name.replace(/_/g, ' ')) + '</span><span class="drow__ds">' + (e.kind === 'd' ? '음식' : '원재료') + (e.serve ? ' · 1인분 ' + e.serve + e.base : '') + '</span></span>' +
+        '<span class="drow__vl">' + comma(e.kcal) + '<small class="dfind__per"> kcal/100' + esc(e.base) + '</small></span></button></li>';
+    }).join('') + '</ul>' + (f.items || f.busy || f.error ? '<h3 class="dsec dfind__h">식약처 가공식품</h3>' : '') : '';
     return '<div class="sheet-layer sheet-layer--top">' +
       '<button type="button" class="scrim" data-act="dp-close" aria-label="닫기"></button>' +
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dp-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
-      '<h2 id="dp-title" class="sheet__title">제품 찾기</h2>' +
-      '<p class="sheet__sub">「' + esc(f.name) + '」을(를) 식약처 가공식품에서 골라요</p>' +
+      '<h2 id="dp-title" class="sheet__title">' + esc(f.title || '제품 찾기') + '</h2>' +
+      '<p class="sheet__sub">「' + esc(f.name) + '」을(를) ' + (f.table ? '식품표나 ' : '') + '식약처 가공식품에서 골라요</p>' +
       '<div class="dfind__bar"><label class="sr-only" for="dp-q">찾을 제품 이름</label><input id="dp-q" class="dfind__in" type="search" maxlength="40" autocomplete="off" enterkeyhint="search" value="' + esc(f.q) + '" placeholder="예) 신라면, 농심 새우깡">' +
         '<button type="button" class="mbtn mbtn--solid dfind__go" data-act="dp-go"' + (f.busy ? ' disabled' : '') + '>찾기</button></div>' +
-      '<p class="dfind__st' + (f.error ? ' dfind__st--err' : '') + '" role="' + (f.error ? 'alert' : 'status') + '">' + esc(st) + '</p>' + list +
+      tab + '<p class="dfind__st' + (f.error ? ' dfind__st--err' : '') + '" role="' + (f.error ? 'alert' : 'status') + '">' + esc(st) + '</p>' + list +
       '</section></div>';
   }
 
-  var api = { findSheet: findSheet, goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
+  var api = { WAIT_WHY: WAIT_WHY, mealScreen: mealScreen, itemSheet: itemSheet, itemPrev: itemPrev, findSheet: findSheet, goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

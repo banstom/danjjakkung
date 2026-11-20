@@ -1720,3 +1720,61 @@ button.rv-srow { cursor: pointer; }
 .dfind__row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; border: 0; border-bottom: 1px solid var(--divider); background: none; padding: 6px 2px; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
 .dfind__list li:last-child .dfind__row { border-bottom: 0; }
 .dfind__per { font-size: 11px; font-weight: 600; color: var(--sub); }
+
+/* 단짝 식탁 · 끼니 상세 · 한 항목 고치기 (11-20 목업 ②③④) */
+.dmeal { display: block; }
+.dmeal__btn { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; border: 0; background: none; padding: 6px 0; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.dmeal__btn svg { color: var(--faint); flex: none; }
+.dmeal__btn:focus-visible, .ddrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 12px; }
+.dmeals__hint { margin: 6px 0 0; font-size: 12px; color: var(--sub); }
+.ddcard { margin-top: 12px; padding-top: 0; padding-bottom: 0; }
+.ddlist { margin: 12px 0 0; padding-top: 0; padding-bottom: 0; list-style: none; }
+.ddlist > li { border-bottom: 1px solid var(--divider); }
+.ddlist > li:last-child { border-bottom: 0; }
+.ddrow { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; border: 0; background: none; padding: 8px 0; font: inherit; color: var(--text); text-align: left; cursor: pointer; }
+.ddrow svg { color: var(--faint); flex: none; }
+.ddbadge { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); font-size: 11px; font-weight: 700; color: var(--sub); vertical-align: 1px; }
+.ddwait { padding: 10px 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.ddwait__top { display: flex; align-items: center; gap: 10px; }
+.ddwait__top .drow__nm { color: var(--sub); }
+.ddwait__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ddwait__acts .dfind { margin-top: 0; min-height: 40px; }
+.ddnote { margin-top: 8px; font-size: 12px; }
+.dsum__n { margin: 0; font-size: 12px; color: var(--sub); }
+.ddtext { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: var(--raised); }
+.ddtext__l { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.ddtext__t { margin: 0; font-size: 14px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.ddfoot { display: flex; gap: 8px; }
+.ddfoot .mbtn { min-height: 52px; }
+.ddfoot__del { flex: 0 0 auto; min-width: 96px; color: var(--warn); }
+.ddfoot__del.is-armed { border-color: var(--warn); }
+.ddfoot__go { flex: 1; }
+.diamt { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.diamt__l { font-size: 14px; font-weight: 700; }
+.diamt__row { display: flex; align-items: center; gap: 8px; }
+.diamt__pm { flex: none; width: 48px; height: 48px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; font-size: 22px; font-weight: 700; color: var(--text); }
+.diamt__in { flex: 1; min-width: 0; height: 48px; box-sizing: border-box; border: 1.5px solid var(--accent); border-radius: 14px; background: var(--input-bg); text-align: center; font: inherit; font-size: 20px; font-weight: 800; color: var(--text); }
+.diamt__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.diamt__u { flex: none; margin: 0; }
+.diamt__u .dseg__b { min-width: 48px; min-height: 48px; }
+.diamt__one { flex: none; min-width: 32px; font-size: 15px; font-weight: 700; color: var(--sub); }
+.diamt__q { display: flex; gap: 6px; }
+.diamt__qb { flex: 1; min-height: 40px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; font-size: 13px; font-weight: 700; color: var(--text); }
+.diamt__qb[aria-pressed="true"] { border-color: var(--primary-edge); background: var(--primary); color: var(--on-primary); }
+.diprev { margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: var(--raised); }
+.diprev__k { margin: 0; font-size: 14px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.diprev__k b { font-size: 20px; font-weight: 800; color: var(--text); }
+.diprev__m { margin: 4px 0 0; font-size: 13px; color: var(--sub); }
+.diswap { margin-top: 10px; border-top: 1px solid var(--divider); border-bottom: 1px solid var(--divider); }
+.diswap .dwhen__l { display: flex; flex-direction: column; gap: 1px; font-size: 15px; font-weight: 700; }
+.diswap__d { font-size: 12px; font-weight: 500; color: var(--sub); }
+.difoot { margin-top: 14px; }
+.dinote { margin: 8px 0 0; text-align: center; font-size: 12px; }
+.dwtime { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.dwtime__l { font-size: 15px; font-weight: 700; flex: 1; }
+.dwtime__in { min-height: 48px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 14px; background: var(--input-bg); padding: 0 12px; font: inherit; font-size: 16px; color: var(--text); }
+.dwtime__go { width: 100%; margin-top: 12px; flex: none; }
+.dfixing { margin: 8px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--tint); color: var(--tint-text); font-size: 13px; font-weight: 700; line-height: 1.5; }
+.dfind__h { margin: 14px 2px 2px; }
+.dfind__list--tab { max-height: 30vh; }
+.diamt__u { width: auto; }
