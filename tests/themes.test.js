@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const T = require('../js/themes.js');
 
-const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas'];
+const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas', 'spring-picnic'];
 // 화면에 다는 판 id — 낮 · 밤 판이 있는 테마는 판 둘 (11/19 겨울 도트 테마)
-const BOARDS = IDS.concat(['winter-snack-night', 'merry-xmas-night']);
+const BOARDS = IDS.concat(['winter-snack-night', 'merry-xmas-night', 'spring-picnic-night']);
 const css = fs.readFileSync(path.join(__dirname, '../styles/tokens.css'), 'utf8');
 const appCss = fs.readFileSync(path.join(__dirname, '../styles/app.css'), 'utf8');
 
@@ -28,7 +28,7 @@ function lum(h) {
 }
 function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
 
-test('테마 ID 16개 (기존 6 + 신규 8 + 겨울 도트 2), 순서와 이름', () => {
+test('테마 ID 17개 (기존 6 + 신규 8 + 겨울 도트 2 + 봄소풍 1), 순서와 이름', () => {
   assert.deepStrictEqual(T.THEMES.map((t) => t.id), IDS);
   for (const t of T.THEMES) assert.ok(t.name && t.desc);
   assert.strictEqual(T.byId('nope'), null);

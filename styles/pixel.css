@@ -35,7 +35,7 @@
 /* 화면 맨 위 가로 띠: 16칸 타일을 3배(48px)로 가로 반복. 화면과 같이 스크롤된다 */
 [data-skin="pixel"] body::before {
   content: ''; position: absolute; z-index: 1; left: 0; right: 0; top: env(safe-area-inset-top, 0px); height: var(--head-h);
-  background: var(--head-art) 0 0 / 48px var(--head-h) repeat-x; image-rendering: pixelated; pointer-events: none;
+  background: var(--head-art) 0 0 / var(--head-w, 48px) var(--head-h) repeat-x; image-rendering: pixelated; pointer-events: none; /* --head-w: 봄소풍 72px, 겨울은 48px */
 }
 /* 머리말은 장식 높이만큼 아래로 (C5: 위 여백 ≥ 장식 높이) */
 [data-skin="pixel"] .app { padding-top: calc(var(--head-h) + 22px); }
@@ -75,7 +75,7 @@
 /* 5. 목록 구분선 — 6px 간격 픽셀 점선 */
 [data-skin="pixel"] :is(.arow, .mrow, .nrow) {
   border-bottom: 0;
-  background-image: linear-gradient(90deg, var(--line) 50%, transparent 50%);
+  background-image: linear-gradient(90deg, var(--dash, var(--line)) 50%, transparent 50%); /* --dash: 봄소풍 밤 판 점선 색 */
   background-size: 6px 3px; background-repeat: repeat-x; background-position: bottom;
 }
 [data-skin="pixel"] :is(.arow, .mrow, .nrow):last-child { background-image: none; }

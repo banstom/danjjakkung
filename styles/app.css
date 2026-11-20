@@ -1659,7 +1659,7 @@ button.rv-srow { cursor: pointer; }
 .lg-firstbtn { min-height: 48px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--primary-edge, var(--primary)); background: var(--primary); color: var(--on-primary); font: inherit; font-size: 15px; font-weight: 700; }
 .lg-art { display: flex; justify-content: center; margin-top: 16px; }
 .lg-art__img { image-rendering: pixelated; max-width: 50%; height: auto; }
-.lg-entry { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 16px; }
+button.lg-entry { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; padding: 16px; } /* button.card 의 display: block 보다 구체적으로 */
 .lg-entry__head { display: flex; justify-content: space-between; align-items: baseline; }
 .lg-entry__mo { font-size: 13px; color: var(--sub); }
 .lg-entry__total { font-size: 22px; font-weight: 800; }

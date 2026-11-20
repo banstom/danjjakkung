@@ -33,7 +33,10 @@
     { id: 'winter-snack', name: '도란도란 겨울 간식', ko: '도란도란 겨울 간식', desc: '군밤 · 붕어빵 노점의 도트 간식', dark: false, skin: 'pixel',
       modes: { light: 'winter-snack', dark: 'winter-snack-night' }, tags: ['NEW'] },
     { id: 'merry-xmas', name: '두근두근 크리스마스', ko: '두근두근 크리스마스', desc: '솔잎 가랜드와 반짝이는 전구', dark: false, skin: 'pixel',
-      modes: { light: 'merry-xmas', dark: 'merry-xmas-night' }, tags: ['NEW'] }
+      modes: { light: 'merry-xmas', dark: 'merry-xmas-night' }, tags: ['NEW'] },
+    // 봄 업데이트 (11/20, docs/themes-spring) — 도트 테마, 낮 · 밤 판(밤 = 밤벚꽃 소풍). 1년 내내 고를 수 있다
+    { id: 'spring-picnic', name: '몽글몽글 봄소풍', ko: '몽글몽글 봄소풍', desc: '벚꽃 아래 피크닉 깃발과 도시락', dark: false, skin: 'pixel',
+      modes: { light: 'spring-picnic', dark: 'spring-picnic-night' }, tags: ['NEW'] }
   ];
   var KEY = 'danjjakkung.theme';
   var MODE_KEY = 'danjjakkung.themeMode';
@@ -61,7 +64,8 @@
     'harvest': { ink: '#24230F', both: '#CA8D7D', colors: ['#EAB45B', '#B5B581', '#D9925B', '#F1E2A1', '#C9A27A', '#A8C0A0', '#CA8D7D', '#9DB4C8'] },
     // 낮 · 밤 판이 있는 테마는 묶음 id 하나로 (앞 둘 · both = 낮 판 값, 밤 판 기본색은 tokens.css 의 밤 블록)
     'winter-snack': { ink: '#2E1C12', both: '#D49A5A', colors: ['#D9825B', '#F0C27B', '#D49A5A', '#E8A0A0', '#A8C27A', '#9FC0D0', '#C9A27A', '#B49AD8'] },
-    'merry-xmas': { ink: '#29291F', both: '#6E9E5A', colors: ['#D07A6A', '#E9B949', '#6E9E5A', '#8FB5D0', '#C49AC0', '#F2A08A', '#B8C8A8', '#E8A0A0'] }
+    'merry-xmas': { ink: '#29291F', both: '#6E9E5A', colors: ['#D07A6A', '#E9B949', '#6E9E5A', '#8FB5D0', '#C49AC0', '#F2A08A', '#B8C8A8', '#E8A0A0'] },
+    'spring-picnic': { ink: '#2E2128', both: '#A5CB93', colors: ['#E89AB0', '#F3C96B', '#A5CB93', '#9FC8DC', '#F4B8A0', '#C9B8E8', '#E8D58A', '#D8A0C0'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -79,7 +83,8 @@
    ['#E8B6C5','더스티 핑크'],['#B2DCD6','민트'],['#DCC9BC','오트밀'],['#A8C0D8','겨울 하늘'],['#C8B8D8','라벤더'],['#E8C89A','캐멀'],['#B8C8A8','세이지'],['#D0A0A0','로즈 브라운'],
    ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘'],
    ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'], // 10/28 시간표 색 바꿈
-   ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'] // 11/19 겨울 도트 테마
+   ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'], // 11/19 겨울 도트 테마
+   ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'] // 11/20 봄소풍
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -91,6 +96,11 @@
     'merry-xmas': {
       s1: { w: 32, h: 40, x: 2, alt: '작은 트리' }, s2: { w: 37, h: 38, x: 2, alt: '진저브레드 쿠키 둘' },
       s3: { w: 28, h: 41, x: 3, alt: '눈사람' }, s4: { w: 40, h: 40, x: 3, alt: '선물 더미' }
+    },
+    // 봄소풍: 기획 계정의 임시 그림(크림 테두리 포함). Gemini 그림으로 바꾸면 w · h · x 를 고친다 (docs/themes-spring/spec.md 4절)
+    'spring-picnic': {
+      s1: { w: 18, h: 16, x: 4, alt: '피크닉 바구니' }, s2: { w: 20, h: 10, x: 4, alt: '딸기 샌드위치 둘' },
+      s3: { w: 17, h: 17, x: 8, alt: '벚꽃 한 송이' }, s4: { w: 26, h: 20, x: 6, alt: '도시락 한 상' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

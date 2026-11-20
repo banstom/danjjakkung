@@ -367,3 +367,47 @@
   --sec-dot: #D9564A; --deco-a: #C9443A; --deco-b: #E9B949;
   --bg-art: url('../themes/merry-xmas/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/merry-xmas/head-night.svg'); --head-h: 60px; --checker: rgba(255, 255, 255, 0.025);
 }
+
+/* ── 봄 업데이트 (11/20): 「몽글몽글 봄소풍」 낮 · 밤 판 — docs/themes-spring/spec.md ──
+   기획 계정 tokens-spring.css 값 + 겨울 판에만 있던 토큰은 같은 이름으로 이 계열 값을 채움 (spec 「바뀐 것」).
+   --head-w : 머리 장식 한 칸 너비(겨울은 48px 기본), --dash : 도트 점선 구분 색(기본은 --sh) */
+
+/* 몽글몽글 봄소풍 (낮) — 진달래 분홍 버튼 · 깃발 줄 머리 장식 · 꽃잎 바탕 */
+[data-theme="spring-picnic"] {
+  color-scheme: light;
+  --bg: #FBF3EC; --surface: #FFFCF8; --raised: #F7E9E4; --input-bg: #FFFCF8;
+  --text: #3A2830; --sub: #6E5560; --faint: #CDB6BE; --line: #EBD9D3;
+  --divider: #EBD9D3; --primary: #A8436A; --primary-edge: #A8436A; --on-primary: #FFFCF8;
+  --secondary: #F7E3EA; --accent: #C46A8A; --strong: #963B5E; --icon: #6E5560;
+  --tab-bg: #FFFCF8; --tab-active: #963B5E; --tab-inactive: #6E5560; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C62F3A; --her: #E89AB0; --her-ink: #2E2128;
+  --me: #F3C96B; --me-ink: #2E2128; --both: #A5CB93; --both-ink: #2E2128;
+  --tint: #FBE1EA; --tint-text: #82304F; --today: #3A2830; --on-today: #FFFCF8;
+  --lv-full: #6E9E5A; --lv-full-text: #2E2128; --lv-half: #D9E8CF;
+  --lv-half-text: #3A2830; --empty: #F1E4DF; --empty-text: #64505A; --switch-knob: #FFFCF8;
+  --scrim: rgba(58, 40, 48, 0.45); --shadow: 0 -8px 24px rgba(90, 58, 68, 0.12); --lift: 0 1px 3px rgba(90, 58, 68, 0.18); --toast-bg: #3A2830;
+  --toast-fg: #FFFCF8; --toast-shadow: 0 4px 0 #E6CFC8; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #5A3A44; --sh: #E6CFC8; --btn-hi: #C4648A; --btn-lo: #7E2C4B;
+  --sec-dot: #5E9E5A; --deco-a: #F2A9BE; --deco-b: #FFF1C2;
+  --bg-art: url('../themes/spring-picnic/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/spring-picnic/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(224, 122, 152, 0.08);
+}
+
+/* 몽글몽글 봄소풍 (밤) — 밤벚꽃 소풍: 짙은 보라 밤하늘 · 종이 등 줄 · 벚꽃 분홍 버튼 */
+[data-theme="spring-picnic-night"] {
+  color-scheme: dark;
+  --bg: #1F1A2E; --surface: #2B2440; --raised: #372E50; --input-bg: #2B2440;
+  --text: #FBEFF3; --sub: #D4C2D0; --faint: #5E5378; --line: #463C5E;
+  --divider: #463C5E; --primary: #F2A9BE; --primary-edge: #F2A9BE; --on-primary: #2A1621;
+  --secondary: #3A2E4A; --accent: #E58FA8; --strong: #F2A9BE; --icon: #D4C2D0;
+  --tab-bg: #2B2440; --tab-active: #F7C3D2; --tab-inactive: #D4C2D0; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #E89AB0; --her-ink: #2A1621;
+  --me: #F3C96B; --me-ink: #2A1621; --both: #8FC07E; --both-ink: #2A1621;
+  --tint: #45304A; --tint-text: #F7C3D2; --today: #FBEFF3; --on-today: #2B2440;
+  --lv-full: #8FC07E; --lv-full-text: #2A1621; --lv-half: #566F4D;
+  --lv-half-text: #FBEFF3; --empty: #3A3152; --empty-text: #D4C2D0; --switch-knob: #2A1621;
+  --scrim: rgba(6, 4, 14, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #FBEFF3;
+  --toast-fg: #2A1621; --toast-shadow: 0 4px 0 #120E1D; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #7A68A0; --sh: #120E1D; --btn-hi: #FAD0DC; --btn-lo: #C9708F;
+  --sec-dot: #9FD08F; --deco-a: #D98AA2; --deco-b: #EBD9A8; --dash: #4B4166;
+  --bg-art: url('../themes/spring-picnic/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/spring-picnic/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}

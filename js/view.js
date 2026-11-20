@@ -110,7 +110,7 @@
 
   // 「테마」 시트 (11/19 겨울 업데이트, docs/themes-winter/spec.md 7절 — 제목은 v53 결정대로 「테마」) — 위에서부터 낮 · 밤 / 테마 카드 / 다른 테마 더 보기 / 사람 색.
   // 카드 미리보기는 CSS 만: 그 테마의 지금 판(낮 · 밤) 색을 data-theme 으로 받는다. 누르면 바로 바뀌고 저장 버튼은 없다.
-  var FEATURED = ['winter-snack', 'merry-xmas', 'soft-pastel', 'cosmic-dream'];
+  var FEATURED = ['spring-picnic', 'winter-snack', 'merry-xmas', 'soft-pastel']; // 11/20 봄소풍 목업 T1 순서 (코스믹 드림은 「다른 테마 더 보기」)
   var MODE_LABEL = { auto: '자동', light: '낮', dark: '밤' };
   function themeCard(th, t) {
     var on = th.id === t.current;
