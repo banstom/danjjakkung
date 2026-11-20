@@ -573,4 +573,21 @@
 [data-skin="pixel"]:not([data-font="plain"]) .dwtime__l { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .dwtime__in { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .dfixing { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dtable__date { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dchip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgs__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgs__plain { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgs__plain b { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dgs__row { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__tip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__ax { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__t, [data-skin="pixel"]:not([data-font="plain"]) .dmr__chip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__kc { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__who { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dmr__lg { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfast { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfood__note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfe__l { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfe__in { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .dfe__u { font-size: 12px; font-family: var(--px-font-11); }
 /* ── 글씨 크기 표 끝 ── */

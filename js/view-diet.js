@@ -99,23 +99,98 @@
   function mealName(m) { return m.label || KIND_NAME[m.kind] || '식사'; }
   function grams(n) { return comma(n) + 'g'; }
 
-  /** 첫 화면: 내 목표 · 단짝 목표 · 오늘 먹은 것 (짝꿍 식탁 그래프는 D5). h = { mine, partner, today: { meals, total, goal, delId }, partnerToday: { name, total, n } | null } */
+  var GEAR = '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>';
+  var PLUS = '<path d="M12 5v14M5 12h14"/>', DOWN = '<path d="M6 9l6 6 6-6"/>';
+
+  /** 목표 대비 요약 (목업 ③). g = { name, who: me|her, goalName, rows: [{ key, label, actual, target, unit, pct, text, tone }] } | { name, who, none } */
+  function goalSum(g) {
+    if (g.none) return '<section class="card dgs"><div class="dgs__head"><span class="dchip dchip--' + g.who + '">' + esc(g.name) + '</span><span class="dgs__t">' + esc(g.none) + '</span></div>' +
+      (g.total ? '<p class="dgs__plain"><b>' + comma(g.total.kcal) + '</b> kcal · 탄 ' + grams(g.total.carb) + ' · 단 ' + grams(g.total.protein) + ' · 지 ' + grams(g.total.fat) + '</p>' : '') + '</section>';
+    return '<section class="card dgs" aria-label="' + esc(g.name + ' ' + g.goalName + ' 목표 대비') + '"><div class="dgs__head"><span class="dchip dchip--' + g.who + '">' + esc(g.name) + '</span><span class="dgs__t">' + esc(g.goalName) + ' 목표 대비</span></div>' +
+      g.rows.map(function (r) {
+        return '<div class="dgs__row"><span class="dgs__l">' + r.label + '</span><span class="dgs__m" aria-hidden="true"><i class="dgs__f dgs__f--' + g.who + '" style="width:' + r.pct + '%"></i></span>' +
+          '<span class="dgs__v">' + comma(r.actual) + '<span class="dgs__g"> / ' + comma(r.target) + r.unit + '</span></span><span class="dgs__s dgs__s--' + r.tone + '">' + esc(r.text) + '</span></div>';
+      }).join('') + '</section>';
+  }
+
+  /** 거울 차트 (목업 ③): 6~24시, 띠 위로 나 · 아래로 단짝, 높이 = 끼니 kcal, 탄수(띠 쪽 진하게) → 단백질 → 지방.
+      c = { bars: [{ id, who: me|her, x(%), h(px), kcal, at, carb, pro, fat(%), both, tip, on }], both: [{ x, at }], tip, me, her } */
+  function mirror(c) {
+    var half = function (who) {
+      return c.bars.filter(function (b) { return b.who === who; }).map(function (b) {
+        var segs = [['carb', b.carb], ['pro', b.pro], ['fat', b.fat]];
+        if (who === 'me') segs = segs.slice().reverse(); // 위 기둥은 아래(띠 쪽)가 탄수
+        return '<button type="button" class="dmr__bar dmr__bar--' + who + (b.on ? ' is-on' : '') + '" style="left:' + b.x + '%;height:' + b.h + 'px" data-act="dt-bar" data-v="' + esc(b.id) + '" aria-pressed="' + !!b.on + '" aria-label="' + esc(b.tip) + '">' +
+          segs.map(function (x) { return '<i class="dmr__s dmr__s--' + x[0] + '" style="flex:' + Math.max(1, Math.round(x[1])) + ' 1 0"></i>'; }).join('') + '</button>' +
+          '<span class="dmr__kc" style="left:' + b.x + '%;' + (who === 'me' ? 'bottom' : 'top') + ':' + (b.h + 2) + 'px" aria-hidden="true">' + comma(b.kcal) + '</span>';
+      }).join('');
+    };
+    var times = function (who) { return c.bars.filter(function (b) { return b.who === who && !b.both; }).map(function (b) { return '<span class="dmr__t" style="left:' + b.x + '%">' + esc(b.at) + '</span>'; }).join(''); };
+    var both = c.both.map(function (x) { return '<span class="dmr__bg" style="left:' + x.x + '%"></span>'; }).join('');
+    var chips = c.both.map(function (x) { return '<span class="dmr__chip" style="left:' + x.x + '%">' + esc(x.at) + '</span>'; }).join('');
+    return '<section class="card dmr" aria-label="시간대별 끼니 차트">' +
+      '<p class="dmr__tip" aria-live="polite">' + (c.tip ? esc(c.tip) : '기둥을 누르면 탄수 · 단백질 · 지방 비율이 보여요') + '</p>' +
+      '<div class="dmr__box"><div class="dmr__bgs" aria-hidden="true">' + both + '</div>' +
+        '<div class="dmr__half dmr__half--me">' + half('me') + '</div>' +
+        '<div class="dmr__band" aria-hidden="true"><span class="dmr__ax dmr__ax--l">6시</span><span class="dmr__ax dmr__ax--r">24시</span><div class="dmr__row">' + times('me') + chips + '</div><div class="dmr__row">' + times('her') + '</div></div>' +
+        '<div class="dmr__half dmr__half--her">' + half('her') + '</div>' +
+      '</div>' +
+      '<div class="dmr__lg" aria-hidden="true"><span><i class="dmr__dot dmr__dot--me"></i>위 ' + esc(c.me) + '</span>' + (c.her ? '<span><i class="dmr__dot dmr__dot--her"></i>아래 ' + esc(c.her) + '</span>' : '') + '<span><i class="dmr__sw dmr__s--carb"></i>탄수</span><span><i class="dmr__sw dmr__s--pro"></i>단백질</span><span><i class="dmr__sw dmr__s--fat"></i>지방</span>' + (c.both.length ? '<span><i class="dmr__sw dmr__sw--both"></i>함께 먹음</span>' : '') + '</div>' +
+      '</section>';
+  }
+
+  /** ③ 짝꿍 식탁 (D5 · 목업 03). 나 = 위 · me 이름표, 단짝 = 아래 · her (보는 사람이 her 칸 사람이면 swap 으로 색만 바꿈). h = { swap, dateLabel, isToday, who: me|her, names: { me, her }, sum: goalSum 모델, chart: mirror 모델 | null, list: { name, mine, rows: [{ gap } | { id, at, name, together, np, carb, pro, fat, kcal }], empty, off } } */
   function home(h) {
-    var t = h.today || { meals: [], total: null };
-    // 끼니 한 줄 = 누르는 단추 → 끼니 상세 (정리 · 지우기는 상세 안으로 — 11-20 목업 ①)
-    var list = t.meals.length ? '<ul class="dmeals">' + t.meals.map(function (m) {
-      var np = m.pending && m.pending.length ? m.pending.length : 0;
-      return '<li class="dmeal"><button type="button" class="dmeal__btn" data-act="dm-open" data-v="' + esc(m.id) + '" aria-label="' + esc((m.at || '') + ' ' + mealName(m) + (m.together ? ', 함께' : '') + (np ? ', 정리 대기 ' + np + '줄' : '') + ', ' + comma(m.total ? m.total.kcal : 0) + 'kcal, ' + (m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(', ') + ' 열기') + '">' +
-        '<span class="dmeal__at">' + esc(m.at || '') + '</span><span class="dmeal__tx"><span class="dmeal__nm">' + esc(mealName(m)) + (m.together ? ' <span class="abadge">함께</span>' : '') + (np ? ' <span class="dwait">정리 대기 ' + np + '</span>' : '') + '</span>' +
-        '<span class="dmeal__ds">' + esc((m.items || []).map(function (i) { return i.name; }).concat((m.pending || []).map(function (x) { return x.raw; })).join(' · ')) + '</span></span>' +
-        '<span class="dmeal__vl">' + comma(m.total ? m.total.kcal : 0) + '</span>' + svg(CHEV, 18) + '</button></li>';
-    }).join('') + '</ul><p class="dmeals__hint">끼니를 누르면 무엇을 얼마나 먹었는지 보고 고칠 수 있어요</p>' : '<p class="dnote">' + (t.off ? '기록을 불러오지 못했어요 · 저장 규칙 배포 전이거나 연결이 끊겼어요' : '아직 오늘 기록이 없어요') + '</p>';
-    var sum = t.total ? '<p class="dtoday__sum"><b>' + comma(t.total.kcal) + '</b> kcal' + (t.goal ? ' / ' + comma(t.goal.kcal) : '') + ' · 탄 ' + grams(t.total.carb) + ' · 단 ' + grams(t.total.protein) + ' · 지 ' + grams(t.total.fat) + '</p>' : '';
-    var pt = h.partnerToday ? '<p class="dnote">' + esc(h.partnerToday.name) + ' 님 오늘 ' + (h.partnerToday.n ? comma(h.partnerToday.total.kcal) + 'kcal · ' + h.partnerToday.n + '끼' : '아직 기록 없음') + '</p>' : '';
-    return '<div class="mscreen"><div class="mbar"><button type="button" class="mbar__btn" data-act="diet-close" aria-label="전체로 돌아가기">' + svg(BACK) + '</button><h1 class="mbar__title">단짝 식탁</h1></div>' +
-      '<section class="card dtoday"><div class="dgc__head"><h2 class="dgc__t">오늘 먹은 것</h2></div>' + sum + list + pt +
-      '<button type="button" class="mbtn mbtn--solid dtoday__go" data-act="dl-open">기록하기</button></section>' +
-      goalCard('내 목표', h.mine, true) + (h.partner ? goalCard(h.partner.name + ' 님 목표', h.partner.goal, false) : '') + '</div>';
+    var L = h.list, rows = L.rows.map(function (r) {
+      if (r.gap != null) return '<li class="dfast" aria-label="' + esc(r.gap) + '"><span class="dfast__d" aria-hidden="true"></span>' + esc(r.gap) + '</li>';
+      var inner = '<span class="dmeal__at">' + esc(r.at || '') + '</span><span class="dmeal__tx"><span class="dmeal__nm">' + esc(r.name) + (r.together ? ' <span class="dchip dchip--both">함께</span>' : '') + (r.np ? ' <span class="dwait">정리 대기 ' + r.np + '</span>' : '') + '</span>' +
+        '<span class="dmeal__ds">탄 ' + comma(r.carb) + ' · 단 ' + comma(r.pro) + ' · 지 ' + comma(r.fat) + 'g</span></span><span class="dmeal__vl">' + comma(r.kcal) + '</span>';
+      return '<li class="dmeal">' + (L.mine ? '<button type="button" class="dmeal__btn" data-act="dm-open" data-v="' + esc(r.id) + '" aria-label="' + esc((r.at || '') + ' ' + r.name + (r.together ? ', 함께' : '') + (r.np ? ', 정리 대기 ' + r.np + '줄' : '') + ', ' + comma(r.kcal) + 'kcal, 탄수 ' + comma(r.carb) + 'g 단백질 ' + comma(r.pro) + 'g 지방 ' + comma(r.fat) + 'g 열기') + '">' + inner + svg(CHEV, 18) + '</button>' : '<div class="dmeal__btn dmeal__btn--ro">' + inner + '</div>') + '</li>';
+    }).join('');
+    return '<div class="mscreen dtable' + (h.swap ? ' dtable--swap' : '') + '"><div class="mbar"><button type="button" class="mbar__btn" data-act="diet-close" aria-label="전체로 돌아가기">' + svg(BACK) + '</button><span class="mbar__fill"></span>' +
+      '<button type="button" class="mbar__btn" data-act="ds-open" aria-label="식단 설정">' + svg(GEAR, 22) + '</button><button type="button" class="mbar__btn" data-act="dl-open" aria-label="기록하기">' + svg(PLUS) + '</button></div>' +
+      '<header class="dtable__head"><button type="button" class="dtable__date" data-act="dt-cal" aria-haspopup="dialog" aria-label="날짜 ' + esc(h.dateLabel) + ', 바꾸기">' + esc(h.dateLabel) + svg(DOWN, 18) + '</button><h1 class="title">단짝 식탁</h1>' +
+        (h.isToday ? '' : '<button type="button" class="small-btn dtable__today" data-act="dt-today">오늘로 가기</button>') + '</header>' +
+      (h.names.her ? '<div class="dseg dseg--wide dtable__who" role="group" aria-label="누구의 숫자">' + [['me', h.names.me], ['her', h.names.her]].map(function (x) { return '<button type="button" class="dseg__b" data-act="dt-who" data-v="' + x[0] + '" aria-pressed="' + (h.who === x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>' : '') +
+      goalSum(h.sum) + (h.chart ? mirror(h.chart) : '') +
+      '<h2 class="dsec dtable__sec">' + esc(L.name) + '의 끼니</h2>' +
+      (L.rows.length ? '<ul class="card dmeals dtable__list">' + rows + '</ul>' : '<p class="dnote">' + esc(L.empty) + '</p>') +
+      (L.mine ? '<button type="button" class="mbtn mbtn--solid dtoday__go" data-act="dl-open">기록하기</button>' : '') + '</div>';
+  }
+
+  /** ⑥ 식단 설정 (D6 일부): 목표 · 내 식품. s = { mine, partner, nFoods } */
+  function settingsScreen(s, entering) {
+    return '<div class="sheet-layer sheet-layer--full"><section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="ds-title">' +
+      '<div class="dbar"><button type="button" class="mbar__btn" data-act="ds-close" aria-label="단짝 식탁으로 돌아가기">' + svg(BACK) + '</button></div>' +
+      '<h2 id="ds-title" class="title">식단 설정</h2>' +
+      goalCard('내 목표 · 단짝도 보는 숫자', s.mine, true) + (s.partner ? goalCard(s.partner.name + ' 님 목표', s.partner.goal, false) : '') +
+      '<div class="card ddcard"><button type="button" class="dwhen__row" data-act="df-open"><span class="dwhen__l">내 식품<span class="diswap__d">알려 준 영양 숫자 · 고른 가공식품 · 둘이 함께 써요</span></span><span class="dwhen__v">' + s.nFoods + '개</span>' + svg(CHEV, 18) + '</button></div>' +
+      '</section></div>';
+  }
+  /** ⑦ 내 식품 (D6 일부 · 목업 07). f = { rows: [{ id, name, ds, vl, by, mine }], empty } */
+  function foodsScreen(f, entering) {
+    return '<div class="sheet-layer sheet-layer--full"><section class="sheet dscreen' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="df-title">' +
+      '<div class="dbar"><button type="button" class="mbar__btn" data-act="df-close" aria-label="식단 설정으로 돌아가기">' + svg(BACK) + '</button></div>' +
+      '<p class="caption">식단 설정</p><h2 id="df-title" class="title">내 식품</h2>' +
+      (f.rows.length ? '<ul class="card dlist ddlist">' + f.rows.map(function (r) {
+        return '<li><button type="button" class="ddrow" data-act="df-item" data-v="' + esc(r.id) + '" aria-label="' + esc(r.name + ', ' + r.ds + ', ' + r.vl + ', ' + r.by + ' 등록, 고치기') + '"><span class="drow__tx"><span class="drow__nm">' + esc(r.name) + '</span><span class="drow__ds">' + esc(r.ds) + '</span></span>' +
+          '<span class="dfood__r"><span class="drow__vl">' + esc(r.vl) + '</span><span class="dchip dchip--' + r.slot + '">' + esc(r.by) + ' 등록</span></span>' + svg(CHEV, 16) + '</button></li>';
+      }).join('') + '</ul>' : '<p class="dnote">' + esc(f.empty) + '</p>') +
+      '<p class="dnote dfood__note">기록할 때 이름만 적으면 여기 값으로 계산해요. 한쪽이 고치면 둘 다 바뀌어요. 제품 값은 포장지 영양성분표로 확인해 주세요.</p>' +
+      '</section></div>';
+  }
+  /** 내 식품 하나 고치기 · 지우기. e = { name, unit, unitG, kcal, carb, protein, fat, src, error, del, saving } */
+  function foodSheet(e, entering) {
+    var fld = function (id, label, v, mode, suf) { return '<div class="dfe__f"><label class="dfe__l" for="' + id + '">' + label + '</label><span class="dfe__w"><input id="' + id + '" class="dfe__in" type="text" inputmode="' + mode + '" autocomplete="off" maxlength="' + (mode === 'text' ? 20 : 8) + '" value="' + esc(v == null ? '' : String(v)) + '">' + (suf ? '<span class="dfe__u">' + suf + '</span>' : '') + '</span></div>'; };
+    return '<div class="sheet-layer sheet-layer--top"><button type="button" class="scrim" data-act="dfe-close" aria-label="닫기"></button>' +
+      '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dfe-title"><span class="grabber" aria-hidden="true"></span>' +
+      '<h2 id="dfe-title" class="sheet__title">' + esc(e.name) + '</h2><p class="sheet__sub">' + esc(e.src) + '</p>' +
+      '<div class="dfe">' + fld('dfe-unit', '1단위', e.unit, 'text', '') + fld('dfe-g', '1단위 무게', e.unitG, 'decimal', 'g') + fld('dfe-kcal', '열량', e.kcal, 'decimal', 'kcal') +
+        fld('dfe-carb', '탄수', e.carb, 'decimal', 'g') + fld('dfe-protein', '단백질', e.protein, 'decimal', 'g') + fld('dfe-fat', '지방', e.fat, 'decimal', 'g') + '</div>' +
+      '<p class="sheet__sub">1단위에 들어 있는 값이에요. 고치면 「알려 준 값」으로 바뀌어요</p>' +
+      (e.error ? '<p class="rform__error" role="alert">' + esc(e.error) + '</p>' : '') +
+      '<div class="ddfoot difoot"><button type="button" class="mbtn ddfoot__del' + (e.del ? ' is-armed' : '') + '" data-act="dfe-del"' + (e.saving ? ' disabled' : '') + '>' + (e.del ? '정말 지우기' : '지우기') + '</button><button type="button" class="mbtn mbtn--solid ddfoot__go" data-act="dfe-save"' + (e.saving ? ' disabled' : '') + '>저장</button></div>' +
+      '</section></div>';
   }
 
   /** ④ 기록하기 (목업 04). e = { dateLabel, text, together, chips, partnerName, loading, error, whenLabel, fixing: 고치는 끼니 이름 | '' } */
@@ -171,19 +246,19 @@
       w.cells.map(function (c) {
         if (!c) return '<span></span>';
         return '<button type="button" class="dcal__d' + (c.on ? ' is-on' : '') + (c.today ? ' is-today' : '') + '"' + (c.off ? ' disabled' : ' data-act="' + A + '-pick" data-v="' + esc(c.key) + '"') +
-          ' aria-pressed="' + !!c.on + '" aria-label="' + esc(c.label) + (c.today ? ', 오늘' : '') + '">' + c.d + '</button>';
+          ' aria-pressed="' + !!c.on + '" aria-label="' + esc(c.label) + (c.today ? ', 오늘' : '') + (c.dot ? ', 기록 있음' : '') + '">' + c.d + (c.dot ? '<i class="dcal__dot" aria-hidden="true"></i>' : '') + '</button>';
       }).join('');
     return '<div class="sheet-layer sheet-layer--top">' +
       '<button type="button" class="scrim" data-act="' + A + '-close" aria-label="닫기"></button>' +
       '<section class="sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="dw-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
-      '<h2 id="dw-title" class="sheet__title dwhen__title">언제 먹었나요?</h2>' +
-      '<div class="dseg dseg--wide dwhen__quick" role="group" aria-label="빠르게 고르기">' + w.quick.map(function (q) { return '<button type="button" class="dseg__b" data-act="' + A + '-pick" data-v="' + esc(q.key) + '" aria-pressed="' + !!q.on + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' +
+      '<h2 id="dw-title" class="sheet__title dwhen__title">' + esc(w.heading || '언제 먹었나요?') + '</h2>' +
+      (w.quick ? '<div class="dseg dseg--wide dwhen__quick" role="group" aria-label="빠르게 고르기">' + w.quick.map(function (q) { return '<button type="button" class="dseg__b" data-act="' + A + '-pick" data-v="' + esc(q.key) + '" aria-pressed="' + !!q.on + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' : '') +
       '<div class="dcal__head"><p class="dcal__m" aria-live="polite">' + esc(w.title) + '</p>' +
         '<button type="button" class="mbar__btn" data-act="' + A + '-month" data-v="-1" aria-label="이전 달"' + (w.prev ? '' : ' disabled') + '>' + svg(BACK) + '</button>' +
         '<button type="button" class="mbar__btn" data-act="' + A + '-month" data-v="1" aria-label="다음 달"' + (w.next ? '' : ' disabled') + '>' + svg(CHEV) + '</button></div>' +
       '<div class="dcal">' + cells + '</div>' +
-      '<p class="sheet__sub dcal__note">테두리 = 오늘 · 한 달 전까지 고를 수 있어요</p>' +
+      '<p class="sheet__sub dcal__note">' + esc(w.note || '테두리 = 오늘 · 1년 전까지 고를 수 있어요') + '</p>' + (w.toToday ? '<button type="button" class="mbtn dwtime__go" data-act="' + A + '-pick" data-v="' + esc(w.toToday) + '">오늘로 가기</button>' : '') +
       (w.time != null ? '<div class="dwtime"><label class="dwtime__l" for="dw-time">시각</label><input id="dw-time" class="dwtime__in" type="time" value="' + esc(w.time) + '"></div>' +
         (w.error ? '<p class="rform__error" role="alert">' + esc(w.error) + '</p>' : '') +
         '<button type="button" class="mbtn mbtn--solid dwtime__go" data-act="' + A + '-save"' + (w.saving ? ' disabled' : '') + '>' + (w.saving ? '옮기는 중…' : '바꾸기') + '</button>' : '') +
@@ -290,7 +365,7 @@
       '</section></div>';
   }
 
-  var api = { WAIT_WHY: WAIT_WHY, mealScreen: mealScreen, itemSheet: itemSheet, itemPrev: itemPrev, findSheet: findSheet, goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
+  var api = { settingsScreen: settingsScreen, foodsScreen: foodsScreen, foodSheet: foodSheet, mirror: mirror, goalSum: goalSum, WAIT_WHY: WAIT_WHY, mealScreen: mealScreen, itemSheet: itemSheet, itemPrev: itemPrev, findSheet: findSheet, goalScreen: goalScreen, reco: reco, notes: notes, disc: disc, basisSheet: basisSheet, home: home, logScreen: logScreen, logFoot: logFoot, whenSheet: whenSheet, confirmScreen: confirmScreen, mealName: mealName, GOAL_NAME: GOAL_NAME };
   root.RT = root.RT || {};
   root.RT.viewDiet = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

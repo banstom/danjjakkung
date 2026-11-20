@@ -1778,3 +1778,92 @@ button.lg-entry { display: flex; flex-direction: column; gap: 8px; margin-top: 1
 .dfind__h { margin: 14px 2px 2px; }
 .dfind__list--tab { max-height: 30vh; }
 .diamt__u { width: auto; }
+
+/* 단짝 식탁 D5 · 짝꿍 식탁 (목업 03) */
+.mbar__fill { flex: 1; }
+.dtable__head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 0 0 12px; }
+.dtable__date { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; border: 0; background: none; padding: 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--text); cursor: pointer; }
+.dtable__date:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.dtable__today { margin-top: 6px; }
+.dtable__who { margin-bottom: 10px; }
+.dtable { --P-me: var(--me); --P-her: var(--her); }
+.dtable--swap { --P-me: var(--her); --P-her: var(--me); }
+.dchip { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 700; vertical-align: 1px; }
+.dchip--me { background: var(--P-me, var(--me)); color: var(--me-ink); }
+.dchip--her { background: var(--P-her, var(--her)); color: var(--her-ink); }
+.dtable--swap .dchip--me { color: var(--her-ink); }
+.dtable--swap .dchip--her { color: var(--me-ink); }
+.dchip--both { background: var(--both); color: var(--both-ink); }
+.dgs { padding: 12px 14px; }
+.dgs__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dgs__t { flex: 1; font-size: 14px; font-weight: 700; }
+.dgs__plain { margin: 0; font-size: 14px; color: var(--sub); }
+.dgs__plain b { font-size: 20px; color: var(--text); }
+.dgs__row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 116px; grid-template-areas: "l m v" ". s s"; align-items: center; column-gap: 8px; row-gap: 0; min-height: 30px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.dgs__l { grid-area: l; font-weight: 700; }
+.dgs__m { grid-area: m; height: 8px; border-radius: 4px; background: var(--empty); overflow: hidden; }
+.dgs__f { display: block; height: 100%; border-radius: 4px; }
+.dgs__f--me { background: var(--P-me, var(--me)); }
+.dgs__f--her { background: var(--P-her, var(--her)); }
+.dgs__v { grid-area: v; text-align: right; font-weight: 700; white-space: nowrap; }
+.dgs__g { font-weight: 500; color: var(--sub); }
+.dgs__s { grid-area: s; text-align: right; font-weight: 700; white-space: nowrap; margin-top: -2px; }
+.dgs__s--ok { color: var(--text); }
+.dgs__s--left { color: var(--sub); }
+.dgs__s--over { color: var(--strong); }
+@media (min-width: 360px) { .dgs__row { grid-template-columns: 44px minmax(0, 1fr) 116px 80px; grid-template-areas: "l m v s"; } .dgs__s { margin-top: 0; } }
+.dmr { margin-top: 10px; padding: 12px 12px 10px; }
+.dmr__tip { margin: 0 0 6px; min-height: 18px; font-size: 12px; font-weight: 700; color: var(--sub); font-variant-numeric: tabular-nums; }
+.dmr__box { position: relative; height: 268px; }
+.dmr__half { position: absolute; left: 0; right: 0; height: 116px; }
+.dmr__half--me { top: 0; }
+.dmr__half--her { bottom: 0; }
+.dmr__band { position: absolute; left: 0; right: 0; top: 116px; height: 36px; border-radius: 8px; background: var(--raised); }
+.dmr__row { position: absolute; left: 0; right: 0; height: 18px; }
+.dmr__row:first-of-type { top: 0; }
+.dmr__row + .dmr__row { bottom: 0; }
+.dmr__ax { position: absolute; top: 11px; font-size: 10px; color: var(--faint); }
+.dmr__ax--l { left: 4px; } .dmr__ax--r { right: 4px; }
+.dmr__t, .dmr__chip { position: absolute; top: 2px; transform: translateX(-50%); font-size: 10px; font-weight: 600; color: var(--sub); white-space: nowrap; line-height: 14px; font-variant-numeric: tabular-nums; }
+.dmr__chip { top: 9px; padding: 0 5px; border-radius: 999px; background: var(--both); color: var(--both-ink); font-weight: 700; line-height: 18px; z-index: 1; }
+.dmr__bgs { position: absolute; inset: 0; pointer-events: none; }
+.dmr__bg { position: absolute; top: 4px; bottom: 4px; width: 28px; transform: translateX(-50%); border-radius: 8px; background: color-mix(in srgb, var(--both) 30%, var(--surface)); }
+.dmr__bar { position: absolute; width: 16px; min-height: 8px; margin-left: -8px; padding: 0; border: 0; display: flex; flex-direction: column; gap: 1px; background: none; cursor: pointer; }
+.dmr__half--me .dmr__bar { bottom: 0; }
+.dmr__half--her .dmr__bar { top: 0; }
+.dmr__half--me .dmr__s:first-child { border-radius: 4px 4px 0 0; }
+.dmr__half--her .dmr__s:last-child { border-radius: 0 0 4px 4px; }
+.dmr__bar--me { --P: var(--P-me); }
+.dmr__bar--her { --P: var(--P-her); }
+.dmr__bar.is-on { outline: 2px solid var(--text); outline-offset: 1px; }
+.dmr__bar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dmr__bar::before { content: ""; position: absolute; inset: -14px -10px; } /* 누르는 자리 넓히기 */
+.dmr__s { display: block; min-height: 2px; }
+.dmr__s--carb { background: var(--P, var(--P-me)); }
+.dmr__s--pro { background: color-mix(in srgb, var(--P, var(--P-me)) 58%, var(--surface)); }
+.dmr__s--fat { background: color-mix(in srgb, var(--P, var(--P-me)) 28%, var(--surface)); }
+.dmr__kc { position: absolute; transform: translateX(-50%); font-size: 10px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; pointer-events: none; }
+.dmr__who { position: absolute; left: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; pointer-events: none; }
+.dmr__who--me { top: 0; } .dmr__who--her { bottom: 0; }
+.dmr__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dmr__dot--me { background: var(--P-me); } .dmr__dot--her { background: var(--P-her); }
+.dmr__lg { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--sub); }
+.dmr__lg span { display: inline-flex; align-items: center; gap: 4px; }
+.dmr__sw { --P: var(--P-me); display: inline-block; width: 12px; height: 10px; border-radius: 3px; }
+.dmr__sw--both { background: color-mix(in srgb, var(--both) 30%, var(--surface)); }
+.dtable__sec { margin-top: 16px; }
+.dtable__list { padding-top: 0; padding-bottom: 0; list-style: none; margin: 0; }
+.dfast { display: flex; align-items: center; gap: 10px; min-height: 28px; padding-left: 14px; font-size: 12px; font-weight: 600; color: var(--sub); border-bottom: 1px solid var(--divider); font-variant-numeric: tabular-nums; }
+.dfast__d { width: 0; height: 16px; border-left: 2px dotted var(--faint); }
+.dmeal__btn--ro { cursor: default; }
+.dcal__d { position: relative; }
+.dcal__dot { position: absolute; left: 50%; bottom: 4px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor; }
+.dfood__r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.dfood__note { margin-top: 10px; font-size: 12px; }
+.dfe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.dfe__f { display: flex; flex-direction: column; gap: 4px; }
+.dfe__l { font-size: 13px; font-weight: 700; }
+.dfe__w { position: relative; display: flex; align-items: center; }
+.dfe__in { width: 100%; min-height: 48px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 14px; background: var(--input-bg); padding: 0 44px 0 12px; font: inherit; font-size: 16px; color: var(--text); }
+.dfe__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dfe__u { position: absolute; right: 12px; font-size: 13px; color: var(--sub); pointer-events: none; }

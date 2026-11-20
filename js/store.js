@@ -223,6 +223,13 @@
         return db.collection('foods').onSnapshot(function (q) { var out = {}; q.docs.forEach(function (doc) { var d = doc.data(); if (d && d.name) out[d.name] = d; }); next(out); }, fail);
       },
       setFood: function (id, food) { return db.doc('foods/' + id).set(food); },
+      deleteFood: function (id) { return db.doc('foods/' + id).delete(); },
+      /** 그 기간에 기록이 있는 날 { 'YYYY-MM-DD': true } (둘 다 — 짝꿍 식탁 달력의 점) */
+      mealMonth: function (from, to) {
+        return db.collection('meals').where('date', '>=', from).where('date', '<=', to).get().then(function (q) {
+          var out = {}; q.docs.forEach(function (doc) { var d = doc.data(); if (d && d.date && d.meals && d.meals.length) out[d.date] = true; }); return out;
+        });
+      },
       watchMealDay: function (uid, date, next, fail) {
         return db.doc('meals/' + uid + '_' + date).onSnapshot(function (snap) { next(snap.exists ? snap.data() : null); }, fail);
       },

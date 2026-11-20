@@ -72,7 +72,7 @@ const FAKE_FIREBASE = `
       return filters.every(function (f) {
         if (!(f[0] in v) || v[f[0]] === null && f[1] !== '==') return false;
         var a = v[f[0]], b = f[2];
-        return f[1] === '==' ? a === b : f[1] === '>=' ? a >= b : f[1] === '<' ? a < b : false;
+        return f[1] === '==' ? a === b : f[1] === '>=' ? a >= b : f[1] === '<=' ? a <= b : f[1] === '<' ? a < b : false;
       });
     }
     function keys() {
@@ -1277,9 +1277,10 @@ async function tick(page, dateKey, key) {
   assert.strictEqual(gl.kind, 'bulk'); assert.ok(Math.abs(gl.kcal - 2853.74) < 0.1, '목표 칼로리 소수 그대로'); assert.strictEqual(gl.protein, 150); assert.strictEqual(gl.edited, true);
   assert.deepStrictEqual(pv.edits, { protein: 150 }, '고친 줄만 기록');
   assert.ok(!('weightKg' in gl) && !('body' in gl), '목표 문서엔 몸 정보 없음');
-  assert.match(await jm.textContent('.dgc'), /2,854kcal[^]*단 150g/);
+  assert.match(await jm.textContent('.dgs'), /벌크업 목표 대비[^]*2,854kcal[^]*150g/, 'D5: 첫 화면 목표 대비 요약');
   await jm.screenshot({ path: path.join(OUT, 'diet-home.png'), fullPage: true });
-  // 다시 열면 고치기 화면은 저장된 값으로 · 근거 확인은 다시 안 물음
+  // 다시 열면 고치기 화면은 저장된 값으로 · 근거 확인은 다시 안 물음 (목표 고치기는 ⚙ 식단 설정 안)
+  await jm.click('[data-act="ds-open"]'); await jm.waitForSelector('#ds-title'); assert.match(await jm.textContent('.dscreen'), /내 목표[^]*2,854kcal/);
   await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
   assert.strictEqual(await jm.inputValue('#dg-weight'), '70'); assert.match(await jm.textContent('.dscreen .caption'), /내 목표 고치기/);
   assert.match(await jm.textContent('#dg-reco'), /150g[^]*고친 값|고친 값[^]*150g/, '다시 열면 고친 줄만 고친 값');
@@ -1303,7 +1304,8 @@ async function tick(page, dateKey, key) {
   await dj.click('[data-act="dg-start"]'); await dj.waitForSelector('#dbasis-title'); await dj.click('[data-act="dg-basis-ok"]'); await dj.waitForTimeout(300);
   assert.ok(!(docs.get('private/' + djUid0) || {}).body, '직접 입력이면 몸 정보 저장 안 함');
   assert.strictEqual(docs.get('goals/' + djUid0).kcal, 1800);
-  assert.match(await dj.textContent('.mscreen'), /준민 님 목표[^]*감량/, '단짝 화면에 내 목표(숫자만)');
+  await dj.click('[data-act="dt-who"][data-v="her"]'); await dj.waitForTimeout(60);
+  assert.match(await dj.textContent('.dgs'), /준민[^]*감량 목표 대비/, '단짝 화면에 내 목표(숫자만)');
   assert.ok(!/70kg|175cm|25세/.test(await dj.textContent('.mscreen')), '단짝 화면에 몸 정보 없음');
   await dj.click('[data-act="diet-close"]');
   // 뒤로가기 = 「전체」로, 카드에 내 목표 칼로리
@@ -1311,7 +1313,7 @@ async function tick(page, dateKey, key) {
   assert.ok(await jm.$('.all'), '뒤로가기는 단짝 식탁만 닫음');
   assert.match(await jm.textContent('[data-act="all-diet"] .afeat__ds'), /하루 [\d,]+kcal/);
   // 320px · 어두운 테마
-  await jm.click('[data-act="all-diet"]'); await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
+  await jm.click('[data-act="all-diet"]'); await jm.click('[data-act="ds-open"]'); await jm.click('[data-act="dg-open"]'); await jm.waitForSelector('#dg-title');
   await jm.setViewportSize({ width: 320, height: 640 }); await jm.evaluate(() => RT.themes.apply('cosmic-dream')); await jm.waitForTimeout(120);
   assert.ok(await jm.evaluate(() => { const s = document.querySelector('.dscreen'); return s.scrollWidth <= s.clientWidth + 1; }), '320px 목표 화면 넘치지 않음');
   await jm.screenshot({ path: path.join(OUT, 'diet-goal-dark-320.png') });
@@ -1320,7 +1322,7 @@ async function tick(page, dateKey, key) {
   console.log('단짝 식탁 D2 확인 끝 (추천 · 고치기 · 근거 확인 · private/goals · 직접 입력 · 단짝 화면 · 뒤로 · 320px)');
   // 4-1a7) (D3) 기록하기 → 확인 카드 → 저장 · 정리 대기 · 단짝 화면 · 지우기
   await jm.click('[data-act="all-diet"]'); await jm.waitForSelector('[data-act="dl-open"]');
-  assert.match(await jm.textContent('.dtoday'), /아직 오늘 기록이 없어요/);
+  assert.match(await jm.textContent('.dtable'), /이날 기록이 없어요/);
   await jm.click('[data-act="dl-open"]'); await jm.waitForSelector('#dl-text');
   assert.strictEqual(await jm.evaluate(() => document.activeElement.id), 'dl-text', '열면 바로 적기');
   await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; }, null, { timeout: 8000 });
@@ -1347,10 +1349,12 @@ async function tick(page, dateKey, key) {
   assert.deepStrictEqual(ml.pending.map((x) => x.raw), ['우리집 특제 볶음']);
   assert.deepStrictEqual(ml.items.map((x) => x.ref.key), ['사과_생것', '달걀_생것', '쌀밥']);
   assert.strictEqual(ml.items[2].est, '공기 기본값 210g'); assert.strictEqual(ml.items[2].grams, 315);
-  assert.match(await jm.textContent('.dtoday'), /12:40[^]*점심[^]*함께[^]*정리 대기 1/);
+  assert.match(await jm.textContent('.dtable__list'), /아침 전 공복 · 어제 기록 없음[^]*12:40[^]*점심[^]*함께[^]*정리 대기 1/);
   await jm.screenshot({ path: path.join(OUT, 'diet-today.png') });
-  await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('.dtoday');
-  await dj.waitForFunction(() => /준민 님 오늘 [\d,]+kcal · 1끼/.test(document.querySelector('.dtoday').textContent));
+  await dj.click('[data-act="all-diet"]'); await dj.waitForSelector('.dtable');
+  await dj.waitForFunction(() => document.querySelectorAll('.dmr__bar--me').length === 0 && document.querySelectorAll('.dmr__bar--her').length === 1, null, { timeout: 5000 }); // 단짝 화면: 준민 끼니는 아래(단짝 쪽) 기둥
+  await dj.click('[data-act="dt-who"][data-v="her"]'); await dj.waitForFunction(() => /12:40[^]*점심/.test(document.querySelector('.dtable__list').textContent));
+  assert.ok(!(await dj.$('.dtable__list [data-act="dm-open"]')), '단짝 끼니는 열어 고칠 수 없음');
   await dj.click('[data-act="diet-close"]');
   // 시각을 안 적으면 지금 · 두 번째 끼니는 시각 순
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
@@ -1455,7 +1459,7 @@ async function tick(page, dateKey, key) {
   assert.ok(docs.get('meals/' + jmUid0 + '_' + d2.w), '5일 전 문서에');
   await jm.click('[data-act="dl-open"]'); await jm.click('[data-act="dl-when"]'); await jm.waitForSelector('#dw-title');
   await jm.click('[data-act="dl-when-month"][data-v="-1"]'); await jm.waitForTimeout(40);
-  assert.ok(await jm.evaluate(() => [...document.querySelectorAll('.dcal__d')].some((b) => b.disabled)), '한 달 넘은 날은 못 누름');
+  assert.ok(await jm.evaluate(() => [...document.querySelectorAll('.dcal__d')].every((b) => !b.disabled)), '지난 달도 (1년 안이면) 누를 수 있음');
   assert.notStrictEqual(await jm.evaluate(() => document.activeElement.tagName), 'BODY', '달을 넘겨도 포커스가 시트 안에');
   await jm.keyboard.press('Escape'); await jm.waitForTimeout(120);
   assert.ok(!(await jm.$('#dw-title')) && await jm.$('#dl-text'), 'Esc 는 날짜 시트만 닫음');
@@ -1464,7 +1468,19 @@ async function tick(page, dateKey, key) {
   await jm.click('[data-act="dl-open"]'); await jm.waitForFunction(() => { const b = document.querySelector('[data-act="dl-go"]'); return b && !b.disabled; });
   await jm.fill('#dl-text', '사과 1개'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('#dc-title');
   await jm.keyboard.press('Escape'); await jm.waitForSelector('#dl-text'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(100);
-  assert.ok(!(await jm.$('#dl-text')) && await jm.$('.dtoday'), 'Esc 두 번이면 첫 화면');
+  assert.ok(!(await jm.$('#dl-text')) && await jm.$('.dtable'), 'Esc 두 번이면 첫 화면');
+  // D5 짝꿍 식탁: 거울 차트(기둥 = 끼니) · 누르면 비율 · 공복 · 날짜 달력(점) · 어제로 · 오늘로 가기
+  const nBars = await jm.$$eval('.dmr__bar--me', (e) => e.length), nMine = docs.get('meals/' + jmUid0 + '_' + today).meals.length;
+  assert.strictEqual(nBars, nMine, '내 끼니마다 위 기둥');
+  await jm.click('.dmr__bar--me'); assert.match(await jm.textContent('.dmr__tip'), /준민 \d\d:\d\d [^·]+ · [\d,]+kcal · 탄 \d+% · 단 \d+% · 지 \d+%/);
+  assert.match(await jm.textContent('.dtable__list'), /공복 \d+시간/);
+  await jm.click('[data-act="dt-cal"]'); await jm.waitForSelector('#dw-title'); assert.match(await jm.textContent('#dw-title'), /날짜 고르기/);
+  await jm.waitForFunction(() => document.querySelector('.dcal__d.is-on .dcal__dot'), null, { timeout: 5000 });
+  const yKeyT = await jm.evaluate(() => RT.dates.toKey(RT.dates.fromLocal(new Date()) - 1));
+  await jm.click('[data-act="dt-cal-pick"][data-v="' + yKeyT + '"]'); await jm.waitForFunction(() => /어제/.test(document.querySelector('.dtable__date').textContent));
+  assert.ok(await jm.$('[data-act="dt-today"]'), '지난 날엔 오늘로 가기');
+  assert.match(await jm.textContent('.dtable__list'), /19:00[^]*저녁/, '어제 기록 (앞 시험에서 어제로 적은 끼니)');
+  await jm.click('[data-act="dt-today"]'); await jm.waitForFunction(() => /오늘/.test(document.querySelector('.dtable__date').textContent) && document.querySelectorAll('.dmr__bar--me').length > 0);
   await jm.setViewportSize({ width: 320, height: 640 }); await jm.waitForTimeout(100);
   assert.ok(await jm.evaluate(() => document.documentElement.scrollWidth <= 320), '320px 첫 화면 넘치지 않음');
   await jm.setViewportSize({ width: 390, height: 844 });
@@ -1542,7 +1558,8 @@ async function tick(page, dateKey, key) {
   // 정리 대기 끼니 「정리」 → 다시 정리해 바꿔 끼움 (끼니 수 그대로, 정리 대기 없어짐)
   const nFix = docs.get('meals/' + jmUid0 + '_' + today).meals.length;
   aiReplies.push({ body: { result: { result: { meals: [{ at: '12:00', kind: 'meal', items: [{ name: '덮밥 밥', amount: 1, unit: '공기', match: { kind: 'table', key: '쌀밥' } }] }], unknowns: [] } } } });
-  await jm.click('[data-act="dm-open"]:has-text("우리집 특제 덮밥")'); await jm.click('[data-act="dd-ai"]'); await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
+  const dupId = docs.get('meals/' + jmUid0 + '_' + today).meals.find((m) => m.pending.some((x) => x.raw === '우리집 특제 덮밥')).id;
+  await jm.click('[data-act="dm-open"][data-v="' + dupId + '"]'); await jm.click('[data-act="dd-ai"]'); await jm.waitForFunction(() => /AI가 정리했어요/.test((document.querySelector('.dai') || {}).textContent || ''));
   assert.match(aiCalls[aiCalls.length - 1].data.text, /우리집 특제 덮밥/, '적었던 글로 다시');
   await jm.click('[data-act="dl-save"]'); await jm.waitForTimeout(250);
   const fixed = docs.get('meals/' + jmUid0 + '_' + today).meals;
@@ -1627,6 +1644,21 @@ async function tick(page, dateKey, key) {
   await jm.fill('#dl-text', '라면 2봉지'); await jm.click('[data-act="dl-go"]'); await jm.waitForSelector('[data-act="dl-save"]');
   assert.strictEqual(aiCalls.length, nAi2); assert.match(await jm.textContent('.drow__vl'), /1,001/);
   await jm.keyboard.press('Escape'); await jm.keyboard.press('Escape'); await jm.waitForTimeout(80);
+  // 내 식품 (⚙ → 내 식품): 줄마다 1단위 kcal · 등록한 사람 · 고치면 알려 준 값 · 지우기
+  await jm.click('[data-act="ds-open"]'); await jm.click('[data-act="df-open"]'); await jm.waitForSelector('#df-title');
+  const fl = await jm.textContent('.dscreen:has(#df-title)');
+  assert.match(fl, /라면[^]*식약처 신라면[^]*1봉지 500kcal[^]*준민 등록/); assert.match(fl, /임팩트웨이프로틴[^]*알려 준 값 · 일부 AI 추정/);
+  await jm.click('[data-act="df-item"][data-v="임팩트웨이프로틴"]'); await jm.waitForSelector('#dfe-kcal');
+  assert.strictEqual(await jm.inputValue('#dfe-protein'), '21');
+  await jm.fill('#dfe-carb', '3'); await jm.click('[data-act="dfe-save"]'); await jm.waitForFunction(() => !document.getElementById('dfe-kcal'));
+  const fImp = [...docs.entries()].find(([k, v]) => k.startsWith('foods/') && v.name === '임팩트웨이프로틴')[1];
+  assert.strictEqual(fImp.carb, 3); assert.strictEqual(fImp.src, 'user'); assert.deepStrictEqual(fImp.user, ['kcal', 'carb', 'protein'], '고친 칸만 알려 준 값으로 (지방은 AI 추정 그대로)');
+  await jm.click('[data-act="df-item"][data-v="라면"]'); await jm.waitForSelector('#dfe-kcal');
+  await jm.click('[data-act="dfe-del"]'); await jm.click('[data-act="dfe-del"]'); await jm.waitForFunction(() => !document.getElementById('dfe-kcal'));
+  assert.ok(![...docs.entries()].some(([k, v]) => k.startsWith('foods/') && v && v.name === '라면'), '지우기');
+  assert.ok(!/라면/.test(await jm.textContent('.dscreen:has(#df-title)')));
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(60); assert.ok(await jm.$('#ds-title'), 'Esc 하나에 한 겹');
+  await jm.keyboard.press('Escape'); await jm.waitForTimeout(60); assert.ok(!(await jm.$('#ds-title')));
   await jm.click('[data-act="diet-close"]'); await jm.waitForSelector('.all');
   // 회귀(점검 AI): 식품표를 받는 동안 적은 글은 다 받은 뒤에도 그대로
   await dj.route('**/data/foods-kr.json', async (r) => { await new Promise((ok) => setTimeout(ok, 700)); await r.continue(); });
