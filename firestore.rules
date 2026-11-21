@@ -701,6 +701,18 @@ service cloud.firestore {
         && request.resource.data.shown.size() <= 9;
       allow delete: if false;
     }
+    // 출출 쿠키 꿍으로 알려 주기 (spec 8절 — 꿍 문서는 글을 못 붙여서 전용 문서): 오늘 먹을 쿠키 하나에 사람마다 한 번, 만들기만. 서버가 단짝에게 알림
+    match /eatPings/{id} {
+      allow create: if isMember()
+        && request.resource.data.keys().hasOnly(['by', 'eatId', 'food', 'at'])
+        && request.resource.data.by == request.auth.uid
+        && id == request.resource.data.eatId + '_' + request.auth.uid
+        && request.resource.data.at == request.time
+        && get(/databases/$(database)/documents/eats/$(request.resource.data.eatId)).data.state == 'today'
+        && get(/databases/$(database)/documents/eats/$(request.resource.data.eatId)).data.food == request.resource.data.food;
+      allow read, update, delete: if false;
+    }
+
     // 월말 · 연말결산 (docs/recap): recaps/<YYYY-MM | YYYY> — 서버 함수(monthlyRecap)만 쓴다. 둘 다 읽기만
     match /recaps/{key} {
       allow read: if isMember();

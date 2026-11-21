@@ -10,6 +10,7 @@
    - monthlyRecap   : 매달 1일 03:00 지난달 결산(1월 1일엔 작년 한 해도) → recaps/{key} (docs/recap)
    - questionDaily  : 매일 21:00 교환 쪽지 — 그날 질문이 없으면 만들고(앱과 같은 모듈), 아직 안 남긴 사람에게 (users.qRemind=false 면 안 보냄)
    - questionAnswered: 교환 쪽지를 처음 남기면 단짝에게 (오늘 질문만, users.qPartner=false 면 안 보냄, 글은 안 넣음)
+   - onEatPing      : 출출 쿠키 「꿍으로 알려 주기」 — 단짝에게 「단짝이 출출 쿠키를 깼어요 · 오늘은 ○○ 어때요?」
    - recapNotify    : 매달 1일 09:00 「11월의 단짝꿍이 나왔어요」 (1월 1일엔 연말결산 하나만, users.recap=false 면 안 보냄)
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
@@ -20,6 +21,7 @@ const admin = require('firebase-admin');
 const N = require('./notify');
 const RJ = require('./recap-job');
 const QJ = require('./question-job');
+const ET = require('./shared/eat-text');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -250,6 +252,17 @@ exports.questionDaily = onSchedule({ schedule: '0 21 * * *', timeZone: 'Asia/Seo
 });
 exports.questionAnswered = onDocumentCreated('qdays/{date}/a/{uid}', async (event) => {
   await QJ.runAnswered(db, { date: event.params.date, author: event.params.uid }, new Date(), { send: sendTo, once, appUrl: APP_URL });
+});
+
+// 출출 쿠키 · 꿍으로 알려 주기 (docs/eat 8절): eatPings 문서가 생기면 단짝에게 — 고른 음식 이름만 (메모 · 가게는 안 넣음). 짝꿍 알림을 끄면 안 보냄
+exports.onEatPing = onDocumentCreated('eatPings/{id}', async (event) => {
+  const d = event.data && event.data.data();
+  if (!d || typeof d.by !== 'string' || typeof d.food !== 'string') return;
+  if (!(await once(`eat_${event.params.id}`))) return;
+  for (const p of await partnersOf(d.by)) {
+    if (!(await prefsFor(p)).partner) continue;
+    await sendTo(p, { title: ET.T.pushTitle, body: ET.T.pushBody(d.food.slice(0, 20)) }, 'eat', 'eat', `${APP_URL}?tab=all&open=eat`);
+  }
 });
 
 // 단짝 식탁(parseMeal · findProduct)은 11-20에 폐기 — 함수를 지워 AI 비용을 멈춤 (docs/diet 기록, 데이터는 남김)

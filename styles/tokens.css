@@ -411,3 +411,15 @@
   --sec-dot: #9FD08F; --deco-a: #D98AA2; --deco-b: #EBD9A8; --dash: #4B4166;
   --bg-art: url('../themes/spring-picnic/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/spring-picnic/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
+
+/* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
+   쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
+   밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
+:root {
+  --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
+  --ck-paper: var(--surface);
+}
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"] {
+  --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
+  --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
+}

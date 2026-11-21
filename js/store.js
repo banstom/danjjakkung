@@ -497,6 +497,8 @@
           });
         });
       },
+      /** 꿍으로 알려 주기 (spec 8절): eatPings/<쿠키 id>_<나> — 쿠키 하나에 한 번, 만들기만. 서버가 단짝에게 「단짝이 ○○를 깼어요 · 오늘은 ○○ 어때요?」 */
+      eatPing: function (uid, eatId, food) { return db.doc('eatPings/' + eatId + '_' + uid).set({ by: uid, eatId: eatId, food: food, at: ts() }); },
       /** 먹은 뒤 별점 · 한 줄 (자기 칸만) */
       rateEat: function (id, uid, stars, note) {
         var p = {}; p['stars.' + uid] = stars; if (note) p['notes.' + uid] = note;

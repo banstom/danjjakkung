@@ -1,0 +1,158 @@
+/* 출출 쿠키 (docs/eat) — 목업 design/mockups/chosen/eat/ 의 부품을 옮김. 색은 토큰만 (쿠키 그림 색 --ck-* 는 tokens.css, 가이드라인 예외 5번) */
+.ek { --ek-paper: var(--surface); --ek-crease: color-mix(in srgb, var(--text) 8%, transparent);
+  --ek-lid: color-mix(in srgb, var(--accent) 38%, var(--surface)); --ek-lid-dk: color-mix(in srgb, var(--accent) 58%, var(--surface));
+  --ek-glass: color-mix(in srgb, var(--surface) 55%, transparent); --ek-glass-hi: color-mix(in srgb, var(--surface) 85%, transparent);
+  padding-bottom: 88px; }
+.ek-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+/* 쿠키 그림 (js/eat-cookie-svg.js) — 크기는 --s 하나 */
+.ck { --s: 64px; position: relative; display: inline-block; width: var(--s); height: calc(var(--s) * .7); flex-shrink: 0; line-height: 0; }
+.ck.open { height: calc(var(--s) * .85); }
+.ck svg { display: block; overflow: visible; }
+.kk .k-b { fill: var(--ck); }
+.kk .k-m { fill: var(--ck-mid); }
+.kk .k-d { fill: var(--ck-dk); }
+.kk .k-h { fill: var(--ck-hi); }
+.kk .k-p { fill: var(--ck-paper); }
+.kk .k-l { fill: color-mix(in srgb, var(--ck-ol) 35%, var(--ck-paper)); }
+.kk .k-w { fill: var(--me); }
+.kk.her .k-w { fill: var(--her); }
+.kk .k-s { fill: var(--text); opacity: .1; }
+.kk-sticker .k-halo { fill: var(--ck-paper); stroke: var(--ck-paper); stroke-width: 9; stroke-linejoin: round; }
+.kk-sticker .k-ol { fill: none; stroke: var(--ck-ol); stroke-width: 2.6; stroke-linejoin: round; }
+.kk-sticker .k-olp { stroke: var(--ck-ol); stroke-width: 2.2; }
+.kk-sticker .k-cr { fill: none; stroke: var(--ck-ol); stroke-width: 2.4; stroke-linecap: round; opacity: .8; }
+
+/* 유리병 */
+.ek-jar { position: relative; width: 250px; height: 292px; margin: 8px auto 0; }
+.ek-jar__lid { position: absolute; left: 50%; top: 0; width: 150px; height: 30px; margin-left: -75px; border-radius: 10px; background: var(--ek-lid); box-shadow: inset 0 -7px 0 var(--ek-lid-dk); z-index: 2; }
+.ek-jar__neck { position: absolute; left: 50%; top: 26px; width: 134px; height: 20px; margin-left: -67px; background: var(--ek-glass); box-shadow: inset 2px 0 0 var(--line), inset -2px 0 0 var(--line); }
+.ek-jar__body { position: absolute; left: 0; right: 0; top: 42px; bottom: 0; border-radius: 46px 46px 58px 58px; background: var(--ek-glass); box-shadow: inset 0 0 0 2px var(--line); overflow: hidden; }
+.ek-jar__body::before { content: ""; position: absolute; left: 20px; top: 26px; width: 11px; height: 118px; border-radius: 6px; background: var(--ek-glass-hi); z-index: 3; }
+.ek-jar__body .ck { position: absolute; --s: 62px; }
+.ek-jar__body .k-s { display: none; }
+.ek-jar__body .ck.is-fresh { z-index: 2; filter: drop-shadow(0 4px 6px color-mix(in srgb, var(--accent) 55%, transparent)); animation: ek-glow 1s ease-out; }
+@keyframes ek-glow { from { transform: translateY(-40px) scale(.7); opacity: .3; } }
+.ek-jar__label { position: absolute; left: 50%; top: 78px; z-index: 3; transform: translateX(-50%) rotate(-3deg); background: var(--ek-paper); border-radius: 8px; padding: 6px 16px 7px; box-shadow: var(--lift); display: flex; align-items: baseline; gap: 2px; white-space: nowrap; }
+.ek-jar__label b { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.ek-jar__label span { font-size: 14px; font-weight: 700; color: var(--sub); }
+.ek-jar__label--empty span { font-size: 15px; color: var(--text); }
+.ek-jar--sm { transform: scale(.62); transform-origin: top center; margin-bottom: -110px; }
+.ek-jarline { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 10px 0 0; font-size: 13px; color: var(--sub); font-weight: 600; flex-wrap: wrap; text-align: center; word-break: keep-all; }
+.ek-jarline .ek-dot + * { margin-right: 4px; }
+.ek-sec { margin: 18px 0 8px; }
+.ek-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.ek-pill { min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--raised); color: var(--text); font: inherit; font-size: 15px; font-weight: 600; }
+.ek-pill[aria-pressed="true"] { background: var(--tint); color: var(--tint-text); font-weight: 700; }
+.ek-hint { margin: 10px 0 0; font-size: 13px; color: var(--sub); line-height: 1.5; word-break: keep-all; }
+.ek-hint--c { text-align: center; }
+.ek-caption { margin: 2px 0 10px; font-size: 13px; color: var(--sub); word-break: keep-all; }
+
+/* 아래 버튼 줄 (탭 바 위) */
+.ek-actions { position: fixed; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 76px); display: flex; gap: 10px; padding: 0 20px; max-width: 480px; margin: 0 auto; z-index: 5; box-sizing: border-box; }
+.ek-actions .ghost-btn, .ek-actions .solid-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-height: 48px; }
+.ek-actions .ek-add { flex: 0 0 auto; padding: 0 18px; color: var(--text); }
+.ek-actions .ek-grow { flex: 1 1 auto; }
+
+/* 오늘 먹을 것 (08) */
+.ek-today { background: var(--tint); border-radius: 22px; padding: 16px 16px 12px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.ek-today__kick { margin: 0; font-size: 13px; font-weight: 700; color: var(--tint-text); }
+.ek-today__food { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; word-break: keep-all; }
+.ek-today__sub { margin: 0; font-size: 13px; color: var(--sub); font-weight: 600; word-break: keep-all; }
+.ek-today__memo { margin: 4px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ek-paper); font-size: 14px; line-height: 1.5; word-break: keep-all; }
+.ek-today__btns { display: flex; gap: 8px; margin-top: 8px; }
+.ek-today__btns .ek-btn { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; min-height: 44px; font-size: 14px; color: var(--text); }
+.ek-today__btns .solid-btn.ek-btn { color: var(--on-primary); }
+.ek-tbtn { align-self: center; min-height: 44px; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 700; color: var(--sub); display: inline-flex; align-items: center; gap: 4px; }
+
+/* 쿠키 넣기 (02) — 접힌 자국 종이 */
+.ek-form { position: relative; background: var(--ek-paper); border-radius: 4px; box-shadow: var(--lift); padding: 18px 18px 16px; margin-top: 10px; display: flex; flex-direction: column; gap: 14px;
+  background-image: linear-gradient(to right, transparent calc(50% - .5px), var(--ek-crease) 50%, transparent calc(50% + .5px)), linear-gradient(to bottom, transparent calc(50% - .5px), var(--ek-crease) 50%, transparent calc(50% + .5px)); }
+.ek-stamp { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.ek-fld { display: flex; flex-direction: column; gap: 6px; position: relative; }
+.ek-fld > span { font-size: 13px; font-weight: 700; color: var(--sub); }
+.ek-fld > span small { margin-left: 4px; font-size: 11px; font-weight: 600; }
+.ek-food { font-size: 20px; font-weight: 700; height: 52px; }
+.ek-count { align-self: flex-end; font-style: normal; font-size: 12px; color: var(--sub); }
+.ek-err { margin: 0; font-size: 13px; font-weight: 600; color: var(--warn); }
+.ek-placebox { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 52px; padding: 0 4px 0 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); box-sizing: border-box; font: inherit; color: var(--text); text-align: left; }
+.ek-placebox b { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 15px; font-weight: 700; }
+.ek-placebox b small { font-size: 12px; font-weight: 500; color: var(--sub); }
+.ek-placebox--empty { color: var(--sub); border-style: dashed; padding-right: 12px; }
+.ek-placebox--empty span { font-size: 15px; font-weight: 600; }
+.ek-res { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--line); background: none; font: inherit; color: var(--text); text-align: left; margin-top: 8px; }
+.ek-res__tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ek-res__tx b { font-size: 15px; font-weight: 700; word-break: keep-all; }
+.ek-res__tx span { font-size: 12px; color: var(--sub); }
+
+/* 깨는 중 (05) */
+.ek-crackrow { display: flex; justify-content: center; align-items: flex-end; gap: 14px; margin-top: 150px; }
+.ek-crackrow .ck { --s: 96px; }
+.ek-crackrow .ck.open { --s: 110px; animation: ek-crack .35s ease-out; }
+@keyframes ek-crack { from { transform: scale(.85) rotate(-6deg); opacity: .6; } }
+.ek-cracknote { text-align: center; margin-top: 48px; }
+.ek-cracknote b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.ek-cracknote span { display: block; margin-top: 6px; font-size: 13px; color: var(--sub); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .ek-crackrow .ck.open, .ek-jar__body .ck.is-fresh { animation: none; } }
+
+/* 펼친 쪽지 (06 · 07) — 교환 쪽지 5의 접힌 자국 종이 */
+.ek-slip { position: relative; box-sizing: border-box; background: var(--ek-paper); border-radius: 4px; box-shadow: var(--lift); padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 6px;
+  background-image: linear-gradient(to right, transparent calc(50% - .5px), var(--ek-crease) 50%, transparent calc(50% + .5px)), linear-gradient(to bottom, transparent calc(50% - .5px), var(--ek-crease) 50%, transparent calc(50% + .5px)); }
+.ek-slip__head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--sub); min-height: 20px; padding-right: 32px; }
+.ek-sp { flex: 1; }
+.ek-slip__food { margin: 2px 0 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; word-break: keep-all; }
+.ek-slip__place { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; min-height: 22px; word-break: keep-all; }
+.ek-slip__place small { color: var(--sub); font-weight: 600; font-size: 12px; }
+.ek-slip__place.is-none { color: var(--sub); font-weight: 600; }
+.ek-slip__place a { margin-left: auto; font-size: 12px; color: var(--tint-text); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.ek-slip__memo { margin: 2px 0 0; font-size: 15px; line-height: 1.55; word-break: keep-all; overflow-wrap: anywhere; }
+.ek-slip__foot { margin: 4px 0 0; font-size: 11px; color: var(--sub); font-weight: 500; }
+.ek-slip--big { padding: 20px 20px 16px; gap: 10px; }
+.ek-slip--big .ek-slip__food { font-size: 32px; }
+.ek-slip--big .ek-slip__memo { font-size: 16px; }
+.ek-slip--compact { padding: 12px 14px 10px; gap: 4px; }
+.ek-slip--compact .ek-slip__food { font-size: 21px; }
+.ek-slip--compact .ek-slip__memo { font-size: 14px; }
+.ek-slist { display: flex; flex-direction: column; gap: 12px; }
+.ek-pick { position: relative; width: 100%; border: 0; padding: 0; background: none; text-align: left; display: block; border-radius: 6px; font: inherit; color: inherit; }
+.ek-ring { position: absolute; right: 12px; top: 12px; width: 26px; height: 26px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--faint); display: flex; align-items: center; justify-content: center; z-index: 2; background: var(--ek-paper); }
+.ek-pick[aria-pressed="true"] .ek-slip { box-shadow: 0 0 0 2.5px var(--strong), var(--lift); }
+.ek-pick[aria-pressed="true"] .ek-ring { background: var(--strong); box-shadow: none; color: var(--surface); }
+
+/* 별점 · 시트 */
+.ek-stars { display: flex; gap: 4px; margin: 10px 0 6px; }
+.ek-star { width: 44px; height: 44px; border: 0; background: none; padding: 0; display: flex; align-items: center; justify-content: center; color: var(--faint); }
+.ek-star.is-on { color: var(--strong); }
+.ek-star.is-on svg { fill: currentColor; }
+.ek-sw { margin-top: 10px; }
+.ek-save { margin-top: 14px; }
+
+/* 넣어 둔 쿠키 (10) */
+.ek-tabs { margin-top: 6px; }
+.ek-list { margin-top: 12px; padding: 4px 16px; }
+.ek-list--empty { text-align: center; padding: 24px 16px; }
+.ek-krow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 8px 0; text-align: left; font: inherit; color: var(--text); box-sizing: border-box; }
+.ek-krow:last-child { border-bottom: 0; }
+.ek-krow .ck { --s: 40px; }
+.ek-krow__tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ek-krow__tx b { font-size: 15px; font-weight: 700; word-break: keep-all; }
+.ek-krow__tx b.is-secret { color: var(--sub); font-weight: 600; }
+.ek-krow__tx span { font-size: 12px; color: var(--sub); font-weight: 500; word-break: keep-all; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ek-krow__d { font-size: 12px; color: var(--sub); font-weight: 600; white-space: nowrap; }
+
+/* 빈 통 (11) */
+.ek-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.ek-step { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--surface); font-size: 14px; font-weight: 700; line-height: 1.45; word-break: keep-all; }
+.ek-step b { width: 26px; height: 26px; border-radius: 50%; background: var(--tint); color: var(--tint-text); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+
+/* 입구 (12) */
+button.ek-entry { display: flex; flex-direction: column; gap: 8px; }
+.ek-entry__head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.ek-entry__head .ck { --s: 44px; }
+.ek-entry__line { font-size: 14px; line-height: 1.45; word-break: keep-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ek-entry__line.is-today { font-weight: 700; }
+.ek-entry__st { display: flex; align-items: center; gap: 6px; margin-top: auto; font-size: 13px; color: var(--sub); font-weight: 700; flex-wrap: wrap; }
+.ek-new { padding: 2px 8px; border-radius: 999px; background: var(--tint); color: var(--tint-text); font-size: 12px; }
+
+.ek-pill:focus-visible, .ek-tbtn:focus-visible, .ek-pick:focus-visible, .ek-star:focus-visible, .ek-krow:focus-visible, .ek-res:focus-visible, .ek-placebox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 340px) { .ek-jar { transform: scale(.88); transform-origin: top center; margin-bottom: -34px; } .ek-actions { padding: 0 12px; gap: 8px; } .ek-actions .ek-add { padding: 0 12px; } .ek-today__btns .ek-btn { font-size: 13px; } }

@@ -112,7 +112,7 @@
     var q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(root.location.search || '');
     var mq = /[?&]map=(\d{5})/.exec(root.location.search || ''); // v54 단짝 지도 알림 → 그 지역 시트
     var rq = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(root.location.search || ''); // 결산 알림 → 그 결산 카드
-    var oq = /[?&]open=(question|eat)/.exec(root.location.search || ''); // 교환 쪽지 · 출출 쿠키 알림 → 그 화면
+    var oq = /[?&]open=(question|eat)/.exec(root.location.search || ''); // 교환 쪽지 · eat(쿠키) 기능 알림 → 그 화면
     if (oq) { state.pendingOpen = oq[1]; if (!q) q = [null, 'all']; }
     if (rq) { state.recap.pending = rq[1]; state.review.mode = 'recap'; if (!q) q = [null, 'look']; }
     if (mq) { state.pendingMap = mq[1]; if (!q) q = [null, 'all']; }
@@ -427,7 +427,7 @@
     if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || !appEl.contains(btn)) return;
     var act = btn.getAttribute('data-act');
     if (act.indexOf('q-') === 0 && qc && qc.act(act, btn)) return; // 교환 쪽지 (js/app-question.js)
-    if (act.indexOf('ek-') === 0 && ec && ec.act(act, btn)) return; // 출출 쿠키 (js/app-eat.js)
+    if (act.indexOf('ek-') === 0 && ec && ec.act(act, btn)) return; // eat(쿠키) 기능 (js/app-eat.js)
     if (act === 'filter') { state.filter = btn.getAttribute('data-id'); state.page = 0; render(); }
     else if (act === 'page') { state.page = state.page + Number(btn.getAttribute('data-dir')); render(); }
     else if (act === 'this-month') { state.page = 0; render(); var cur = appEl.querySelector('.cell.is-today') || appEl.querySelector('[data-act="page"]:not([disabled])'); if (cur) cur.focus({ preventScroll: true }); }
@@ -2036,7 +2036,7 @@
     });
   }
   /** 알림으로 연 지역 (v54): 「전체」 탭 → 단짝 지도 → 지도 데이터가 오면 그 지역 시트 */
-  // ── 교환 쪽지 (docs/question) · 출출 쿠키 (docs/eat) — 화면 상태는 각 모듈(js/app-question.js · js/app-eat.js)이 갖고, 여기선 이어 붙이기만 ──
+  // ── 교환 쪽지 (docs/question) · eat(쿠키) 기능 (docs/eat) — 화면 상태는 각 모듈(js/app-question.js · js/app-eat.js)이 갖고, 여기선 이어 붙이기만 ──
   var qc = null, ec = null;
   function featureHost() {
     return {
@@ -2070,7 +2070,7 @@
     if (f === 'question' && qc && !qc.isOpen()) qc.open();
     if (f === 'eat' && ec && !ec.isOpen()) ec.open();
   }
-  /** 출출 쿠키 → 짝꿍 지도 칠하기: 그 시·군·구에 오늘 방문 기록 (지도의 「다녀왔어요」와 같은 쓰기) */
+  /** eat(쿠키) 기능 → 짝꿍 지도 칠하기: 그 시·군·구에 오늘 방문 기록 (지도의 「다녀왔어요」와 같은 쓰기) */
   function paintFromEat(code, food) {
     if (!store || !state.me || !RT.places) return Promise.reject(new Error('no-map'));
     var uid = state.uid || state.me, now = new Date().toISOString();
@@ -3439,7 +3439,7 @@
       us: usModel(), // 「우리 둘」 박스 (디데이 · 다음 기념일 · 사진)
       map: allMapModel(),
       question: qc ? qc.entryModel() : null, // 교환 쪽지 입구 E1 (식탁 자리)
-      eat: ec ? ec.entryModel() : null,      // 출출 쿠키 입구
+      eat: ec ? ec.entryModel() : null,      // eat(쿠키) 기능 입구
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
       theme: RT.themes ? RT.themes.byId(RT.themes.current()).ko : '',
       meName: state.me ? nameOf(state.me) : '',
@@ -4443,7 +4443,7 @@
       store.watchRoutines(function (list) { state.routineDocs = list; gotRoutines = true; ready(); }, lost),
       // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
       store.watchUser(state.uid, function (doc, fromCache) {
-        state.userDoc = doc || null; // 교환 쪽지 · 출출 쿠키 설정 칸 (qRemind · qPartner · eatDraw* · eatSeenAt)
+        state.userDoc = doc || null; // 교환 쪽지 · eat(쿠키) 기능 설정 칸 (qRemind · qPartner · eatDraw* · eatSeenAt)
         state.prefs = doc && doc.notify ? doc.notify : null;
         state.weeklyOn = !(doc && doc.weekly === false);
         state.recapOn = !(doc && doc.recap === false);

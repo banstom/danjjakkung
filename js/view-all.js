@@ -1,4 +1,4 @@
-/* 「전체」 탭 (v47) — 우리 둘 카드 · 단짝 기능(단짝 지도 · 교환 쪽지 · 출출 쿠키 · 단짝 영수증, 2×2) · 설정 목록, 그리고 계정 시트.
+/* 「전체」 탭 (v47) — 우리 둘 카드 · 단짝 기능(단짝 지도 · 교환 쪽지 · eat(쿠키) 기능 · 단짝 영수증, 2×2) · 설정 목록, 그리고 계정 시트.
    목업 design/mockups/chosen/01-전체-탭.html (B 카드형). 값은 app.js 의 allModel() 이 만든다. */
 (function (root) {
   'use strict';
@@ -56,7 +56,7 @@
       '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('단짝 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +
       '<span class="afeat__nm">단짝 지도</span>' + mapPreview(map.tiles) +
       (map.ready ? '<span class="afeat__ds">함께 ' + esc(map.count || 0) + '곳</span>' : '<span class="abadge">준비 중</span>') + '</button>' +
-      // 11-21: 단짝 식탁 자리 → 교환 쪽지 (docs/question E1) · 출출 쿠키 (docs/eat 12) · 단짝 영수증 — 2×2
+      // 11-21: 단짝 식탁 자리 → 교환 쪽지 (docs/question E1) · eat(쿠키) 기능 (docs/eat 12) · 단짝 영수증 — 2×2
       (m.question && root.RT && root.RT.viewQuestion ? root.RT.viewQuestion.entry(m.question) : '') +
       (m.eat && root.RT && root.RT.viewEat ? root.RT.viewEat.entry(m.eat) : '') +
       (m.ledger && root.RT && root.RT.viewLedger ? root.RT.viewLedger.entryCard(m.ledger, true) : '') + '</div>';
