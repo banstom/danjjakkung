@@ -1,4 +1,4 @@
-/* 「전체」 탭 (v47) — 우리 둘 카드 · 단짝 기능(단짝 지도 · 단짝 식탁) · 설정 목록, 그리고 계정 시트.
+/* 「전체」 탭 (v47) — 우리 둘 카드 · 단짝 기능(단짝 지도 · 교환 쪽지 · 출출 쿠키 · 단짝 영수증, 2×2) · 설정 목록, 그리고 계정 시트.
    목업 design/mockups/chosen/01-전체-탭.html (B 카드형). 값은 app.js 의 allModel() 이 만든다. */
 (function (root) {
   'use strict';
@@ -14,7 +14,6 @@
     bell: '<path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/>',
     palette: '<path d="M12 3a9 9 0 100 18c1.2 0 1.8-.8 1.8-1.7 0-1-.8-1.4-.8-2.3 0-1 .8-1.6 1.8-1.6H17a4 4 0 004-4c0-4.6-4-8.4-9-8.4z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
-    bowl: '<path d="M3.5 11h17a8.5 8.5 0 01-17 0z"/><path d="M8 7c0-1.5 1-1.5 1-3M12 7c0-1.5 1-1.5 1-3M16 7c0-1.5 1-1.5 1-3"/>', // 단짝 식탁
     chev: '<path d="M9 6l6 6-6 6"/>'
   };
 
@@ -57,17 +56,11 @@
       '<button type="button" class="card afeat__card" data-act="all-map" aria-label="' + esc('단짝 지도' + (map.ready ? ' · 함께 ' + (map.count || 0) + '곳' : ' · 준비 중')) + '">' +
       '<span class="afeat__nm">단짝 지도</span>' + mapPreview(map.tiles) +
       (map.ready ? '<span class="afeat__ds">함께 ' + esc(map.count || 0) + '곳</span>' : '<span class="abadge">준비 중</span>') + '</button>' +
-      (function (d) {
-        d = d || {};
-        var line = d.kcal ? '하루 ' + Math.round(d.kcal).toLocaleString('ko-KR') + 'kcal' : '목표 정하기';
-        return '<button type="button" class="card afeat__card" data-act="all-diet" aria-label="' + esc('단짝 식탁 · ' + line) + '">' +
-          '<span class="afeat__nm">단짝 식탁</span>' +
-          // 도트 테마 그림 S2 (그림이 있는 테마에서만, 없으면 그릇 아이콘)
-          '<span class="afeat__ico">' + ((root.RT && root.RT.themes && root.RT.themes.artHtml('s2', 'afeat__art')) || svg(36, ICON.bowl)) + '</span>' +
-          '<span class="afeat__ds">' + esc(line) + '</span></button></div>';
-      })(m.diet);
+      // 11-21: 단짝 식탁 자리 → 교환 쪽지 (docs/question E1) · 출출 쿠키 (docs/eat 12) · 단짝 영수증 — 2×2
+      (m.question && root.RT && root.RT.viewQuestion ? root.RT.viewQuestion.entry(m.question) : '') +
+      (m.eat && root.RT && root.RT.viewEat ? root.RT.viewEat.entry(m.eat) : '') +
+      (m.ledger && root.RT && root.RT.viewLedger ? root.RT.viewLedger.entryCard(m.ledger, true) : '') + '</div>';
     // 단짝 영수증 (docs/ledger L11) — 기능 그리드 아래 가로 꽉 찬 카드
-    if (m.ledger && root.RT && root.RT.viewLedger) feats += root.RT.viewLedger.entryCard(m.ledger);
     var set = '<h2 class="asec">설정</h2><div class="alist">' +
       // 예전 머리말처럼 쓸 수 없을 땐 줄을 숨긴다 (알림 모듈 · 테마 모듈이 없을 때)
       (m.notify ? row('open-notify', 'bell', '알림', '', m.notify, '알림 설정 (' + m.notify + ')') : '') +

@@ -1,0 +1,350 @@
+{
+ "note": "make-fixture.mjs로 만든 11월 1~20일 시험 기록. 오늘 = 2026-11-20. 손으로 고치지 말고 스크립트를 다시 돌리기",
+ "today": "2026-11-20",
+ "ours": [
+  {
+   "id": "o-1",
+   "text": "같이 본 영화 중에 다시 보고 싶은 건요?",
+   "by": "u-junmin",
+   "ask": true,
+   "createdAt": 1793884200000
+  },
+  {
+   "id": "o-2",
+   "text": "요즘 나한테 제일 고마운 사람은 누구예요?",
+   "by": "u-danjjak",
+   "ask": false,
+   "createdAt": 1794222000000
+  },
+  {
+   "id": "o-3",
+   "text": "겨울에 꼭 같이 먹고 싶은 간식은요?",
+   "by": "u-danjjak",
+   "ask": true,
+   "createdAt": 1794666600000
+  },
+  {
+   "id": "o-4",
+   "text": "올해 가장 많이 웃은 날은 언제였어요?",
+   "by": "u-junmin",
+   "ask": false,
+   "createdAt": 1795005600000
+  }
+ ],
+ "days": [
+  {
+   "date": "2026-11-01",
+   "q": "first",
+   "text": "첫 쪽지예요! 요즘 가장 자주 하는 생각은요?",
+   "src": "date",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1793534700000,
+    "u-danjjak": 1793540400000
+   },
+   "likes": {
+    "u-junmin": true,
+    "u-danjjak": true
+   },
+   "createdAt": 1793485800000
+  },
+  {
+   "date": "2026-11-02",
+   "q": "taste-046",
+   "text": "버스나 지하철에서 좋아하는 자리는요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1793617800000,
+    "u-danjjak": 1793628120000
+   },
+   "likes": {},
+   "createdAt": 1793572200000
+  },
+  {
+   "date": "2026-11-03",
+   "q": "imagine-022",
+   "text": "깨고 싶지 않았던 꿈이 있었어요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1793662200000
+   },
+   "likes": {},
+   "createdAt": 1793658600000
+  },
+  {
+   "date": "2026-11-04",
+   "q": "daily-023",
+   "text": "오늘 사진첩에 남긴 사진이 있다면 뭐예요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1793793600000,
+    "u-danjjak": 1793795400000
+   },
+   "likes": {
+    "u-danjjak": true
+   },
+   "createdAt": 1793745000000
+  },
+  {
+   "date": "2026-11-05",
+   "q": "pick-016",
+   "text": "커피 vs 차, 하나만 고른다면요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1793884500000,
+    "u-danjjak": 1793879400000
+   },
+   "likes": {
+    "u-junmin": true
+   },
+   "createdAt": 1793831400000
+  },
+  {
+   "date": "2026-11-06",
+   "q": "o-1",
+   "text": "같이 본 영화 중에 다시 보고 싶은 건요?",
+   "src": "ours",
+   "by": "u-junmin",
+   "skipped": [],
+   "done": {
+    "u-danjjak": 1793960400000
+   },
+   "likes": {},
+   "createdAt": 1793917800000
+  },
+  {
+   "date": "2026-11-07",
+   "q": "imagine-007",
+   "text": "미래의 나에게 질문 하나를 할 수 있다면요?",
+   "src": "base",
+   "by": null,
+   "skipped": [
+    "food-026"
+   ],
+   "done": {
+    "u-junmin": 1794024000000,
+    "u-danjjak": 1794028200000
+   },
+   "likes": {},
+   "createdAt": 1794004200000,
+   "swappedAt": 1794005100000,
+   "swappedBy": "u-junmin"
+  },
+  {
+   "date": "2026-11-08",
+   "q": "pick-039",
+   "text": "노래 부르기 vs 춤추기, 하나만 해야 한다면요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794141900000,
+    "u-danjjak": 1794143100000
+   },
+   "likes": {
+    "u-junmin": true,
+    "u-danjjak": true
+   },
+   "createdAt": 1794090600000
+  },
+  {
+   "date": "2026-11-09",
+   "q": "taste-028",
+   "text": "집에서 제일 좋아하는 자리는 어디예요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794225600000,
+    "u-danjjak": 1794229200000
+   },
+   "likes": {},
+   "createdAt": 1794177000000
+  },
+  {
+   "date": "2026-11-10",
+   "q": "o-2",
+   "text": "요즘 나한테 제일 고마운 사람은 누구예요?",
+   "src": "ours",
+   "by": "u-danjjak",
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794310200000,
+    "u-danjjak": 1794312600000
+   },
+   "likes": {
+    "u-danjjak": true
+   },
+   "createdAt": 1794263400000
+  },
+  {
+   "date": "2026-11-11",
+   "q": "daily-026",
+   "text": "요즘 즐겨 입는 옷은 어떤 거예요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {},
+   "likes": {},
+   "createdAt": 1794349800000
+  },
+  {
+   "date": "2026-11-12",
+   "q": "daily-002",
+   "text": "요즘 가장 자주 듣는 노래는 뭐예요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794486000000,
+    "u-danjjak": 1794488100000
+   },
+   "likes": {},
+   "createdAt": 1794436200000
+  },
+  {
+   "date": "2026-11-13",
+   "q": "taste-002",
+   "text": "비 오는 날 하고 싶은 일은 뭐예요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794574800000,
+    "u-danjjak": 1794567600000
+   },
+   "likes": {
+    "u-junmin": true
+   },
+   "createdAt": 1794522600000
+  },
+  {
+   "date": "2026-11-14",
+   "q": "food-023",
+   "text": "가장 좋아하는 김치나 반찬은요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794652800000,
+    "u-danjjak": 1794665400000
+   },
+   "likes": {},
+   "createdAt": 1794609000000
+  },
+  {
+   "date": "2026-11-15",
+   "q": "o-3",
+   "text": "겨울에 꼭 같이 먹고 싶은 간식은요?",
+   "src": "ours",
+   "by": "u-danjjak",
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794708000000,
+    "u-danjjak": 1794713400000
+   },
+   "likes": {
+    "u-junmin": true,
+    "u-danjjak": true
+   },
+   "createdAt": 1794695400000
+  },
+  {
+   "date": "2026-11-16",
+   "q": "imagine-003",
+   "text": "복권 1등에 당첨되면 제일 먼저 뭘 할래요?",
+   "src": "base",
+   "by": null,
+   "skipped": [
+    "pick-035"
+   ],
+   "done": {
+    "u-junmin": 1794830700000,
+    "u-danjjak": 1794833400000
+   },
+   "likes": {},
+   "createdAt": 1794781800000,
+   "swappedAt": 1794782700000,
+   "swappedBy": "u-junmin"
+  },
+  {
+   "date": "2026-11-17",
+   "q": "daily-021",
+   "text": "이번 주말에 꼭 하고 싶은 일은요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1794913200000
+   },
+   "likes": {},
+   "createdAt": 1794868200000
+  },
+  {
+   "date": "2026-11-18",
+   "q": "taste-015",
+   "text": "가장 좋아하는 책 한 권은요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-junmin": 1795005000000,
+    "u-danjjak": 1795009500000
+   },
+   "likes": {
+    "u-danjjak": true
+   },
+   "createdAt": 1794954600000
+  },
+  {
+   "date": "2026-11-19",
+   "q": "o-4",
+   "text": "올해 가장 많이 웃은 날은 언제였어요?",
+   "src": "ours",
+   "by": "u-junmin",
+   "skipped": [],
+   "done": {
+    "u-junmin": 1795093800000,
+    "u-danjjak": 1795089600000
+   },
+   "likes": {},
+   "createdAt": 1795041000000
+  },
+  {
+   "date": "2026-11-20",
+   "q": "us-007",
+   "text": "우리 둘만 아는 말이 있다면요?",
+   "src": "base",
+   "by": null,
+   "skipped": [],
+   "done": {
+    "u-danjjak": 1795173300000
+   },
+   "likes": {},
+   "createdAt": 1795127400000
+  }
+ ],
+ "answers": {
+  "2026-11-15": {
+   "u-junmin": "호떡! 꿀이 흘러내리는 걸 반으로 나눠 먹기.",
+   "u-danjjak": "붕어빵. 팥 하나 슈크림 하나 사서 바꿔 먹기."
+  },
+  "2026-11-19": {
+   "u-junmin": "강릉 가는 KTX에서 둘 다 잠들었다가 내릴 역을 놓칠 뻔한 날.",
+   "u-danjjak": "속초 케이블카에서 준민 모자가 날아가서 같이 뛰어다닌 날 ㅋㅋ"
+  },
+  "2026-11-20": {
+   "u-danjjak": "「밥 먹었어?」 대신 「배 채웠어?」. 처음엔 오타였는데 이제 우리 말이 됐어요.",
+   "u-junmin:mock": "「꿍 하나만 보내 줘」 — 힘든 날 신호. 다른 사람은 무슨 뜻인지 모를걸요."
+  }
+ }
+}

@@ -15,6 +15,20 @@ test('functions/shared 의 파일마다 js/ 원본과 같다 (sync-shared.sh 목
   for (const f of files) assert.equal(fs.readFileSync(path.join(DIR, f), 'utf8'), fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'), f + ' — bash scripts/sync-shared.sh');
 });
 
+test('교환 쪽지 질문 묶음: 앱(data/) · 서버(functions/shared/) · 원본 빌드 결과(docs/question/data/) 셋이 같다', () => {
+  const a = fs.readFileSync(path.join(ROOT, 'docs/question/data/questions.json'), 'utf8');
+  assert.equal(fs.readFileSync(path.join(ROOT, 'data/questions.json'), 'utf8'), a, 'bash scripts/sync-shared.sh');
+  assert.equal(fs.readFileSync(path.join(DIR, 'questions.json'), 'utf8'), a, 'bash scripts/sync-shared.sh');
+});
+
+test('교환 쪽지: 서버 사본이 앱과 같은 그날 질문을 고른다 (js/ 없이)', () => {
+  const Q = require('../functions/shared/question.js');
+  const bank = require('../functions/shared/questions.json');
+  const p = Q.pickQuestion({ date: '2026-11-20', since: '2026-02-14', bank, history: [{ date: '2026-11-19', q: 'first', src: 'date', skipped: [] }], ours: [] });
+  const A = require('../js/question.js');
+  assert.deepEqual(p, A.pickQuestion({ date: '2026-11-20', since: '2026-02-14', bank: require('../data/questions.json'), history: [{ date: '2026-11-19', q: 'first', src: 'date', skipped: [] }], ours: [] }));
+});
+
 test('사본만으로 서버에서 불러와진다 (js/ 없이)', () => {
   const S = require('../functions/shared/schedule.js');
   const evs = S.fromDocs([{ id: 'e', owner: 'both', title: '산책', weekly: true, weekdays: [0, 2], weekday: null, start: '20:00', end: '21:00', from: '2026-11-01' }]);

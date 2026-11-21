@@ -8,21 +8,18 @@
    - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
    - onPlaceWritten : 단짝 지도에 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「별점을 남겨 주세요」 (v54, 누르면 그 지역 시트)
    - monthlyRecap   : 매달 1일 03:00 지난달 결산(1월 1일엔 작년 한 해도) → recaps/{key} (docs/recap)
+   - questionDaily  : 매일 21:00 교환 쪽지 — 그날 질문이 없으면 만들고(앱과 같은 모듈), 아직 안 남긴 사람에게 (users.qRemind=false 면 안 보냄)
+   - questionAnswered: 교환 쪽지를 처음 남기면 단짝에게 (오늘 질문만, users.qPartner=false 면 안 보냄, 글은 안 넣음)
    - recapNotify    : 매달 1일 09:00 「11월의 단짝꿍이 나왔어요」 (1월 1일엔 연말결산 하나만, users.recap=false 면 안 보냄)
-   - parseMeal      : 단짝 식탁 — 적은 끼니 글을 Claude Haiku 로 구조만 정리 (영양 숫자는 앱이 계산, D4). 키는 Secret Manager
    기기 주소는 users/<uid>/devices/<기기> 에 있고, 못 쓰게 된 주소는 보낼 때 지운다. */
 'use strict';
 const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
-const { defineSecret } = require('firebase-functions/params');
-const M = require('./meal');
-const P = require('./products');
-const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
 const admin = require('firebase-admin');
 const N = require('./notify');
 const RJ = require('./recap-job');
+const QJ = require('./question-job');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -246,65 +243,16 @@ exports.recapNotify = onSchedule({ schedule: '0 9 1 * *', timeZone: 'Asia/Seoul'
   const sent = await RJ.runNotify(db, new Date(), { send: sendTo, once, appUrl: APP_URL });
   logger.info('결산 알림', sent.length);
 });
-/* 단짝 식탁 · 끼니 정리 (D4). 앱이 { text, today, state, table? } 를 보내면 정리한 구조를 돌려준다.
-   - state 에 넣는 것(D3 앱 코드): 저장된 레시피 · 내 식품 이름과 재료, 내 단위(정했는지), 오늘 기록, 물은 질문 — 몸 정보 · 목표는 넣지 않는다
-   - 두 사람(members)만 · 한 사람 하루 LIMITS.perDay 번까지 (aiUse/{uid_날짜}, 앱 규칙엔 없어 앱은 못 읽고 못 씀)
-   - 몸 정보는 받지 않는다. 영양 숫자는 nutrition 칸만 남기고, 사용자가 적었다는 숫자는 글에 있는지 확인 (meal.sanitize) */
-exports.parseMeal = onCall({ secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '256MiB', maxInstances: 3 }, async (req) => {
-  const uid = req.auth && req.auth.uid;
-  if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
-  const mem = await db.doc(`members/${uid}`).get();
-  if (!mem.exists) throw new HttpsError('permission-denied', '단짝꿍 멤버만 쓸 수 있어요');
-  const bad = M.badInput(req.data);
-  if (bad) throw new HttpsError('invalid-argument', bad);
-  const useRef = db.doc(`aiUse/${M.dayKey(uid)}`);
-  const used = await db.runTransaction(async (tx) => {
-    const d = await tx.get(useRef);
-    const n = (d.exists && d.data().n) || 0;
-    if (n >= M.LIMITS.perDay) return -1;
-    tx.set(useRef, { n: n + 1, uid, at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    return n + 1;
-  });
-  if (used < 0) throw new HttpsError('resource-exhausted', '오늘은 정리를 많이 했어요. 내일 다시 해 주세요');
-  // 실패하면 오늘 횟수를 돌려준다 (모델 오류 · 잘림 · JSON 못 읽음)
-  const refund = () => db.runTransaction(async (tx) => {
-    const d = await tx.get(useRef); const n = (d.exists && d.data().n) || 0;
-    if (n > 0) tx.set(useRef, { n: n - 1 }, { merge: true });
-  }).catch(() => {});
-  let out;
-  try {
-    out = await M.callModel(ANTHROPIC_API_KEY.value(), M.systemPrompt(), M.userMessage(req.data.today, req.data.state, req.data.text, req.data.table));
-  } catch (e) {
-    logger.error('parseMeal model', { status: e.status, msg: String(e.message).slice(0, 200) });
-    await refund();
-    throw new HttpsError('unavailable', '지금은 정리하지 못했어요. 잠시 뒤 다시 해 주세요');
-  }
-  if (out.stop === 'max_tokens') {
-    logger.warn('parseMeal cut', { len: out.text.length, usage: out.usage });
-    await refund();
-    throw new HttpsError('out-of-range', '한 번에 적은 게 많아요. 끼니를 나눠서 적어 주세요');
-  }
-  const result = M.sanitize(M.extractJson(out.text), req.data.text, req.data.state);
-  if (!result) {
-    logger.warn('parseMeal json', { len: out.text.length, stop: out.stop });
-    await refund();
-    throw new HttpsError('internal', '정리 결과를 읽지 못했어요. 다시 해 주세요');
-  }
-  logger.info('parseMeal ok', { uid, used, usage: out.usage });
-  return { result, used, limit: M.LIMITS.perDay, model: M.MODEL };
+// 교환 쪽지 (docs/question 8절)
+exports.questionDaily = onSchedule({ schedule: '0 21 * * *', timeZone: 'Asia/Seoul' }, async () => {
+  const r = await QJ.runDaily(db, new Date(), { send: sendTo, once, appUrl: APP_URL, serverTime: () => admin.firestore.FieldValue.serverTimestamp() });
+  logger.info('교환 쪽지 저녁 알림', r.date, r.sent.length);
+});
+exports.questionAnswered = onDocumentCreated('qdays/{date}/a/{uid}', async (event) => {
+  await QJ.runAnswered(db, { date: event.params.date, author: event.params.uid }, new Date(), { send: sendTo, once, appUrl: APP_URL });
 });
 
-/* 단짝 식탁 · 가공식품 찾기: { q } → 식약처 가공식품 후보 10개 (100g·ml당 값 · 1회 제공량 · 내용량). 두 사람(members)만.
-   32만 건을 함수 메모리에 들고 찾는다 (products.js) — 처음 부를 때 1초쯤 읽음 */
-exports.findProduct = onCall({ timeoutSeconds: 30, memory: '1GiB', maxInstances: 2 }, async (req) => {
-  const uid = req.auth && req.auth.uid;
-  if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
-  const mem = await db.doc(`members/${uid}`).get();
-  if (!mem.exists) throw new HttpsError('permission-denied', '단짝꿍 멤버만 쓸 수 있어요');
-  const bad = P.badQuery(req.data);
-  if (bad) throw new HttpsError('invalid-argument', bad);
-  return { items: P.search(req.data.q.trim(), 10) };
-});
+// 단짝 식탁(parseMeal · findProduct)은 11-20에 폐기 — 함수를 지워 AI 비용을 멈춤 (docs/diet 기록, 데이터는 남김)
 
 // 단짝 지도 (v54): 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「OO 다녀온 기록이 생겼어요 · 별점을 남겨 주세요」 → 누르면 그 지역 시트.
 //  방문 하나에 한 번만 (notifyLog place_<코드>_<방문 id>). 짝꿍 알림 · 지도 알림(users.mapNudge) 둘 다 켜져 있어야.

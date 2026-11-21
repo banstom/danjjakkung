@@ -539,6 +539,7 @@
 [data-skin="pixel"]:not([data-font="plain"]) .lg-entry__mo { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-entry__total { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-entry__line { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .lg-entry--cell .lg-entry__total { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-sheet .field__label { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-hint { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .lg-pill { font-size: 15px; font-family: var(--px-font-14); }

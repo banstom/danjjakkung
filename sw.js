@@ -1,7 +1,7 @@
 /* 서비스 워커 — 앱 화면(파일들)을 기기에 저장해 두고, 오프라인에서도 열리게 한다.
    기록(Firestore)은 Firebase가 따로 기기에 보관하므로 여기서는 손대지 않는다.
    파일을 바꿔서 올릴 때마다 VERSION을 올리면 새 파일로 바뀐다. */
-var VERSION = 'danjjakkung-v74';
+var VERSION = 'danjjakkung-v75';
 
 /* 푸시 알림: 서버(functions/)가 보낸 알림을 휴대폰 알림으로 띄운다.
    아이폰은 받은 알림을 화면에 띄우지 않으면 몇 번 뒤 알림 구독을 끊어 버리므로,
@@ -32,9 +32,9 @@ self.addEventListener('notificationclick', function (e) {
 });
 var FILES = [
   './', 'index.html', 'manifest.webmanifest',
-  'styles/tokens.css', 'styles/app.css', 'styles/pixel.css',
+  'styles/tokens.css', 'styles/app.css', 'styles/question.css', 'styles/eat.css', 'styles/pixel.css', 'data/questions.json',
   'js/firebase-config.js', 'js/firebase.js', 'js/dates.js', 'js/seasons.js', 'js/themes.js', 'js/streak.js', 'js/icons.js',
-  'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/todos.js', 'js/uni.js', 'js/cats.js', 'js/schedule.js', 'js/review.js', 'js/quest.js', 'js/grow.js', 'js/tomato.js', 'js/view-plan.js', 'js/anniv.js', 'js/view-review.js', 'js/ledger-sum.js', 'js/ledger-parse.js', 'js/ledger-form.js', 'js/view-ledger.js', 'js/recap-text.js', 'js/view-recap.js', 'js/recap-image.js', 'js/view-all.js', 'js/avatar-crop.js', 'js/view-avatar.js', 'js/places.js', 'js/map-zoom.js', 'js/view-map.js', 'js/diet-calc.js', 'js/diet-goal.js', 'js/diet-ask.js', 'js/diet-match.js', 'js/diet-ai.js', 'js/view-diet.js', 'js/store.js', 'js/app.js',
+  'js/people.js', 'js/model.js', 'js/news.js', 'js/view.js', 'js/todos.js', 'js/uni.js', 'js/cats.js', 'js/schedule.js', 'js/review.js', 'js/quest.js', 'js/grow.js', 'js/tomato.js', 'js/view-plan.js', 'js/anniv.js', 'js/view-review.js', 'js/ledger-sum.js', 'js/ledger-parse.js', 'js/ledger-form.js', 'js/view-ledger.js', 'js/recap-text.js', 'js/view-recap.js', 'js/recap-image.js', 'js/view-all.js', 'js/avatar-crop.js', 'js/view-avatar.js', 'js/places.js', 'js/map-zoom.js', 'js/view-map.js', 'js/question-text.js', 'js/question.js', 'js/view-question.js', 'js/app-question.js', 'js/eat.js', 'js/eat-text.js', 'js/eat-cookie-svg.js', 'js/view-eat.js', 'js/app-eat.js', 'js/store.js', 'js/app.js',
   'vendor/firebase/firebase-app-compat.js', 'vendor/firebase/firebase-auth-compat.js', 'vendor/firebase/firebase-firestore-compat.js', 'vendor/firebase/firebase-messaging-compat.js', 'js/push.js',
   'fonts/PretendardVariable.woff2', 'fonts/tossface-00.woff2', 'fonts/tossface-02.woff2', 'fonts/tossface-04.woff2', 'fonts/tossface-05.woff2',
   'fonts/tossface-06.woff2', 'fonts/tossface-07.woff2', 'fonts/tossface-08.woff2', 'fonts/tossface-09.woff2',

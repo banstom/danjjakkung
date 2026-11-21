@@ -94,14 +94,19 @@
       line = me.name + ' ' + s.me.pct + '% · ' + pt.name + ' ' + s.partner.pct + '% · ' + tail;
     }
     return { month: Number(ctx.month.slice(5, 7)) + '월', total: s.totalText, empty: !s.total, off: !!ctx.off,
-      ratio: s.total ? [{ slot: ctx.slotOf(me.uid), pct: s.me.pct }, { slot: ctx.slotOf(pt.uid), pct: s.partner.pct }] : [], line: ctx.off ? '저장 규칙 배포 뒤에 보여요' : line };
+      ratio: s.total ? [{ slot: ctx.slotOf(me.uid), pct: s.me.pct }, { slot: ctx.slotOf(pt.uid), pct: s.partner.pct }] : [], line: ctx.off ? '저장 규칙 배포 뒤에 보여요' : line,
+      short: ctx.off ? '규칙 배포 뒤에' : !s.total ? '기록이 없어요' : s.me.pct === s.partner.pct ? '반반' : me.name + ' ' + s.me.pct + '% · ' + pt.name + ' ' + s.partner.pct + '%' };
   }
 
   function ratio(parts, cls) {
     return '<div class="lg-ratio' + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + parts.map(function (p) { return '<span class="bg--' + esc(p.slot) + '" style="width:' + p.pct + '%"></span>'; }).join('') + '</div>';
   }
 
-  function entryCard(m) {
+  /** cell = 전체 탭 2×2 칸 (11-21 — 교환 쪽지 · 출출 쿠키와 같은 크기, 비율 막대 대신 한 줄) */
+  function entryCard(m, cell) {
+    if (cell) return '<button type="button" class="card afeat__card lg-entry lg-entry--cell" data-act="all-ledger" aria-label="' + esc('단짝 영수증 · ' + m.month + ' ' + m.total + ' · ' + m.line) + '">' +
+      '<span class="lg-entry__head"><span class="afeat__nm">단짝 영수증</span><span class="lg-entry__mo">' + esc(m.month) + '</span></span>' +
+      '<span class="lg-entry__total">' + esc(m.total) + '</span><span class="lg-entry__line">' + esc(m.short || m.line) + '</span></button>';
     return '<button type="button" class="card lg-entry" data-act="all-ledger" aria-label="' + esc('단짝 영수증 · ' + m.month + ' ' + m.total + ' · ' + m.line) + '">' +
       '<span class="lg-entry__head"><span class="afeat__nm">단짝 영수증</span><span class="lg-entry__mo">' + esc(m.month) + '</span></span>' +
       '<span class="lg-entry__total">' + esc(m.total) + '</span>' + (m.ratio.length ? ratio(m.ratio, 'lg-ratio--thin') : '') +

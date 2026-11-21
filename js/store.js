@@ -24,6 +24,37 @@
 
   function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
 
+  // 서버 시각 (Firestore 웹 SDK compat) · 칸 지우기. 시험용 가짜 저장소도 같은 이름을 준다
+  function fv() { return root.firebase && root.firebase.firestore && root.firebase.firestore.FieldValue; }
+  function ts() { var f = fv(); return f ? f.serverTimestamp() : Date.now(); }
+  function del() { var f = fv(); return f ? f.delete() : null; }
+  var EST = { serverTimestamps: 'estimate' }; // 막 쓴 서버 시각도 기기 추정값으로 바로 보이게
+  /** Timestamp · Date · ms · ISO 글 → ms (없으면 null) */
+  function msOf(v) {
+    if (v == null) return null;
+    if (typeof v === 'number') return v;
+    if (typeof v.toMillis === 'function') return v.toMillis();
+    if (v instanceof Date) return v.getTime();
+    if (typeof v === 'string') { var t = Date.parse(v); return isFinite(t) ? t : null; }
+    if (typeof v.seconds === 'number') return v.seconds * 1000 + Math.round((v.nanoseconds || 0) / 1e6);
+    return null;
+  }
+  function msMap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { if (m[k] != null) o[k] = msOf(m[k]) || 1; }); return o; }
+  /** qdays 문서 → 계산 모듈 모양 */
+  function qDayOf(date, d) {
+    d = d || {};
+    return { date: date, q: d.q, text: String(d.text || ''), src: d.src, by: d.by || null, skipped: Array.isArray(d.skipped) ? d.skipped : [],
+      done: msMap(d.done), likes: Object.assign({}, d.likes || {}), swappedAt: d.swappedAt ? msOf(d.swappedAt) : null, swappedBy: d.swappedBy || null };
+  }
+  /** eats 문서 → 계산 모듈 모양 (시각은 ms) */
+  function eatOf(id, d) {
+    var c = Object.assign({}, d, { id: id, at: msOf(d.at) || 0 });
+    if (d.editedAt) c.editedAt = msOf(d.editedAt);
+    if (d.pick) c.pick = Object.assign({}, d.pick, { at: msOf(d.pick.at) });
+    if (d.eaten) c.eaten = Object.assign({}, d.eaten, { at: msOf(d.eaten.at) || 0 });
+    return c;
+  }
+
   function createStore(db, opts) {
     var retryDelay = (opts && opts.retryDelay) || function () { return 400 + Math.random() * 600; };
     var queues = {}; // 문서마다 쓰기를 한 줄로 세워 순서가 뒤바뀌지 않게
@@ -345,6 +376,134 @@
       },
       addSpendCat: function (id, data) { return db.doc('spendCats/' + id).set(data); },
       deleteSpendCat: function (id) { return db.doc('spendCats/' + id).delete(); },
+      // ── 교환 쪽지 (docs/question) ── qdays/{서울 날짜} · qdays/{date}/a/{uid} · ourQuestions/{id}
+      //   시각(done · at · editedAt · createdAt)은 서버 시각 → 앱에는 ms 로 넘긴다 (msOf). 쪽지 글은 문서 하나씩 get/구독 (목록 조회는 규칙이 막음)
+      watchQDay: function (date, next, fail) {
+        return listen(db.doc('qdays/' + date), function (snap) { next(snap.exists ? qDayOf(date, snap.data(EST)) : null, !!(snap.metadata && snap.metadata.fromCache)); }, fail);
+      },
+      /** 지난 기록 전부 (그날 질문 고르기 · 지난 쪽지) — 날짜 순 */
+      loadQDays: function () {
+        return db.collection('qdays').get().then(function (q) { return q.docs.map(function (doc) { return qDayOf(doc.id, doc.data(EST)); }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }); });
+      },
+      /** 쪽지 하나 (내 것은 늘, 단짝 것은 내 쪽지가 있을 때만 — 그 밖엔 부르지 않는다) */
+      watchAnswer: function (date, uid, next, fail) {
+        return db.doc('qdays/' + date + '/a/' + uid).onSnapshot(function (snap) {
+          var d = snap.exists ? snap.data(EST) : null;
+          next(d ? { text: String(d.text || ''), at: msOf(d.at), editedAt: d.editedAt ? msOf(d.editedAt) : null } : null);
+        }, fail);
+      },
+      watchOurs: function (next, fail) {
+        return db.collection('ourQuestions').onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { var d = doc.data(EST); return { id: doc.id, text: String(d.text || ''), by: d.by, ask: !!d.ask, createdAt: msOf(d.createdAt) }; }));
+        }, fail);
+      },
+      /** 그날 질문 만들기: 트랜잭션으로 읽고 없을 때만 (두 기기가 동시에 열어도 문서 하나). pick = pickQuestion 결과 */
+      createQDay: function (date, pick) {
+        var ref = db.doc('qdays/' + date);
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (snap) {
+            if (snap.exists) return false;
+            tx.set(ref, { q: pick.q, text: pick.text, src: pick.src, by: pick.by || null, skipped: [], done: {}, likes: {}, createdAt: ts() });
+            return true;
+          });
+        });
+      },
+      /** 다른 질문: 트랜잭션 안에서 다시 확인 → change(지금 문서) 가 바꿀 칸(또는 null)을 돌려줌 */
+      swapQDay: function (date, change) {
+        var ref = db.doc('qdays/' + date);
+        return db.runTransaction(function (tx) {
+          return tx.get(ref).then(function (snap) {
+            if (!snap.exists) throw { code: 'not-found' };
+            var patch = change(qDayOf(date, snap.data(EST)));
+            if (!patch) throw { code: 'blocked' };
+            patch.swappedAt = ts();
+            tx.update(ref, patch);
+            return patch;
+          });
+        });
+      },
+      /** 쪽지 남기기: 내 쪽지 + done 표시를 한 묶음으로 (규칙이 같이 오는지 확인) */
+      saveAnswer: function (date, uid, text) {
+        var b = db.batch(), done = {};
+        done['done.' + uid] = ts();
+        b.set(db.doc('qdays/' + date + '/a/' + uid), { text: text, at: ts() });
+        b.update(db.doc('qdays/' + date), done);
+        return b.commit();
+      },
+      editAnswer: function (date, uid, text) { return db.doc('qdays/' + date + '/a/' + uid).update({ text: text, editedAt: ts() }); },
+      setLike: function (date, uid, on) { var p = {}; p['likes.' + uid] = on ? true : del(); return db.doc('qdays/' + date).update(p); },
+      addOurs: function (uid, text, ask) { return db.doc('ourQuestions/' + newKey().replace(/^r/, 'o')).set({ text: text, by: uid, ask: !!ask, createdAt: ts() }); },
+      editOurs: function (id, text, ask) { return db.doc('ourQuestions/' + id).update({ text: text, ask: !!ask }); },
+      deleteOurs: function (id) { return db.doc('ourQuestions/' + id).delete(); },
+      // ── 출출 쿠키 (docs/eat) ── eats/{id} · eatState/today · eatDraws/{id}. 시각은 서버 시각 → 앱에는 ms
+      watchEats: function (next, fail) {
+        return db.collection('eats').onSnapshot(function (q) { next(q.docs.map(function (doc) { return eatOf(doc.id, doc.data(EST)); })); }, fail);
+      },
+      watchEatToday: function (next, fail) {
+        return db.doc('eatState/today').onSnapshot(function (snap) { var d = snap.exists ? snap.data(EST) : null; next(d ? { eatId: d.eatId, by: d.by, at: msOf(d.at) } : null); }, fail);
+      },
+      /** 쿠키 넣기 — doc 은 js/eat.js newCookie 값 (at 은 서버 시각으로 바꿔 씀). 새 id 를 돌려줌 */
+      addEat: function (doc) {
+        var id = newKey().replace(/^r/, 'k'), body = Object.assign({}, doc, { at: ts() });
+        return db.doc('eats/' + id).set(body).then(function () { return id; });
+      },
+      editEat: function (id, patch) { return db.doc('eats/' + id).update(Object.assign({}, patch, { editedAt: ts() })); },
+      removeEat: function (id) { return db.doc('eats/' + id).update({ state: 'out' }); },
+      /** 깨기 기록 */
+      addDraw: function (uid, n, who, shown) {
+        var id = newKey().replace(/^r/, 'd');
+        return db.doc('eatDraws/' + id).set({ by: uid, at: ts(), n: n, who: who, shown: shown }).then(function () { return id; });
+      },
+      updateDraw: function (id, patch) { return db.doc('eatDraws/' + id).update(patch); },
+      /** 고르기: 쿠키 jar → today + eatState/today 만들기를 한 트랜잭션. 이미 있으면 { taken: 지금 값 } */
+      pickEat: function (id, uid, drawId) {
+        var ref = db.doc('eats/' + id), st = db.doc('eatState/today');
+        return db.runTransaction(function (tx) {
+          return Promise.all([tx.get(st), tx.get(ref)]).then(function (s) {
+            if (s[0].exists) return { taken: s[0].data().eatId };
+            if (!s[1].exists || s[1].data().state !== 'jar') return { gone: true };
+            tx.update(ref, { state: 'today', pick: { by: uid, at: ts(), drawId: drawId || null } });
+            tx.set(st, { eatId: id, by: uid, at: ts() });
+            return { ok: true };
+          });
+        });
+      },
+      /** 돌려놓기 (직접 · 자동): today → jar + eatState/today 지우기 */
+      returnEat: function (id) {
+        var ref = db.doc('eats/' + id), st = db.doc('eatState/today');
+        return db.runTransaction(function (tx) {
+          return Promise.all([tx.get(st), tx.get(ref)]).then(function (s) {
+            if (!s[0].exists || s[0].data().eatId !== id || !s[1].exists || s[1].data().state !== 'today') return { gone: true };
+            tx.update(ref, { state: 'jar', pick: null });
+            tx.delete(st);
+            return { ok: true };
+          });
+        });
+      },
+      /** 먹었어요: today → eaten + 내 별점 · 한 줄 + eatState/today 지우기 (+ 또 먹고 싶어요 새 쿠키) — 한 트랜잭션 */
+      eatEat: function (id, uid, r) {
+        var ref = db.doc('eats/' + id), st = db.doc('eatState/today');
+        return db.runTransaction(function (tx) {
+          return Promise.all([tx.get(st), tx.get(ref)]).then(function (s) {
+            if (!s[0].exists || s[0].data().eatId !== id || !s[1].exists || s[1].data().state !== 'today') return { gone: true };
+            var patch = { state: 'eaten', eaten: { at: ts(), by: uid, together: !!r.together } };
+            patch['stars.' + uid] = r.stars;
+            if (r.note) patch['notes.' + uid] = r.note;
+            tx.update(ref, patch);
+            tx.delete(st);
+            var againId = null;
+            if (r.againDoc) { againId = newKey().replace(/^r/, 'k'); tx.set(db.doc('eats/' + againId), Object.assign({}, r.againDoc, { at: ts() })); }
+            return { ok: true, againId: againId };
+          });
+        });
+      },
+      /** 먹은 뒤 별점 · 한 줄 (자기 칸만) */
+      rateEat: function (id, uid, stars, note) {
+        var p = {}; p['stars.' + uid] = stars; if (note) p['notes.' + uid] = note;
+        return db.doc('eats/' + id).update(p);
+      },
+      /** users/<uid> 의 몇 칸만 (출출 쿠키 개수 · 범위 · 연 시각, 교환 쪽지 알림 스위치) — 다른 칸은 그대로 */
+      saveUserFields: function (uid, fields) { return db.doc('users/' + uid).set(fields, { mergeFields: Object.keys(fields) }); },
       /** 월말 · 연말결산 (docs/recap) — recaps/<YYYY-MM | YYYY> 전부 (한 해에 13개 정도). 서버만 쓰고 앱은 읽기만 */
       loadRecaps: function () {
         return db.collection('recaps').get().then(function (q) {
@@ -430,7 +589,7 @@
   /** 새 루틴 키: 시간 + 무작위 (영문·숫자만) */
   function newKey() { return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-  var api = { createStore: createStore, checkId: checkId, mergeChecks: mergeChecks, newKey: newKey };
+  var api = { createStore: createStore, checkId: checkId, mergeChecks: mergeChecks, newKey: newKey, msOf: msOf, qDayOf: qDayOf, eatOf: eatOf };
   root.RT = root.RT || {};
   root.RT.store = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -42,6 +42,15 @@
     return '<div class="nrow"><div class="nrow__text"><span class="nrow__title" id="' + act + '-label">' + esc(title) + '</span><span class="nrow__desc">' + esc(desc) + '</span></div>' +
       '<button type="button" class="switch" role="switch" aria-checked="' + !!on + '" aria-labelledby="' + act + '-label" data-act="' + act + '"' + (disabled ? ' disabled' : '') + '><span class="switch__knob"></span></button></div>';
   }
+  /** 교환 쪽지 알림 두 줄 (docs/question F13) — 문구는 question-text.js 그대로, 이름 묶음 */
+  function qNotifyRows(p, off) {
+    var QT = root.RT && root.RT.questionText;
+    if (!QT) return '';
+    var T = QT.T;
+    return '<h3 class="mgroup">' + esc(T.name) + '</h3><div class="nlist">' +
+      switchRow('pref-qremind', p.qRemind !== false, T.settingRemind, T.settingRemindSub, off) +
+      switchRow('pref-qpartner', p.qPartner !== false, T.settingPartner, '', off) + '</div>';
+  }
   function notifySheet(n, entering) {
     if (!n) return '';
     var dev;
@@ -79,7 +88,7 @@
       switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
       switchRow('pref-recap', p.recap !== false, '매달 1일 결산 알림', '아침 9시에 지난달 결산이 나오면 알려 줘요 · 누르면 결산 카드', off) +
       switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요 · 함께 할 일 이름도 숨겨요', off) +
-      '</div>' +
+      '</div>' + qNotifyRows(p, off) +
       '<p class="muted nfoot">설정은 내 모든 기기에 같이 적용돼요.</p>' +
       '<button type="button" class="close-btn" data-act="close-notify">닫기</button>' +
       '</section></div>';

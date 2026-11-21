@@ -100,7 +100,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -112,12 +112,14 @@
     var q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(root.location.search || '');
     var mq = /[?&]map=(\d{5})/.exec(root.location.search || ''); // v54 단짝 지도 알림 → 그 지역 시트
     var rq = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(root.location.search || ''); // 결산 알림 → 그 결산 카드
+    var oq = /[?&]open=(question|eat)/.exec(root.location.search || ''); // 교환 쪽지 · 출출 쿠키 알림 → 그 화면
+    if (oq) { state.pendingOpen = oq[1]; if (!q) q = [null, 'all']; }
     if (rq) { state.recap.pending = rq[1]; state.review.mode = 'recap'; if (!q) q = [null, 'look']; }
     if (mq) { state.pendingMap = mq[1]; if (!q) q = [null, 'all']; }
     var t = q ? q[1] : lsGet(LS_TAB);
     if (TAB_IDS.indexOf(t) >= 0) state.tab = t;
     // 돌아보기는 언제나 이번 주부터 (주소로 열어도 · 다시 열어도)
-    if (q || rq) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
+    if (q || rq || oq) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
   })();
   function typing() {
     var el = document.activeElement;
@@ -176,7 +178,7 @@
     if (state.status !== 'ready') m.header.meName = '';
     var onAll = state.status === 'ready' && state.tab === 'all';
     m.header.title = onAll ? '전체' : '';
-    m.header.hidden = onAll && (!!state.map || !!state.diet || !!state.ledger); // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
+    m.header.hidden = onAll && (!!state.map || !!state.diet || !!state.ledger || !!(qc && qc.isOpen()) || !!(ec && ec.isOpen())); // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
     m.header.dday = null; // v51: 디데이는 「전체」의 「우리 둘」 박스에서만 (사용자 결정)
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
       tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
@@ -231,7 +233,7 @@
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
-    'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
+    'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'pref-qremind': null, 'pref-qpartner': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'lg-cat-new': null, 'lg-cat-new-cancel': null, 'lg-cat-add': null, 'lg-cat-edit': null, 'lg-cat-del': 'data-v', 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v', 'dp-open': 'data-v', 'dp-close': null, 'dp-go': null, 'dp-pick': 'data-v', 'dp-tpick': 'data-v', 'dt-cal': null, 'dt-cal-close': null, 'dt-cal-pick': 'data-v', 'dt-cal-month': 'data-v', 'dt-today': null, 'dt-who': 'data-v', 'dt-bar': 'data-v', 'ds-open': null, 'ds-close': null, 'df-open': null, 'df-close': null, 'df-item': 'data-v', 'dfe-close': null, 'dfe-save': null, 'dfe-del': null, 'dm-open': 'data-v', 'dd-close': null, 'dd-when': null, 'dd-when-close': null, 'dd-when-pick': 'data-v', 'dd-when-month': 'data-v', 'dd-when-save': null, 'dd-item': 'data-v', 'dd-pfind': 'data-v', 'dd-ai': null, 'dd-text': null, 'dd-del': null, 'di-close': null, 'di-step': 'data-v', 'di-unit': 'data-v', 'di-quick': 'data-v', 'di-save': null, 'di-remove': null, 'di-swap': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
@@ -424,6 +426,8 @@
     var btn = ev.target.closest('[data-act]');
     if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || !appEl.contains(btn)) return;
     var act = btn.getAttribute('data-act');
+    if (act.indexOf('q-') === 0 && qc && qc.act(act, btn)) return; // 교환 쪽지 (js/app-question.js)
+    if (act.indexOf('ek-') === 0 && ec && ec.act(act, btn)) return; // 출출 쿠키 (js/app-eat.js)
     if (act === 'filter') { state.filter = btn.getAttribute('data-id'); state.page = 0; render(); }
     else if (act === 'page') { state.page = state.page + Number(btn.getAttribute('data-dir')); render(); }
     else if (act === 'this-month') { state.page = 0; render(); var cur = appEl.querySelector('.cell.is-today') || appEl.querySelector('[data-act="page"]:not([disabled])'); if (cur) cur.focus({ preventScroll: true }); }
@@ -513,6 +517,7 @@
     else if (act === 'rc-save') saveRecapImage();
     else if (act === 'rc-retry') { state.recap.list = null; state.recap.error = ''; render(true); }
     else if (act === 'pref-recap') setRecapPref(!state.recapOn);
+    else if (act === 'pref-qremind' || act === 'pref-qpartner') setQPref(act === 'pref-qremind' ? 'qRemind' : 'qPartner');
     else if (act === 'rv-page') {
       var rvDir = Number(btn.getAttribute('data-dir'));
       focusAfter = ['[data-act="rv-page"][data-dir="' + rvDir + '"]:not([disabled])', '[data-act="rv-page"][data-dir="' + (-rvDir) + '"]:not([disabled])'];
@@ -724,12 +729,16 @@
 
   // ── 아래 탭 · 할 일 · 시간표 ─────────────────────────────
   function setTab(t) {
+    if (t === 'all' && state.tab === 'all' && qc && qc.isOpen()) { qc.close(); return; }
+    if (t === 'all' && state.tab === 'all' && ec && ec.isOpen()) { ec.close(); return; }
     if (t === 'all' && state.tab === 'all' && state.diet) { closeDiet(); return; }
     if (t === 'all' && state.tab === 'all' && state.ledger) { closeLedger(); return; }
     if (t === 'all' && state.tab === 'all' && state.map) { closeMap(); return; } // 지도에서 「전체」를 누르면 「전체」로
     if (TAB_IDS.indexOf(t) < 0 || t === state.tab) return;
     if (state.map) stopMap();
     if (state.diet) stopDiet();
+    if (qc && qc.isOpen()) qc.close(true);
+    if (ec && ec.isOpen()) ec.close(true);
     state.ledger = null;
     state.tab = t; lsSet(LS_TAB, t);
     if (t === 'look') { state.review.key = null; if (!state.recap.loading) state.recap.list = null; } // 돌아보기를 열 때마다 새로 불러온다 (결산 목록도)
@@ -810,6 +819,10 @@
     if (state.tab === 'look' && other) out.tab = state.review.mode === 'recap' ? RT.viewRecap.tab(recapEntryModel()) : RT.viewReview.tab(reviewModel());
     if (state.tab === 'look' && state.recap.open) { var dmRc = recapDeckModel(); if (dmRc) out.sheet = RT.viewRecap.deck(dmRc, state.sheetEntering); else state.recap.open = null; }
     if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
+    if (state.status === 'ready' && qc) qc.tick();
+    if (state.status === 'ready' && ec) ec.tick();
+    if (state.tab === 'all' && other && qc && qc.isOpen()) { out.tab = qc.screenHtml(); var qsh = qc.sheetHtml(); if (qsh) out.sheet = qsh; return out; }
+    if (state.tab === 'all' && other && ec && ec.isOpen()) { out.tab = ec.screenHtml(); var esh = ec.sheetHtml(); if (esh) out.sheet = esh; return out; }
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietTableModel()) : state.ledger ? RT.viewLedger.screen(ledgerModel()) : RT.viewAll.tab(allModel());
     if (state.tab === 'all' && state.ledger && state.ledger.sheet) out.sheet = RT.viewLedger.sheet(state.ledger.sheet, ledgerSheetCtx(), state.sheetEntering);
     if (state.diet && state.diet.meal && !state.diet.log && !curMeal()) { // 다른 곳에서 지웠거나 날짜가 넘어감 → 상세를 닫고 알림 (보이지 않는 상세가 뒤로가기를 먹지 않게)
@@ -1010,6 +1023,13 @@
       state.recap.saving = false; render(true);
       if (!(e && e.name === 'AbortError')) showToast('이미지를 만들지 못했어요. 잠시 뒤 다시 해 주세요');
     });
+  }
+  /** 교환 쪽지 알림 스위치 (users/<uid>.qRemind · qPartner, 없으면 켬) */
+  function setQPref(field) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    var on = !(state.userDoc && state.userDoc[field] === false), before = state.userDoc;
+    state.userDoc = Object.assign({}, state.userDoc || {}); state.userDoc[field] = !on; render(true);
+    store.saveValue(state.uid, field, !on).catch(function () { state.userDoc = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
   function setRecapPref(on) {
     if (!store || !state.uid || !state.prefsReady) return;
@@ -1983,7 +2003,7 @@
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
   var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
-  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { weekly: state.weeklyOn, recap: state.recapOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn }); }
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { qRemind: !(state.userDoc && state.userDoc.qRemind === false), qPartner: !(state.userDoc && state.userDoc.qPartner === false), weekly: state.weeklyOn, recap: state.recapOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn }); }
   function notifyModel() {
     var P = RT.push;
     return {
@@ -2016,6 +2036,51 @@
     });
   }
   /** 알림으로 연 지역 (v54): 「전체」 탭 → 단짝 지도 → 지도 데이터가 오면 그 지역 시트 */
+  // ── 교환 쪽지 (docs/question) · 출출 쿠키 (docs/eat) — 화면 상태는 각 모듈(js/app-question.js · js/app-eat.js)이 갖고, 여기선 이어 붙이기만 ──
+  var qc = null, ec = null;
+  function featureHost() {
+    return {
+      store: function () { return store; },
+      render: function (f) { render(f); },
+      toast: function (t) { showToast(t); },
+      me: function () { return state.me; },
+      partner: function () { return ledgerPartner(); },
+      nameOf: function (u) { return nameOf(u); },
+      slotOf: function (u) { var sm = slotMap(); return sm[u] || (u === state.me ? 'me' : 'her'); },
+      since: function () { return coupleStartKey(); },
+      focus: function (sels, inSheet) { focusAfter = sels; if (inSheet) focusInSheet = true; },
+      kung: { ready: function () { var k = state.status === 'ready' ? model().kung : null; return !!(k && k.status === 'ready' && !state.kungOff); }, send: function () { sendKung(); } },
+      user: function () { return state.userDoc || null; },
+      now: function () { return Date.now(); },
+      openMapPaint: function (code, food) { return paintFromEat(code, food); },
+      paintedSigungu: function () { return new Set(Object.keys(state.placeDocs || {}).filter(function (c) { var d = state.placeDocs[c]; return d && d.visits && d.visits.length; })); },
+      areaName: function (code) { return mapData && mapData.names ? mapData.names[code] : null; },
+      reduceMotion: function () { try { return root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+    };
+  }
+  function makeFeatures() {
+    if (RT.appQuestion && RT.viewQuestion && RT.question) qc = RT.appQuestion.create(featureHost());
+    if (RT.appEat && RT.viewEat && RT.eat) ec = RT.appEat.create(featureHost());
+  }
+  function openPendingFeature() {
+    var f = state.pendingOpen;
+    if (!f || state.status !== 'ready') return;
+    state.pendingOpen = null;
+    if (state.tab !== 'all') setTab('all');
+    if (f === 'question' && qc && !qc.isOpen()) qc.open();
+    if (f === 'eat' && ec && !ec.isOpen()) ec.open();
+  }
+  /** 출출 쿠키 → 짝꿍 지도 칠하기: 그 시·군·구에 오늘 방문 기록 (지도의 「다녀왔어요」와 같은 쓰기) */
+  function paintFromEat(code, food) {
+    if (!store || !state.me || !RT.places) return Promise.reject(new Error('no-map'));
+    var uid = state.uid || state.me, now = new Date().toISOString();
+    var visit = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: D.toKey(state.today), createdAt: now, createdBy: uid };
+    return savePlace(code, uid, function (cur) {
+      var next = RT.places.addVisit(cur, visit, uid, RT.places.cleanEntry(0, food, now));
+      next.wishRank = null; next.wishNote = '';
+      return next;
+    });
+  }
   function openPendingMap() {
     if (!state.pendingMap || state.status !== 'ready' || !RT.viewMap || !store) return;
     if (state.tab !== 'all') setTab('all');
@@ -3373,7 +3438,8 @@
     return {
       us: usModel(), // 「우리 둘」 박스 (디데이 · 다음 기념일 · 사진)
       map: allMapModel(),
-      diet: allDietModel(),
+      question: qc ? qc.entryModel() : null, // 교환 쪽지 입구 E1 (식탁 자리)
+      eat: ec ? ec.entryModel() : null,      // 출출 쿠키 입구
       notify: RT.push && root.DANJJAKKUNG_PUSH_READY ? (RT.push.isOn() ? '켜짐' : '꺼짐') : '',
       theme: RT.themes ? RT.themes.byId(RT.themes.current()).ko : '',
       meName: state.me ? nameOf(state.me) : '',
@@ -4004,6 +4070,8 @@
   // 입력칸: 글자를 칠 때마다 상태에만 담고 화면은 다시 그리지 않는다
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
+    if (qc && /^q-/.test(id) && qc.input(id, ev.target.value)) return;
+    if (ec && /^ek-/.test(id) && ec.input(id, ev.target.value)) return;
     if (id === 'ava-zoom' && state.avaCrop) { var ac = state.avaCrop, vw = ac.view / 2; ac.st = RT.avatarCrop.zoomAt(ac.st, (ac.st.min * parseFloat(ev.target.value)) / ac.st.scale, vw, vw, ac.iw, ac.ih, ac.view); avaApply(); return; }
     if (state.ledger && state.ledger.sheet) {
       var lf = state.ledger.sheet;
@@ -4092,7 +4160,7 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!(qc && qc.hasSheet()) || !!(ec && ec.hasSheet()) || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
@@ -4101,6 +4169,8 @@
     if (state.avaView) { closeAvaView(); return; }
     if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
+    if (qc && qc.isOpen() && state.tab === 'all') { qc.back(); return; }
+    if (ec && ec.isOpen() && state.tab === 'all') { ec.back(); return; }
     if (state.diet && state.diet.log && state.diet.log.find) { dietFindClose(); return; }
     if (state.diet && state.diet.cal && !state.diet.log) { state.diet.cal = null; focusAfter = ['[data-act="dt-cal"]']; render(true); return; }
     if (state.diet && state.diet.set && !state.diet.log) {
@@ -4263,6 +4333,8 @@
     root.navigator.serviceWorker.addEventListener('message', function (ev) {
       var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(String(d.link || ''));
       var mq = /[?&]map=(\d{5})/.exec(String(d.link || ''));
+      var oq2 = /[?&]open=(question|eat)/.exec(String(d.link || ''));
+      if (d.type === 'open' && oq2) { state.pendingOpen = oq2[1]; openPendingFeature(); return; }
       if (d.type === 'open' && mq) { state.pendingMap = mq[1]; openPendingMap(); return; } // 아직 준비 중이면 ready() 가 연다
       if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
     });
@@ -4359,7 +4431,7 @@
     kungUnsub = store.watchKungs(D.toKey(state.today), function (list) { state.kungs = list; state.kungOff = false; if (state.status === 'ready') render(); },
       function () { state.kungOff = true; state.kungs = []; if (state.status === 'ready') render(); }); // 규칙이 아직 없어도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
   }
-  function unsubscribe() { subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
+  function unsubscribe() { if (qc) qc.stop(); if (ec) ec.stop(); subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
   function subscribe() {
     unsubscribe();
     subs = [
@@ -4371,6 +4443,7 @@
       store.watchRoutines(function (list) { state.routineDocs = list; gotRoutines = true; ready(); }, lost),
       // 내 알림 설정 — 아직 규칙이 없거나 막혀도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
       store.watchUser(state.uid, function (doc, fromCache) {
+        state.userDoc = doc || null; // 교환 쪽지 · 출출 쿠키 설정 칸 (qRemind · qPartner · eatDraw* · eatSeenAt)
         state.prefs = doc && doc.notify ? doc.notify : null;
         state.weeklyOn = !(doc && doc.weekly === false);
         state.recapOn = !(doc && doc.recap === false);
@@ -4415,7 +4488,7 @@
     if (state.status === 'denied' || !state.uid) return render();
     var before = state.status;
     if (gotMembers && gotChecks && gotRoutines) {
-      if (state.me) { state.status = 'ready'; if (state.pendingMap && before !== 'ready') setTimeout(openPendingMap, 0); }
+      if (state.me) { state.status = 'ready'; if (state.pendingMap && before !== 'ready') setTimeout(openPendingMap, 0); if (state.pendingOpen && before !== 'ready') setTimeout(openPendingFeature, 0); }
       else if (membersFromServer) state.status = 'setup';   // 캐시만 보고 이름 화면을 띄우지 않는다
     }
     render(state.status !== before); // 화면이 바뀌는 순간은 입력 중이어도 그린다
@@ -4460,6 +4533,7 @@
     render(true);
   } else {
     store = RT.store.createStore(RT.firebase.db, { metadataChanges: true });
+    makeFeatures();
     RT.firebase.onAuth(function (user) {
       resetSession();
       if (!user) {

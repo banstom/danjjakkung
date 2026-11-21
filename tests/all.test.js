@@ -20,12 +20,13 @@ test('아래 탭이 다섯 개, 마지막이 「전체」', () => {
   assert.match(html, /data-tab="all" aria-current="page"[^]*?<span>전체<\/span>/);
 });
 
-test('「전체」: 우리 둘 카드 · 단짝 기능 2칸 · 설정 3줄이 각 시트를 연다', () => {
-  const html = ALL.tab(base);
+test('「전체」: 우리 둘 카드 · 단짝 기능 2×2(지도 · 교환 쪽지 · 출출 쿠키 · 영수증) · 설정 3줄이 각 시트를 연다', () => {
+  require('../js/question-text.js'); require('../js/view-question.js');
+  const html = ALL.tab(Object.assign({}, base, { question: { text: '우리 둘만 아는 말이 있다면요?', state: 'theirs', meSlot: 'me', herSlot: 'her' } }));
   assert.match(html, /우리 둘[^]*준민[^]*다진[^]*data-act="open-anniv"[^]*단짝이 된 지 412일[^]*500일까지 D-88/, 'v52 하트 잇기: 왼쪽 준민 · 오른쪽 다진 · 아래 디데이');
   assert.match(html, /data-act="all-map"[^]*단짝 지도/);
-  assert.match(html, /data-act="all-diet"[^]*단짝 식탁[^]*목표 정하기/, 'D2: 준비 중 대신 목표 정하기');
-  assert.match(ALL.tab(Object.assign({}, base, { diet: { ready: true, kcal: 2853.7, kind: 'bulk' } })), /하루 2,854kcal/);
+  assert.doesNotMatch(html, /all-diet|단짝 식탁/, '11-20 단짝 식탁 폐기 — 입구 없음');
+  assert.match(html, /data-act="q-open"[^]*교환 쪽지[^]*우리 둘만 아는 말이 있다면요\?[^]*단짝이 남겼어요/, '식탁 자리 = 교환 쪽지 입구 E1');
   for (const act of ['open-notify', 'open-theme', 'open-account']) assert.match(html, new RegExp('data-act="' + act + '"'));
   assert.match(html, /알림<\/span><\/span><span class="arow__vl">켜짐/);
   assert.match(html, /Soft Pastel/);

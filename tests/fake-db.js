@@ -18,7 +18,8 @@ function fakeDb() {
   }
   return {
     collection: (col) => query(col, []),
-    doc: (p) => ({ get: async () => snap(p), set: async (d) => { store.set(p, JSON.parse(JSON.stringify(d))); } }),
+    doc: (p) => ({ get: async () => snap(p), set: async (d) => { store.set(p, JSON.parse(JSON.stringify(d))); },
+      create: async (d) => { if (store.has(p)) { const e = new Error('exists'); e.code = 6; throw e; } store.set(p, JSON.parse(JSON.stringify(d))); } }),
     put: (p, d) => store.set(p, d),
     get: (p) => store.get(p),
     count: (col) => [...store.keys()].filter((p) => p.startsWith(col + '/')).length

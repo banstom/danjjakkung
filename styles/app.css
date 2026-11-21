@@ -1664,6 +1664,9 @@ button.lg-entry { display: flex; flex-direction: column; gap: 8px; margin-top: 1
 .lg-entry__mo { font-size: 13px; color: var(--sub); }
 .lg-entry__total { font-size: 22px; font-weight: 800; }
 .lg-entry__line { font-size: 13px; color: var(--sub); }
+button.lg-entry--cell { margin-top: 0; padding: 16px; min-height: 150px; } /* 전체 탭 2×2 칸 (11-21) */
+.lg-entry--cell .lg-entry__total { font-size: 20px; margin-top: auto; }
+.lg-entry--cell .lg-entry__line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lg-sheet .field { margin-top: 12px; }
 .lg-sheet .field__label { display: block; margin: 14px 0 6px; font-size: 13px; font-weight: 700; color: var(--sub); }
 .lg-sheet .field > .field__label { margin-top: 0; }
