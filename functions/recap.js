@@ -12,14 +12,15 @@
      kungs:       [{ at: 'YYYY-MM-DD', from }]
      events:      [{ start: 'YYYY-MM-DDTHH:mm', end, shared }]   기간 안의 실제 일정 (매주 일정은 읽기 모듈이 펼쳐 줌)
      places:      [{ code, name, visits: [{ id, date }], entries: { uid: { visitId: { stars, note } } } }]
-     meals:       [{ date, shared }]
-     goalDays:    { uid: ['YYYY-MM-DD'] }               식단 기능이 판단한 '목표 맞춘 날'만 (몸 정보 없음)
+     qdays:       교환 쪽지 [{ date, text, done: { uid: 1 }, likes: { uid: true } }]   기간 안 (카드 8, 11-21 식탁 → 교환 쪽지)
+     qanswers:    { date: { uid: { text } } }           마음에 남은 쪽지 후보 날의 작성자 쪽지만
      spends:      단짝 영수증 기록 (아직 없으면 [])
    }
    prevData = 바로 앞 기간의 같은 모양 (없으면 null → 비교 숫자 없음) */
 'use strict';
 const N = require('./notify');
 const L = require('./shared/ledger-sum');
+const NC = require('./recap-note');
 
 // ── 날짜 ──
 const D = (s) => new Date(s + 'T00:00:00Z');
@@ -229,14 +230,13 @@ function placesCard(period, data) {
   return out;
 }
 
-// ── 카드 8 식탁 ── 몸 정보 · 체중 · 칼로리 숫자는 넣지 않는다
-function mealsCard(period, data) {
-  const r = periodRange(period);
-  const shared = (data.meals || []).filter((m) => m.shared && inRange(m.date, r)).length;
-  const goal = {};
-  data.uids.forEach((u) => { goal[u] = ((data.goalDays && data.goalDays[u]) || []).filter((d) => inRange(d, r)).length; });
-  if (shared === 0 && Object.values(goal).every((n) => n === 0)) return null;
-  return { id: 'meals', sharedMeals: shared, goalDays: goal };
+// ── 카드 8 교환 쪽지 ── (docs/recap/changes/2026-11-21-card8-교환쪽지.md) 식탁 카드는 만들지 않음 — 11-20 폐기
+//   지난달 비교는 지난달 qdays 가 하나라도 있을 때만 (기능이 생긴 첫 달에 「+15일」이 뜨지 않게). 결산 뒤에 쪽지를 고쳐도 결산은 그대로
+function noteCard(period, data, prev) {
+  const members = data.people.map((p) => ({ uid: p.uid }));
+  const c = NC.computeNoteCard({ period: { kind: period.kind, key: period.key }, members, days: data.qdays || [], answers: data.qanswers || {},
+    prevDays: period.kind === 'month' && prev ? (prev.qdays || []) : null });
+  return c ? Object.assign({ id: 'note' }, c) : null;
 }
 
 // ── 카드 9 단짝 영수증 ── 영수증 화면과 같은 모듈 (functions/ledger-sum.js = js/ledger-sum.js)
@@ -291,10 +291,9 @@ function computeRecap(rawData, rawPrev) {
     c.diffPrev = pc ? diff(c[key], pc[key]) : null;
     cards.push(c);
   }
-  for (const fn of [placesCard, mealsCard, spendsCard]) {
-    const c = fn(p, data);
-    if (c) cards.push(c);
-  }
+  const pc = placesCard(p, data); if (pc) cards.push(pc);
+  const nc = noteCard(p, data, prev); if (nc) cards.push(nc);
+  const sc = spendsCard(p, data); if (sc) cards.push(sc);
   // 마무리: 위 숫자를 한 장에 (있는 카드만)
   const pick = (id) => cards.find((c) => c.id === id);
   const tiles = [];
@@ -304,7 +303,8 @@ function computeRecap(rawData, rawPrev) {
   if (pick('time')) tiles.push({ id: 'time', value: pick('time').hours, unit: '시간', label: '함께 보낸 시간' });
   const pl = pick('places');
   if (pl) tiles.push({ id: 'places', value: pl.newPlaces.length || pl.places, unit: '곳', label: pl.newPlaces.length ? '새로 칠한 곳' : '다녀온 곳' });
-  if (pick('meals') && pick('meals').sharedMeals) tiles.push({ id: 'meals', value: pick('meals').sharedMeals, unit: '번', label: '함께 먹은 끼니' });
+  const nt = NC.noteTile(pick('note')); // 숫자만 — 쪽지 글 · 질문은 마무리(이미지)에 넣지 않음
+  if (nt) tiles.push({ id: 'note', value: nt.value, unit: nt.unit, label: '쪽지를 주고받은 날' });
   const sp = pick('spends');
   cards.push({ id: 'final', tiles, spends: sp ? { total: sp.total, byPerson: sp.byPerson } : null });
 

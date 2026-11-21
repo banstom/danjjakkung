@@ -14,6 +14,7 @@
   }
   var X = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   var DL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+  var HEART = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z" fill="currentColor"/></svg>';
   var DOWS = ['월', '화', '수', '목', '금', '토', '일'];
 
   /** 결산 이름: 「11월의 단짝꿍」 · 다른 해면 「2025년 12월의 단짝꿍」 · 연말 「2026년의 단짝꿍」 */
@@ -127,6 +128,13 @@
       case 'meals':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p>' +
           prows(t.rows, slots) + (t.more && t.more.length ? '<p class="rc-more">' + lines(t.more) + '</p>' : '') + (t.note ? '<p class="rc-note">' + esc(t.note) + '</p>' : '') + '</div>';
+      case 'note': // 카드 8 교환 쪽지 — 접힌 모서리 카드(쪽지 모양 5 전체는 아님), 쪽지 글 3줄까지
+        return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + lines(t.leadLines) + '</p>' +
+          (t.best ? '<div class="rc-panel rc-bestmo"><b>' + esc(t.best.month) + '</b><span>' + esc(t.best.label) + '<br>' + esc(t.best.sub) + '</span></div>' : '') +
+          (t.likedHead ? '<p class="rc-likedhead">' + esc(t.likedHead) + '</p>' + t.liked.map(function (x) {
+            return '<div class="rc-notecard"><span class="rc-notecard__hd">' + HEART + esc(x.head) + '</span><p class="rc-notecard__q">' + esc(x.q) + '</p>' +
+              '<p class="rc-notecard__tx">' + esc(x.text) + '</p><span class="rc-notecard__by">' + dot(slots(x.author), true) + esc(x.by) + '</span></div>';
+          }).join('') : '') + '</div>';
       case 'time':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p></div>';
       case 'places': {

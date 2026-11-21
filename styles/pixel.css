@@ -498,6 +498,13 @@
 [data-skin="pixel"]:not([data-font="plain"]) .rc-rt__nm { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct b { font-size: 36px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-rt__pct span { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-bestmo b { font-size: 36px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-bestmo span { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-likedhead { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__hd { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__q { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__tx { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__by { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-best__k { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-best__t { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-memo { font-size: 15px; font-family: var(--px-font-14); }

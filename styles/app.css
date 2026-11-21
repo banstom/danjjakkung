@@ -1557,6 +1557,18 @@ button.rv-srow { cursor: pointer; }
 .bg--her { background: var(--her); }
 .bg--both { background: var(--both); }
 .rc-best { display: flex; flex-direction: column; gap: 8px; }
+/* 카드 8 교환 쪽지 (docs/recap/changes/2026-11-21-card8-교환쪽지.md) — 오른쪽 위 모서리만 작게 접힌 카드, 쪽지 글 3줄까지 */
+.rc-bestmo { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.rc-bestmo b { font-size: 40px; font-weight: 800; color: var(--tint-text); line-height: 1; }
+.rc-bestmo span { font-size: 15px; line-height: 1.5; }
+.rc-likedhead { margin: 14px 2px 8px; font-size: 13px; font-weight: 700; color: var(--sub); }
+.rc-notecard { position: relative; background: var(--surface); border-radius: 14px 4px 14px 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.rc-notecard::after { content: ""; position: absolute; top: 0; right: 0; width: 16px; height: 16px; border-radius: 0 0 0 6px; background: linear-gradient(225deg, var(--tint) 50%, color-mix(in srgb, var(--text) 10%, var(--surface)) 50%); }
+.rc-notecard__hd { font-size: 12px; font-weight: 700; color: var(--sub); display: flex; align-items: center; gap: 6px; padding-right: 14px; }
+.rc-notecard__hd svg { color: var(--tint-text); flex-shrink: 0; }
+.rc-notecard__q { margin: 0; font-size: 13px; color: var(--sub); line-height: 1.4; word-break: keep-all; }
+.rc-notecard__tx { margin: 0; font-size: 15px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: keep-all; }
+.rc-notecard__by { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; color: var(--sub); }
 .rc-best__k { font-size: 13px; font-weight: 700; color: var(--sub); }
 .rc-best__t { font-size: 17px; font-weight: 700; }
 .rc-memo { background: var(--raised); border-radius: 12px; padding: 10px 12px; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }

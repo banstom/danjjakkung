@@ -8,7 +8,10 @@ const { computeRecap, dayStates, dayLevel, sharedMinutes, periodRange, prevPerio
 const { cardText, cmpText, hoursText, dayLabel } = require('../js/recap-text.js');
 
 const load = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/recap-' + n + '.json'), 'utf8'));
-const nov = load('2026-11');
+const { noteFixture } = require('./note-fixture.js');
+const NF = noteFixture();
+// 11-21 카드 8 = 교환 쪽지 (식탁 기록은 읽지 않음 — 자료에 meals 가 남아 있어도 카드 없음)
+const nov = Object.assign(load('2026-11'), { qdays: NF.qdays, qanswers: NF.qanswers });
 const oct = load('2026-10');
 const recap = computeRecap(nov, oct);
 const card = (id, r = recap) => r.cards.find((c) => c.id === id);
@@ -23,14 +26,14 @@ test('D1 날짜 도우미', () => {
 });
 
 test('C1 카드 순서와 건너뛰기', () => {
-  assert.deepEqual(recap.cards.map((c) => c.id), ['cover', 'together', 'routines', 'todos', 'kungs', 'time', 'places', 'meals', 'spends', 'final']);
+  assert.deepEqual(recap.cards.map((c) => c.id), ['cover', 'together', 'routines', 'todos', 'kungs', 'time', 'places', 'note', 'spends', 'final']);
   // 10월은 영수증 · (지도 방문 1번은 있음) — 기록이 없는 카드는 빠짐
   const r = computeRecap(oct, null);
   assert.ok(!r.cards.some((c) => c.id === 'spends'));
   assert.equal(r.cards[0].id, 'cover');
   assert.equal(r.cards.at(-1).id, 'final');
   // 아무 기록도 없으면 표지 + 마무리만
-  const empty = computeRecap({ ...oct, routines: [], checks: [], todos: [], kungs: [], events: [], places: [], meals: [], goalDays: {}, spends: [] });
+  const empty = computeRecap({ ...oct, routines: [], checks: [], todos: [], kungs: [], events: [], places: [], qdays: [], spends: [] });
   assert.deepEqual(empty.cards.map((c) => c.id), ['cover', 'final']);
 });
 
@@ -94,10 +97,19 @@ test('C7 지도 — 새로 칠한 곳 · 별점 가장 높은 방문', () => {
   assert.deepEqual(t.best.memos.map((m) => m.note), ['바다 보면서 먹은 물회', 'KTX 창밖이 예뻤어']);
 });
 
-test('C8 식탁 — 몸 정보 없음', () => {
-  const c = card('meals');
-  assert.deepEqual(c, { id: 'meals', sharedMeals: 18, goalDays: { jm: 12, dj: 15 } });
-  assert.ok(!JSON.stringify(recap).match(/weight|kcal|체중|칼로리/));
+test('C8 교환 쪽지 (11-21 식탁 → 교환 쪽지): 둘 다 남긴 날 15 · 연속 5 · 지난달 기록 없음 → 비교 없음 · 마음에 남은 쪽지 2장 · 식탁 숫자 없음', () => {
+  const c = card('note');
+  assert.deepEqual([c.bothDays, c.streak, c.prevDiff, c.likedCount, c.liked.length], [15, 5, null, 3, 2]);
+  assert.ok(!card('meals'), '식탁 카드는 만들지 않음');
+  assert.ok(!JSON.stringify(recap).match(/weight|kcal|체중|칼로리|sharedMeals|goalDays/));
+  const t = cardText(c, recap, 'jm');
+  assert.equal(t.kick, '교환 쪽지'); assert.equal(t.cmp, null); assert.deepEqual(t.leadLines, ['둘 다 쪽지를 남긴 날이에요.', '가장 길게는 5일 연속']);
+  assert.deepEqual(t.liked.map((x) => x.head), ['준민의 마음에 남은 쪽지 · 11월 15일 (일)', '단짝의 마음에 남은 쪽지 · 11월 9일 (월)']);
+  assert.deepEqual(t.liked.map((x) => x.by), ['단짝의 쪽지', '준민의 쪽지']);
+  // 다진이 보면: 나 = 다진, 상대 = 단짝
+  assert.equal(cardText(c, recap, 'dj').liked[0].head, '단짝의 마음에 남은 쪽지 · 11월 15일 (일)');
+  // 쪽지가 없는 달은 카드 없음 → 진행 막대 칸도 하나 줄어듦
+  assert.ok(!computeRecap(load('2026-11'), oct).cards.some((x) => x.id === 'note'));
 });
 
 test('C9 영수증 — 단짝 영수증 모듈과 같은 숫자', () => {
@@ -110,8 +122,10 @@ test('C9 영수증 — 단짝 영수증 모듈과 같은 숫자', () => {
 
 test('C10 마무리 타일', () => {
   const t = cardText(card('final'), recap, 'jm');
-  assert.deepEqual(t.tiles.map((x) => `${x.big} ${x.label}`), ['15일 둘 다 해낸 날', '23개 끝낸 일', '153번 주고받은 꿍', '50시간 함께 보낸 시간', '2곳 새로 칠한 곳', '18번 함께 먹은 끼니']);
+  assert.deepEqual(t.tiles.map((x) => `${x.big} ${x.label}`), ['15일 둘 다 해낸 날', '23개 끝낸 일', '153번 주고받은 꿍', '50시간 함께 보낸 시간', '2곳 새로 칠한 곳', '15일 쪽지를 주고받은 날']);
   assert.equal(t.spends.line, '준민 50% · 단짝 50%');
+  const fin = JSON.stringify(card('final'));
+  for (const it of card('note').liked) { assert.ok(!fin.includes(it.text), '마무리(이미지)에 쪽지 글 없음'); assert.ok(!fin.includes(it.q), '질문도 없음'); }
 });
 
 test('C11 비교 문구', () => {
@@ -122,8 +136,7 @@ test('C11 비교 문구', () => {
 
 test('Y1 연말결산 — 같은 틀, 1년치', () => {
   const merge = (k) => [...oct[k], ...nov[k]];
-  const year = { ...nov, period: { kind: 'year', key: '2026' }, checks: merge('checks'), todos: merge('todos'), kungs: merge('kungs'), events: merge('events'), meals: merge('meals'),
-    goalDays: { jm: [...oct.goalDays.jm, ...nov.goalDays.jm], dj: [...oct.goalDays.dj, ...nov.goalDays.dj] } };
+  const year = { ...nov, period: { kind: 'year', key: '2026' }, checks: merge('checks'), todos: merge('todos'), kungs: merge('kungs'), events: merge('events') };
   const r = computeRecap(year, null);
   assert.deepEqual(cardText(r.cards[0], r, 'jm'), { kick: '2026년', title: '이번 해의 단짝꿍', sub: '단짝이 된 지 321일' });
   const tg = cardText(card('together', r), r, 'jm');

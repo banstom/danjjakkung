@@ -4,6 +4,43 @@
   'use strict';
   var NODE = typeof module !== 'undefined' && module.exports;
   var L = NODE ? require('./ledger-sum.js') : root.RT.ledgerSum;
+  var QT = NODE ? require('./question-text.js') : root.RT.questionText; // 카드 8 머리 = 교환 쪽지 이름 (NAME 한 곳)
+
+  // ── 카드 8 「교환 쪽지」 화면 글 (docs/recap/changes/card8/src/note-card-text.js 글자 그대로) ──
+  var WEEK = ['일', '월', '화', '수', '목', '금', '토'];
+  /** '2026-11-15' → '11월 15일 (일)' */
+  function noteDateLabel(date) {
+    var p = String(date).split('-').map(Number);
+    var w = new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay();
+    return p[1] + '월 ' + p[2] + '일 (' + WEEK[w] + ')';
+  }
+  /** 카드 2와 같은 비교 칩 규칙 (빨강 없음, 마이너스는 U+2212) */
+  function diffChip(diff) {
+    if (diff === null || diff === undefined) return null;
+    if (diff > 0) return '지난달보다 +' + diff + '일';
+    if (diff < 0) return '지난달보다 −' + (-diff) + '일';
+    return '지난달과 같아요';
+  }
+  function makeNoteCardText(name) {
+    if (name === undefined) name = QT ? QT.NAME : '교환 쪽지';
+    return {
+      kick: function (kind) { return kind === 'year' ? name + ' · 올해' : name; },
+      big: function (card) { return { num: String(card.bothDays), unit: '일' }; },
+      lead: function (card) {
+        var lines = ['둘 다 쪽지를 남긴 날이에요.'];
+        if (card.streak >= 2) lines.push('가장 길게는 ' + card.streak + '일 연속');
+        return lines;
+      },
+      bestMonth: function (card) {
+        return card.bestMonth ? { month: card.bestMonth.month + '월', label: '가장 많이 주고받은 달', sub: card.bestMonth.days + '일 둘 다 남겼어요' } : null;
+      },
+      chip: function (card, kind) { return kind === 'month' ? diffChip(card.prevDiff) : null; },
+      likedHead: function (card) { return '마음에 남은 쪽지 ' + card.likedCount + '장'; },
+      likedItem: function (item, labelOf) { return labelOf(item.likedBy) + '의 마음에 남은 쪽지 · ' + noteDateLabel(item.date); },
+      likedAuthor: function (item, labelOf) { return labelOf(item.author) + '의 쪽지'; },
+      tileLabel: '쪽지를 주고받은 날'
+    };
+  }
 
   var DOW = '월화수목금토일';
   /** 'YYYY-MM-DD' → "11월 8일 (일)" */
@@ -82,6 +119,16 @@
           } : null
         };
       }
+      case 'note': {
+        // 사람 이름은 보는 사람 기준: 나 = 내 이름, 상대 = 「단짝」 (카드 8 문서 3-3)
+        var NT = makeNoteCardText();
+        var labelOf = function (uid) { return uid === viewerUid ? name(uid) : '단짝'; };
+        return {
+          kick: NT.kick(kind), big: card.bothDays, unit: '일', leadLines: NT.lead(card), cmp: NT.chip(card, kind), best: NT.bestMonth(card),
+          likedHead: card.liked && card.liked.length ? NT.likedHead(card) : null,
+          liked: (card.liked || []).map(function (it) { return { head: NT.likedItem(it, labelOf), q: it.q, text: it.text, author: it.author, by: NT.likedAuthor(it, labelOf) }; })
+        };
+      }
       case 'meals':
         return {
           kick: '짝꿍 식탁', big: card.sharedMeals, unit: '번', lead: '함께 먹은 끼니예요.',
@@ -105,7 +152,7 @@
     }
   }
 
-  var api = { dayLabel: dayLabel, hoursText: hoursText, cmpText: cmpText, cardText: cardText };
+  var api = { dayLabel: dayLabel, hoursText: hoursText, cmpText: cmpText, cardText: cardText, makeNoteCardText: makeNoteCardText, noteDateLabel: noteDateLabel, diffChip: diffChip };
   root.RT = root.RT || {};
   root.RT.recapText = api;
   if (NODE) module.exports = api;

@@ -7,7 +7,9 @@ const V = require('../js/view-recap.js');
 const { computeRecap } = require('../functions/recap.js');
 
 const load = (n) => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/recap-' + n + '.json'), 'utf8'));
-const oct = load('2026-10'), nov = load('2026-11');
+const { noteFixture } = require('./note-fixture.js');
+const NF = noteFixture();
+const oct = load('2026-10'), nov = Object.assign(load('2026-11'), { qdays: NF.qdays, qanswers: NF.qanswers }); // 카드 8 = 교환 쪽지
 const doc = JSON.parse(JSON.stringify(computeRecap(nov, oct)));
 const slot = (uid) => (uid === 'jm' ? 'me' : 'her');
 const deckAt = (i, viewer) => V.deck(V.deckModel(doc, viewer || 'jm', i, slot));
@@ -50,6 +52,18 @@ test('U4 카드마다 목업 문구 (R2 달력 · R3 새 루틴 · R7 별점 · 
   assert.match(r10, /data-act="rc-save"/);
   assert.match(r10, /data-act="rc-restart"/);
   assert.doesNotMatch(r10, /class="rc-tap"/); // 마지막 장엔 넘기기 안내 없음
+});
+
+test('U8 카드 8 교환 쪽지: 목업 08 문구 · 접힌 모서리 카드 · 쪽지 글 · 사람 색 점 / 쪽지가 없는 달은 카드 · 칸 없음', () => {
+  const h = deckAt(7);
+  assert.match(h, /rc-kick">교환 쪽지</); assert.match(h, /15<small>일<\/small>/);
+  assert.match(h, /둘 다 쪽지를 남긴 날이에요\.<br>가장 길게는 5일 연속/);
+  assert.doesNotMatch(h, /rc-cmp/, '지난달 쪽지가 없으면 비교 칩 없음');
+  assert.match(h, /마음에 남은 쪽지 3장/);
+  assert.match(h, /준민의 마음에 남은 쪽지 · 11월 15일 \(일\)[^]*단짝에게 배운 것 하나는요\?[^]*천천히 먹어도 된다는 거[^]*dot--her[^]*단짝의 쪽지/);
+  assert.equal((h.match(/class="rc-notecard"/g) || []).length, 2);
+  const none = JSON.parse(JSON.stringify(computeRecap(load('2026-11'), oct)));
+  assert.ok(!none.cards.some((c) => c.id === 'note'));
 });
 
 test('U5 메모 · 이름은 글자 그대로 (태그로 안 읽힘)', () => {

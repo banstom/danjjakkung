@@ -45,7 +45,7 @@ test('읽기 → 계산 (진짜 쿼리): 목업 숫자 그대로', async () => {
   await seed((w) => { seedFromFixture(w, load('2026-10')); seedFromFixture(w, load('2026-11')); });
   const r = (await RJ.runMonthly(db, kst('2026-12-01T03:00:00')))['2026-11'];
   assert.deepEqual([card(r, 'together').fullDays, card(r, 'together').longestStreak, card(r, 'together').diffPrev], [15, 4, 2]);
-  assert.deepEqual([card(r, 'todos').total, card(r, 'kungs').total, card(r, 'meals').sharedMeals], [23, 153, 18]);
+  assert.deepEqual([card(r, 'todos').total, card(r, 'kungs').total, card(r, 'meals')], [23, 153, undefined]); // 11-21 식탁 카드 없음 (카드 8 = 교환 쪽지)
   assert.equal(cardText(card(r, 'spends'), r, 'jm').bigText, '446,200원');
   const saved = (await db.doc('recaps/2026-11').get()).data();
   assert.deepEqual(saved.cards, r.cards);
