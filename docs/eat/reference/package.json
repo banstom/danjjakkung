@@ -1,0 +1,7 @@
+{
+  "name": "eat-reference",
+  "private": true,
+  "type": "module",
+  "description": "출출 쿠키 참조 구현 — 저장소에 옮길 때 동작은 그대로, 모듈 규칙만 맞추기",
+  "scripts": { "test": "node --test test/*.test.js" }
+}

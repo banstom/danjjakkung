@@ -6,7 +6,7 @@
   14~18px → 15px  Galmuri14      (본문 · 목록 · 카드 이름 · 버튼)
   19~30px → 24px  Galmuri11 × 2  (화면 제목 · 큰 숫자)
   31px~   → 36px  Galmuri11 × 3  (아주 큰 숫자 — D-day 등)
-app.css 의 글씨 크기를 바꾸면 이 스크립트를 다시 돌린다:  python3 scripts/pixel-fonts.py
+app.css · question.css · eat.css 의 글씨 크기를 바꾸면 이 스크립트를 다시 돌린다:  python3 scripts/pixel-fonts.py
 (tests/themes-winter.test.js 가 표가 최신인지 확인한다)
 """
 import os
@@ -15,6 +15,8 @@ import sys
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 APP = os.path.join(ROOT, 'styles', 'app.css')
+# 기능별 스타일도 같은 표에 (v75: 교환 쪽지 · 출출 쿠키)
+EXTRA = [os.path.join(ROOT, 'styles', n) for n in ('question.css', 'eat.css')]
 PIXEL = os.path.join(ROOT, 'styles', 'pixel.css')
 START = '/* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */'
 END = '/* ── 글씨 크기 표 끝 ── */'
@@ -94,7 +96,7 @@ def prefix(sel):
 
 
 def build():
-    css = strip_comments(open(APP, encoding='utf8').read())
+    css = '\n'.join(strip_comments(open(f, encoding='utf8').read()) for f in [APP] + [e for e in EXTRA if os.path.exists(e)])
     lines = [START]
     for media, sel, body in rules(css):
         m = re.search(r'font-size:\s*(\d+(?:\.\d+)?)px', body)

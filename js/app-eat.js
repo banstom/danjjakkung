@@ -51,6 +51,13 @@
       if (st.today && st.todayReady && st.cookies && !st.returning && E.autoReturnDue(st.today, now())) {
         st.returning = true;
         S().returnEat(st.today.eatId).then(function () { st.returning = false; }, function () { st.returning = false; });
+        return;
+      }
+      // 오늘 먹을 것이 가리키는 쿠키가 이미 통 · 먹은 것으로 갔으면 (다른 기기에서 묶음이 끊긴 경우) 표시만 지운다 — 규칙도 이 경우 지우기를 허락
+      var tc = st.today && st.cookies ? byId(st.today.eatId) : null;
+      if (tc && tc.state !== 'today' && tc.state !== 'out' && !st.returning) {
+        st.returning = true;
+        S().clearEatToday().then(function () { st.returning = false; }, function () { st.returning = false; });
       }
     }
 

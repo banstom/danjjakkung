@@ -1,0 +1,242 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>body{margin:0}
+[data-theme]{--divider:var(--line);--input-bg:var(--surface);--icon:var(--sub);--tab-bg:var(--surface);--tab-inactive:var(--sub);--switch-knob:#FFFFFF;--strong:var(--primary);--primary-edge:var(--primary);--success:#2E7D4F;--warning:#9A5B00;--scrim:rgba(30,28,40,0.4);--shadow:0 -8px 24px rgba(30,28,40,0.08);--lift:0 1px 3px rgba(30,28,40,0.12);--font:'Pretendard','Tossface',-apple-system,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif}
+[data-theme="soft-pastel"]{color-scheme:light;--bg:#FFF8E7;--surface:#FFFFFF;--raised:#FCF4EE;--line:#EEE8E7;--text:#34313A;--sub:#6D6973;--faint:#C9C2CB;--primary:#F6DDE8;--on-primary:#34313A;--secondary:#DCD9FA;--accent:#BC7897;--tab-active:#94486B;--strong:#B4587F;--primary-edge:var(--accent);--tint:#FBEDF3;--tint-text:#8E4467;--both:#D98E94;--both-ink:#2A2730;--her:#D78EAD;--her-ink:#2A2730;--me:#B0A5E8;--me-ink:#2A2730;--empty:#F1EAE8;--empty-text:#5F5A66;--warn:#C62F3A}
+[data-theme="cosmic-dream"]{color-scheme:dark;--bg:#101426;--surface:#191D33;--raised:#232842;--line:#30334B;--text:#F4F2FF;--sub:#B5B5D0;--faint:#4C506E;--primary:#7557C8;--on-primary:#FFFFFF;--secondary:#292650;--accent:#8F74E0;--tab-active:#6CD8E8;--tint:#292650;--tint-text:#CFC3FF;--both:#A84F88;--both-ink:#FFFFFF;--her:#267C91;--her-ink:#FFFFFF;--me:#7052B8;--me-ink:#FFFFFF;--empty:#2B3050;--empty-text:#C9C9E0;--warn:#FF7B86;--success:#5BD08A;--warning:#F2B84B;--scrim:rgba(5,7,18,0.62);--shadow:0 -8px 24px rgba(0,0,0,0.45);--lift:0 1px 3px rgba(0,0,0,0.4)}
+.scr{box-sizing:border-box;background:var(--bg);color:var(--text);font-family:var(--font);position:relative;overflow:hidden;padding:20px 20px 0}
+.scr button{font:inherit;color:inherit}
+.caption{margin:0;font-size:13px;font-weight:500;color:var(--sub)}
+.title{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.02em}
+.sec{margin:20px 4px 8px;font-size:13px;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:6px}
+.card{background:var(--surface);border-radius:20px;padding:14px 16px;box-sizing:border-box}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.tabbar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:4px;padding:4px 12px 8px;background:var(--tab-bg);border-top:1px solid var(--divider);z-index:5}
+.tabbar button{flex:1 1 0;min-height:56px;border:0;background:none;padding:6px 0 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--tab-inactive);font-size:12px;font-weight:600}
+.tabbar button[aria-current="page"]{color:var(--tab-active);font-weight:700}
+.seg{display:grid;gap:4px;padding:4px;border-radius:14px;background:var(--raised)}
+.seg button{min-height:40px;border:0;border-radius:10px;background:none;font-size:14px;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:700;box-shadow:var(--lift)}
+.iconbtn{width:44px;height:44px;border:0;background:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--text)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:var(--shadow);padding:8px 20px 24px;box-sizing:border-box;z-index:7}
+.grabber{display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.sheet__title{margin:0;font-size:18px;font-weight:700}
+.sheet__sub{margin:4px 0 0;font-size:13px;color:var(--sub);line-height:1.5}
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:6}
+.bar{display:flex;align-items:center;gap:4px;min-height:44px}
+.list{background:var(--surface);border-radius:20px;padding:4px 16px}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;border:0;background:none;padding:0;text-align:left;border-bottom:1px solid var(--divider)}
+.row:last-child{border-bottom:0}
+.row .nm{flex:1;font-size:16px;font-weight:600}
+.row .vl{font-size:13px;color:var(--sub);font-weight:500}
+.btn{min-height:48px;border-radius:14px;border:1.5px solid var(--primary-edge);background:var(--primary);color:var(--on-primary);font-size:15px;font-weight:700;padding:0 16px}
+.btn[disabled]{opacity:.45}
+.btn2{min-height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;padding:0 16px}
+.btn2.sm,.btn.sm{min-height:40px;font-size:14px;border-radius:12px;padding:0 12px}
+.tbtn{min-height:44px;border:0;background:none;padding:0 4px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.hint{margin:6px 2px 0;font-size:12px;color:var(--sub);line-height:1.5}
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;background:var(--raised);font-size:13px;font-weight:700;border:0}
+.pill[aria-pressed="true"]{background:var(--tint);color:var(--tint-text)}
+.switch{width:52px;height:32px;border-radius:16px;border:0;background:var(--empty);position:relative;flex-shrink:0;padding:0}
+.switch::after{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:var(--switch-knob);box-shadow:var(--lift)}
+.switch[aria-checked="true"]{background:var(--strong)}
+.switch[aria-checked="true"]::after{left:23px}
+.new{display:inline-flex;align-items:center;min-height:20px;padding:0 6px;border-radius:6px;background:var(--tint);color:var(--tint-text);font-size:11px;font-weight:800;margin-left:6px;vertical-align:2px}
+.clamp2{word-break:keep-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.toast{position:absolute;left:20px;right:20px;z-index:8;display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;border-radius:16px;background:var(--text);color:var(--bg);font-size:14px;font-weight:700;box-sizing:border-box}
+.toast span{flex:1}
+.toast .tbtn{color:var(--bg);min-height:40px}
+.minifold{position:relative;width:34px;height:24px;background:var(--tint);border-radius:2px;box-shadow:var(--lift);overflow:hidden;transform:rotate(-6deg);flex-shrink:0}
+.minifold::before{content:"";position:absolute;inset:0;background:linear-gradient(to bottom right,transparent calc(50% - .5px),color-mix(in srgb,var(--text) 18%,transparent) 50%,transparent calc(50% + .5px)),linear-gradient(to bottom left,transparent calc(50% - .5px),color-mix(in srgb,var(--text) 18%,transparent) 50%,transparent calc(50% + .5px))}
+.minifold::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--her)}
+.qstat{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub);font-weight:600;word-break:keep-all}
+.dots{display:flex;gap:4px;flex-shrink:0}
+.dot.hollow{background:transparent !important;box-shadow:inset 0 0 0 2px var(--faint)}
+
+/* ── 오늘 뭐 먹지 · 쿠키 토큰 (기존 토큰의 섞음만) ── */
+[data-theme]{--glass:color-mix(in srgb,var(--surface) 55%,transparent);--glass-hi:color-mix(in srgb,var(--surface) 85%,transparent);--lid:color-mix(in srgb,var(--accent) 38%,var(--surface));--lid-dk:color-mix(in srgb,var(--accent) 58%,var(--surface));--paper:var(--surface);--crease:color-mix(in srgb,var(--text) 8%,transparent)}
+[data-theme="cosmic-dream"]{--glass:color-mix(in srgb,var(--raised) 60%,transparent);--glass-hi:color-mix(in srgb,var(--text) 18%,transparent);--lid:color-mix(in srgb,var(--accent) 55%,var(--raised));--lid-dk:color-mix(in srgb,var(--accent) 35%,var(--raised));--paper:var(--raised);--crease:color-mix(in srgb,var(--text) 10%,transparent)}
+
+/* 쿠키 부품 (그림 규칙은 art.css): 크기는 --s 하나 */
+.ck{--s:64px;position:relative;display:inline-block;width:var(--s);height:calc(var(--s) * .7);flex-shrink:0}
+.ck.open{height:calc(var(--s) * .85)}
+.ck svg{display:block;overflow:visible}
+
+/* 유리병 */
+.jar{position:relative;width:250px;height:292px;margin:8px auto 0}
+.jar__lid{position:absolute;left:50%;top:0;width:150px;height:30px;margin-left:-75px;border-radius:10px;background:var(--lid);box-shadow:inset 0 -7px 0 var(--lid-dk);z-index:2}
+.jar__neck{position:absolute;left:50%;top:26px;width:134px;height:20px;margin-left:-67px;background:var(--glass);box-shadow:inset 2px 0 0 var(--line),inset -2px 0 0 var(--line)}
+.jar__body{position:absolute;left:0;right:0;top:42px;bottom:0;border-radius:46px 46px 58px 58px;background:var(--glass);box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
+.jar__body::before{content:"";position:absolute;left:20px;top:26px;width:11px;height:118px;border-radius:6px;background:var(--glass-hi);z-index:3}
+.jar__body .ck{position:absolute;--s:62px}
+.jar__label{position:absolute;left:50%;top:78px;z-index:3;transform:translateX(-50%) rotate(-3deg);background:var(--paper);border-radius:8px;padding:6px 16px 7px;box-shadow:var(--lift);text-align:center;display:flex;align-items:baseline;gap:2px;white-space:nowrap}
+.jar__label b{font-size:30px;font-weight:800;letter-spacing:-0.03em;line-height:1}
+.jar__label span{font-size:14px;font-weight:700;color:var(--sub)}
+.jar.sm{transform:scale(.62);transform-origin:top center;margin-bottom:-110px}
+.jarline{display:flex;align-items:center;justify-content:center;gap:6px;margin:10px 0 0;font-size:13px;color:var(--sub);font-weight:600;flex-wrap:wrap;word-break:keep-all;text-align:center}
+.ck.fresh{z-index:2;filter:drop-shadow(0 4px 6px color-mix(in srgb,var(--accent) 55%,transparent))}
+.jar__body .k-s{display:none}
+
+/* 시안 B · 쿠키 접시 */
+.tray{background:var(--surface);border-radius:22px;padding:14px 12px 10px;margin-top:10px}
+.tray__head{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 6px}
+.tray__head b{font-size:17px;font-weight:800}
+.tray__head span{font-size:12px;color:var(--sub);font-weight:600}
+.tray__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.tray__cell{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-height:76px;border:0;border-radius:14px;background:var(--raised);padding:10px 0 6px}
+.tray__cell .ck{--s:50px}
+.tray__cell span{font-size:11px;font-weight:700;color:var(--sub);display:flex;align-items:center;gap:4px}
+
+/* 시안 C · 한 개 크게 */
+.hero{background:var(--tint);border-radius:24px;padding:34px 18px 22px;margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.hero .ck{--s:168px;margin-bottom:12px}
+.hero h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-0.02em;word-break:keep-all}
+.hero p{margin:0;font-size:13px;color:var(--tint-text);font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center}
+
+/* 뽑기 고르기 · 아래 버튼 */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.actions{position:absolute;left:20px;right:20px;bottom:84px;display:flex;gap:8px;z-index:4}
+.actions .btn,.actions .btn2{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.actions .grow{flex-grow:1.6}
+
+/* 펼친 쪽지 (쪽지 5의 종이를 그대로) */
+.slip{position:relative;box-sizing:border-box;background:var(--paper);border-radius:4px;box-shadow:var(--lift);padding:14px 16px 12px;display:flex;flex-direction:column;gap:6px;background-image:linear-gradient(to right,transparent calc(50% - .5px),var(--crease) 50%,transparent calc(50% + .5px)),linear-gradient(to bottom,transparent calc(50% - .5px),var(--crease) 50%,transparent calc(50% + .5px))}
+.slip__head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub);min-height:20px}
+.slip__head .sp{flex:1}
+.slip__food{margin:2px 0 0;font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1.25;word-break:keep-all}
+.slip__place{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;min-height:22px;word-break:keep-all}
+.slip__place.none{color:var(--sub);font-weight:600}
+.slip__place a{margin-left:auto;font-size:12px;color:var(--tint-text);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
+.slip__memo{margin:2px 0 0;font-size:15px;line-height:1.55;word-break:keep-all}
+.slip__foot{margin:4px 0 0;font-size:11px;color:var(--sub);font-weight:500}
+.slip.big{padding:20px 20px 16px;gap:10px}
+.slip.big .slip__food{font-size:32px}
+.slip.big .slip__memo{font-size:16px}
+.slip.compact{padding:12px 14px 10px;gap:4px}
+.slip.compact .slip__food{font-size:21px}
+.slip.compact .slip__memo{font-size:14px}
+/* 고르기 */
+.pick{position:relative;width:100%;border:0;padding:0;background:none;text-align:left;display:block;border-radius:6px}
+.pick .ring{position:absolute;right:12px;top:12px;width:26px;height:26px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--faint);display:flex;align-items:center;justify-content:center;z-index:2;background:var(--paper)}
+.pick[aria-pressed="true"] .slip{box-shadow:0 0 0 2.5px var(--strong),var(--lift)}
+.pick[aria-pressed="true"] .ring{background:var(--strong);box-shadow:none;color:var(--surface)}
+.slist{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+/* 시안 R1 가로 넘기기 */
+.carousel{position:relative;height:430px;margin:14px -20px 0}
+.carousel .slip{position:absolute;top:0;width:300px;height:400px}
+.pager{display:flex;justify-content:center;gap:6px;margin-top:6px}
+.pager i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.pager i.on{width:20px;border-radius:4px;background:var(--strong)}
+/* 시안 R3 하나씩 펴기 */
+.crackrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.crack{display:flex;flex-direction:column;align-items:center;gap:6px;min-height:118px;justify-content:flex-end;border:0;border-radius:18px;background:var(--surface);padding:22px 4px 10px}
+.crack .ck{--s:68px}
+.crack span{font-size:12px;font-weight:700;color:var(--sub)}
+.crack[aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--strong)}
+.crack[aria-pressed="true"] span{color:var(--tint-text)}
+
+/* 쿠키 적기 */
+.form-slip{position:relative;box-sizing:border-box;background:var(--paper);border-radius:4px;box-shadow:var(--lift);padding:18px 18px 16px;margin-top:10px;display:flex;flex-direction:column;gap:14px;background-image:linear-gradient(to right,transparent calc(50% - .5px),var(--crease) 50%,transparent calc(50% + .5px)),linear-gradient(to bottom,transparent calc(50% - .5px),var(--crease) 50%,transparent calc(50% + .5px))}
+.stamp{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-size:13px;font-weight:700;color:var(--sub)}
+.fld label small{font-weight:600;color:var(--sub);margin-left:4px}
+.inp{box-sizing:border-box;width:100%;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--input-bg);padding:0 14px;font:inherit;font-size:16px;color:var(--text)}
+.inp.big{min-height:56px;font-size:22px;font-weight:800;letter-spacing:-0.02em}
+.inp.on{border-color:var(--accent)}
+.ta{box-sizing:border-box;width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--line);background:var(--input-bg);padding:12px 14px;font:inherit;font-size:16px;line-height:1.55;color:var(--text);resize:none;display:block;word-break:keep-all}
+.count{font-size:12px;color:var(--sub);text-align:right}
+.placebox{display:flex;align-items:center;gap:10px;min-height:52px;border-radius:12px;border:1.5px solid var(--line);background:var(--input-bg);padding:0 6px 0 12px;box-sizing:border-box}
+.placebox b{flex:1;font-size:16px;font-weight:700}
+.placebox small{display:block;font-size:12px;color:var(--sub);font-weight:600}
+.srch{display:flex;align-items:center;gap:8px;min-height:48px;border-radius:12px;border:1.5px solid var(--accent);background:var(--input-bg);padding:0 12px;box-sizing:border-box}
+.srch input{flex:1;border:0;background:none;font:inherit;font-size:16px;color:var(--text);min-width:0;padding:0}
+.res{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:0;border-bottom:1px solid var(--divider);background:none;padding:8px 0;text-align:left}
+.res:last-child{border-bottom:0}
+.res .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.res .tx b{font-size:16px;font-weight:700}
+.res .tx span{font-size:12px;color:var(--sub);font-weight:500}
+.res .tx b mark{background:none;color:var(--tint-text)}
+
+/* 오늘 먹을 것 */
+.today{background:var(--tint);border-radius:22px;padding:16px 16px 12px;margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.today__kick{margin:0;font-size:13px;font-weight:700;color:var(--tint-text);display:flex;align-items:center;gap:6px}
+.today__food{margin:0;font-size:30px;font-weight:800;letter-spacing:-0.03em;line-height:1.2}
+.today__sub{margin:0;font-size:13px;color:var(--sub);font-weight:600;word-break:keep-all}
+.today__memo{margin:4px 0 0;padding:10px 12px;border-radius:12px;background:var(--paper);font-size:14px;line-height:1.5;word-break:keep-all}
+.today__btns{display:flex;gap:8px;margin-top:8px}
+.today__btns .btn,.today__btns .btn2{flex:1 1 0;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+
+/* 별점 */
+.stars{display:flex;gap:4px;margin-top:14px}
+.stars button{width:44px;height:44px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;color:var(--faint)}
+.stars button.on{color:var(--strong)}
+.optrow{display:flex;align-items:center;gap:12px;min-height:60px;border-bottom:1px solid var(--divider)}
+.optrow:last-of-type{border-bottom:0}
+.optrow .tx{flex:1;display:flex;flex-direction:column;gap:2px}
+.optrow .tx b{font-size:15px;font-weight:700}
+.optrow .tx span{font-size:12px;color:var(--sub);line-height:1.4;word-break:keep-all}
+
+/* 넣어 둔 쿠키 목록 */
+.krow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:0;border-bottom:1px solid var(--divider);background:none;padding:8px 0;text-align:left}
+.krow:last-child{border-bottom:0}
+.krow .ck{--s:40px}
+.krow .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.krow .tx b{font-size:15px;font-weight:700;word-break:keep-all}
+.krow .tx span{font-size:12px;color:var(--sub);font-weight:500;word-break:keep-all}
+.krow .tx b.secret{color:var(--sub);font-weight:600}
+.krow .d{font-size:12px;color:var(--sub);font-weight:600;white-space:nowrap}
+
+/* 빈 통 · 처음 */
+.steps{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.step{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:16px;padding:12px 14px}
+.step i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--tint);color:var(--tint-text);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step span{font-size:14px;font-weight:600;line-height:1.45;word-break:keep-all}
+
+/* 깨는 순간 */
+.cracking{display:flex;justify-content:center;align-items:flex-end;gap:14px;margin-top:150px}
+.cracking .ck{--s:96px}
+.cracking .ck.open{--s:110px}
+.cracknote{text-align:center;margin-top:48px}
+.cracknote b{display:block;font-size:22px;font-weight:800;letter-spacing:-0.02em}
+.cracknote span{display:block;margin-top:6px;font-size:13px;color:var(--sub);font-weight:600}
+
+/* 입구 */
+.eentry{border:0;text-align:left;display:flex;flex-direction:column;gap:8px;min-height:120px;width:100%}
+.eentry .ck{--s:44px}
+.ewide{border:0;text-align:left;display:flex;align-items:center;gap:14px;width:100%;grid-column:1 / -1}
+.ewide .ck{--s:72px}
+
+/* ── 쿠키 그림 토큰 ──
+   금빛(golden): 토마토처럼 그림 전용 토큰을 테마마다 따로 정함 (밝게 값은 도트 간식 테마의 --me #F0C27B 계열)
+   분홍빛(pastel): 기존 토큰 --both를 바탕과 섞기만 */
+[data-theme="soft-pastel"][data-ck="golden"],[data-theme="soft-pastel"] [data-ck="golden"]{--ck-hi:#FCE6BC;--ck:#F0C27B;--ck-mid:#DDA25B;--ck-dk:#B37435;--ck-ol:#7A4C22}
+[data-theme="cosmic-dream"][data-ck="golden"],[data-theme="cosmic-dream"] [data-ck="golden"]{--ck-hi:#F7DCA6;--ck:#E6B56C;--ck-mid:#C88F4D;--ck-dk:#8E5B2A;--ck-ol:#4A2F17}
+[data-theme="soft-pastel"][data-ck="pastel"],[data-theme="soft-pastel"] [data-ck="pastel"]{--ck-hi:color-mix(in srgb,var(--both) 16%,var(--surface));--ck:color-mix(in srgb,var(--both) 36%,var(--bg));--ck-mid:color-mix(in srgb,var(--both) 58%,var(--bg));--ck-dk:color-mix(in srgb,var(--both) 74%,var(--text));--ck-ol:color-mix(in srgb,var(--both) 50%,var(--text))}
+[data-theme="cosmic-dream"][data-ck="pastel"],[data-theme="cosmic-dream"] [data-ck="pastel"]{--ck-hi:color-mix(in srgb,var(--both) 45%,var(--text));--ck:color-mix(in srgb,var(--both) 70%,var(--text) 30%);--ck-mid:var(--both);--ck-dk:color-mix(in srgb,var(--both) 55%,var(--bg));--ck-ol:color-mix(in srgb,var(--both) 25%,var(--bg))}
+
+[data-theme]{--ck-paper:var(--surface)}
+[data-theme="cosmic-dream"]{--ck-paper:color-mix(in srgb,var(--text) 90%,var(--raised))}
+.kk{display:inline-block;line-height:0;flex-shrink:0}
+.kk svg{display:block;overflow:visible}
+.kk .k-b{fill:var(--ck)}
+.kk .k-m{fill:var(--ck-mid)}
+.kk .k-d{fill:var(--ck-dk)}
+.kk .k-h{fill:var(--ck-hi)}
+.kk .k-h2{fill:var(--ck-hi);opacity:.9}
+.kk .k-o{fill:var(--ck-ol)}
+.kk .k-p{fill:var(--ck-paper)}
+.kk .k-l{fill:color-mix(in srgb,var(--ck-ol) 35%,var(--ck-paper))}
+.kk .k-w{fill:var(--me)}
+.kk.her .k-w{fill:var(--her)}
+.kk .k-s{fill:var(--text);opacity:.1}
+.kk .k-sp{fill:var(--ck-dk);opacity:.35}
+.kk .k-rim{fill:none;stroke:var(--ck-hi);stroke-width:2.2;stroke-linecap:round;opacity:.9}
+.kk .k-cr{fill:none;stroke:var(--ck-dk);stroke-width:2.2;stroke-linecap:round;opacity:.5}
+.kk-pixel .k-p{stroke:none}
+.kk-sticker .k-halo{fill:var(--ck-paper);stroke:var(--ck-paper);stroke-width:9;stroke-linejoin:round}
+.kk-sticker .k-ol{fill:none;stroke:var(--ck-ol);stroke-width:2.6;stroke-linejoin:round}
+.kk-sticker .k-olp{stroke:var(--ck-ol);stroke-width:2.2}
+.kk-sticker .k-cr{opacity:.8;stroke:var(--ck-ol);stroke-width:2.4}
+.kk-sticker .k-d{fill:var(--ck-dk)}
+
+html,body{margin:0;background:#888}</style></head><body>
+<div class="scr" data-theme="soft-pastel" data-ck="golden" style="width: 390px; height: 844px"><div class="bar"><button type="button" class="iconbtn" aria-label="전체로 돌아가기" style="margin-left: -12px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></button><h1 class="title" style="font-size: 20px; flex: 1">출출 쿠키</h1><button type="button" class="iconbtn" aria-label="넣어 둔 쿠키" style="margin-right: -10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg></button></div><div class="jar" role="img" aria-label="쿠키 통, 쿠키 13개"><div class="jar__lid"></div><div class="jar__neck"></div><div class="jar__body"><span class="ck kk kk-sticker" style="left: 8px; bottom: 4px; transform: rotate(-8deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker her" style="left: 66px; bottom: 2px; transform: rotate(6deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 124px; bottom: 4px; transform: rotate(-4deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 180px; bottom: 6px; transform: rotate(10deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker her" style="left: 34px; bottom: 38px; transform: rotate(12deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 94px; bottom: 36px; transform: rotate(-10deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker her" style="left: 152px; bottom: 40px; transform: rotate(4deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 6px; bottom: 72px; transform: rotate(-6deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker her" style="left: 64px; bottom: 70px; transform: rotate(8deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 122px; bottom: 74px; transform: rotate(-12deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker her" style="left: 180px; bottom: 72px; transform: rotate(6deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker" style="left: 90px; bottom: 106px; transform: rotate(-4deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span><span class="ck kk kk-sticker fresh" style="left: 148px; bottom: 108px; transform: rotate(12deg)" aria-hidden="true"><svg viewBox="0 0 120 84" width="100%" height="100%"><ellipse class="k-s" cx="60" cy="78" rx="44" ry="4"></ellipse><path class="k-halo" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><g transform="rotate(22 60 66)"><rect class="k-halo" x="57" y="61" width="44" height="11" rx="1"></rect></g><path class="k-b" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-m" d="M60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C64 56 64 36 60 19Z" opacity=".55"></path><path class="k-d" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><path class="k-cr" d="M60 19C64 36 64 56 60 73"></path><ellipse class="k-h" cx="30" cy="27" rx="12" ry="4.5" transform="rotate(-34 30 27)"></ellipse><path class="k-ol" d="M8 62C3 40 18 13 42 12C50 11 56 14 60 19C64 14 70 11 78 12C102 13 117 40 112 62C100 57 85 54 74 58C68 61 63 66 60 73C57 66 52 61 46 58C35 54 20 57 8 62Z"></path><path class="k-ol" d="M60 19C56 34 56 54 60 73C56 65 51 60 46 58C47 44 51 29 60 19Z"></path><g transform="rotate(22 60 66)"><rect class="k-p k-olp" x="57" y="61" width="44" height="11" rx="1"></rect><rect class="k-l" x="64" y="65" width="20" height="1.5"></rect><rect class="k-l" x="64" y="68" width="13" height="1.5"></rect><rect class="k-w k-olp" x="93" y="61" width="8" height="11"></rect></g></svg></span></div><div class="jar__label"><b>13</b><span>개</span></div></div><p class="jarline"><span class="dot" style="background: var(--me); width: 8px; height: 8px"></span>나 8<span class="dot" style="background: var(--her); width: 8px; height: 8px; margin-left: 6px"></span>단짝 5<span style="margin-left: 6px">· 가장 오래된 쿠키 14일 전</span></p><p class="sec">몇 개 깰까요?</p><div class="seg" style="grid-template-columns: repeat(3, 1fr)" role="group" aria-label="몇 개 깰까요"><button type="button" aria-pressed="false">1개</button><button type="button" aria-pressed="false">2개</button><button type="button" aria-pressed="true">3개</button></div><div class="chips" role="group" aria-label="누구 쿠키"><button type="button" class="pill" aria-pressed="true">모두</button><button type="button" class="pill" aria-pressed="false">내 쿠키</button><button type="button" class="pill" aria-pressed="false">단짝 쿠키</button></div><div class="actions"><button type="button" class="btn2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>쿠키 넣기</button><button type="button" class="btn grow">쿠키 3개 깨기</button></div><div class="toast" style="bottom: 148px" role="status"><span>쿠키 통에 넣었어요 · 13개째</span><button type="button" class="tbtn">고치기</button></div><nav class="tabbar" aria-label="화면 이동"><button type="button"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="2"></rect><rect x="13" y="4" width="7" height="7" rx="2"></rect><rect x="4" y="13" width="7" height="7" rx="2"></rect><rect x="13" y="13" width="7" height="7" rx="2"></rect></svg><span>루틴</span></button><button type="button"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg><span>시간표</span></button><button type="button"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7l2 2 3.5-3.5M4 15l2 2 3.5-3.5M13 8h7M13 16h7"></path></svg><span>할 일</span></button><button type="button"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"></path></svg><span>돌아보기</span></button><button type="button" aria-current="page"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg><span>전체</span></button></nav></div></body></html>

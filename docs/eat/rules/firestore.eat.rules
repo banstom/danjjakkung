@@ -1,0 +1,126 @@
+// ── 출출 쿠키 (eats · eatDraws · eatState) ── firestore.rules의 match /databases/{database}/documents { … } 안에 붙여 넣기
+// 기획 계정에서 만든 조각이라 에뮬레이터로 돌려 보지 못했어요. E2에서 emulator-tests.md의 R1~R16을 먼저 통과시킬 것.
+// 저장소에 members 확인 함수가 이미 있으면 그걸 쓰고 eatMember()는 지우기.
+// 글자 수의 정확한 검사(음식 20 · 메모 100 · 가게 40 · 한 줄 40)는 앱(reference/src/cookie.js · today.js)이 하고,
+// 규칙은 넉넉한 상한만 둔다 — 규칙의 size()가 한글을 어떻게 세는지에 따라 정상 입력이 막히지 않게.
+
+function eatMember() {
+  return request.auth != null
+    && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+}
+
+function eatStr(v, min, max) {
+  return v is string && v.size() >= min && v.size() <= max;
+}
+
+function eatPlaceOk(p) {
+  return p == null || (p is map
+    && p.keys().hasOnly(['name', 'kakaoId', 'url', 'sigungu'])
+    && eatStr(p.name, 1, 120)
+    && (!('kakaoId' in p) || (p.kakaoId is string && p.kakaoId.matches('^[0-9]{1,20}$')))
+    && (!('url' in p) || (p.url is string && p.url.matches('^https://place[.]map[.]kakao[.]com/[0-9]+$')))
+    && (!('sigungu' in p) || (p.sigungu is string && p.sigungu.matches('^[0-9]{5}$'))));
+}
+
+function eatContentOk(d) {
+  return eatStr(d.food, 1, 60)
+    && (!('memo' in d) || d.memo == null || eatStr(d.memo, 0, 300))
+    && (!('place' in d) || eatPlaceOk(d.place));
+}
+
+// 별점 · 한 줄은 자기 칸(uid 키)만 바꿀 수 있다
+function eatOwnScores(uid) {
+  let before = resource.data.get('stars', {});
+  let after = request.resource.data.get('stars', {});
+  let nb = resource.data.get('notes', {});
+  let na = request.resource.data.get('notes', {});
+  return after.diff(before).affectedKeys().hasOnly([uid])
+    && (!(uid in after) || (after[uid] is int && after[uid] >= 1 && after[uid] <= 5))
+    && na.diff(nb).affectedKeys().hasOnly([uid])
+    && (!(uid in na) || eatStr(na[uid], 1, 120));
+}
+
+function eatTodayPath() {
+  return /databases/$(database)/documents/eatState/today;
+}
+
+match /eats/{id} {
+  allow read: if eatMember();
+
+  // 넣기: 적은 사람 = 나, 통 안, 작성 시각 = 서버 시각
+  allow create: if eatMember()
+    && request.resource.data.keys().hasOnly(['food', 'place', 'memo', 'by', 'at', 'state', 'from'])
+    && request.resource.data.by == request.auth.uid
+    && request.resource.data.state == 'jar'
+    && request.resource.data.at == request.time
+    && eatContentOk(request.resource.data)
+    && (!('from' in request.resource.data) || exists(/databases/$(database)/documents/eats/$(request.resource.data.from)));
+
+  allow update: if eatMember() && request.resource.data.by == resource.data.by && request.resource.data.at == resource.data.at && (
+    // 고치기: 적은 사람만, 통 안에서만
+    (resource.data.by == request.auth.uid
+      && resource.data.state == 'jar' && request.resource.data.state == 'jar'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['food', 'place', 'memo', 'editedAt'])
+      && request.resource.data.editedAt == request.time
+      && eatContentOk(request.resource.data))
+    // 빼기: 적은 사람만, 통 안 → out
+    || (resource.data.by == request.auth.uid
+      && resource.data.state == 'jar' && request.resource.data.state == 'out'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state']))
+    // 고르기: 통 안 → today, 같은 쓰기 묶음에서 eatState/today가 이 쿠키를 가리켜야 함
+    || (resource.data.state == 'jar' && request.resource.data.state == 'today'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'pick'])
+      && request.resource.data.pick.by == request.auth.uid
+      && request.resource.data.pick.at == request.time
+      && getAfter(eatTodayPath()).data.eatId == id)
+    // 돌려놓기 (직접 · 자동): today → 통 안, eatState/today는 같은 묶음에서 지워져야 함
+    || (resource.data.state == 'today' && request.resource.data.state == 'jar'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'pick'])
+      && request.resource.data.pick == null
+      && !existsAfter(eatTodayPath()))
+    // 먹었어요: today → eaten, 내 별점 · 한 줄만, eatState/today는 지워져야 함
+    || (resource.data.state == 'today' && request.resource.data.state == 'eaten'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['state', 'eaten', 'stars', 'notes'])
+      && request.resource.data.eaten.by == request.auth.uid
+      && request.resource.data.eaten.at == request.time
+      && request.resource.data.eaten.together is bool
+      && request.auth.uid in request.resource.data.stars
+      && eatOwnScores(request.auth.uid)
+      && !existsAfter(eatTodayPath()))
+    // 먹은 뒤 별점 · 한 줄 (자기 칸만)
+    || (resource.data.state == 'eaten' && request.resource.data.state == 'eaten'
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stars', 'notes'])
+      && eatOwnScores(request.auth.uid))
+  );
+
+  allow delete: if false;   // 빼기는 state 'out'
+}
+
+// 오늘 먹을 것: 둘이 같이 하나. 이미 있으면 create가 update로 바뀌어 막힘 → 앱은 「단짝이 방금 골랐어요」
+match /eatState/{doc} {
+  allow read: if eatMember() && doc == 'today';
+  allow create: if eatMember() && doc == 'today'
+    && request.resource.data.keys().hasOnly(['eatId', 'by', 'at'])
+    && request.resource.data.by == request.auth.uid
+    && request.resource.data.at == request.time
+    && getAfter(/databases/$(database)/documents/eats/$(request.resource.data.eatId)).data.state == 'today';
+  allow update: if false;
+  allow delete: if eatMember() && doc == 'today'
+    && getAfter(/databases/$(database)/documents/eats/$(resource.data.eatId)).data.state in ['jar', 'eaten'];
+}
+
+// 깨기 기록 (다시 뽑기에서 뺄 쿠키 · 결산용)
+match /eatDraws/{id} {
+  allow read: if eatMember();
+  allow create: if eatMember()
+    && request.resource.data.keys().hasOnly(['by', 'at', 'n', 'who', 'shown', 'picked'])
+    && request.resource.data.by == request.auth.uid
+    && request.resource.data.at == request.time
+    && request.resource.data.n is int && request.resource.data.n >= 1 && request.resource.data.n <= 3
+    && request.resource.data.who in ['all', 'me', 'partner']
+    && request.resource.data.shown is list && request.resource.data.shown.size() <= 3;
+  allow update: if eatMember() && resource.data.by == request.auth.uid
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shown', 'picked'])
+    && request.resource.data.shown.size() <= 9;
+  allow delete: if false;
+}

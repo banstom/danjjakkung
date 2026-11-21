@@ -480,6 +480,8 @@
           });
         });
       },
+      /** 오늘 먹을 것 표시만 지우기 — 가리키는 쿠키가 이미 통 안 · 먹은 것일 때 (규칙: eatState 지우기는 그 쿠키가 jar · eaten 일 때만) */
+      clearEatToday: function () { return db.doc('eatState/today').delete(); },
       /** 먹었어요: today → eaten + 내 별점 · 한 줄 + eatState/today 지우기 (+ 또 먹고 싶어요 새 쿠키) — 한 트랜잭션 */
       eatEat: function (id, uid, r) {
         var ref = db.doc('eats/' + id), st = db.doc('eatState/today');

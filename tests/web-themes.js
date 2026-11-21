@@ -157,11 +157,11 @@ async function main() {
     assert.deepStrictEqual(await themeOf(p), ['merry-xmas-night'.replace('merry-xmas', 'winter-snack'), 'pixel'], 'B3 밤 고정은 시스템과 상관없이');
     // 꼬리표 · 앞 네 장 · 더 보기
     const cards = await p.$$eval('.tpick', (a) => a.map((e) => e.getAttribute('data-v')));
-    assert.deepStrictEqual(cards, ['winter-snack', 'merry-xmas', 'soft-pastel', 'cosmic-dream'], 'E 앞 네 장 (도트 2 → 기본 둘)');
+    assert.deepStrictEqual(cards, ['spring-picnic', 'winter-snack', 'merry-xmas', 'soft-pastel'], 'E 앞 네 장 (v72: 도트 3 → 소프트 파스텔, 코스믹 드림은 더 보기)');
     assert.match(await p.textContent('.tpick[data-v="winter-snack"] .tpick__tags'), /사용 중.*낮·밤.*NEW/);
-    assert.match(await p.textContent('.tpick[data-v="cosmic-dream"] .tpick__tags'), /어둡게/);
     await p.click('[data-act="theme-more"]');
-    assert.strictEqual(await p.$$eval('.tpick', (a) => a.length), 16, 'E 더 보기 → 16장');
+    assert.match(await p.textContent('.tpick[data-v="cosmic-dream"] .tpick__tags'), /어둡게/);
+    assert.strictEqual(await p.$$eval('.tpick', (a) => a.length), 17, 'E 더 보기 → 17장 (v72 봄소풍 포함)');
     // v61 글씨체: 기본 → 글자만 프리텐다드, 테두리는 그대로 · 다시 열어도 그대로 · 도트로 되돌리기
     const look = () => p.evaluate(() => ({ fam: getComputedStyle(document.querySelector('.sheet__title')).fontFamily, frame: getComputedStyle(document.querySelector('.tpick')).boxShadow !== 'none', font: document.documentElement.getAttribute('data-font') }));
     assert.match((await look()).fam, /Galmuri/, '도트 글씨가 기본');

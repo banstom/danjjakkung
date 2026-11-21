@@ -1,0 +1,45 @@
+/* ── 출출 쿠키 그림 토큰 · 클래스 (초안) ──
+   가이드라인 예외: 토마토(--tomato-*)처럼 그림 전용 토큰. 가이드라인 문서에 먼저 적고 tokens.css로 옮기기 (spec 9절)
+   - 밝은 판: 아래 LIGHT 값 (소프트 파스텔에서 고른 값 — 도트 간식 테마의 #F0C27B 계열)
+   - 어두운 판: 아래 DARK 값 (코스믹 드림에서 고른 값)
+   - tokens.css의 14판 모두에: 밝은 판은 LIGHT, 어두운 판(cosmic-dream · midnight-noir · *-night 등)은 DARK
+   - 화면 색이 아니라 그림 색이라 글자 대비 검사는 없음. 대신 판마다 바탕에서 쿠키 · 쪽지가 묻히지 않는지 눈으로 확인 */
+
+/* LIGHT */
+[data-theme="soft-pastel"] {
+  --ck-hi: #FCE6BC;
+  --ck: #F0C27B;
+  --ck-mid: #DDA25B;
+  --ck-dk: #B37435;
+  --ck-ol: #7A4C22;
+  --ck-paper: var(--surface);
+}
+
+/* DARK */
+[data-theme="cosmic-dream"] {
+  --ck-hi: #F7DCA6;
+  --ck: #E6B56C;
+  --ck-mid: #C88F4D;
+  --ck-dk: #8E5B2A;
+  --ck-ol: #4A2F17;
+  --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
+}
+
+/* 그림 부품 (reference/src/cookie-svg.js가 만드는 마크업용) — 크기는 --s 하나 */
+.ck { --s: 64px; position: relative; display: inline-block; width: var(--s); height: calc(var(--s) * .7); flex-shrink: 0; }
+.ck.open { height: calc(var(--s) * .85); }
+.ck svg { display: block; overflow: visible; }
+.kk .k-b { fill: var(--ck); }
+.kk .k-m { fill: var(--ck-mid); }
+.kk .k-d { fill: var(--ck-dk); }
+.kk .k-h { fill: var(--ck-hi); }
+.kk .k-p { fill: var(--ck-paper); }
+.kk .k-l { fill: color-mix(in srgb, var(--ck-ol) 35%, var(--ck-paper)); }
+.kk .k-w { fill: var(--me); }              /* 쪽지 끝 띠 = 적은 사람 색 */
+.kk.her .k-w { fill: var(--her); }
+.kk .k-s { fill: var(--text); opacity: .1; } /* 바닥 그림자 — 병 안에서는 끄기 */
+.kk-sticker .k-halo { fill: var(--ck-paper); stroke: var(--ck-paper); stroke-width: 9; stroke-linejoin: round; }
+.kk-sticker .k-ol { fill: none; stroke: var(--ck-ol); stroke-width: 2.6; stroke-linejoin: round; }
+.kk-sticker .k-olp { stroke: var(--ck-ol); stroke-width: 2.2; }
+.kk-sticker .k-cr { fill: none; stroke: var(--ck-ol); stroke-width: 2.4; stroke-linecap: round; opacity: .8; }
+.jar .k-s { display: none; }

@@ -32,10 +32,15 @@
 
   // ── 입구 (전체 탭 칸 12) ──
   /** m = { total, todayFood, newCount, off } */
+  /** 입구 그림: 도트 테마는 테마 그림(s2 — 먹거리 둘), 그 밖엔 쿠키 */
+  function entryArt() {
+    var t = root.RT && root.RT.themes && root.RT.themes.artHtml ? root.RT.themes.artHtml('s2', 'afeat__art') : '';
+    return t || ck('me', true, 44);
+  }
   function entry(m) {
     var line = m.off ? '저장 규칙 배포 뒤에 열려요' : m.todayFood ? T.entryToday(m.todayFood) : T.entrySub;
     return '<button type="button" class="card afeat__card ek-entry" data-act="ek-open" aria-label="' + esc(T.name + ' · ' + line + (m.off ? '' : ' · ' + T.entryCount(m.total) + (m.newCount ? ' · ' + T.entryNew(m.newCount) : ''))) + '">' +
-      '<span class="ek-entry__head"><span class="afeat__nm">' + esc(T.name) + '</span>' + ck('me', true, 44) + '</span>' +
+      '<span class="ek-entry__head"><span class="afeat__nm">' + esc(T.name) + '</span>' + entryArt() + '</span>' +
       '<span class="ek-entry__line' + (m.todayFood ? ' is-today' : '') + '">' + esc(line) + '</span>' +
       (m.off ? '' : '<span class="ek-entry__st">' + esc(T.entryCount(m.total)) + (m.newCount ? '<span class="ek-new">' + esc(T.entryNew(m.newCount)) + '</span>' : '') + '</span>') + '</button>';
   }
