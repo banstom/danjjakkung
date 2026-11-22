@@ -26,7 +26,7 @@ test('읽기 → 계산: 시험 자료를 저장소 문서로 펼쳐도 목업 �
   assert.deepEqual(r.cards.map((c) => c.id), ['cover', 'together', 'routines', 'todos', 'kungs', 'time', 'places', 'note', 'spends', 'final']);
   assert.equal(cardText(card(r, 'cover'), r, 'jm').sub, '단짝이 된 지 290일');
   assert.deepEqual([card(r, 'together').fullDays, card(r, 'together').longestStreak, card(r, 'together').diffPrev], [15, 4, 2]);
-  assert.deepEqual(cardText(card(r, 'routines'), r, 'jm').rows.map((x) => [x.routine, x.pct, x.sub, x.cmp]), [['영어 단어 30개', 85, '11/13일', '−15%p'], ['감사 일기', 86, '18/21일', null]]);
+  assert.deepEqual(cardText(card(r, 'routines'), r, 'jm').rows.map((x) => [x.routine, x.pct, x.sub, x.cmp]), [['영어 단어 30개', 85, '11/13일', '지난달보다 −15%p'], ['감사 일기', 86, '18/21일', null]]);
   assert.deepEqual([card(r, 'todos').total, card(r, 'todos').shared, card(r, 'todos').diffPrev], [23, 8, 11]);
   assert.deepEqual([card(r, 'kungs').total, card(r, 'kungs').byPerson.jm, card(r, 'kungs').byPerson.dj], [153, 84, 69]);
   assert.deepEqual(cardText(card(r, 'places'), r, 'jm').more, ['새로 칠한 곳 2곳 · 강릉시 · 속초시']);
@@ -153,4 +153,12 @@ test('알림 문구 · 대상 기간', () => {
   assert.deepEqual(RJ.recapMessage({ kind: 'month', key: '2026-11' }), { title: '11월의 단짝꿍이 나왔어요', body: '한 장씩 넘겨 보세요' });
   assert.deepEqual(RJ.targetsFor(kst('2026-12-01T09:00:00')), { month: { kind: 'month', key: '2026-11' }, year: null });
   assert.deepEqual(RJ.targetsFor(new Date('2026-12-31T15:00:00Z')).year, { kind: 'year', key: '2026' }); // UTC 12-31 = 서울 1월 1일
+});
+
+test('F-L 옮기지 않은 옛 지도 칸(stars · visits[].note)도 결산이 읽는다 (11-23 점검 AI)', () => {
+  const RDm = require('../functions/recap-read.js');
+  const raw = { people: [], routines: [], checks: [], todos: [], kungs: [], events: [], spends: [], spendCats: [], qdays: [], qanswers: {}, couple: null,
+    places: [{ id: '11110', stars: { a: 5, b: 4 }, visits: [{ id: 'v1', date: '2026-11-08', createdBy: 'a', note: '좋았다' }] }] };
+  const p = RDm.toInput(raw, { kind: 'month', key: '2026-11' }).places[0];
+  assert.deepEqual([p.code, p.entries.a.v1.stars, p.entries.a.v1.note, p.entries.b.v1.stars], ['11110', 5, '좋았다', 4]);
 });

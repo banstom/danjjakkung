@@ -63,7 +63,7 @@ test('T5 화면 글이 목업과 같다', () => {
   assert.equal(t.resultTitle(3), '쿠키 3개를 깼어요');
   assert.equal(t.singleSubMine('14일 전'), '14일 전의 내가 남긴 쿠키예요');
   assert.equal(t.todayFrom(false, seoul(2026, 11, 15, 19, 30)), '단짝이 11월 15일에 적은 쿠키');
-  assert.equal(t.paintAsk('성북구'), '짝꿍 지도에 성북구를 칠할까요?');
+  assert.equal(t.paintAsk('성북구'), '단짝 지도에 성북구를 칠할까요?');
   assert.equal(t.placeNameOnly('솔뫼'), '「솔뫼」 이름만 적기');
   assert.equal(t.pushTitle, '단짝이 출출 쿠키를 깼어요');
   assert.equal(t.pushBody('김치찌개'), '오늘은 김치찌개 어때요?');

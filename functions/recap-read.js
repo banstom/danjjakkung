@@ -7,6 +7,7 @@ const N = require('./notify');
 const R = require('./recap');
 const D = require('./shared/dates');
 const S = require('./shared/schedule');
+const P = require('./shared/places'); // 옛 지도 칸(stars · visits[].note)도 읽으려고 — 앱과 같은 legacyFold (11-23 점검 AI)
 const REGIONS = require('./regions.json');
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,7 +55,7 @@ function toInput(raw, period) {
     }
   }
 
-  const places = (raw.places || []).filter((p) => Array.isArray(p.visits) && p.visits.length).map((p) => ({
+  const places = (raw.places || []).map((p) => (P.needsFold(p) ? Object.assign(P.legacyFold(p), { id: p.id }) : p)).filter((p) => Array.isArray(p.visits) && p.visits.length).map((p) => ({
     code: p.id, name: regionName(p.id),
     visits: p.visits.filter((v) => v && typeof v.id === 'string' && DATE.test(String(v.date || ''))).map((v) => ({ id: v.id, date: v.date })),
     entries: p.entries && typeof p.entries === 'object' ? p.entries : {}

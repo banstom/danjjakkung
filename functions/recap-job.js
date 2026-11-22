@@ -24,7 +24,7 @@ const recapLink = (appUrl, key) => `${appUrl}?tab=look&recap=${key}`;
     단짝이 된 달은 만들되 비교 없음(앞 기간 = null) */
 async function buildOne(db, period, now) {
   const data = await RD.loadPeriod(db, period);
-  if (data.people.length < 2) return null;
+  if (data.people.length !== 2) { console.warn(`결산 ${period.key}: members 가 ${data.people.length}명이라 만들지 않음 (둘이어야 함)`); return null; } // 11-23 점검 AI: 셋 이상이면 카드 8 계산이 throw 해서 결산 전체가 멈췄음
   const range = R.periodRange(period);
   if (data.coupleSince && range.end < data.coupleSince) return null;
   const pp = R.prevPeriod(period);
@@ -58,8 +58,8 @@ async function runNotify(db, now, deps) {
     const u = await db.doc(`users/${m.id}`).get();
     if (u.exists && u.data().recap === false) continue;
     if (!(await deps.once(`recap_${m.id}_${period.key}`))) continue;
-    await deps.send(m.id, msg, 'recap', `recap-${period.key}`, recapLink(deps.appUrl, period.key));
-    sent.push(m.id);
+    try { await deps.send(m.id, msg, 'recap', `recap-${period.key}`, recapLink(deps.appUrl, period.key)); sent.push(m.id); }
+    catch (e) { console.warn(`결산 알림 실패 ${m.id}`, e && e.message); } // 11-23 점검 AI: 한 사람이 실패해도 다음 사람에게는 보낸다
   }
   return sent;
 }

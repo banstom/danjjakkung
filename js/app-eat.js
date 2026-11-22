@@ -281,7 +281,7 @@
     function paintYes() {
       var p = st.paint; if (!p || p.busy) return;
       p.busy = true; render(true);
-      host.openMapPaint(p.code, p.food).then(function () { st.paint = null; host.toast('짝꿍 지도에 ' + p.area + ' 칠했어요'); render(true); },
+      host.openMapPaint(p.code, p.food).then(function () { st.paint = null; host.toast('단짝 지도에 ' + p.area + ' 칠했어요'); render(true); },
         function () { st.paint = null; host.toast('지도에 칠하지 못했어요'); render(true); });
     }
 

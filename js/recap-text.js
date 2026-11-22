@@ -22,7 +22,7 @@
     return '지난달과 같아요';
   }
   function makeNoteCardText(name) {
-    if (name === undefined) name = QT ? QT.NAME : '교환 쪽지';
+    if (name === undefined) { var qt = QT || (root.RT && root.RT.questionText); name = qt ? qt.NAME : '교환 쪽지'; } // 11-23: 스크립트 순서와 상관없이 늦게 읽음
     return {
       kick: function (kind) { return kind === 'year' ? name + ' · 올해' : name; },
       big: function (card) { return { num: String(card.bothDays), unit: '일' }; },
@@ -81,7 +81,7 @@
           kick: '각자의 루틴',
           rows: people.map(function (p) { return card.people.filter(function (x) { return x && x.uid === p.uid; })[0]; }).filter(Boolean).map(function (x) {
             return { uid: x.uid, name: name(x.uid), routine: x.name, pct: x.pct, sub: x.done + '/' + x.due + '일',
-              cmp: x.diff === null ? null : (signed(x.diff, '%p') || '그대로'), isNew: !!x.isNew };
+              cmp: cmpText(x.diff, '%p', kind), isNew: !!x.isNew };
           })
         };
       case 'todos':
@@ -110,7 +110,7 @@
         if (kind === 'year' && card.topRegion) lines.push('올해 별점 1위 ' + card.topRegion.name + ' ★' + card.topRegion.avg.toFixed(1));
         var best = card.best;
         return {
-          kick: '짝꿍 지도', big: card.visits, unit: '번', lead: card.places + '곳을 함께 다녀왔어요.', more: lines,
+          kick: '단짝 지도', big: card.visits, unit: '번', lead: card.places + '곳을 함께 다녀왔어요.', more: lines,
           best: best ? {
             title: best.name + ' · ' + dayLabel(best.date),
             stars: Math.round(best.avg * 10) / 10,
@@ -131,8 +131,8 @@
       }
       case 'meals':
         return {
-          kick: '짝꿍 식탁', big: card.sharedMeals, unit: '번', lead: '함께 먹은 끼니예요.',
-          rows: people.map(function (p) { return { uid: p.uid, name: p.name, value: '목표 맞춘 날 ' + card.goalDays[p.uid] + '일' }; }),
+          kick: '단짝 식탁', big: card.sharedMeals || 0, unit: '번', lead: '함께 먹은 끼니예요.',
+          rows: people.map(function (p) { return { uid: p.uid, name: p.name, value: '목표 맞춘 날 ' + ((card.goalDays || {})[p.uid] || 0) + '일' }; }),
           note: '몸 정보 · 체중은 결산에 넣지 않아요'
         };
       case 'spends':

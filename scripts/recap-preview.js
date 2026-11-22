@@ -27,7 +27,7 @@ const period = { kind: key.length === 4 ? 'year' : 'month', key };
   admin.initializeApp({ projectId: PROJECT });
   const db = admin.firestore();
   const data = await RD.loadPeriod(db, period);
-  if (data.people.length < 2) { console.log('members 가 둘이 아니라 결산을 만들지 않아요.'); return; }
+  if (data.people.length !== 2) { console.log(`⚠ members 가 ${data.people.length}명이에요. 둘이 아니면 서버가 결산을 만들지 않아요 (Firestore members 컬렉션 확인).`); return; }
   const range = R.periodRange(period);
   if (data.coupleSince && range.end < data.coupleSince) { console.log('단짝이 된 날보다 이른 기간이라 결산을 만들지 않아요.'); return; }
   const pp = R.prevPeriod(period);

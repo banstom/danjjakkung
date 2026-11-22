@@ -213,7 +213,7 @@
       (a.error ? '<p class="ek-err" role="alert">' + esc(a.error) + '</p>' : '') +
       '<button type="button" class="solid-btn solid-btn--full ek-save" data-act="ek-ate-save"' + (a.stars && !a.saving ? '' : ' disabled') + '>' + esc(T.save) + '</button></section></div>';
   }
-  /** 짝꿍 지도 칠하기 물음 (7절) */
+  /** 단짝 지도 칠하기 물음 (7절) */
   function paintSheet(p, entering) {
     return '<div class="sheet-layer"><button type="button" class="scrim" data-act="ek-paint-no" aria-label="닫기"></button>' +
       '<section class="sheet ek-sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="ek-paint-t">' +

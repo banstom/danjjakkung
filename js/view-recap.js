@@ -121,7 +121,7 @@
           return '<div class="rc-panel rc-rt"><span class="rc-rt__who">' + dot(slot) + esc(r.name) + '</span><span class="rc-rt__nm">' + esc(r.routine) + '</span>' +
             '<span class="rc-rt__pct"><b>' + r.pct + '%</b><span>' + esc(r.sub) + '</span></span>' +
             '<div class="rc-hbar" aria-hidden="true"><span class="bg--' + esc(slot) + '" style="width:' + Math.max(0, Math.min(100, r.pct)) + '%"></span></div>' +
-            (r.cmp ? '<span>' + cmp((m.kind === 'year' ? '작년보다 ' : '지난달보다 ') + r.cmp) + '</span>' : r.isNew ? '<span class="rc-note">' + (m.kind === 'year' ? '올해' : '이번 달에') + ' 새로 만든 루틴</span>' : '') + '</div>';
+            (r.cmp ? '<span>' + cmp(r.cmp) + '</span>' : r.isNew ? '<span class="rc-note">' + (m.kind === 'year' ? '올해' : '이번 달에') + ' 새로 만든 루틴</span>' : '') + '</div>';
         }).join('') + '</div>';
       case 'todos':
       case 'kungs':
@@ -171,7 +171,7 @@
    * → { title, idx, n, cards: [{ card, text }], ... }
    */
   function deckModel(doc, viewer, idx, slotOf, extra) {
-    var cards = (doc.cards || []).map(function (c) { return { card: c, text: T.cardText(c, doc, viewer) }; }).filter(function (x) { return x.text; });
+    var cards = (doc.cards || []).map(function (c) { var t = null; try { t = T.cardText(c, doc, viewer); } catch (e) { t = null; } return { card: c, text: t }; }).filter(function (x) { return x.text; }); // 모양이 이상한 옛 카드 하나 때문에 결산 전체가 안 열리지 않게 (11-23)
     var n = cards.length;
     var i = Math.max(0, Math.min(n - 1, idx | 0));
     var sp = (doc.cards || []).filter(function (c) { return c.id === 'spends'; })[0];

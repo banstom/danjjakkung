@@ -111,11 +111,11 @@
       ateSub: '별점은 각자 남겨요. 단짝 별점은 단짝이 남기면 같이 보여요',
       oneLine: '한 줄',
       together: '단짝과 함께 먹었어요',
-      togetherSub: '가게가 있는 쿠키면 짝꿍 지도에 칠할지도 물어봐요',
+      togetherSub: '가게가 있는 쿠키면 단짝 지도에 칠할지도 물어봐요',
       again: '또 먹고 싶어요',
       againSub: '같은 쿠키를 통에 다시 넣어 둘게요',
       save: '남기기',
-      paintAsk: (area) => `짝꿍 지도에 ${withJosa(area, '을/를')} 칠할까요?`,
+      paintAsk: (area) => `단짝 지도에 ${withJosa(area, '을/를')} 칠할까요?`,
 
       // 넣어 둔 쿠키
       listTitle: '넣어 둔 쿠키',

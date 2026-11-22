@@ -2090,7 +2090,7 @@
     if (f === 'question' && qc && !qc.isOpen()) qc.open();
     if (f === 'eat' && ec && !ec.isOpen()) ec.open();
   }
-  /** eat(쿠키) 기능 → 짝꿍 지도 칠하기: 그 시·군·구에 오늘 방문 기록 (지도의 「다녀왔어요」와 같은 쓰기) */
+  /** eat(쿠키) 기능 → 단짝 지도 칠하기: 그 시·군·구에 오늘 방문 기록 (지도의 「다녀왔어요」와 같은 쓰기) */
   function paintFromEat(code, food) {
     if (!store || !state.me || !RT.places) return Promise.reject(new Error('no-map'));
     var uid = state.uid || state.me, now = new Date().toISOString();
@@ -4357,6 +4357,12 @@
       var oq2 = /[?&]open=(question|eat)/.exec(String(d.link || ''));
       if (d.type === 'open' && oq2) { state.pendingOpen = oq2[1]; openPendingFeature(); return; }
       if (d.type === 'open' && mq) { state.pendingMap = mq[1]; openPendingMap(); return; } // 아직 준비 중이면 ready() 가 연다
+      var rq2 = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(String(d.link || '')); // 결산 알림: 앱이 이미 열려 있을 때도 그 결산으로 (11-23 점검 AI)
+      if (d.type === 'open' && rq2) {
+        state.recap.pending = rq2[1]; state.recap.open = null; state.review.mode = 'recap'; state.review.page = 0; state.review.key = null;
+        if (state.status === 'ready') { if (!state.recap.loading) state.recap.list = null; setTab('look'); render(true); } else state.tab = 'look'; // 다시 불러오면 loadRecaps 가 pending 을 연다 (이미 돌아보기 탭이어도)
+        return;
+      }
       if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
     });
   }

@@ -63,7 +63,7 @@ test('C3-1 「모두」 규칙 — 저장소 규칙(시작 전 · 그만둔 뒤 
 test('C4 각자의 루틴 — 4일 이상인 것 중 % 높은 것, 지난달 비교', () => {
   const t = cardText(card('routines'), recap, 'jm');
   assert.deepEqual(t.rows.map((r) => [r.name, r.routine, r.pct, r.sub, r.cmp]), [
-    ['준민', '영어 단어 30개', 85, '11/13일', '−15%p'],
+    ['준민', '영어 단어 30개', 85, '11/13일', '지난달보다 −15%p'], // 11-23: 같으면 「지난달과 같아요」 (전엔 「지난달보다 그대로」)
     ['단짝', '감사 일기', 86, '18/21일', null], // 11월에 만든 루틴 → 비교 없음
   ]);
   // 단짝이 보면 단짝이 먼저
@@ -226,4 +226,12 @@ test('R8 영수증 카드: 직접 만든 분류가 가장 많으면 그 이름',
   const r = computeRecap({ ...nov, spendCats: [{ id: 'cdate01', label: '데이트' }], spends: [{ date: '2026-11-03', amount: 900000, paidBy: 'jm', cat: 'cdate01' }].concat(nov.spends) }, oct);
   const t = cardText(card('spends', r), r, 'jm');
   assert.match(t.more[0], /^가장 많이 쓴 곳은 데이트 · 90만 원 · 1건$/);
+});
+
+test('C4-1 각자의 루틴 비교가 0이면 「지난달과 같아요」 (11-23 점검 AI: 「지난달보다 그대로」 고침)', () => {
+  const r = { period: { kind: 'month', key: '2026-11' }, people: [{ uid: 'a', name: '가' }, { uid: 'b', name: '나' }] };
+  const c = { id: 'routines', people: [{ uid: 'a', name: '물', pct: 80, done: 8, due: 10, diff: 0 }, { uid: 'b', name: '책', pct: 90, done: 9, due: 10, diff: 5 }] };
+  assert.deepEqual(cardText(c, r, 'a').rows.map((x) => x.cmp), ['지난달과 같아요', '지난달보다 +5%p']);
+  const y = Object.assign({}, r, { period: { kind: 'year', key: '2026' } });
+  assert.equal(cardText(c, y, 'a').rows[0].cmp, '작년과 같아요');
 });
