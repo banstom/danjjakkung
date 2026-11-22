@@ -1572,6 +1572,13 @@ button.rv-srow { cursor: pointer; }
 .rc-notecard__q { margin: 0; font-size: 13px; color: var(--sub); line-height: 1.4; word-break: keep-all; }
 .rc-notecard__tx { margin: 0; font-size: 15px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: keep-all; }
 .rc-notecard__by { font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; color: var(--sub); }
+.rc-notecard__ft { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rc-notecard__more { border: 0; background: none; padding: 10px 0 10px 12px; margin: -10px 0; font: inherit; font-size: 12px; font-weight: 700; color: var(--tint-text, var(--sub)); text-decoration: underline; text-underline-offset: 2px; }
+/* 쪽지 전체 보기 (11-23) — 결산 카드 위에 겹쳐 뜸 */
+.rc-notesheet { position: absolute; inset: 0; z-index: 3; background: color-mix(in srgb, var(--text) 35%, transparent); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.rc-notesheet__card { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; background: var(--surface); border-radius: 18px; padding: 18px 18px 14px; display: flex; flex-direction: column; gap: 8px; }
+.rc-notesheet__tx { margin: 4px 0; font-size: 16px; line-height: 1.6; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
+.rc-notesheet__card .rc-btn2 { margin-top: 6px; flex: none; }
 .rc-best__k { font-size: 13px; font-weight: 700; color: var(--sub); }
 .rc-best__t { font-size: 17px; font-weight: 700; }
 .rc-memo { background: var(--raised); border-radius: 12px; padding: 10px 12px; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }

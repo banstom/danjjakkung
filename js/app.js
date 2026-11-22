@@ -27,7 +27,7 @@
     manage: null,        // 「내 루틴」 시트 { open, form: { key, name, icon, start, error, saving, confirmDelete } }
     tab: 'routine',      // 아래 탭: routine | schedule | todo | look(돌아보기)
     review: { mode: 'week', page: 0, key: null, todos: [], kungs: [], loading: false, error: '' }, // 돌아보기: 주 · 달, page = 몇 칸 전, 기간 안에 끝낸 일 · 꿍 (열 때 불러옴)
-    recap: { list: null, loading: false, error: '', open: null, idx: 0, pending: null, saving: false }, // 결산(R3): 지난 결산 목록 · 넘기는 중인 결산 key · 장
+    recap: { list: null, loading: false, error: '', open: null, idx: 0, pending: null, saving: false, noteOpen: null }, // 결산(R3): 지난 결산 목록 · 넘기는 중인 결산 key · 장
     ledger: null,        // 단짝 영수증 화면 { month, cat, rows, loading, error, sheet } (docs/ledger)
     spendDocs: null, spendsOff: false, spendMonth: '', spendCatDocs: [], // 직접 만든 영수증 분류 (spendCats) // 이번 달 영수증 기록 (구독 — 전체 탭 카드 · 영수증 화면이 같이 씀)
     recapOn: true,       // 매달 1일 결산 알림 (users/<uid>.recap, 없으면 켬)
@@ -233,7 +233,7 @@
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
     'uni-place': 'data-id', 'uni-done': null, 'uni-edit': null, 'uni-delete': null, 'uni-close': null, 'place-block': null, 'place-cancel': null, 'place-ask': null, 'place-ans': 'data-v', 'place-stopask': null,
     'place-next': null, 'place-back': null, 'archive-open': null, 'archive-more': null, 'archive-undo': 'data-id', 'archive-close': null,
-    'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'pref-qremind': null, 'pref-qpartner': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
+    'rv-mode': 'data-v', 'rc-open': 'data-v', 'rc-close': null, 'rc-tap': null, 'rc-note': 'data-v', 'rc-note-close': null, 'rc-note-stay': null, 'rc-prev': null, 'rc-next': null, 'rc-restart': null, 'rc-save': null, 'rc-retry': null, 'pref-recap': null, 'pref-qremind': null, 'pref-qpartner': null, 'rv-page': 'data-dir', 'rv-now': null, 'rv-retry': null, 'rv-view': 'data-v', 'rv-row': 'data-v', 'rv-row-close': null,
     'open-account': null, 'close-account': null, 'ava-open': null, 'ava-close': null, 'ava-view': 'data-v', 'ava-view-close': null, 'ava-view-edit': null, 'ava-delete': null, 'ava-crop-cancel': null, 'ava-crop-save': null, 'all-map': null, 'all-diet': null, 'all-ledger': null, 'lg-close': null, 'lg-month': 'data-dir', 'lg-cat': 'data-v', 'lg-cat-clear': null, 'lg-add': null, 'lg-row': 'data-v', 'lg-cancel': null, 'lg-payer': 'data-v', 'lg-catpick': 'data-v', 'lg-save': null, 'lg-del': null, 'lg-del-no': null, 'lg-del-yes': null, 'lg-cat-new': null, 'lg-cat-new-cancel': null, 'lg-cat-add': null, 'lg-cat-edit': null, 'lg-cat-del': 'data-v', 'diet-close': null, 'dg-open': null, 'dg-close': null, 'dg-goal': 'data-v', 'dg-sex': 'data-v', 'dg-act': 'data-v', 'dg-edit': 'data-v', 'dg-skip': null, 'dg-retune': null, 'dg-basis': null, 'dg-basis-close': null, 'dg-basis-ok': null, 'dg-start': null, 'dl-open': null, 'dl-close': null, 'dl-go': null, 'dl-back': null, 'dl-save': null, 'dl-chip': 'data-v', 'dl-who': 'data-v', 'dm-del': 'data-v', 'dl-retry': null, 'dq-send': null, 'dq-skip': null, 'dm-fix': 'data-v', 'dl-when': null, 'dl-when-close': null, 'dl-when-pick': 'data-v', 'dl-when-month': 'data-v', 'dp-open': 'data-v', 'dp-close': null, 'dp-go': null, 'dp-pick': 'data-v', 'dp-tpick': 'data-v', 'dt-cal': null, 'dt-cal-close': null, 'dt-cal-pick': 'data-v', 'dt-cal-month': 'data-v', 'dt-today': null, 'dt-who': 'data-v', 'dt-bar': 'data-v', 'ds-open': null, 'ds-close': null, 'df-open': null, 'df-close': null, 'df-item': 'data-v', 'dfe-close': null, 'dfe-save': null, 'dfe-del': null, 'dm-open': 'data-v', 'dd-close': null, 'dd-when': null, 'dd-when-close': null, 'dd-when-pick': 'data-v', 'dd-when-month': 'data-v', 'dd-when-save': null, 'dd-item': 'data-v', 'dd-pfind': 'data-v', 'dd-ai': null, 'dd-text': null, 'dd-del': null, 'di-close': null, 'di-step': 'data-v', 'di-unit': 'data-v', 'di-quick': 'data-v', 'di-save': null, 'di-remove': null, 'di-swap': null,
     'map-close': null, 'map-seg': 'data-v', 'map-zoom': 'data-v', 'map-visit': null, 'map-visit-cancel': null, 'map-visit-save': null, 'map-visit-toggle': 'data-v', 'map-entry': 'data-v', 'map-rec-star': 'data-v', 'map-visit-delete': null, 'map-visit-del': 'data-v', 'map-wish': null, 'map-rank': null, 'map-rank-close': null, 'map-rank-move': 'data-v', 'map-rank-save': null, 'map-unwish': null, 'map-sort': 'data-v', 'map-open': 'data-v', 'map-wish-add': null, 'map-find': null, 'map-find-close': null, 'map-pick': 'data-v', 'map-retry': null,
     'open-anniv': null, 'close-anniv': null, 'anniv-edit': null, 'anniv-label': 'data-v', 'anniv-box': 'data-v', 'anniv-save': null, 'anniv-cancel': null };
@@ -510,6 +510,9 @@
     else if (act === 'rv-mode') { if (btn.getAttribute('data-v') !== state.review.mode) setReview(btn.getAttribute('data-v'), 0); }
     else if (act === 'rc-open') openRecap(btn.getAttribute('data-v'));
     else if (act === 'rc-close') closeRecap();
+    else if (act === 'rc-note') { state.recap.noteOpen = Number(btn.getAttribute('data-v')) || 0; focusAfter = ['.rc-notesheet__card [data-act="rc-note-close"]']; focusInSheet = true; render(true); }
+    else if (act === 'rc-note-close') closeRecapNote();
+    else if (act === 'rc-note-stay') { /* 쪽지 전체 보기 안쪽을 눌러도 닫히거나 넘어가지 않게 */ }
     else if (act === 'rc-tap') { if (Date.now() >= rcNoTapUntil) { var rb = btn.getBoundingClientRect(); recapStep(RT.viewRecap.tapDir(ev.clientX - rb.left, rb.width)); } }
     else if (act === 'rc-prev') recapStep(-1);
     else if (act === 'rc-next') recapStep(1);
@@ -994,22 +997,27 @@
     if (!row || !row.doc || !row.doc.cards) return null;
     var sm = slotMap();
     var m = RT.viewRecap.deckModel(row.doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
-      { saving: rc.saving, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
+      { saving: rc.saving, noteOpen: rc.noteOpen, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
     rc.idx = m.idx;
     return m;
   }
   function openRecap(key) {
     if (!key) return;
     state.tab = 'look'; state.review.mode = 'recap'; state.review.row = null;
-    state.recap.open = key; state.recap.idx = 0; state.sheetEntering = true;
+    state.recap.open = key; state.recap.idx = 0; state.recap.noteOpen = null; state.sheetEntering = true;
     focusAfter = ['[data-act="rc-close"]']; focusInSheet = true;
     render(true);
   }
   function closeRecap() {
-    var k = state.recap.open; state.recap.open = null; state.recap.idx = 0;
+    var k = state.recap.open; state.recap.open = null; state.recap.idx = 0; state.recap.noteOpen = null;
     focusAfter = ['[data-act="rc-open"][data-v="' + k + '"]']; render(true);
   }
+  function closeRecapNote() {
+    var i = state.recap.noteOpen; state.recap.noteOpen = null;
+    focusAfter = ['[data-act="rc-note"][data-v="' + i + '"]']; focusInSheet = true; render(true);
+  }
   function recapStep(dir) {
+    if (state.recap.noteOpen !== null) return; // 쪽지 전체 보기가 떠 있으면 넘기지 않음
     var m = recapDeckModel(); if (!m) return;
     var i = RT.viewRecap.step(m.idx, m.n, dir);
     if (i === m.idx) return;
@@ -4222,7 +4230,7 @@
       else closeMap();
       return;
     }
-    if (state.recap.open) { closeRecap(); return; }
+    if (state.recap.open) { if (state.recap.noteOpen !== null) closeRecapNote(); else closeRecap(); return; }
     if (state.ledger && state.ledger.sheet) { if (state.ledger.sheet.confirmDelete) { state.ledger.sheet.confirmDelete = false; focusAfter = ['[data-act="lg-del"]']; focusInSheet = true; render(true); } else closeLedgerSheet(); return; }
     if (state.review.row) { closeRvRow(); return; }
     if (state.anniv) { if (state.anniv.edit && state.couple && RT.anniv.fromDoc(state.couple)) { state.anniv.edit = null; render(true); } else closeAnniv(); return; }

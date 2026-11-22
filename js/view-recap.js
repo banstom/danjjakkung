@@ -128,12 +128,13 @@
       case 'meals':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p>' +
           prows(t.rows, slots) + (t.more && t.more.length ? '<p class="rc-more">' + lines(t.more) + '</p>' : '') + (t.note ? '<p class="rc-note">' + esc(t.note) + '</p>' : '') + '</div>';
-      case 'note': // 카드 8 교환 쪽지 — 접힌 모서리 카드(쪽지 모양 5 전체는 아님), 쪽지 글 3줄까지
+      case 'note': // 카드 8 교환 쪽지 — 접힌 모서리 카드(쪽지 모양 5 전체는 아님), 쪽지 글 3줄까지 + 길면 「전체 보기」(11-23 사용자 결정)
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + lines(t.leadLines) + '</p>' +
           (t.best ? '<div class="rc-panel rc-bestmo"><b>' + esc(t.best.month) + '</b><span>' + esc(t.best.label) + '<br>' + esc(t.best.sub) + '</span></div>' : '') +
-          (t.likedHead ? '<p class="rc-likedhead">' + esc(t.likedHead) + '</p>' + t.liked.map(function (x) {
+          (t.likedHead ? '<p class="rc-likedhead">' + esc(t.likedHead) + '</p>' + t.liked.map(function (x, i) {
             return '<div class="rc-notecard"><span class="rc-notecard__hd">' + HEART + esc(x.head) + '</span><p class="rc-notecard__q">' + esc(x.q) + '</p>' +
-              '<p class="rc-notecard__tx">' + esc(x.text) + '</p><span class="rc-notecard__by">' + dot(slots(x.author), true) + esc(x.by) + '</span></div>';
+              '<p class="rc-notecard__tx">' + esc(x.text) + '</p><span class="rc-notecard__ft"><span class="rc-notecard__by">' + dot(slots(x.author), true) + esc(x.by) + '</span>' +
+              (longNote(x.text) ? '<button type="button" class="rc-notecard__more" data-act="rc-note" data-v="' + i + '">전체 보기</button>' : '') + '</span></div>';
           }).join('') : '') + '</div>';
       case 'time':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p></div>';
@@ -180,8 +181,18 @@
     return Object.assign({ key: doc.period.key, kind: doc.period.kind, title: nameOf(doc.period.key, Number(doc.period.key.slice(0, 4))), idx: i, n: n, cards: cards, slotOf: slotOf, finalRows: finalRows }, extra || {});
   }
 
+  /** 3줄(약 15px · 카드 폭)을 넘길 만한 쪽지인지 — 넘으면 「전체 보기」. 글자 수 · 줄바꿈으로 어림 */
+  function longNote(s) { s = String(s || ''); return s.length > 48 || (s.match(/\n/g) || []).length >= 2; }
+  /** 쪽지 전체 보기 (카드 위에 겹쳐 뜸). 바깥을 누르거나 닫기 · Esc 로 닫힘 */
+  function noteSheet(x, m) {
+    return '<div class="rc-notesheet" data-act="rc-note-close"><div class="rc-notesheet__card" role="dialog" aria-modal="true" aria-label="쪽지 전체" data-act="rc-note-stay">' +
+      '<span class="rc-notecard__hd">' + HEART + esc(x.head) + '</span><p class="rc-notecard__q">' + esc(x.q) + '</p>' +
+      '<p class="rc-notesheet__tx">' + esc(x.text) + '</p><span class="rc-notecard__by">' + dot(m.slotOf(x.author), true) + esc(x.by) + '</span>' +
+      '<button type="button" class="rc-btn2" data-act="rc-note-close">닫기</button></div></div>';
+  }
   function deck(m, entering) {
     var cur = m.cards[m.idx];
+    var openNote = cur.card.id === 'note' && m.noteOpen !== null && m.noteOpen !== undefined && cur.text.liked ? cur.text.liked[m.noteOpen] : null;
     var prog = '<div class="rc-prog" aria-hidden="true">' + m.cards.map(function (_, i) { return '<span' + (i <= m.idx ? ' class="is-on"' : '') + '></span>'; }).join('') + '</div>';
     var last = m.idx === m.n - 1;
     return '<div class="sheet-layer sheet-layer--full"><section class="sheet recap' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-label="' + esc(m.title) + '" aria-roledescription="카드 넘기기">' +
@@ -189,6 +200,7 @@
       '<div class="rc-stage" data-act="rc-tap" aria-live="polite"><p class="sr-only">' + (m.idx + 1) + ' / ' + m.n + '</p>' + cardBody(cur.card, cur.text, m) + '</div>' +
       (last ? '' : '<p class="rc-tap" aria-hidden="true">왼쪽 · 오른쪽을 눌러 넘기기</p>') +
       '<div class="sr-only"><button type="button" data-act="rc-prev"' + (m.idx ? '' : ' disabled') + '>앞 장</button><button type="button" data-act="rc-next"' + (last ? ' disabled' : '') + '>다음 장</button></div>' +
+      (openNote ? noteSheet(openNote, m) : '') +
       '</section></div>';
   }
 
@@ -196,7 +208,7 @@
   function step(idx, n, dir) { return Math.max(0, Math.min(n - 1, idx + dir)); }
   function tapDir(x, width) { return x < width / 3 ? -1 : 1; }
 
-  var api = { nameOf: nameOf, entryModel: entryModel, tab: tab, deckModel: deckModel, deck: deck, step: step, tapDir: tapDir };
+  var api = { nameOf: nameOf, entryModel: entryModel, tab: tab, deckModel: deckModel, deck: deck, step: step, tapDir: tapDir, longNote: longNote };
   root.RT = root.RT || {};
   root.RT.viewRecap = api;
   if (NODE) module.exports = api;

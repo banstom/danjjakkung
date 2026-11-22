@@ -99,3 +99,23 @@ test('카드 넘기기는 전체 화면 대화상자 · 닫기 버튼 · 키보�
   assert.match(html, /data-act="rc-prev" disabled/);
   assert.match(html, /data-act="rc-next">/);
 });
+
+test('U8-1 카드 8 쪽지가 길면 「전체 보기」 → 쪽지 전체가 겹쳐 뜸 (11-23 사용자 결정: 3줄 + 전체 보기)', () => {
+  assert.equal(V.longNote('짧은 쪽지'), false);
+  assert.equal(V.longNote('가'.repeat(49)), true);
+  assert.equal(V.longNote('한 줄\n두 줄\n세 줄'), true);
+  const d = JSON.parse(JSON.stringify(doc));
+  const nc = d.cards.find((c) => c.id === 'note');
+  const long = '오늘은 같이 걸으면서 이야기한 게 제일 좋았어. '.repeat(6).trim();
+  const key = Object.keys(nc.liked || {})[0];
+  if (Array.isArray(nc.liked)) nc.liked[0].text = long; else nc.liked[key].text = long;
+  const idx = d.cards.findIndex((c) => c.id === 'note');
+  const closed = V.deck(V.deckModel(d, 'jm', idx, slot));
+  assert.match(closed, /data-act="rc-note" data-v="0">전체 보기</);
+  assert.doesNotMatch(closed, /rc-notesheet/);
+  const open = V.deck(V.deckModel(d, 'jm', idx, slot, { noteOpen: 0 }));
+  assert.match(open, /class="rc-notesheet" data-act="rc-note-close"/);
+  assert.ok(open.includes('rc-notesheet__tx">' + long + '<'), '쪽지 글 전체 (자르지 않음)');
+  // 다른 카드에서는 noteOpen 이 있어도 안 뜸
+  assert.doesNotMatch(V.deck(V.deckModel(d, 'jm', 0, slot, { noteOpen: 0 })), /rc-notesheet/);
+});

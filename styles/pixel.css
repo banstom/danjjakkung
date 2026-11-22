@@ -102,6 +102,9 @@
 /* 9. 그림 자리 S1~S4 — 정수 배율만 (width · height 는 원본 × 배율, 화면에서 늘리지 않음) */
 .theme-art { display: block; image-rendering: pixelated; flex: none; max-width: none; }
 
+/* 결산 쪽지 전체 보기 (11-23) — 픽셀 테두리 상자 */
+[data-skin="pixel"] .rc-notesheet__card { border-radius: 0; box-shadow: 0 0 0 3px var(--text); }
+
 /* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */
 [data-skin="pixel"]:not([data-font="plain"]) body { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .caption { font-size: 12px; font-family: var(--px-font-11); }
@@ -505,6 +508,8 @@
 [data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__q { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__tx { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__by { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notecard__more { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-notesheet__tx { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-best__k { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-best__t { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-memo { font-size: 15px; font-family: var(--px-font-14); }
