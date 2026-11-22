@@ -310,78 +310,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // 단짝 식탁 (D1): 몸 정보 · 체중 기록은 본인만 (단짝도 못 읽음). 목표 숫자는 둘 다 읽고 본인만 고침
-    //  (기획은 users/{uid}.goal 이었지만 users 문서는 본인만 읽는 문서라 goals/{uid} 로 따로 둠 — docs/diet/plan.md 「바뀐 것」)
-    function dietNum(v, hi) { return (v is int || v is float) && v >= 0 && v <= hi; }
-    function dietAt(d, k) { return !(k in d) || (d[k] is string && d[k].size() <= 40); }
-    function validBody(b) {
-      return b is map && b.keys().hasOnly(['sex', 'age', 'heightCm', 'weightKg', 'activity'])
-        && (!('sex' in b) || b.sex in ['m', 'f'])
-        && (!('age' in b) || (dietNum(b.age, 120) && b.age >= 1))
-        && (!('heightCm' in b) || (dietNum(b.heightCm, 260) && b.heightCm >= 50))
-        && (!('weightKg' in b) || (dietNum(b.weightKg, 400) && b.weightKg >= 10))
-        && (!('activity' in b) || b.activity in ['none', 'w1_3', 'w3_5', 'daily']);
-    }
-    match /private/{uid} {
-      allow read, delete: if isMember() && request.auth.uid == uid;
-      allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['body', 'suggested', 'edits', 'ackAt', 'updatedAt'])
-        && (!('edits' in request.resource.data) || (request.resource.data.edits is map && request.resource.data.edits.keys().hasOnly(['kcal', 'protein', 'fat', 'carb'])))
-        && (!('body' in request.resource.data) || validBody(request.resource.data.body))
-        && (!('suggested' in request.resource.data) || request.resource.data.suggested is map)
-        && dietAt(request.resource.data, 'ackAt') && dietAt(request.resource.data, 'updatedAt');
-      match /weights/{date} {
-        allow read, delete: if isMember() && request.auth.uid == uid;
-        allow create, update: if isMember() && request.auth.uid == uid && isDate(date)
-          && request.resource.data.keys().hasOnly(['kg', 'at']) && dietNum(request.resource.data.kg, 400) && dietAt(request.resource.data, 'at');
-      }
-    }
-    function validGoal(g) {
-      return g.keys().hasOnly(['kind', 'kcal', 'carb', 'protein', 'fat', 'edited', 'retune', 'updatedAt'])
-        && g.kind in ['cut', 'keep', 'bulk']
-        && dietNum(g.kcal, 10000) && dietNum(g.carb, 2000) && dietNum(g.protein, 1000) && dietNum(g.fat, 1000)
-        && (!('edited' in g) || g.edited is bool) && (!('retune' in g) || g.retune is bool) && dietAt(g, 'updatedAt');
-    }
-    match /goals/{uid} {
-      allow read: if isMember();
-      allow create, update: if isMember() && request.auth.uid == uid && validGoal(request.resource.data);
-      allow delete: if isMember() && request.auth.uid == uid;
-    }
-
-    // 단짝 식탁 하루 기록 (D3): meals/<uid>_<YYYY-MM-DD> = { uid, date, meals: [끼니 20개까지], updatedAt }. 둘 다 읽고 본인만 고침
-    //   끼니 안쪽 모양은 앱이 맞춤(규칙은 목록을 돌 수 없음) — 크기 상한으로 막음 (문서 1MB 아래)
-    match /meals/{id} {
-      allow read: if isMember();
-      allow create, update: if isMember()
-        && request.resource.data.keys().hasOnly(['uid', 'date', 'meals', 'updatedAt'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.date is string && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
-        && id == request.auth.uid + '_' + request.resource.data.date
-        && request.resource.data.meals is list && request.resource.data.meals.size() <= 20
-        && request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 40;
-      allow delete: if isMember() && resource.data.uid == request.auth.uid;
-    }
-
-    // 단짝 식탁 내 식품 (D6 일부): foods/f_<이름 해시> = 1단위 값. 알려 준 영양 숫자 · 고른 가공식품을 저장해 다음부터 바로 계산. 둘이 함께 씀 (plan.md 데이터 절)
-    function validFood(f) {
-      return f.keys().hasOnly(['type', 'name', 'unit', 'unitG', 'kcal', 'carb', 'protein', 'fat', 'user', 'src', 'maker', 'product', 'base', 'by', 'updatedAt'])
-        && f.type in ['product', 'food']
-        && f.name is string && f.name.size() >= 1 && f.name.size() <= 60
-        && f.unit is string && f.unit.size() >= 1 && f.unit.size() <= 20
-        && (!('unitG' in f) || f.unitG == null || (dietNum(f.unitG, 5000) && f.unitG > 0))
-        && dietNum(f.kcal, 5000) && dietNum(f.carb, 1000) && dietNum(f.protein, 1000) && dietNum(f.fat, 1000)
-        && (!('user' in f) || (f.user is list && f.user.size() <= 4))
-        && f.src in ['user', 'kr']
-        && (!('maker' in f) || (f.maker is string && f.maker.size() <= 60))
-        && (!('product' in f) || (f.product is string && f.product.size() <= 80))
-        && (!('base' in f) || f.base in ['g', 'ml'])
-        && f.by == request.auth.uid && dietAt(f, 'updatedAt');
-    }
-    match /foods/{id} {
-      allow read: if isMember();
-      allow create, update: if isMember() && id.matches('^f_[a-z0-9]{1,24}$') && validFood(request.resource.data);
-      allow delete: if isMember();
-    }
+    // 단짝 식탁(private · goals · meals · foods)은 11-20 폐기, 11-23 데이터까지 지움 (scripts/delete-diet-data.js) — 규칙도 뺌 (없으면 막힘)
 
     // 프로필 사진 (v51): avatars/<uid> — 256px JPEG 를 data URL 글자로 (Storage 없이). 둘 다 읽고 본인만 올리고 지움
     match /avatars/{uid} {
