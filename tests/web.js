@@ -1746,6 +1746,13 @@ async function tick(page, dateKey, key) {
   await dj.click('[data-act="ev-unsolo"]').catch(() => {});
   await dj.waitForTimeout(250);
   console.log('다시 함께:', JSON.stringify(docs.get(dateKey).solo || null), '| 나', await dateLook(jm));
+  // (v79) 매주 함께 일정: 혼자 버튼 두 개가 따로 한 줄에 같은 높이로
+  await addEvent(jm, '헬스', { both: true, wd: [0, 4], start: '07:00', end: '08:00' });
+  await jm.click('.sblock[aria-label^="헬스"][aria-label*="금요일"]');
+  await jm.waitForSelector('.skipbox__row--solo');
+  console.log('혼자 버튼 높이:', await jm.$$eval('.skipbox__row--solo .ghost-btn', (e) => e.map((x) => Math.round(x.getBoundingClientRect().top) + '/' + Math.round(x.getBoundingClientRect().width)).join(' ')));
+  await jm.screenshot({ path: path.join(OUT, 'web-solo-weekly.png') });
+  await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(450); await jm.click('[data-act="event-delete"]'); await jm.waitForTimeout(250);
   // (점검 8) 알림으로 열면(?tab=routine) 그 탭으로, 주소는 깔끔하게
   await jm.goto(URL + '?tab=routine');
   await jm.waitForSelector('[data-act="tab"][aria-current="page"]');

@@ -405,10 +405,12 @@
   // 쉬는 날 · 시간 바꾼 날 목록은 두지 않는다 — 시간표 아래 그날 목록에 「쉬어요」 · 「이날만 🕐」로 남아 있어 거기서 눌러 되돌린다
   function soloRow(o, dis) {
     if (!o.people || !o.people.length) return '';
-    if (o.solo) return '<button type="button" class="ghost-btn" data-act="ev-unsolo" data-v="' + esc(o.key) + '"' + dis + '>👥 이날 다시 함께</button>';
-    return o.people.map(function (p) {
-      return '<button type="button" class="ghost-btn" data-act="ev-solo" data-v="' + esc(o.key + '|' + p.key) + '"' + dis + '>🙋 이날 ' + esc(p.name) + '만</button>';
-    }).join('');
+    // 다른 버튼 줄과 따로 한 줄 — 두 사람 버튼이 같은 높이 · 같은 폭으로 나란히
+    var inner = o.solo ? '<button type="button" class="ghost-btn" data-act="ev-unsolo" data-v="' + esc(o.key) + '"' + dis + '>👥 이날 다시 함께</button>'
+      : o.people.map(function (p) {
+        return '<button type="button" class="ghost-btn" data-act="ev-solo" data-v="' + esc(o.key + '|' + p.key) + '"' + dis + '>🙋 이날 ' + esc(p.name) + '만</button>';
+      }).join('');
+    return '<div class="skipbox__row skipbox__row--solo' + (o.solo ? ' is-one' : '') + '" role="group" aria-label="이날만 혼자">' + inner + '</div>';
   }
   function skipBox(k) {
     if (!k || !k.occ) return '';
@@ -417,7 +419,7 @@
     if (o.once) {
       // 한 번 일정(함께): 이날만 혼자만
       out += '<p class="skipbox__title">' + esc(o.label) + soloT + '</p>' +
-        '<div class="skipbox__row">' + soloRow(o, dis) + '</div>' +
+        soloRow(o, dis) +
         '<p class="skipbox__hint">' + (o.solo ? '이날은 ' + esc(o.solo.name) + ' 님 일정으로 보여요' : '한 사람이 쉬면 그 사람 일정으로 바꿔요 · 함께 일정은 그대로') + '</p>';
       return out + '</section>';
     }
@@ -444,7 +446,7 @@
         : '<div class="skipbox__row"><button type="button" class="ghost-btn" data-act="ev-move" data-v="' + esc(o.key) + '"' + dis + '>📅 ' + (o.moved ? '이날 다시 바꾸기' : '이날만 날짜 · 시간 바꾸기') + '</button>' +
           (o.moved ? '<button type="button" class="ghost-btn" data-act="ev-unmove" data-v="' + esc(o.key) + '"' + dis + '>원래대로 (' + esc(o.base) + ')</button>' : '') +
           '<button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.key) + '"' + dis + '>🌿 이날만 쉬기</button>' +
-          (o.weekKey && !o.weekSkipped ? '<button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.weekKey) + '"' + dis + '>이번 주 모두 쉬기</button>' : '') + soloRow(o, dis) + '</div>';
+          (o.weekKey && !o.weekSkipped ? '<button type="button" class="ghost-btn" data-act="ev-skip" data-v="' + esc(o.weekKey) + '"' + dis + '>이번 주 모두 쉬기</button>' : '') + '</div>' + soloRow(o, dis);
       out += '<p class="skipbox__hint">그 주만 다른 날 · 다른 시간으로 옮기거나 쉬어요' + (o.people && o.people.length ? ' · 한 사람만 쉬면 「이날 ○○만」' : '') + ' · 매주 일정은 그대로</p>';
     }
     return out + '</section>';
