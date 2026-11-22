@@ -1714,11 +1714,38 @@ async function tick(page, dateKey, key) {
   // 오늘 표시 (중립색) · 지금 선
   const todayLook = await jm.evaluate(() => { const d = document.querySelector('.sday.is-today .sday__date'), c = document.querySelector('.scol.is-today'); return getComputedStyle(d).backgroundColor + ' | 칸 ' + getComputedStyle(c).backgroundColor + ' | 지금 선 ' + !!c.querySelector('.snow--week'); });
   console.log('오늘 표시:', todayLook);
-  // 쉬는 날 정리: 「쉬는 날」 칩으로 되돌린다 (시트는 열린 채로)
-  await jm.click('.slist__item--skipped');
-  while (await jm.$('.chip--rest')) { await jm.click('.chip--rest'); await jm.waitForTimeout(200); }
-  console.log('칩으로 되돌린 뒤:', JSON.stringify(docs.get(bioKey).skip || null), '| 시트 열림', !!(await jm.$('#event-sheet-title')), '| 블록', await bioCount(jm));
-  await jm.keyboard.press('Escape');
+  // 쉬는 날 정리 (v78): 시트에 쉬는 날 목록이 없다 → 요일 목록의 「쉬어요」를 눌러 「이날 다시 하기」
+  console.log('쉬는 날 목록 칩(없어야 함):', await jm.$$eval('.chip--rest', (e) => e.length));
+  for (let i = 0; i < 7; i++) {
+    await (await jm.$$('.sday'))[i].click(); await jm.waitForTimeout(100);
+    while (await jm.$('.slist__item--skipped')) {
+      await jm.click('.slist__item--skipped');
+      console.log('  쉬는 날 열기 칩:', await jm.$$eval('.sheet .chip--rest', (e) => e.length), '| 시간 바꾼 날 목록', await jm.$$eval('.sheet .skipbox__list', (e) => e.length));
+      await jm.click('.skipbox__row [data-act="ev-unskip"]'); await jm.waitForTimeout(250);
+    }
+  }
+  console.log('목록에서 되돌린 뒤:', JSON.stringify(docs.get(bioKey).skip || null), '| 블록', await bioCount(jm));
+  // (v78) 함께 일정 이날만 혼자 — 데이트(10/31 함께)를 준민만 → 준민 자리 · 목록 「준민 · 이날만 혼자」 · 다진 화면도 → 다시 함께
+  const dateKey = [...docs.entries()].find(([k, v]) => v && v.title === '데이트')[0];
+  const dateLook = (p) => p.$$eval('.sblock[aria-label^="데이트"]', (e) => e.map((x) => x.className.match(/sblock--(\w+)/)[1] + (x.getAttribute('aria-label').includes('이날만 혼자') ? '(혼자)' : '')).join(' '));
+  console.log('혼자 전:', await dateLook(jm));
+  await jm.click('.sblock[aria-label^="데이트"]');
+  await jm.waitForSelector('.skipbox');
+  console.log('혼자 칸:', await jm.textContent('.skipbox__title'), '|', await jm.$$eval('.skipbox [data-act]', (e) => e.map((x) => x.textContent).join(' / ')));
+  await jm.screenshot({ path: path.join(OUT, 'web-solo-sheet.png') });
+  await jm.click('[data-act="ev-solo"][data-v$="|' + accounts.get('junmin@example.com').uid + '"]');
+  await jm.waitForTimeout(250);
+  console.log('혼자 뒤: 저장', JSON.stringify(docs.get(dateKey).solo), docs.get(dateKey).owner, '| 토스트', await jm.textContent('.toast').catch(() => ''), '| 나', await dateLook(jm), '| 다진', await dateLook(dj));
+  await (await jm.$$('.sday'))[5].click(); await jm.waitForTimeout(100);
+  console.log('토요일 목록:', await jm.$$eval('.slist__item[aria-label^="데이트"]', (e) => e.map((x) => x.textContent).join(' / ')));
+  await jm.screenshot({ path: path.join(OUT, 'web-solo-week.png'), fullPage: true });
+  // 다진(일정 주인이 아님)도 함께 일정이라 고칠 수 있고, 다시 함께로
+  await dj.click('.sblock[aria-label^="데이트"]').catch(() => {});
+  await dj.waitForTimeout(150);
+  console.log('다진 열기:', await dj.textContent('.skipbox__title').catch(() => '(칸 없음)'));
+  await dj.click('[data-act="ev-unsolo"]').catch(() => {});
+  await dj.waitForTimeout(250);
+  console.log('다시 함께:', JSON.stringify(docs.get(dateKey).solo || null), '| 나', await dateLook(jm));
   // (점검 8) 알림으로 열면(?tab=routine) 그 탭으로, 주소는 깔끔하게
   await jm.goto(URL + '?tab=routine');
   await jm.waitForSelector('[data-act="tab"][aria-current="page"]');

@@ -308,6 +308,48 @@ test('쉬는 날 더하기 · 빼기 · 정리', () => {
   assert.strictEqual(out[out.length - 1], many[69]);
 });
 
+// ── 함께 일정 그날만 혼자 (v78) ──
+test('그날만 혼자: 함께 일정이 그날만 그 사람 자리 · 색으로, 고치기는 둘 다', () => {
+  // 수(2) 함께 헬스, 11/4 은 준민만 · 11/5(목) · 이상한 값은 빠짐 / 개인 일정의 solo 는 무시
+  const list = S.fromDocs([
+    { id: 'gym', owner: 'both', title: '헬스', weekly: true, weekday: 2, start: '19:00', end: '20:00', solo: { '2026-11-04': 'jm', '2026-11-05': 'jm', 'nope': 'dj', '2026-11-11': 'both' } },
+    { id: 'me', owner: 'jm', title: '과외', weekly: true, weekday: 2, start: '10:00', end: '11:00', solo: { '2026-11-04': 'dj' } },
+    { id: 'once', owner: 'both', title: '영화', weekly: false, date: '2026-11-06', start: '18:00', end: '20:00', solo: { '2026-11-06': 'dj', '2026-11-07': 'dj' } }]);
+  assert.deepStrictEqual(list[0].solo, { '2026-11-04': 'jm' });
+  assert.deepStrictEqual(list[1].solo, {});
+  assert.deepStrictEqual(list[2].solo, { '2026-11-06': 'dj' });
+  const wed = D.parse('2026-11-04'), fri = D.parse('2026-11-06'), P = ['dj', 'jm'];
+  const occ = S.on(list, wed).find((e) => e.id === 'gym');
+  assert.deepStrictEqual([occ.owner, occ.baseOwner, occ.soloDay], ['jm', 'both', true]);
+  assert.strictEqual(S.on(list, wed + 7).find((e) => e.id === 'gym').owner, 'both'); // 다음 주는 함께
+  // 주 보기: 준민 자리 하나 · 다진도 고칠 수 있음 · 목록은 「준민」 + 이날만 혼자
+  const w = S.week(list, P, 'dj', S.monStart(wed), today, { pick: wed, names: { dj: '다진', jm: '준민' } });
+  const bs = w.blocks.filter((b) => b.id === 'gym');
+  assert.deepStrictEqual(bs.map((b) => [b.lane, b.slot, b.editable, b.soloDay]), [[1, 'me', true, true]]);
+  const it = w.pick.items.find((x) => x.id === 'gym');
+  assert.deepStrictEqual([it.slot, it.who, it.soloDay], ['me', '준민', true]);
+  // 일 보기 지금 상태: 다진은 그 시간 비어 있음
+  const d = S.day(list, P, {}, 'dj', wed, wed, 19 * 60 + 30);
+  assert.deepStrictEqual(d.status.map((x) => x.busy), [false, true]);
+  // 한 번 일정도
+  assert.strictEqual(S.on(list, fri)[0].owner, 'dj');
+  // 다른 날로 옮긴 회차도 원래 날 기준
+  const mv = S.fromDocs([{ id: 'g', owner: 'both', title: '헬스', weekly: true, weekday: 2, start: '19:00', end: '20:00', moved: { '2026-11-04': '2026-11-05 19:00-20:00' }, solo: { '2026-11-04': 'dj' } }]);
+  assert.strictEqual(S.on(mv, D.parse('2026-11-05'))[0].owner, 'dj');
+});
+
+test('그날만 혼자 더하기 · 빼기 · 정리', () => {
+  const e = { owner: 'both', weekly: true, weekdays: [2], solo: { '2026-09-02': 'jm', '2026-11-04': 'jm' } };
+  assert.deepStrictEqual(S.withSolo(e, '2026-11-11', 'dj', today), { '2026-11-04': 'jm', '2026-11-11': 'dj' }); // 4주 지난 9/2 정리
+  assert.deepStrictEqual(S.withSolo(e, '2026-11-04', null, today), {});
+  assert.deepStrictEqual(S.withSolo(e, '2026-11-05', 'dj', today), { '2026-11-04': 'jm' }); // 요일이 아님
+  assert.deepStrictEqual(S.withSolo(Object.assign({}, e, { weekdays: [3] }), null, null, today), {}); // 요일을 바꾸면 빠짐
+  assert.deepStrictEqual(S.withSolo({ owner: 'jm', weekly: true, weekdays: [2], solo: {} }, '2026-11-04', 'jm', today), {}); // 함께 일정만
+  const fs = require('fs'), path = require('path');
+  const rules = fs.readFileSync(path.join(__dirname, '..', 'firestore.rules'), 'utf8');
+  assert.ok(rules.includes("'moved', 'solo', 'more'") && rules.includes("d.owner == 'both' && d.solo is map"));
+});
+
 test('모르는 필드는 extra 로 남아 다시 저장할 때 그대로', () => {
   const [e] = S.fromDocs([{ id: 'a', owner: 'jm', title: 'x', weekly: true, weekday: 1, start: '10:00', end: '11:00', future: { a: 1 }, updatedAt: 't' }]);
   assert.deepStrictEqual(e.extra, { future: { a: 1 } });

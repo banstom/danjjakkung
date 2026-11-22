@@ -160,6 +160,9 @@
         var sp = function (t) { return t.start + '-' + t.end; };
         // 다른 날로 옮겼으면 앞에 옮긴 날: 'YYYY-MM-DD HH:MM-HH:MM,…'
         if (mk.length) { doc.moved = {}; mk.forEach(function (k) { var m = e.moved[k]; doc.moved[k] = (m.to ? m.to + ' ' : '') + m.spans.map(sp).join(','); }); }
+        // 함께 일정에서 그날만 혼자: { 'YYYY-MM-DD': <uid> } (없으면 필드 없음)
+        var sk = e.owner === 'both' && e.solo ? Object.keys(e.solo) : [];
+        if (sk.length) { doc.solo = {}; sk.forEach(function (k) { doc.solo[k] = e.solo[k]; }); }
         if (e.more && e.more.length) doc.more = e.more.map(sp); // 하루에 한 번 더 (없으면 필드 없음)
         if (e.weekly && e.last) doc.last = e.last; // 마지막 날 (이 날 포함, 없으면 계속). 예전 until 은 이걸로 바뀐다
         if (e.weekly && e.from) doc.from = e.from; // 이 날짜(그 주 월요일)부터 매주 (없으면 앱을 처음 쓴 주부터)

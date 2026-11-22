@@ -9,6 +9,8 @@
                    moved: { 'YYYY-MM-DD': 'HH:MM-HH:MM' } 매주 일정에서 그날만 시간이 다른 날 (보강 · 시간 옮김) — 쉬는 날이 먼저
                      하루에 여러 번이면 'HH:MM-HH:MM,HH:MM-HH:MM' (그날 모든 시간)
                      같은 주 다른 날로 옮기면 'YYYY-MM-DD HH:MM-HH:MM' (앞이 옮긴 날 — 수 과외를 그 주만 화로)
+                   solo: { 'YYYY-MM-DD': <uid> } 함께(both) 일정에서 그날만 한 사람 일정 (한 사람이 쉬는 날 — 매주면 원래 날, 한 번이면 그 날짜)
+                     그날은 그 사람 자리 · 색으로 보이고, 일정 자체는 함께 일정이라 둘 다 고칠 수 있다
                    more: ['HH:MM-HH:MM', …] 하루에 한 번 더 (1~3개, 모든 요일 같은 시간) — 아침 · 저녁 봉사처럼 한 일정이 하루에 여러 번
                    last: 'YYYY-MM-DD' 마지막 날 (선택, 이 날 포함) — 이 날까지만 반복. 시작 주 일요일이면 「이번 주만」
                    until: (v35 예전 모양) 마지막 주의 월요일 — 읽을 때 그 주 일요일을 last 로 본다
@@ -97,7 +99,7 @@
 
   var SKIP_MAX = 60;
   // 화면이 아는 필드 — 이 밖의 필드(더 새 버전 앱이 넣은 것)는 고쳐 저장할 때 그대로 둔다
-  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'more', 'from', 'until', 'last', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
+  var KNOWN = ['id', 'owner', 'title', 'short', 'weekly', 'weekday', 'weekdays', 'times', 'cat', 'skip', 'moved', 'solo', 'more', 'from', 'until', 'last', 'date', 'start', 'end', 'createdBy', 'updatedAt'];
   function extraOf(e) {
     var out = null;
     Object.keys(e).forEach(function (k) { if (KNOWN.indexOf(k) < 0) { out = out || {}; out[k] = e[k]; } });
@@ -160,6 +162,31 @@
     keys.forEach(function (k) { out[k] = m[k]; });
     return out;
   }
+  /** 함께 일정의 「그날만 혼자」: 맞는 날짜(매주면 그 요일, 한 번이면 그 날짜)와 사람 키만 */
+  function soloOf(raw, e) {
+    var out = {};
+    if (!e || e.owner !== 'both' || !raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    Object.keys(raw).sort().forEach(function (k) {
+      var n = D.parse(k), v = raw[k];
+      if (isNaN(n) || D.toKey(n) !== k || typeof v !== 'string' || !v || v === 'both' || v.length > 128) return;
+      if (e.weekly ? (e.weekdays || []).indexOf(weekdayOf(n)) < 0 : k !== e.date) return;
+      out[k] = v;
+    });
+    return out;
+  }
+  /** 그날만 혼자 · 다시 함께 (uid = null). 4주보다 오래된 날은 정리하고 최대 SKIP_MAX 개 */
+  function withSolo(e, key, uid, today) {
+    var m = soloOf(e.solo, e);
+    if (key) { if (uid) m[key] = uid; else delete m[key]; }
+    m = soloOf(m, e);
+    var old = typeof today === 'number' ? today - 28 : -Infinity, keys = Object.keys(m).filter(function (k) { return D.parse(k) >= old; });
+    keys = keys.slice(Math.max(0, keys.length - SKIP_MAX));
+    var out = {};
+    keys.forEach(function (k) { out[k] = m[k]; });
+    return out;
+  }
+  /** 그날(원래 날) 혼자 하는 사람 키 (없으면 null) */
+  function soloOn(e, day) { return e && e.owner === 'both' && e.solo ? e.solo[D.toKey(day)] || null : null; }
   /** 그날 원래 시간들 (요일마다 다르면 그 요일 시간 + 하루에 한 번 더), 시작 순 */
   function baseSpans(e, day) {
     var wd = weekdayOf(day);
@@ -214,7 +241,7 @@
       var weekly = e.weekly === true, days = weekly ? weekdaysOf(e) : null, times = weekly ? timesOf(e, days) : null;
       var cat = C.isId(e.cat) ? e.cat : null, c = catOf(cat, catList); // 지운 카테고리여도 id 는 남겨 둔다 (아이콘만 없음)
       return { id: e.id, owner: e.owner, title: e.title, short: typeof e.short === 'string' ? shortOf(e.title, e.short) : null, weekly: weekly, weekdays: days, times: times, perDay: weekly ? !sameTimes(times, days) : false,
-        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], moved: weekly ? movedOf(e.moved, days) : {}, more: moreOf(e),
+        cat: cat, catIcon: c ? c.icon : '', catName: c ? c.name : '', skip: weekly ? skipsOf(e.skip, days) : [], moved: weekly ? movedOf(e.moved, days) : {}, solo: soloOf(e.solo, { owner: e.owner, weekly: weekly, weekdays: days, date: e.date }), more: moreOf(e),
         from: weekly ? fromKey(e) : null, last: weekly ? lastKey(e) : null, date: weekly ? null : e.date, start: e.start, end: e.end, createdBy: e.createdBy || null, extra: extraOf(e) };
     });
   }
@@ -224,7 +251,9 @@
     var wd = weekdayOf(day), key = D.toKey(day), want = !!(opts && opts.skipped);
     var out = [];
     function push(e, list, occ, from, moved) {
-      list.forEach(function (t, i) { out.push(Object.assign({}, e, { start: t.start, end: t.end, part: i, parts: list.length, movedFrom: from, movedDay: moved, occ: occ })); });
+      // 함께 일정이 그날만 혼자면 그 사람 일정처럼 (자리 · 색 · 지금 상태) — baseOwner 는 원래 'both' (고치기는 둘 다)
+      var solo = soloOn(e, occ), who = solo ? { owner: solo, baseOwner: 'both', soloDay: true } : {};
+      list.forEach(function (t, i) { out.push(Object.assign({}, e, who, { start: t.start, end: t.end, part: i, parts: list.length, movedFrom: from, movedDay: moved, occ: occ })); });
     }
     var started = active;
     events.forEach(function (e) {
@@ -288,7 +317,7 @@
       lanesOf(e, persons).forEach(function (lane, k) {
         lanes[lane].push({ id: e.id, title: e.title, short: e.short || null, owner: e.owner, weekly: e.weekly, s: toMin(e.start), e: toMin(e.end), dayIdx: dayIdx, day: dayN, icon: e.catIcon || '',
           lane: lane, slot: e.owner === 'both' ? 'both' : (lane === 0 ? 'her' : 'me'), dup: k > 0,
-          editable: !!me && (e.owner === me || e.owner === 'both'), time: e.start + '–' + e.end, movedFrom: e.movedFrom || null, movedDay: !!e.movedDay, part: e.part || 0, parts: e.parts || 1 });
+          editable: !!me && ((e.baseOwner || e.owner) === me || (e.baseOwner || e.owner) === 'both'), soloDay: !!e.soloDay, time: e.start + '–' + e.end, movedFrom: e.movedFrom || null, movedDay: !!e.movedDay, part: e.part || 0, parts: e.parts || 1 });
         if (typeof e.occ === 'number') lanes[lane][lanes[lane].length - 1].day = e.occ; // 누르면 원래 날로 연다
       });
     });
@@ -340,7 +369,7 @@
     var items = on(events, pick).map(function (e) { return [e, false]; }).concat(on(events, pick, { skipped: true }).map(function (e) { return [e, true]; }))
       .sort(function (a, b) { return toMin(a[0].start) - toMin(b[0].start) || toMin(a[0].end) - toMin(b[0].end); }).map(function (x) {
         var e = x[0], k = persons.indexOf(e.owner);
-        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], movedFrom: x[1] ? null : e.movedFrom || null, movedDay: !!e.movedDay, part: e.part || 0, parts: e.parts || 1, day: typeof e.occ === 'number' ? e.occ : pick,
+        return { id: e.id, title: e.title, icon: e.catIcon || '', catName: e.catName || '', time: e.start + '–' + e.end, weekly: e.weekly, skipped: x[1], movedFrom: x[1] ? null : e.movedFrom || null, movedDay: !!e.movedDay, soloDay: !!e.soloDay, part: e.part || 0, parts: e.parts || 1, day: typeof e.occ === 'number' ? e.occ : pick,
           slot: e.owner === 'both' ? 'both' : (k === 0 ? 'her' : 'me'), who: e.owner === 'both' ? '함께' : (names[e.owner] || '') };
       });
     return { days: days, blocks: all, hours: hoursFor(all.map(function (b) { return { start: fmt(b.s), end: fmt(b.e) }; })),
@@ -417,7 +446,7 @@
     return '';
   }
 
-  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, movedOn: movedOn, moveTo: moveTo, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, spanKind: spanKind, active: active, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
+  var api = { WD: WD, CATS: CATS, catOf: catOf, TITLE_MAX: TITLE_MAX, SHORT_MAX: SHORT_MAX, shortOf: shortOf, toMin: toMin, fmt: fmt, weekdayOf: weekdayOf, weekdaysOf: weekdaysOf, wdText: wdText, whenText: whenText, SKIP_MAX: SKIP_MAX, withSkip: withSkip, isSkipped: isSkipped, withMoved: withMoved, withSolo: withSolo, soloOn: soloOn, movedOn: movedOn, moveTo: moveTo, baseSpans: baseSpans, spansOn: spansOn, sameSpans: sameSpans, spanOf: spanOf, spanText: spanText, overlaps: overlaps, LAUNCH: LAUNCH, MORE_MAX: MORE_MAX, spanKind: spanKind, active: active, sameTimes: sameTimes, monStart: monStart, rangeText: rangeText, mergeBoth: mergeBoth, fromDocs: fromDocs, on: on, packLane: packLane, week: week, day: day, statusOf: statusOf, validate: validate };
   root.RT = root.RT || {};
   root.RT.schedule = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

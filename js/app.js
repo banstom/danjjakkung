@@ -227,7 +227,7 @@
     tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
-    'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v', 'ev-move-day': 'data-v',
+    'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v', 'ev-solo': 'data-v', 'ev-unsolo': 'data-v', 'ev-move-day': 'data-v',
     'ev-owner': 'data-v', 'ev-repeat': 'data-v', 'ev-wd': 'data-v', 'ev-timemode': 'data-v', 'ev-cat': 'data-v', 'ev-more-add': null, 'ev-more-del': 'data-v',
     'cat-open': null, 'cat-sort': null, 'cat-move': 'data-key', 'cat-close': null, 'cat-new': null, 'cat-edit': 'data-id', 'cat-icon': 'data-icon', 'cat-save': null, 'cat-cancel': null, 'cat-delete': null,
     'todo-view': 'data-v', 'todo-cat': 'data-v', 'todo-scope': 'data-v', 'todo-save-list': null, 'todo-save-place': null, 'uni-who': 'data-v', 'uni-mode': 'data-v', 'uni-open': 'data-id', 'uni-unplaced': null,
@@ -561,6 +561,8 @@
     else if (act === 'ev-move-save') saveMove();
     else if (act === 'ev-move-day') pickMoveDay(btn.getAttribute('data-v'));
     else if (act === 'ev-unmove') moveEvent(btn.getAttribute('data-v'), null);
+    else if (act === 'ev-solo') { var sv = String(btn.getAttribute('data-v')).split('|'); soloEvent(sv[0], sv[1] || null); }
+    else if (act === 'ev-unsolo') soloEvent(btn.getAttribute('data-v'), null);
     else if (act === 'event-cancel') closePlanSheet();
     else if (act === 'event-delete') deleteEvent();
     else if (act === 'ev-owner' || act === 'ev-repeat' || act === 'ev-wd' || act === 'ev-timemode' || act === 'ev-cat' || act === 'ev-more-add' || act === 'ev-more-del') setEventField(act, btn.getAttribute('data-v'));
@@ -1640,6 +1642,7 @@
     // 누른 칸의 날짜 (매주 일정이면 「이날만 쉬기」에 쓴다)
     var occ = dayAttr === null || dayAttr === undefined || dayAttr === '' ? NaN : Number(dayAttr);
     var occDay = e.weekly && !isNaN(occ) && e.weekdays.indexOf(RT.schedule.weekdayOf(occ)) >= 0 ? occ : null;
+    if (!e.weekly && e.owner === 'both') occDay = D.parse(e.date); // 함께 한 번 일정: 「이날만 혼자」에 쓴다
     // 화 · 목처럼 같은 일정이 여러 칸에 있으면, 누른 그 칸으로 포커스를 돌려준다
     if (!forceEdit) planReturn = '[data-act="event-open"]' + (at ? '[data-at="' + CSS.escape(at) + '"]' : '[data-id="' + CSS.escape(id) + '"]');
     var S = RT.schedule;
@@ -1750,31 +1753,47 @@
       // 쉬는 날은 폼이 아니라 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
       skip: f.weekly && old && old.weekly ? RT.schedule.withSkip({ skip: old.skip, weekdays: days }, [], true, state.today) : [],
       // 그날만 바꾼 시간도 저장된 일정에서 (바뀐 요일에 없는 날은 빠진다)
-      moved: f.weekly && old && old.weekly ? RT.schedule.withMoved({ moved: old.moved, weekdays: days }, null, null, state.today) : {}, extra: old ? old.extra : null };
+      moved: f.weekly && old && old.weekly ? RT.schedule.withMoved({ moved: old.moved, weekdays: days }, null, null, state.today) : {},
+      // 함께 일정의 「이날만 혼자」도 저장된 일정에서 (바뀐 요일 · 날짜에 없는 날은 빠진다)
+      solo: old && f.owner === 'both' ? RT.schedule.withSolo({ solo: old.solo, owner: 'both', weekly: !!f.weekly, weekdays: days, date: f.weekly ? null : f.date }, null, null, state.today) : {}, extra: old ? old.extra : null };
     f.saving = true; f.error = ''; render(true);
     settle(store.saveEvent(e), f, function () { return state.eventForm === f; }, old ? '일정을 고쳤어요' : '🗓️ 일정을 추가했어요', '[data-act="event-add"]');
   }
-  /** 고치기 시트의 쉬는 날 칸 — 저장된 매주 일정 기준 (누른 칸의 날 + 지금 쉬는 날 목록) */
+  /** 고치기 시트의 「이날만 바꾸기」 칸 — 저장된 일정 기준, 누른 칸의 날만 (쉬는 날 · 바꾼 날 목록은 시간표 아래 그날 목록에서)
+      매주 일정: 쉬기 · 날 · 시간 바꾸기 (+ 함께면 이날만 혼자) / 함께 한 번 일정: 이날만 혼자 */
   function skipInfo(f) {
     var S = RT.schedule, e = f.mode === 'edit' && f.id ? findEvent(f.id) : null;
-    if (!e || !e.weekly || !f.weekly) return null;
-    var occ = null;
-    if (f.occDay !== null && f.occDay !== undefined && e.weekdays.indexOf(S.weekdayOf(f.occDay)) >= 0) {
-      var ws = S.monStart(f.occDay), key = D.toKey(f.occDay);
-      var weekKeys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
-      var mv = S.movedOn(e, f.occDay);
-      occ = { key: key, label: D.full(f.occDay), skipped: S.isSkipped(e, f.occDay),
-        moved: mv ? movedText(e, f.occDay) : '', base: S.spanText(S.baseSpans(e, f.occDay)),
-        weekKey: e.weekdays.length > 1 ? 'week:' + key : null, weekLabel: D.label(ws) + ' 주',
-        weekSkipped: weekKeys.every(function (k) { return e.skip.indexOf(k) >= 0; }) };
+    if (!e || f.occDay === null || f.occDay === undefined) return null;
+    var both = e.owner === 'both' && f.owner === 'both', occ = null, key = D.toKey(f.occDay);
+    var who = S.soloOn(e, f.occDay), people = both ? planPeople().map(function (p) { return { key: p.key, name: p.name }; }) : [];
+    var solo = who ? { key: who, name: nameOf(who) } : null;
+    if (!e.weekly) {
+      if (!both || f.weekly || e.date !== key) return null;
+      return { occ: { key: key, label: D.full(f.occDay), once: true, solo: solo, people: people }, busy: !!f.saving };
     }
-    var list = e.skip.map(function (k) { var n = D.parse(k); return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')', past: n < state.today }; });
-    var moves = Object.keys(e.moved || {}).map(function (k) {
-      var n = D.parse(k);
-      var to = e.moved[k].to, tn = to ? D.parse(to) : n;
-      return { key: k, label: D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')' + (to ? ' → ' + D.label(tn) + ' (' + S.WD[S.weekdayOf(tn)] + ')' : '') + ' ' + S.spanText(e.moved[k].spans), past: tn < state.today };
-    });
-    return { occ: occ, list: list, moves: moves, move: f.move || null, busy: !!f.saving };
+    if (!f.weekly || e.weekdays.indexOf(S.weekdayOf(f.occDay)) < 0) return null;
+    var ws = S.monStart(f.occDay), weekKeys = e.weekdays.map(function (w) { return D.toKey(ws + w); });
+    var mv = S.movedOn(e, f.occDay);
+    occ = { key: key, label: D.full(f.occDay), skipped: S.isSkipped(e, f.occDay),
+      moved: mv ? movedText(e, f.occDay) : '', base: S.spanText(S.baseSpans(e, f.occDay)),
+      weekKey: e.weekdays.length > 1 ? 'week:' + key : null, weekLabel: D.label(ws) + ' 주',
+      weekSkipped: weekKeys.every(function (k) { return e.skip.indexOf(k) >= 0; }), solo: solo, people: people };
+    return { occ: occ, move: f.move || null, busy: !!f.saving };
+  }
+  /** 함께 일정 「이날만 혼자」(uid) · 「이날 다시 함께」(uid = null). key = 원래 날(매주) 또는 그 날짜(한 번). 누르면 바로 저장되고 시트를 닫는다 */
+  function soloEvent(key, uid) {
+    var f = state.eventForm, S = RT.schedule;
+    if (!store || !f || !f.id || f.saving || f.mode !== 'edit') return;
+    var e = findEvent(f.id), n = D.parse(key);
+    if (!e || e.owner !== 'both' || isNaN(n)) return;
+    if (uid && !planPeople().some(function (p) { return p.key === uid; })) return;
+    var next = S.withSolo(e, key, uid, state.today);
+    if (uid && next[key] !== uid) { planFail(f, '이날만 혼자는 ' + S.SKIP_MAX + '개까지예요'); return; }
+    var doc = Object.assign({}, e, { solo: next, times: e.perDay ? e.times : null });
+    var label = D.label(n) + ' (' + S.WD[S.weekdayOf(n)] + ')';
+    var msg = uid ? '🙋 ' + label + ' ' + e.title + ' — ' + nameOf(uid) + ' 님만 해요' : '👥 ' + label + ' ' + e.title + ' 다시 함께해요';
+    f.saving = true; render(true);
+    settle(store.saveEvent(doc), f, function () { return state.eventForm === f; }, msg, '[data-act="event-add"]');
   }
   /** 쉬는 날: key = 'YYYY-MM-DD' 하나 또는 'week:YYYY-MM-DD'(그 주 이 일정의 모든 요일). 누르면 바로 저장된다. */
   function skipEvent(v, on) {
