@@ -27,7 +27,7 @@
 | 답 | 300자까지, 고치기만(「고침」 표시), 지우기 없음 | 가정 |
 | 늦게 답하기 | 지난 질문에도 답할 수 있음, 알림은 없음 | 가정 |
 | 마음에 남아요 | 둘 다 답한 날 단짝 답에 누름 → 결산 카드에 씀 | 가정 |
-| 알림 | 저녁 9시(안 남겼을 때만) · 단짝이 남기면, 둘 다 기본 켬 | 가정 |
+| 알림 | 저녁 6시(안 남겼을 때만, 11-23 9시 → 6시) · 단짝이 남기면, 둘 다 기본 켬 | 가정 |
 | 결산 | 카드 8(식탁)을 이 기능(이름 = `T.recapKick`)으로 바꿈 | 가정 |
 
 ## 2. 화면 (목업 ↔ 화면)
@@ -89,7 +89,7 @@ users/{uid}            qRemind?: bool(기본 true) · qPartner?: bool(기본 tru
    - 지난 `qdays` 전체(필드 q · src · skipped · date만)와 `ourQuestions`를 읽고 `pickQuestion()` → 트랜잭션으로 `get` 후 **없을 때만** `set`
    - 두 기기가 동시에 만들어도 같은 기록이면 같은 결과(순수 함수, Q-P16). 트랜잭션은 덮어쓰기만 막음
    - 기록이 1,000일을 넘어 읽기가 무거워지면 요약 문서로 바꾸기(나중)
-2. **저녁 9시 서버 함수**: 그때까지 없으면 같은 모듈로 만들고 알림 (8절)
+2. **저녁 6시 서버 함수**: 그때까지 없으면 같은 모듈로 만들고 알림 (8절)
 - 아무도 앱을 열지 않은 날은 문서가 없고, 그날은 질문을 쓰지 않음(묶음이 아껴짐)
 
 ### 순서 (`reference/src/pick.js`)
@@ -129,7 +129,7 @@ users/{uid}            qRemind?: bool(기본 true) · qPartner?: bool(기본 tru
 ## 8. 알림 (서버 함수, 서울 리전)
 | 함수 | 언제 | 하는 일 |
 |---|---|---|
-| `questionDaily` | 매일 21:00 (Asia/Seoul) | `qdays/{오늘}`이 없으면 만들기(공용 `pickQuestion`, 트랜잭션) → `reminderTargets()`(안 답함 · `qRemind !== false`)에게 제목 = 이름(`T.name`), 본문 = 그날 질문 |
+| `questionDaily` | 매일 18:00 (Asia/Seoul) | `qdays/{오늘}`이 없으면 만들기(공용 `pickQuestion`, 트랜잭션) → `reminderTargets()`(안 답함 · `qRemind !== false`)에게 제목 = 이름(`T.name`), 본문 = 그날 질문 |
 | `questionAnswered` | `qdays/{date}/a/{uid}` 만들어질 때 (고치기 X) | `answerPush()`: 오늘 질문일 때만, 단짝(`qPartner !== false`)에게 첫 쪽지면 `T.pushPartnerAnswered`(「단짝이 쪽지를 남겼어요 · 내 쪽지를 남기면 펴져요」), 두 번째면 `T.pushBothOpen`(「단짝도 쪽지를 남겼어요 · 서로의 쪽지를 펼쳐 볼 수 있어요」) |
 - 누르면 질문 화면으로: 지금 방식(`?tab=…` → 서비스워커 → `setTab()`)에 `open=question`을 더해 주세요
 - 알림 시트(F13): 지금 줄 아래 이름 묶음 두 줄(`T.settingRemind` · `T.settingPartner`). 스위치는 `users/{uid}.qRemind` · `qPartner`
@@ -151,7 +151,7 @@ users/{uid}            qRemind?: bool(기본 true) · qPartner?: bool(기본 tru
 - `a/{uid}`: **get = 본인이거나 내 답 문서가 있을 때**, list 거부. 만들기 · 고치기 = 본인만, 1~300자, 고칠 때 `at` 그대로 + `editedAt`. 지우기 없음
 - `ourQuestions`: members 읽기, 만들기 = `by`가 나, 2~60자. 고치기 · 지우기 = 낸 사람만
 - ⚠ 기획 계정에서는 에뮬레이터를 못 돌렸어요. **Q1에서 `rules/rules.test.mjs` R1~R12를 먼저 통과**시켜 주세요. 저장소 규칙 문법과 다르면 뜻을 지키며 고치고 `## 바뀐 것`에 적기
-- 11-22 Q1~Q4: 오늘 질문은 앱이 처음 열 때(없으면) 트랜잭션으로 만들고, 서버 `questionDaily`(21:00)도 같은 계산으로 만든다 — 누가 먼저든 한 번만(만들기만, 덮어쓰기 없음)
+- 11-22 Q1~Q4: 오늘 질문은 앱이 처음 열 때(없으면) 트랜잭션으로 만들고, 서버 `questionDaily`(18:00)도 같은 계산으로 만든다 — 누가 먼저든 한 번만(만들기만, 덮어쓰기 없음)
 - 11-22 Q1~Q4: 단짝 쪽지는 둘 다 남긴 뒤(`done` 두 칸)에만 구독 — 접힌 동안 읽기 시도 0(규칙에 막히는 요청도 안 보냄). 화면 모델에 글 칸 자체가 없음
 - 11-22 Q1~Q4: 규칙은 저장소 `isMember()`(이메일) 그대로. 참조 `rules.test.mjs` → `functions/emu/question.emu.js`(R1~R12)로 옮겨 `scripts/emu-rules.sh`에서 돌림
 - 11-22 Q4: 알림 두 줄(`users.qRemind` · `qPartner`)은 알림 설정 시트 「교환 쪽지」 묶음. 알림에 쪽지 글은 넣지 않음

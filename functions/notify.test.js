@@ -101,6 +101,7 @@ test('v54 단짝 지도 새 방문: 새로 생긴 방문만 · 만든 사람이 
   const idx = require('fs').readFileSync(require('path').join(__dirname, 'index.js'), 'utf8');
   assert.match(idx, /onDocumentWritten\('places\/\{code\}'/);
   assert.match(idx, /once\(`place_\$\{code\}_\$\{v\.id\}`\)/);
-  assert.match(idx, /!pf\.partner \|\| !pf\.map/);
+  assert.match(idx, /if \(!pf\.map\) continue;/); // 11-23: 짝꿍 알림을 꺼도 지도 알림은 온다
+  assert.doesNotMatch(idx, /!pf\.partner \|\| !pf\.map/);
   assert.match(idx, /\?tab=all&map=\$\{code\}/);
 });

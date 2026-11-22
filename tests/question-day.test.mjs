@@ -111,7 +111,7 @@ test('Q-R1 결산 카드: 11월 시험 기록 → 질문 20개 · 둘 다 답한
   assert.equal(questionRecap(nov.days, { period: '2026-10', members: couple.members }), null);
 });
 
-test('Q-N1 저녁 9시 알림: 답한 사람 · 끈 사람 빼고', () => {
+test('Q-N1 저녁 6시 알림: 답한 사람 · 끈 사람 빼고', () => {
   const d = day(today, 'x', 'base', { done: { [D]: 1 } });
   assert.deepEqual(reminderTargets(d, couple.members, {}), [J]);
   assert.deepEqual(reminderTargets(d, couple.members, { [J]: { qRemind: false } }), []);
@@ -138,7 +138,7 @@ test('Q-T2 이름은 한 곳: 바꾸면 알림 제목 · 설정 · 결산 머리
   const { makeText, NAME } = (await import('../js/question-text.js')).default;
   assert.equal(T.name, NAME);
   const t = makeText('짝꿍 쪽지');
-  assert.equal(t.settingRemind, '저녁 9시에 짝꿍 쪽지 알려 주기');
+  assert.equal(t.settingRemind, '저녁 6시에 짝꿍 쪽지 알려 주기');
   assert.equal(t.recapKick, '짝꿍 쪽지');
   assert.equal(t.tagHundred(1000), '1,000일 기념 질문');
   assert.ok(!/답/.test(t.pushPartnerAnswered + t.pushBothOpen + t.partnerLocked), '화면 글은 「쪽지」로');

@@ -119,7 +119,7 @@ async function main() {
   // F13 알림 시트 두 줄
   await jm.click('[data-act="q-close"]'); await jm.waitForSelector('.all');
   await jm.click('[data-act="open-notify"]'); await jm.waitForSelector('[data-act="pref-qremind"]');
-  assert.match(await text(jm, '.sheet'), /저녁 9시에 교환 쪽지 알려 주기[^]*단짝이 쪽지를 남기면 알려 주기/);
+  assert.match(await text(jm, '.sheet'), /저녁 6시에 교환 쪽지 알려 주기[^]*단짝이 쪽지를 남기면 알려 주기/);
   // (알림을 켜기 전엔 스위치가 꺼져 있음 — 다른 알림 줄과 같은 규칙)
   await jm.click('button.close-btn[data-act="close-notify"]');
 

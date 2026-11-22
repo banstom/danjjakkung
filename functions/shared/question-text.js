@@ -80,7 +80,7 @@
       // 알림
       pushPartnerAnswered: '단짝이 쪽지를 남겼어요 · 내 쪽지를 남기면 펴져요',
       pushBothOpen: '단짝도 쪽지를 남겼어요 · 서로의 쪽지를 펼쳐 볼 수 있어요',
-      settingRemind: `저녁 9시에 ${name} 알려 주기`,
+      settingRemind: `저녁 6시에 ${name} 알려 주기`,
       settingRemindSub: '아직 안 남겼을 때만',
       settingPartner: '단짝이 쪽지를 남기면 알려 주기',
       // 결산 카드 8

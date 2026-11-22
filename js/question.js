@@ -122,7 +122,7 @@
   }
 
   // ── pick.js ──
-  // 그날 질문 고르기. 그날 처음 연 사람(또는 저녁 9시 서버 함수)이 days/{date}를 만들 때 한 번만 부름.
+  // 그날 질문 고르기. 그날 처음 연 사람(또는 저녁 6시 서버 함수)이 days/{date}를 만들 때 한 번만 부름.
   // 순서: 날짜 질문 → 단짝에게 묻기(전날까지 만든 것) → 목록에 섞기(지난 2일에 우리 질문이 없을 때) → 기본 묶음
 
   const DEFAULT_SEED = 'danjjakkung';
@@ -332,7 +332,7 @@
   }
 
   // ── notify.js ──
-  // 알림 두 가지. users/{uid}.qRemind(저녁 9시, 기본 켬) · users/{uid}.qPartner(단짝이 답하면, 기본 켬)
+  // 알림 두 가지. users/{uid}.qRemind(저녁 6시, 기본 켬) · users/{uid}.qPartner(단짝이 답하면, 기본 켬)
 
   function reminderTargets(day, members, prefs) {
     return members.filter((u) => (prefs[u] || {}).qRemind !== false && !(day && day.done && day.done[u]));

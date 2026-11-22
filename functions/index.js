@@ -8,7 +8,7 @@
    - routineClock   : 15분마다 (v41) — 루틴에 정해 둔 시각 알림(아직 안 했으면), 아침 8시 「어제 못 한 루틴」 알림
    - onPlaceWritten : 단짝 지도에 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「별점을 남겨 주세요」 (v54, 누르면 그 지역 시트)
    - monthlyRecap   : 매달 1일 03:00 지난달 결산(1월 1일엔 작년 한 해도) → recaps/{key} (docs/recap)
-   - questionDaily  : 매일 21:00 교환 쪽지 — 그날 질문이 없으면 만들고(앱과 같은 모듈), 아직 안 남긴 사람에게 (users.qRemind=false 면 안 보냄)
+   - questionDaily  : 매일 18:00 교환 쪽지 — 그날 질문이 없으면 만들고(앱과 같은 모듈), 아직 안 남긴 사람에게 (users.qRemind=false 면 안 보냄)
    - questionAnswered: 교환 쪽지를 처음 남기면 단짝에게 (오늘 질문만, users.qPartner=false 면 안 보냄, 글은 안 넣음)
    - onEatPing      : 출출 쿠키 「꿍으로 알려 주기」 — 단짝에게 「단짝이 출출 쿠키를 깼어요 · 오늘은 ○○ 어때요?」
    - recapNotify    : 매달 1일 09:00 「11월의 단짝꿍이 나왔어요」 (1월 1일엔 연말결산 하나만, users.recap=false 면 안 보냄)
@@ -249,8 +249,8 @@ exports.recapNotify = onSchedule({ schedule: '0 9 1 * *', timeZone: 'Asia/Seoul'
   const sent = await RJ.runNotify(db, new Date(), { send: sendTo, once, appUrl: APP_URL });
   logger.info('결산 알림', sent.length);
 });
-// 교환 쪽지 (docs/question 8절)
-exports.questionDaily = onSchedule({ schedule: '0 21 * * *', timeZone: 'Asia/Seoul' }, async () => {
+// 교환 쪽지 (docs/question 8절) · 11-23 저녁 9시 → 6시 (사용자 결정)
+exports.questionDaily = onSchedule({ schedule: '0 18 * * *', timeZone: 'Asia/Seoul' }, async () => {
   const r = await QJ.runDaily(db, new Date(), { send: sendTo, once, appUrl: APP_URL, serverTime: () => admin.firestore.FieldValue.serverTimestamp() });
   logger.info('교환 쪽지 저녁 알림', r.date, r.sent.length);
 });
@@ -302,7 +302,7 @@ exports.searchPlace = onCall({ secrets: [KAKAO_REST_KEY], timeoutSeconds: 20, ma
 // 단짝 식탁(parseMeal · findProduct)은 11-20에 폐기 — 함수를 지워 AI 비용을 멈춤 (docs/diet 기록, 데이터는 남김)
 
 // 단짝 지도 (v54): 새 방문이 저장되면 만든 사람이 아닌 쪽에게 「OO 다녀온 기록이 생겼어요 · 별점을 남겨 주세요」 → 누르면 그 지역 시트.
-//  방문 하나에 한 번만 (notifyLog place_<코드>_<방문 id>). 짝꿍 알림 · 지도 알림(users.mapNudge) 둘 다 켜져 있어야.
+//  방문 하나에 한 번만 (notifyLog place_<코드>_<방문 id>). 지도 알림(users.mapNudge)만 따름 — 짝꿍 알림을 꺼도 온다 (11-23 사용자 결정).
 //  3일 안에 안 남겼을 때 다시 알리기는 하지 않는다 (나중 후보).
 exports.onPlaceWritten = onDocumentWritten('places/{code}', async (event) => {
   const before = event.data && event.data.before && event.data.before.exists ? event.data.before.data() : null;
@@ -313,7 +313,7 @@ exports.onPlaceWritten = onDocumentWritten('places/{code}', async (event) => {
     if (!(await once(`place_${code}_${v.id}`))) continue;
     for (const p of await partnersOf(v.createdBy)) {
       const pf = await prefsFor(p);
-      if (!pf.partner || !pf.map) continue;
+      if (!pf.map) continue;
       await sendTo(p, N.mapMessage({ place: REGIONS[code] }), 'map', `map-${code}`, `${APP_URL}?tab=all&map=${code}`);
     }
   }

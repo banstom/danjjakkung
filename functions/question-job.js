@@ -1,4 +1,4 @@
-/* 교환 쪽지 서버 일 (docs/question/spec.md 8절) — index.js 의 questionDaily(매일 21:00) · questionAnswered(쪽지가 처음 생길 때)가 부른다.
+/* 교환 쪽지 서버 일 (docs/question/spec.md 8절) — index.js 의 questionDaily(매일 18:00) · questionAnswered(쪽지가 처음 생길 때)가 부른다.
    그날 질문은 앱과 같은 모듈(functions/shared/question.js = js/question.js)로 고른다. 알림 글에 쪽지 내용은 넣지 않는다.
    보내기 · 한 번만 기록은 밖에서 받아서 가짜 저장소로 시험한다 (tests/question-server.test.js). */
 'use strict';
@@ -29,7 +29,7 @@ async function ensureDay(db, date, deps) {
   return dayOf(date, doc);
 }
 
-/** questionDaily: 저녁 9시 — 없으면 만들고, 안 남긴 사람(qRemind !== false)에게 「교환 쪽지 · 그날 질문」
+/** questionDaily: 저녁 6시 — 없으면 만들고, 안 남긴 사람(qRemind !== false)에게 「교환 쪽지 · 그날 질문」
     deps = { send(uid, msg, kind, tag, link), once(id) → bool, serverTime(), appUrl } */
 async function runDaily(db, now, deps) {
   const date = Q.dateKey(now.getTime());
