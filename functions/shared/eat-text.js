@@ -62,6 +62,18 @@
       placeNameOnly: (q) => `「${q}」 이름만 적기`,
       placeNameOnlySub: '카카오맵 연결 없이 글자로만 남겨요',
       placeKakaoTag: '카카오맵 장소',
+      placeSearching: '찾는 중…',
+      placeNone: '카카오맵에서 못 찾았어요',
+      placeNameLabel: '쪽지에 적을 이름',
+      placeNameHint: '내가 부르는 이름으로',
+      placeBack: '다시 찾기',
+      placeOk: '이 가게로 할래요',
+      placeErr: {
+        'resource-exhausted': '오늘은 많이 찾았어요. 이름만 적어 주세요',
+        'invalid-argument': '검색어를 다시 확인해 주세요',
+        offline: '인터넷이 끊겨 있어요. 이름만 적어 주세요',
+        other: '지금은 찾지 못했어요. 이름만 적어 주세요'
+      },
 
       // 깨기
       crackingTitle: '쿠키 깨는 중',
@@ -83,6 +95,7 @@
       slipPartner: '단짝이 적은 쿠키',
       noPlace: '가게는 안 정했어요',
       kakaoLink: '카카오맵',
+      naverLink: '네이버 지도',
 
       // 오늘 먹을 것
       todayKick: '오늘은 이거!',

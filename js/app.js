@@ -100,7 +100,7 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
@@ -2041,6 +2041,7 @@
   function featureHost() {
     return {
       store: function () { return store; },
+      searchPlace: function (q) { return RT.firebase && RT.firebase.callFn ? RT.firebase.callFn('searchPlace', { q: q }) : Promise.reject({ code: 'unavailable' }); },
       render: function (f) { render(f); },
       toast: function (t) { showToast(t); },
       me: function () { return state.me; },
@@ -4283,13 +4284,14 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log || state.diet.meal || state.diet.cal || state.diet.set)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !(qc && qc.hasSheet()) && !(ec && ec.hasSheet()) && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log || state.diet.meal || state.diet.cal || state.diet.set)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && ev.target.id === 'lg-cat-name' && !ev.isComposing) { ev.preventDefault(); addLedgerCat(); return; }
     if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && (ev.target.id === 'lg-line' || ev.target.id === 'lg-what' || ev.target.id === 'lg-amount') && !ev.isComposing) { ev.preventDefault(); saveLedger(); return; }
     if (state.recap.open && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
+    if (ev.key === 'Enter' && ec && (ev.target.id === 'ek-place-q' || ev.target.id === 'ek-place-nm') && !ev.isComposing && !composing) { ev.preventDefault(); ec.enter(ev.target.id); return; }
     if (ev.key === 'Enter' && ev.target.id === 'dp-q' && !ev.isComposing && !composing) { ev.preventDefault(); dietFindGo(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'di-amt' && !ev.isComposing && !composing) { ev.preventDefault(); dietItemSave(); return; }
     if (ev.key === 'Enter' && ev.target.id === 'dw-time') { ev.preventDefault(); dietMealWhenSave(); return; }

@@ -22,6 +22,10 @@ const N = require('./notify');
 const RJ = require('./recap-job');
 const QJ = require('./question-job');
 const ET = require('./shared/eat-text');
+const SP = require('./search-place');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { defineSecret } = require('firebase-functions/params');
+const KAKAO_REST_KEY = defineSecret('KAKAO_REST_KEY');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -262,6 +266,36 @@ exports.onEatPing = onDocumentCreated('eatPings/{id}', async (event) => {
   for (const p of await partnersOf(d.by)) {
     if (!(await prefsFor(p)).partner) continue;
     await sendTo(p, { title: ET.T.pushTitle, body: ET.T.pushBody(d.food.slice(0, 20)) }, 'eat', 'eat', `${APP_URL}?tab=all&open=eat`);
+  }
+});
+
+// 출출 쿠키 E5 · 음식점 찾기 (docs/eat 6절): { q } → 카카오 장소 후보 (보여 주기만). 두 사람(members)만 · 한 사람 하루 100번
+//  횟수는 placeUse/{uid_날짜} (앱 규칙에 없어 앱은 못 읽고 못 씀). 카카오가 실패하면 그 번은 돌려줌
+exports.searchPlace = onCall({ secrets: [KAKAO_REST_KEY], timeoutSeconds: 20, maxInstances: 3 }, async (req) => {
+  const uid = req.auth && req.auth.uid;
+  if (!uid) throw new HttpsError('unauthenticated', '로그인해 주세요');
+  if (!(await db.doc(`members/${uid}`).get()).exists) throw new HttpsError('permission-denied', '단짝꿍 멤버만 쓸 수 있어요');
+  const bad = SP.badInput(req.data);
+  if (bad) throw new HttpsError('invalid-argument', bad);
+  const useRef = db.doc(`placeUse/${SP.useKey(uid, new Date())}`);
+  const used = await db.runTransaction(async (tx) => {
+    const d = await tx.get(useRef);
+    const n = (d.exists && d.data().n) || 0;
+    if (n >= SP.LIMITS.perDay) return -1;
+    tx.set(useRef, { n: n + 1, uid, at: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    return n + 1;
+  });
+  if (used < 0) throw new HttpsError('resource-exhausted', '오늘은 많이 찾았어요. 이름만 적거나 내일 다시 찾아 주세요');
+  try {
+    const items = await SP.searchKakao(KAKAO_REST_KEY.value(), SP.cleanQuery(req.data.q));
+    return { items, used, limit: SP.LIMITS.perDay };
+  } catch (e) {
+    logger.error('searchPlace kakao', { status: e.status, msg: String(e.message).slice(0, 200) });
+    await db.runTransaction(async (tx) => {
+      const d = await tx.get(useRef); const n = (d.exists && d.data().n) || 0;
+      if (n > 0) tx.set(useRef, { n: n - 1 }, { merge: true });
+    }).catch(() => {});
+    throw new HttpsError('unavailable', '지금은 찾지 못했어요. 이름만 적어 주세요');
   }
 });
 

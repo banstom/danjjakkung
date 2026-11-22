@@ -75,7 +75,7 @@
         var mine = tc.by === me();
         today = {
           kick: kick === 'today' ? T.todayKick : kick === 'yesterday' ? T.yesterdayKick : T.dayBeforeKick,
-          food: tc.food, memo: tc.memo || '',
+          food: tc.food, memo: tc.memo || '', place: tc.place ? { name: tc.place.name, url: tc.place.url || null } : null,
           sub: T.todayFrom(mine, tc.at) + ' · ' + (tc.place ? tc.place.name : T.noPlace),
           canKung: !!host.partner()
         };
@@ -125,7 +125,7 @@
     function back() {
       if (st.paint) { st.paint = null; render(true); return; }
       if (st.ate) { st.ate = null; host.focus(['[data-act="ek-ate"]']); render(true); return; }
-      if (st.place) { st.place = null; host.focus(['[data-act="ek-place"]']); render(true); return; }
+      if (st.place) { if (st.place.pick) placeBack(); else placeClose(); return; }
       if (st.view === 'write') { closeWrite(); return; }
       if (st.view === 'crack' || st.view === 'pick') { toJar(); return; }
       if (st.view === 'list') { toJar(['[data-act="ek-list"]']); return; }
@@ -285,6 +285,74 @@
         function () { st.paint = null; host.toast('지도에 칠하지 못했어요'); render(true); });
     }
 
+    // ── 음식점 찾기 (E5 · docs/eat 6절) — 카카오 후보는 보여 주기만, 저장은 장소 ID · 주소 · 내가 확인한 이름 ──
+    var SEARCH_WAIT = 500, searchCache = {}, searchTimer = null, searchSeq = 0;
+    function cleanQ(v) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); }
+    function placeRowsNow() { var box = document.getElementById('ek-place-res'); if (box && st.place) box.innerHTML = V.placeRows(st.place); }
+    function placeOpen() {
+      takeInputs();
+      var q = st.write && st.write.place ? st.write.place.name : '';
+      st.place = { q: q, items: null, loading: false, error: '', pick: null, search: !!host.searchPlace };
+      st.entering = true; host.focus(['#ek-place-q'], true); render(true);
+      if (q) runSearch(q);
+    }
+    function placeClose() {
+      if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+      searchSeq++; st.place = null; host.focus(['[data-act="ek-place"]']); render(true);
+    }
+    function placeQuery(value) {
+      st.place.q = value;
+      if (searchTimer) clearTimeout(searchTimer);
+      var q = cleanQ(value);
+      if (!st.place.search || !q) { searchSeq++; st.place.items = null; st.place.loading = false; st.place.error = ''; placeRowsNow(); return; }
+      if (searchCache[q]) { st.place.items = searchCache[q]; st.place.error = ''; placeRowsNow(); return; }
+      st.place.loading = true; st.place.error = ''; placeRowsNow();
+      searchTimer = setTimeout(function () { searchTimer = null; runSearch(q); }, SEARCH_WAIT);
+    }
+    function runSearch(q) {
+      if (!st.place || !st.place.search) return;
+      q = cleanQ(q); if (!q) return;
+      if (searchCache[q]) { st.place.items = searchCache[q]; st.place.loading = false; st.place.error = ''; placeRowsNow(); return; }
+      var seq = ++searchSeq;
+      st.place.loading = true; st.place.error = ''; placeRowsNow();
+      host.searchPlace(q).then(function (r) {
+        if (seq !== searchSeq || !st.place) return;
+        var items = (r && Array.isArray(r.items) ? r.items : []).filter(function (it) { return it && it.kakaoId && it.url && it.name; });
+        searchCache[q] = items;
+        st.place.items = items; st.place.loading = false; st.place.error = ''; placeRowsNow();
+      }, function (e) {
+        if (seq !== searchSeq || !st.place) return;
+        var code = e && e.code, msg = e && e.message;
+        st.place.loading = false; st.place.items = null;
+        st.place.error = msg === 'offline' ? T.placeErr.offline : (T.placeErr[code] || T.placeErr.other);
+        placeRowsNow();
+      });
+    }
+    function placePick(i) {
+      if (!st.place || !st.place.items || !st.place.items[i]) return;
+      if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+      st.place.pick = { i: i, name: cleanQ(st.place.q).slice(0, 40) }; // 이름은 내가 친 글자에서 시작 (카카오 장소명을 그대로 채우지 않음 — 데브톡 답 전)
+      host.focus(['#ek-place-nm'], true); render(true);
+    }
+    function placeBack() { if (!st.place) return; st.place.pick = null; host.focus(['#ek-place-q'], true); render(true); }
+    function placeOk() {
+      var p = st.place; if (!p || !p.pick || !st.write) return;
+      var it = p.items && p.items[p.pick.i]; if (!it) return;
+      var el = document.getElementById('ek-place-nm');
+      var name = cleanQ(el ? el.value : p.pick.name).slice(0, 40);
+      if (!name) { host.toast('쪽지에 적을 이름을 적어 주세요'); host.focus(['#ek-place-nm'], true); render(true); return; }
+      st.write.place = { name: name, kakaoId: String(it.kakaoId), url: String(it.url) };
+      st.place = null; host.focus(['[data-act="ek-place-clear"]']); render(true);
+    }
+    function enter(id) {
+      if (!st.place) return;
+      if (id === 'ek-place-nm') { placeOk(); return; }
+      if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+      var q = cleanQ(st.place.q);
+      if (!st.place.search) { if (q) act('ek-place-name', document.createElement('i')); return; }
+      if (q) runSearch(q);
+    }
+
     // ── 누르기 · 입력 ──
     function act(a, btn) {
       var v = btn.getAttribute('data-v');
@@ -300,8 +368,11 @@
       else if (a === 'ek-write-close') closeWrite();
       else if (a === 'ek-write-save') saveWrite();
       else if (a === 'ek-out') outCookie();
-      else if (a === 'ek-place') { takeInputs(); st.place = { q: st.write && st.write.place ? st.write.place.name : '' }; st.entering = true; host.focus(['#ek-place-q'], true); render(true); }
-      else if (a === 'ek-place-close') { st.place = null; host.focus(['[data-act="ek-place"]']); render(true); }
+      else if (a === 'ek-place') placeOpen();
+      else if (a === 'ek-place-close') placeClose();
+      else if (a === 'ek-place-pick') placePick(Number(v));
+      else if (a === 'ek-place-back') placeBack();
+      else if (a === 'ek-place-ok') placeOk();
       else if (a === 'ek-place-name') { var q = document.getElementById('ek-place-q'); var name = String(q ? q.value : (st.place && st.place.q) || '').replace(/\s+/g, ' ').trim(); if (name && st.write) { st.write.place = { name: name.slice(0, 40) }; } st.place = null; host.focus(['[data-act="ek-place-clear"]']); render(true); }
       else if (a === 'ek-place-clear') { takeInputs(); if (st.write) st.write.place = null; host.focus(['[data-act="ek-place"]']); render(true); }
       else if (a === 'ek-crack') crack();
@@ -334,11 +405,8 @@
         var n = document.getElementById('ek-memo-n'); if (n) n.textContent = T.memoCount(Array.from(value).length, E.MEMO_MAX);
         return true;
       }
-      if (id === 'ek-place-q' && st.place) {
-        st.place.q = value;
-        var box = document.getElementById('ek-place-res'); if (box) box.innerHTML = V.placeRows(String(value).trim());
-        return true;
-      }
+      if (id === 'ek-place-q' && st.place) { placeQuery(value); return true; }
+      if (id === 'ek-place-nm' && st.place && st.place.pick) { st.place.pick.name = value; return true; }
       if (id === 'ek-note' && st.ate) { st.ate.note = value; return true; }
       return false;
     }
@@ -362,7 +430,7 @@
 
     return {
       tick: tick, stop: stop, open: open, close: close, back: back,
-      isOpen: function () { return st.open; }, hasSheet: function () { return st.open && !!(st.paint || st.ate || (st.place && st.view === 'write')); },
+      isOpen: function () { return st.open; }, enter: enter, hasSheet: function () { return st.open && !!(st.paint || st.ate || (st.place && st.view === 'write')); },
       act: act, input: input, screenHtml: screenHtml, sheetHtml: sheetHtml, entryModel: entryModel,
       _st: st, _jarModel: jarModel, _listModel: listModel
     };

@@ -655,12 +655,14 @@
 [data-skin="pixel"]:not([data-font="plain"]) .ek-placebox--empty span { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-res__tx b { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-res__tx span { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ek-sub { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-cracknote b { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-cracknote span { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__head { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__food { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__place { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__place small { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .ek-slip__maps a { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__place a { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__memo { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-slip__foot { font-size: 12px; font-family: var(--px-font-11); }

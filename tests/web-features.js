@@ -26,6 +26,16 @@ async function main() {
   await addRoutine(dj, '스쿼트 100개', '🦵', '2026-10-18'); // 다진은 오늘 아직 안 함 → 꿍 보낼 수 있음
   await jm.waitForTimeout(300);
   const qDenied = (p) => p.evaluate(() => window.__qDenied || 0);
+  // E5 음식점 찾기: 서버 함수 대신 가짜 카카오 후보 (부른 검색어를 셈)
+  const searched = [];
+  const fakePlaces = (p) => p.route('**/searchPlace', async (route) => {
+    const q = JSON.parse(route.request().postData() || '{}').data.q; searched.push(q);
+    const items = q.includes('솔뫼') ? [
+      { kakaoId: '27341234', url: 'https://place.map.kakao.com/27341234', name: '솔뫼 마을', kind: '칼국수', area: '서울 성북구' },
+      { kakaoId: '11112222', url: 'https://place.map.kakao.com/11112222', name: '솔뫼 칼국수 본점', kind: '칼국수', area: '경기 고양시' }] : [];
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ result: { items, used: searched.length, limit: 100 } }) });
+  });
+  await fakePlaces(jm); await fakePlaces(dj);
 
   // ══ 교환 쪽지 ══
   // E1 입구: 처음 그릴 때 오늘 질문이 없으면 만든다 (첫날 질문)
@@ -163,13 +173,26 @@ async function main() {
   await jm.fill('#ek-memo', '뭔가 오늘따라 시원한 칼국수가 먹고싶네');
   assert.strictEqual(await text(jm, '#ek-memo-n'), '21 / 100'); // 목업 22 는 글자 수를 잘못 셈 (실제 21자)
   await jm.click('[data-act="ek-place"]'); await jm.waitForSelector('#ek-place-q');
-  await jm.fill('#ek-place-q', '솔뫼 마을'); await jm.click('[data-act="ek-place-name"]'); await jm.waitForSelector('[data-act="ek-place-clear"]');
+  // E5: 검색 → 카카오 후보 → 고르기 → 쪽지에 적을 이름(내가 친 글자에서 시작) → 넣기
+  await jm.fill('#ek-place-q', '솔뫼'); await jm.waitForSelector('[data-act="ek-place-pick"]');
+  assert.strictEqual((await jm.$$('[data-act="ek-place-pick"]')).length, 2);
+  assert.match(await text(jm, '[data-act="ek-place-pick"][data-v="0"]'), /솔뫼 마을칼국수 · 서울 성북구/);
+  assert.ok(await jm.$('[data-act="ek-place-name"]'), '이름만 적기 줄은 늘 맨 아래');
+  await shot(jm, 'eat-03-search');
+  await jm.click('[data-act="ek-place-pick"][data-v="0"]'); await jm.waitForSelector('#ek-place-nm');
+  assert.strictEqual(await jm.inputValue('#ek-place-nm'), '솔뫼', '카카오 장소명을 채우지 않고 내가 친 글자');
+  await jm.click('[data-act="ek-place-back"]'); await jm.waitForSelector('[data-act="ek-place-pick"]');
+  await jm.click('[data-act="ek-place-pick"][data-v="0"]'); await jm.waitForSelector('#ek-place-nm');
+  await jm.fill('#ek-place-nm', '솔뫼 마을'); await jm.click('[data-act="ek-place-ok"]'); await jm.waitForSelector('[data-act="ek-place-clear"]');
+  assert.match(await text(jm, '.ek-placebox'), /솔뫼 마을카카오맵 장소/);
+  assert.deepStrictEqual([...new Set(searched)], ['솔뫼'], '친 동안은 기다렸다가 한 번만');
   await shot(jm, 'eat-02-write');
   await jm.click('[data-act="ek-write-save"]'); await jm.waitForSelector('.ek-jar');
   await jm.waitForSelector('.toast');
   assert.match(await text(jm, '.toast'), /쿠키 통에 넣었어요 · 1개째/);
   const e1 = keys('eats/'); assert.strictEqual(e1.length, 1);
   assert.deepStrictEqual([docOf(e1[0]).food, docOf(e1[0]).place.name, docOf(e1[0]).state], ['칼국수', '솔뫼 마을', 'jar']);
+  assert.deepStrictEqual(docOf(e1[0]).place, { name: '솔뫼 마을', kakaoId: '27341234', url: 'https://place.map.kakao.com/27341234' }, 'E5 저장: 이름 · id · 주소만 (시·군·구 없음)');
   async function add(p, food, memo) {
     await p.click('[data-act="ek-add"]'); await p.waitForSelector('#ek-food');
     await p.fill('#ek-food', food); if (memo) await p.fill('#ek-memo', memo);
@@ -260,7 +283,7 @@ async function main() {
   await jm.click('[data-act="ek-list-close"]');
   // U8 고르고 3일 뒤(서울 날짜) 앱을 열면 자동으로 통에 돌려놓기
   await jm.click('[data-act="ek-crack"]'); await jm.waitForSelector('.ek-pick');
-  await jm.click('.ek-pick'); await jm.click('[data-act="ek-choose"]'); await jm.waitForSelector('.ek-today');
+  await jm.waitForTimeout(300); await jm.click('.ek-pick'); await jm.click('[data-act="ek-choose"]'); await jm.waitForSelector('.ek-today');
   await jm.clock.fastForward(3 * 86400000); await jm.waitForTimeout(500); await jm.reload(); await jm.waitForSelector('.tabbar'); await toAll(jm);
   await jm.waitForFunction(() => !/오늘은/.test(document.querySelector('[data-act="ek-open"]').textContent), null, { timeout: 5000 });
   assert.strictEqual(keys('eatState/').length, 0, 'U8 자동 돌려놓기');

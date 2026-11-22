@@ -21,6 +21,7 @@
     plus: '<path d="M12 5v14M5 12h14"/>', pin: '<path d="M12 21s-6-5.3-6-10a6 6 0 0112 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2"/>', next: '<path d="M9 5l7 7-7 7"/>',
     redo: '<path d="M20 11a8 8 0 00-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0014.3 4.9L20 16"/><path d="M20 20v-4h-4"/>',
     send: '<path d="M21 3L10 14"/><path d="M21 3l-7 18-4-7-7-4z"/>', check: '<path d="M5 12l5 5 9-10"/>', undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>', pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'
   };
   function ck(who, open, size, cls, style) {
@@ -77,7 +78,7 @@
     if (m.today) {
       var t = m.today;
       today = '<div class="ek-today"><p class="ek-today__kick">' + esc(t.kick) + '</p><p class="ek-today__food">' + esc(t.food) + '</p>' +
-        '<p class="ek-today__sub">' + esc(t.sub) + '</p>' + (t.memo ? '<p class="ek-today__memo">' + esc(t.memo) + '</p>' : '') +
+        '<p class="ek-today__sub">' + esc(t.sub) + '</p>' + (t.place ? '<p class="ek-slip__maps ek-today__maps">' + mapLinks(t.place) + '</p>' : '') + (t.memo ? '<p class="ek-today__memo">' + esc(t.memo) + '</p>' : '') +
         '<div class="ek-today__btns"><button type="button" class="ghost-btn ek-btn" data-act="ek-kung"' + (t.canKung ? '' : ' disabled') + '>' + svg(I.send, 18) + esc(T.kungButton) + '</button>' +
         '<button type="button" class="solid-btn ek-btn" data-act="ek-ate">' + svg(I.check, 18) + esc(T.ateButton) + '</button></div>' +
         '<button type="button" class="ek-tbtn" data-act="ek-return">' + svg(I.undo, 18) + esc(T.returnButton) + '</button></div>';
@@ -112,17 +113,42 @@
       '<div class="ek-actions"><button type="button" class="solid-btn ek-grow" data-act="ek-write-save"' + (f.saving || !String(f.food || '').trim() ? ' disabled' : '') + (f.saving ? ' aria-busy="true"' : '') + '>' + esc(f.edit ? '고치기' : T.foldButton) + '</button></div></div>';
   }
   /** 음식점 시트 (03) — E5(카카오 검색) 전에는 「이름만 적기」만. p = { q } */
+  /** p = { q, items: null | [{ kakaoId, url, name, kind, area }], loading, error, pick: null | { i, name } } */
   function placeSheet(p, entering) {
-    var q = String(p.q || '').trim();
-    return '<div class="sheet-layer"><button type="button" class="scrim" data-act="ek-place-close" aria-label="닫기"></button>' +
+    var head = '<div class="sheet-layer"><button type="button" class="scrim" data-act="ek-place-close" aria-label="닫기"></button>' +
       '<section class="sheet ek-sheet' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="ek-place-t">' +
-      '<span class="grabber" aria-hidden="true"></span><div class="sheet__head"><h2 id="ek-place-t" class="sheet__title">' + esc(T.placeSheetTitle) + '</h2></div>' +
-      '<input id="ek-place-q" class="field__input" type="text" maxlength="40" autocomplete="off" enterkeyhint="done" aria-label="음식점 이름" placeholder="음식점 이름" value="' + esc(p.q || '') + '">' +
-      '<div id="ek-place-res">' + placeRows(q) + '</div></section></div>';
+      '<span class="grabber" aria-hidden="true"></span><div class="sheet__head"><h2 id="ek-place-t" class="sheet__title">' + esc(T.placeSheetTitle) + '</h2></div>';
+    if (p.pick && p.items && p.items[p.pick.i]) {
+      var it = p.items[p.pick.i];
+      return head + '<div class="ek-res ek-res--picked">' + svg(I.pin, 20) + '<span class="ek-res__tx"><b>' + esc(it.name) + '</b><span>' + esc([it.kind, it.area].filter(Boolean).join(' · ')) + '</span></span></div>' +
+        '<label class="ek-fld" for="ek-place-nm"><span>' + esc(T.placeNameLabel) + '<small>' + esc(T.placeNameHint) + '</small></span>' +
+        '<input id="ek-place-nm" class="field__input" type="text" maxlength="40" autocomplete="off" enterkeyhint="done" value="' + esc(p.pick.name || '') + '"></label>' +
+        '<div class="ek-sheet__btns"><button type="button" class="ghost-btn" data-act="ek-place-back">' + esc(T.placeBack) + '</button>' +
+        '<button type="button" class="solid-btn" data-act="ek-place-ok">' + esc(T.placeOk) + '</button></div></section></div>';
+    }
+    return head + (p.search ? '<p class="ek-sub">' + esc(T.placeSheetSub) + '</p>' : '') +
+      '<div class="ek-search">' + (p.search ? svg(I.search, 20) : '') +
+      '<input id="ek-place-q" class="field__input" type="text" maxlength="40" autocomplete="off" enterkeyhint="search" aria-label="음식점 이름" placeholder="음식점 이름" value="' + esc(p.q || '') + '"></div>' +
+      '<div id="ek-place-res" aria-live="polite">' + placeRows(p) + '</div></section></div>';
   }
-  function placeRows(q) {
-    if (!q) return '<p class="ek-hint">' + esc(T.placeNameOnlySub) + '</p>';
-    return '<button type="button" class="ek-res" data-act="ek-place-name">' + svg(I.pin, 20) + '<span class="ek-res__tx"><b>' + esc(T.placeNameOnly(q)) + '</b><span>' + esc(T.placeNameOnlySub) + '</span></span></button>';
+  function hilite(name, q) {
+    var i = q ? name.indexOf(q) : -1;
+    if (i < 0) return esc(name);
+    return esc(name.slice(0, i)) + '<em>' + esc(q) + '</em>' + esc(name.slice(i + q.length));
+  }
+  /** p = 문자열(검색어) 또는 시트 상태 */
+  function placeRows(p) {
+    if (typeof p === 'string') p = { q: p };
+    var q = String(p.q || '').trim();
+    if (!q) return '<p class="ek-hint">' + esc(p.search ? T.placeSheetSub : T.placeNameOnlySub) + '</p>';
+    var rows = '';
+    if (p.loading && !(p.items && p.items.length)) rows += '<p class="ek-hint">' + esc(T.placeSearching) + '</p>';
+    else if (p.error) rows += '<p class="ek-hint ek-hint--warn">' + esc(p.error) + '</p>';
+    else if (p.items && !p.items.length) rows += '<p class="ek-hint">' + esc(T.placeNone) + '</p>';
+    (p.items || []).forEach(function (it, i) {
+      rows += '<button type="button" class="ek-res" data-act="ek-place-pick" data-v="' + i + '">' + svg(I.pin, 20) + '<span class="ek-res__tx"><b>' + hilite(it.name, q) + '</b><span>' + esc([it.kind, it.area].filter(Boolean).join(' · ')) + '</span></span>' + svg(I.next, 18) + '</button>';
+    });
+    return rows + '<button type="button" class="ek-res" data-act="ek-place-name">' + svg(p.search ? I.pen : I.pin, 20) + '<span class="ek-res__tx"><b>' + esc(T.placeNameOnly(q)) + '</b><span>' + esc(T.placeNameOnlySub) + '</span></span></button>';
   }
 
   // ── 깨는 중 (05) ──
@@ -136,9 +162,14 @@
 
   // ── 펼친 쪽지 · 고르기 (06 · 07) ──
   /** s = { id, mine, slot, ago, food, place: null | { name, sigungu?, url? }, memo, written } */
+  function mapLink(label, url) { return '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label) + svg(I.next, 14) + '</a>'; }
+  /** 가게 이름 → 카카오맵(장소면 그 장소, 아니면 검색) · 네이버 지도(검색) */
+  function mapLinks(pl) {
+    return mapLink(T.kakaoLink, pl.url || ('https://map.kakao.com/?q=' + encodeURIComponent(pl.name))) + mapLink(T.naverLink, 'https://map.naver.com/p/search/' + encodeURIComponent(pl.name));
+  }
   function slip(s, cls) {
     var place = s.place ? '<div class="ek-slip__place">' + svg(I.pin, 18) + '<span>' + esc(s.place.name) + '</span>' + (s.place.area ? '<small>' + esc(s.place.area) + '</small>' : '') +
-      (s.place.url ? '<a href="' + esc(s.place.url) + '" target="_blank" rel="noopener">' + esc(T.kakaoLink) + svg(I.next, 14) + '</a>' : '') + '</div>'
+      (/compact/.test(cls || '') ? '' : '<span class="ek-slip__maps">' + mapLinks(s.place) + '</span>') + '</div>'
       : '<div class="ek-slip__place is-none">' + svg(I.pin, 18) + '<span>' + esc(T.noPlace) + '</span></div>';
     return '<div class="ek-slip' + (cls ? ' ' + cls : '') + '"><div class="ek-slip__head">' + dot(s.slot) + esc(s.mine ? T.slipMine : T.slipPartner) + '<span class="ek-sp"></span>' + esc(s.ago) + '</div>' +
       '<p class="ek-slip__food">' + esc(s.food) + '</p>' + place + (s.memo ? '<p class="ek-slip__memo">' + esc(s.memo) + '</p>' : '') +
