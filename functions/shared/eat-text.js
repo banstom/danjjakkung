@@ -95,7 +95,6 @@
       slipPartner: '단짝이 적은 쿠키',
       noPlace: '가게는 안 정했어요',
       kakaoLink: '카카오맵',
-      naverLink: '네이버 지도',
 
       // 오늘 먹을 것
       todayKick: '오늘은 이거!',

@@ -163,9 +163,9 @@
   // ── 펼친 쪽지 · 고르기 (06 · 07) ──
   /** s = { id, mine, slot, ago, food, place: null | { name, sigungu?, url? }, memo, written } */
   function mapLink(label, url) { return '<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(label) + svg(I.next, 14) + '</a>'; }
-  /** 가게 이름 → 카카오맵(장소면 그 장소, 아니면 검색) · 네이버 지도(검색) */
+  /** 가게 이름 → 카카오맵(카카오 장소면 그 장소, 이름만이면 카카오맵 검색) */
   function mapLinks(pl) {
-    return mapLink(T.kakaoLink, pl.url || ('https://map.kakao.com/?q=' + encodeURIComponent(pl.name))) + mapLink(T.naverLink, 'https://map.naver.com/p/search/' + encodeURIComponent(pl.name));
+    return mapLink(T.kakaoLink, pl.url || ('https://map.kakao.com/?q=' + encodeURIComponent(pl.name)));
   }
   function slip(s, cls) {
     var place = s.place ? '<div class="ek-slip__place">' + svg(I.pin, 18) + '<span>' + esc(s.place.name) + '</span>' + (s.place.area ? '<small>' + esc(s.place.area) + '</small>' : '') +
