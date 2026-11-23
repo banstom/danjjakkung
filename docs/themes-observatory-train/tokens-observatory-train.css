@@ -1,0 +1,185 @@
+/* 반짝반짝 천문대 · 덜컹덜컹 기차 여행 — 색 토큰 네 판 (기획 계정 2026-11-23)
+
+   봄소풍(spring-picnic)과 같은 이름. 여기 없는 토큰(--tomato-* 등)은 README 3절대로 같은 계열로 채우고 spec 「바뀐 것」에 남겨 주세요.
+
+   토스트 글자색은 목업 이름 --toast-text = 저장소 이름 --toast-fg. */
+
+[data-theme="observatory"]{
+  color-scheme:light;
+  --bg:#F0EEF8;
+  --surface:#FCFBFF;
+  --raised:#E6E2F3;
+  --line:#D8D2EC;
+  --ol:#2E2A55;
+  --sh:#CFC8E6;
+  --text:#24213F;
+  --sub:#585379;
+  --faint:#B7B0D3;
+  --primary:#5446A0;
+  --on-primary:#FCFBFF;
+  --btn-hi:#7366BE;
+  --btn-lo:#3A2F7A;
+  --secondary:#E8E3F7;
+  --accent:#7466BC;
+  --strong:#4A3D92;
+  --primary-edge:#5446A0;
+  --tab-active:#4A3D92;
+  --tint:#E6E0F8;
+  --tint-text:#463A8C;
+  --me:#F2D27A;
+  --me-ink:#221F38;
+  --her:#E9A3BC;
+  --her-ink:#221F38;
+  --both:#9EC3EC;
+  --both-ink:#221F38;
+  --empty:#E9E6F2;
+  --empty-text:#55506F;
+  --warn:#C62F3A;
+  --success:#2E7D4F;
+  --warning:#9A5B00;
+  --sec-dot:#E0B54A;
+  --deco-a:#3B3577;
+  --deco-b:#F2D27A;
+  --today:#24213F;
+  --lv-full:#6F86C9;
+  --lv-half:#D3DCF1;
+  --toast-bg:#24213F;
+  --toast-fg:#FCFBFF;
+  --head-w:72px;
+  --dash:#CFC8E6;
+}
+
+[data-theme="observatory-night"]{
+  color-scheme:dark;
+  --bg:#12122A;
+  --surface:#1C1C3A;
+  --raised:#26264A;
+  --line:#33335A;
+  --ol:#6A6AA8;
+  --sh:#08081A;
+  --text:#F1EFFF;
+  --sub:#C3C0E3;
+  --faint:#4A4A78;
+  --primary:#C7BBF5;
+  --on-primary:#1A1636;
+  --btn-hi:#E3DBFF;
+  --btn-lo:#8E7FD6;
+  --secondary:#2A2852;
+  --accent:#B3A5EE;
+  --strong:#C7BBF5;
+  --primary-edge:#C7BBF5;
+  --tab-active:#E0D8FF;
+  --tint:#2E2A58;
+  --tint-text:#E0D8FF;
+  --me:#F2D27A;
+  --me-ink:#141228;
+  --her:#E9A3BC;
+  --her-ink:#141228;
+  --both:#9EC3EC;
+  --both-ink:#141228;
+  --empty:#2A2A4C;
+  --empty-text:#C3C0E3;
+  --warn:#FF7B86;
+  --success:#5BD08A;
+  --warning:#F2B84B;
+  --sec-dot:#F2D27A;
+  --deco-a:#2A2860;
+  --deco-b:#F2D27A;
+  --today:#F1EFFF;
+  --lv-full:#9EC3EC;
+  --lv-half:#3F4F78;
+  --toast-bg:#F1EFFF;
+  --toast-fg:#141228;
+  --head-w:72px;
+  --dash:#3A3A66;
+}
+
+[data-theme="train-trip"]{
+  color-scheme:light;
+  --bg:#F5EFE2;
+  --surface:#FFFCF5;
+  --raised:#EFE6D3;
+  --line:#E3D7BF;
+  --ol:#2F3A36;
+  --sh:#DCCFB3;
+  --text:#2A2E2B;
+  --sub:#5C625C;
+  --faint:#C4BBA6;
+  --primary:#22666A;
+  --on-primary:#FFFCF5;
+  --btn-hi:#3F8589;
+  --btn-lo:#144A4D;
+  --secondary:#DDEBE8;
+  --accent:#3C8387;
+  --strong:#1C5A5E;
+  --primary-edge:#22666A;
+  --tab-active:#1C5A5E;
+  --tint:#DCEDEA;
+  --tint-text:#1A5558;
+  --me:#E9B949;
+  --me-ink:#262A27;
+  --her:#DE8A7E;
+  --her-ink:#262A27;
+  --both:#86C1B4;
+  --both-ink:#262A27;
+  --empty:#EDE6D8;
+  --empty-text:#5A5A50;
+  --warn:#C62F3A;
+  --success:#2E7D4F;
+  --warning:#9A5B00;
+  --sec-dot:#9C3B45;
+  --deco-a:#9C3B45;
+  --deco-b:#FFF4DC;
+  --today:#2A2E2B;
+  --lv-full:#4D9A8E;
+  --lv-half:#CFE6E0;
+  --toast-bg:#2A2E2B;
+  --toast-fg:#FFFCF5;
+  --head-w:72px;
+  --dash:#DCCFB3;
+}
+
+[data-theme="train-trip-night"]{
+  color-scheme:dark;
+  --bg:#13202A;
+  --surface:#1B2B36;
+  --raised:#253743;
+  --line:#314552;
+  --ol:#557C88;
+  --sh:#0A1218;
+  --text:#F6F0E2;
+  --sub:#C6C9C0;
+  --faint:#46596A;
+  --primary:#F0C36A;
+  --on-primary:#2A1E08;
+  --btn-hi:#F8DC9E;
+  --btn-lo:#BE8F33;
+  --secondary:#263A40;
+  --accent:#E8B65A;
+  --strong:#F0C36A;
+  --primary-edge:#F0C36A;
+  --tab-active:#F6D592;
+  --tint:#2F3B33;
+  --tint-text:#F6D592;
+  --me:#E9B949;
+  --me-ink:#161E24;
+  --her:#DE8A7E;
+  --her-ink:#161E24;
+  --both:#86C1B4;
+  --both-ink:#161E24;
+  --empty:#263845;
+  --empty-text:#C6C9C0;
+  --warn:#FF7B86;
+  --success:#5BD08A;
+  --warning:#F2B84B;
+  --sec-dot:#E07A82;
+  --deco-a:#7E2E38;
+  --deco-b:#F0C36A;
+  --today:#F6F0E2;
+  --lv-full:#86C1B4;
+  --lv-half:#3E5A57;
+  --toast-bg:#F6F0E2;
+  --toast-fg:#161E24;
+  --head-w:72px;
+  --dash:#3A5060;
+}

@@ -1,0 +1,185 @@
+/* 찰방찰방 여름 바다 · 알록달록 가을 숲 — 색 토큰 네 판 (기획 계정 2026-11-23)
+
+   봄소풍(spring-picnic)과 같은 이름. 여기 없는 토큰(--tomato-* 등)은 README 3절대로 같은 계열로 채우고 spec 「바뀐 것」에 남겨 주세요.
+
+   토스트 글자색은 목업 이름 --toast-text = 저장소 이름 --toast-fg. */
+
+[data-theme="summer-sea"]{
+  color-scheme:light;
+  --bg:#EEF6F4;
+  --surface:#FBFEFD;
+  --raised:#E0EFEC;
+  --line:#CDE2DF;
+  --ol:#23465A;
+  --sh:#C3DAD8;
+  --text:#1D323F;
+  --sub:#4C6470;
+  --faint:#A6C2C6;
+  --primary:#1F6A92;
+  --on-primary:#FBFEFD;
+  --btn-hi:#3D8BB3;
+  --btn-lo:#134D6C;
+  --secondary:#DCEDF3;
+  --accent:#3A88AE;
+  --strong:#195C80;
+  --primary-edge:#1F6A92;
+  --tab-active:#195C80;
+  --tint:#DAEEF5;
+  --tint-text:#165577;
+  --me:#F2CE5A;
+  --me-ink:#1C2A30;
+  --her:#F2917D;
+  --her-ink:#1C2A30;
+  --both:#7DC9BC;
+  --both-ink:#1C2A30;
+  --empty:#E2ECEA;
+  --empty-text:#4C5F66;
+  --warn:#C62F3A;
+  --success:#2E7D4F;
+  --warning:#9A5B00;
+  --sec-dot:#E0705A;
+  --deco-a:#3F9AC2;
+  --deco-b:#FFFFFF;
+  --today:#1D323F;
+  --lv-full:#3E9A8B;
+  --lv-half:#C3E5DE;
+  --toast-bg:#1D323F;
+  --toast-fg:#FBFEFD;
+  --head-w:72px;
+  --dash:#C3DAD8;
+}
+
+[data-theme="summer-sea-night"]{
+  color-scheme:dark;
+  --bg:#0F1B2D;
+  --surface:#17273E;
+  --raised:#21344E;
+  --line:#2D425E;
+  --ol:#4E78A4;
+  --sh:#08101B;
+  --text:#EEF6FA;
+  --sub:#B8CAD7;
+  --faint:#4A5F7A;
+  --primary:#7FCFE5;
+  --on-primary:#0D212F;
+  --btn-hi:#B5E5F2;
+  --btn-lo:#3E98B6;
+  --secondary:#1E3452;
+  --accent:#6BC1DA;
+  --strong:#7FCFE5;
+  --primary-edge:#7FCFE5;
+  --tab-active:#A8E1EF;
+  --tint:#1E3D54;
+  --tint-text:#A8E1EF;
+  --me:#F2CE5A;
+  --me-ink:#0D1A26;
+  --her:#F2917D;
+  --her-ink:#0D1A26;
+  --both:#7DC9BC;
+  --both-ink:#0D1A26;
+  --empty:#253858;
+  --empty-text:#B8CAD7;
+  --warn:#FF7B86;
+  --success:#5BD08A;
+  --warning:#F2B84B;
+  --sec-dot:#F7A08C;
+  --deco-a:#3A7EA7;
+  --deco-b:#CDE3EB;
+  --today:#EEF6FA;
+  --lv-full:#6EC1B3;
+  --lv-half:#3B6767;
+  --toast-bg:#EEF6FA;
+  --toast-fg:#0D1A26;
+  --head-w:72px;
+  --dash:#3A5272;
+}
+
+[data-theme="autumn-forest"]{
+  color-scheme:light;
+  --bg:#F7EEDF;
+  --surface:#FFFBF3;
+  --raised:#F1E3CD;
+  --line:#E6D4BA;
+  --ol:#4A3020;
+  --sh:#E0CBAA;
+  --text:#35261A;
+  --sub:#6A5340;
+  --faint:#CBB497;
+  --primary:#A3441E;
+  --on-primary:#FFFBF3;
+  --btn-hi:#C4653A;
+  --btn-lo:#783012;
+  --secondary:#F6E0CF;
+  --accent:#BE643A;
+  --strong:#913A17;
+  --primary-edge:#A3441E;
+  --tab-active:#913A17;
+  --tint:#F8E0CC;
+  --tint-text:#813516;
+  --me:#EBC04F;
+  --me-ink:#2E2117;
+  --her:#DE7A52;
+  --her-ink:#2E2117;
+  --both:#A6B46C;
+  --both-ink:#2E2117;
+  --empty:#EFE3D2;
+  --empty-text:#66503C;
+  --warn:#C62F3A;
+  --success:#2E7D4F;
+  --warning:#9A5B00;
+  --sec-dot:#7C8A3D;
+  --deco-a:#D9692F;
+  --deco-b:#E9B83E;
+  --today:#35261A;
+  --lv-full:#84964D;
+  --lv-half:#DDE3C0;
+  --toast-bg:#35261A;
+  --toast-fg:#FFFBF3;
+  --head-w:72px;
+  --dash:#E0CBAA;
+}
+
+[data-theme="autumn-forest-night"]{
+  color-scheme:dark;
+  --bg:#1E1A26;
+  --surface:#2A2433;
+  --raised:#362E40;
+  --line:#45394F;
+  --ol:#86709A;
+  --sh:#110E16;
+  --text:#FAF0E2;
+  --sub:#D6C4AE;
+  --faint:#5D5068;
+  --primary:#F2A66B;
+  --on-primary:#2A160B;
+  --btn-hi:#F8C79C;
+  --btn-lo:#C2713A;
+  --secondary:#3A2E3A;
+  --accent:#E8955C;
+  --strong:#F2A66B;
+  --primary-edge:#F2A66B;
+  --tab-active:#F6C08F;
+  --tint:#4A3428;
+  --tint-text:#F6C08F;
+  --me:#EBC04F;
+  --me-ink:#241A12;
+  --her:#DE7A52;
+  --her-ink:#241A12;
+  --both:#A6B46C;
+  --both-ink:#241A12;
+  --empty:#3A3046;
+  --empty-text:#D6C4AE;
+  --warn:#FF7B86;
+  --success:#5BD08A;
+  --warning:#F2B84B;
+  --sec-dot:#B9C77A;
+  --deco-a:#C2602E;
+  --deco-b:#D9A93A;
+  --today:#FAF0E2;
+  --lv-full:#A6B46C;
+  --lv-half:#5E6640;
+  --toast-bg:#FAF0E2;
+  --toast-fg:#241A12;
+  --head-w:72px;
+  --dash:#54465F;
+}

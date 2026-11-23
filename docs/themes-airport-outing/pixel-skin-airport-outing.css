@@ -1,0 +1,21 @@
+/* 공항 · 놀이공원 · 캠핑 — 테마별 장식만 (기획 계정 2026-11-23)
+   픽셀 부품은 저장소 styles/pixel.css 그대로. 이 파일은 바탕 무늬 · 머리 장식만. 그림 경로는 봄소풍과 같은 자리(themes/<id>/).
+   목업 이름: .dscr = 화면, .dawn = 머리 장식 띠 — 저장소 선택자에 맞춰 바꿔 써 주세요 */
+
+[data-theme="airport"] .dscr{background-image:url("themes/airport/bg.svg"),repeating-conic-gradient(rgba(46,52,64,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="airport-night"] .dscr{background-image:url("themes/airport/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="airport"] .dawn{height:42px;background:url("themes/airport/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="airport-night"] .dawn{height:60px;background:url("themes/airport/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="amusement-park"] .dscr{background-image:url("themes/amusement-park/bg.svg"),repeating-conic-gradient(rgba(164,42,114,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="amusement-park-night"] .dscr{background-image:url("themes/amusement-park/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="amusement-park"] .dawn{height:42px;background:url("themes/amusement-park/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="amusement-park-night"] .dawn{height:60px;background:url("themes/amusement-park/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="camping"] .dscr{background-image:url("themes/camping/bg.svg"),repeating-conic-gradient(rgba(78,106,58,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="camping-night"] .dscr{background-image:url("themes/camping/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="camping"] .dawn{height:42px;background:url("themes/camping/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="camping-night"] .dawn{height:60px;background:url("themes/camping/head-night.svg") 0 0/72px 60px repeat-x}
+
+/* 밤 판: 머리 장식이 60px라 머리말을 56px 내림, 고른 탭 테두리 = --btn-lo (다른 도트 테마 밤과 같음) */
+[data-theme$="-night"] .dhead{margin-top:56px}

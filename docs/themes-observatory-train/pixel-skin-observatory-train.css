@@ -1,0 +1,16 @@
+/* 천문대 · 기차 여행 — 테마별 장식만 (기획 계정 2026-11-23)
+   픽셀 부품은 저장소 styles/pixel.css 그대로. 이 파일은 바탕 무늬 · 머리 장식만. 그림 경로는 봄소풍과 같은 자리(themes/<id>/).
+   목업 이름: .dscr = 화면, .dawn = 머리 장식 띠 — 저장소 선택자에 맞춰 바꿔 써 주세요 */
+
+[data-theme="observatory"] .dscr{background-image:url("themes/observatory/bg.svg"),repeating-conic-gradient(rgba(84,70,160,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="observatory-night"] .dscr{background-image:url("themes/observatory/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="observatory"] .dawn{height:42px;background:url("themes/observatory/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="observatory-night"] .dawn{height:60px;background:url("themes/observatory/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="train-trip"] .dscr{background-image:url("themes/train-trip/bg.svg"),repeating-conic-gradient(rgba(34,102,106,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="train-trip-night"] .dscr{background-image:url("themes/train-trip/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="train-trip"] .dawn{height:42px;background:url("themes/train-trip/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="train-trip-night"] .dawn{height:60px;background:url("themes/train-trip/head-night.svg") 0 0/72px 60px repeat-x}
+
+/* 밤 판: 머리 장식이 60px라 머리말을 56px 내림, 고른 탭 테두리 = --btn-lo (봄소풍 · 여름 · 가을 밤과 같음) */
+[data-theme$="-night"] .dhead{margin-top:56px}
