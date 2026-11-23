@@ -1737,7 +1737,7 @@ button.lg-entry--cell { margin-top: 0; padding: 16px; min-height: 150px; } /* �
 .lg-confirm__box { width: 100%; max-width: 320px; background: var(--surface); border-radius: 20px; padding: 20px; box-shadow: var(--lift); }
 .lg-confirm__box h3 { margin: 0 0 6px; font-size: 17px; }
 .lg-confirm__box p { margin: 0 0 16px; font-size: 14px; color: var(--sub); }
-.lg-del-yes { flex: 1; background: var(--warn); border: 0; color: var(--on-primary); }
+.lg-del-yes { flex: 1; background: var(--warn); border: 0; color: var(--on-warn, var(--on-primary)); } /* --on-warn: 버튼 글자가 진한 판(테니스 · 공항 낮)만 따로 */
 /* 영수증 분류 직접 만들기 */
 .lg-cathead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 6px; }
 .lg-sheet .lg-cathead .field__label { margin: 0; }

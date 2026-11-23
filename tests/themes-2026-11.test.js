@@ -77,6 +77,8 @@ test('A2 글자 대비 (contrast.md 21쌍) — 모든 판 4.5:1 이상 · 외곽
     const { v } = block(b);
     for (const [f, g] of pairs) assert.ok(contrast(v[f], v[g]) >= 4.5, `${b}: --${f} / --${g} = ${contrast(v[f], v[g]).toFixed(2)}`);
     assert.ok(contrast(v.ol, v.surface) >= 3, b + ' 외곽선');
+    // 단짝 영수증 지우기 확인 버튼(.lg-del-yes): --warn 바탕 위 --on-warn(없으면 --on-primary)
+    assert.ok(contrast(v['on-warn'] || v['on-primary'], v.warn) >= 4.5, b + ' 경고 버튼 글자');
   }
 });
 

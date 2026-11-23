@@ -73,4 +73,7 @@
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: prague --lv-full-text #16181C (사람 글자색 #22252C은 --lv-full #6F829E 위에서 4.5:1 미만이라 더 진하게)
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: tuscany --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
 - 버튼 글자: 저장소 버튼(styles/app.css · pixel.css 의 채운 버튼 · 고른 칸)은 이미 모두 --on-primary 를 써서 고칠 코드 없음 → 테니스 낮 진한 글씨(#1C2610)가 그대로 나옴 (tests/web-themes 사진으로 확인)
-- 알아 둘 것(고치지 않음): 단짝 영수증 지우기 확인 버튼 .lg-del-yes 는 --warn 바탕에 --on-primary 글자라, 글자가 진한 판(테니스 · 공항 낮, 그리고 기존 소프트 파스텔 · 사쿠라 드림 등 9판)에서 대비가 낮음 — 기존 테마 화면을 안 바꾸려고 이번엔 그대로
+- 단짝 영수증 지우기 확인 버튼(.lg-del-yes, --warn 바탕)은 --on-primary 글자라 테니스 낮(진한 글씨)에서 2.8:1 → 새 토큰 --on-warn(이 판만 = --surface)을 두고 app.css 는 `var(--on-warn, var(--on-primary))` — 다른 판은 그대로 (기존 소프트 파스텔 · 사쿠라 드림 등 9판도 같은 낮은 대비가 원래 있음, 이번엔 손대지 않음)
+- 목업에 없던 칸 더: --switch-knob(낮 = --surface, 밤 = --on-primary — 켜진 스위치 --strong 위 3:1), --lv-full-text(사람 글자색, 달력 꽉 찬 칸 위 4.5:1이 안 되면 같은 색을 더 진하게 — 위 줄)
+- contrast.md 표의 --warn 줄은 기획 값(#C62F3A) 기준이라 위에서 바꾼 판은 실제 값과 조금 다름 — 저장소 시험(--warn/--surface · --warn/--raised 4.5:1)이 기준
+- 화면 읽기용 색 이름은 색 하나에 이름 하나라, 이미 있던 색은 기존 이름으로 읽힘 (예: #F2D27A 「햇살」, #E9B949 「금빛 별」, #F2C14E 「트램 노랑」)

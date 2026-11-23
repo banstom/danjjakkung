@@ -12,7 +12,7 @@
 | `docs/themes-tennis-cities/` | 통통 테니스 코트 · 또각또각 포르투 · 뾰족뾰족 프라하 · 살랑살랑 토스카나 | TC1 |
 | `docs/themes-airport-outing/` | 둥실둥실 공항 · 빙글빙글 놀이공원 · 타닥타닥 캠핑 | AO1 |
 - 그림 · 장식: `design/assets/themes/<id>/` (새 테마 11개 — s1~s4.png, head(-night).svg, bg(-night).svg)
-- 목업: `design/mockups/chosen/<폴더>/screens/` (PNG) + 같은 폴더 html(브라우저로 열림, 글꼴은 시험용)
+- 목업: `design/mockups/chosen/<폴더>/screens/` (PNG) — 목업 html 원본(img 포함)은 저장소에 안 넣고 준민 노트북 handoff 폴더에만 (구현 11-23)
 - 새 도트 테마는 11개 × 낮 · 밤 = 22판. 모두 봄소풍 · 겨울 업데이트에서 만든 판 묶음 · 도트 스킨 · 그림 자리를 그대로 씀
 
 ## 2. 묶음 (테마 시트) 한눈에

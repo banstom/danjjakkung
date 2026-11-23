@@ -599,6 +599,7 @@
   --ol: #24361F; --sh: #C8D6B6; --btn-hi: #D2E86E; --btn-lo: #7F9A1C;
   --sec-dot: #7F9A1C; --deco-a: #3F7A3A; --deco-b: #FFFFFF; --dash: #C8D6B6;
   --bg-art: url('../themes/tennis-court/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/tennis-court/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(63, 122, 58, 0.06);
+  --on-warn: #FCFEF8; /* 경고 버튼 글자 — --on-primary 가 진한 판이라 카드색 */
 }
 
 /* 통통 테니스 코트 (밤) */
@@ -762,6 +763,7 @@
   --ol: #232833; --sh: #C9D1DC; --btn-hi: #F8DA74; --btn-lo: #B88E10;
   --sec-dot: #F2C230; --deco-a: #2E3440; --deco-b: #F2C230; --dash: #C9D1DC;
   --bg-art: url('../themes/airport/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/airport/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(46, 52, 64, 0.06);
+  --on-warn: #FCFDFE; /* 경고 버튼 글자 — --on-primary 가 진한 판이라 카드색 */
 }
 
 /* 둥실둥실 공항 (밤) */

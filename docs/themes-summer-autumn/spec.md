@@ -69,3 +69,6 @@
 - 시험: tests/themes-2026-11.test.js (A1~A9 + 밤 판 · 빨강) · tests/themes.test.js 테마 목록
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: summer-sea --lv-full-text #1A272D (사람 글자색 #1C2A30은 --lv-full #3E9A8B 위에서 4.5:1 미만이라 더 진하게)
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: autumn-forest --warn #C62F3A → #BE2D37 (--surface/--raised 위 4.5:1 맞추려고)
+- 목업에 없던 칸 더: --switch-knob(낮 = --surface, 밤 = --on-primary — 켜진 스위치 --strong 위 3:1), --lv-full-text(사람 글자색, 달력 꽉 찬 칸 위 4.5:1이 안 되면 같은 색을 더 진하게 — 위 줄)
+- contrast.md 표의 --warn 줄은 기획 값(#C62F3A) 기준이라 위에서 바꾼 판은 실제 값과 조금 다름 — 저장소 시험(--warn/--surface · --warn/--raised 4.5:1)이 기준
+- 화면 읽기용 색 이름은 색 하나에 이름 하나라, 이미 있던 색은 기존 이름으로 읽힘 (예: #F2D27A 「햇살」, #E9B949 「금빛 별」, #F2C14E 「트램 노랑」)

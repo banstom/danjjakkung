@@ -70,3 +70,6 @@
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: train-trip --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
 - 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: train-trip --lv-full-text #242725 (사람 글자색 #262A27은 --lv-full #4D9A8E 위에서 4.5:1 미만이라 더 진하게)
 - S1 크기가 테마마다 다름(천문대 90×88, 기차 52×66) — 머리말 오른쪽 아래 자리 그대로, 머리말 높이는 안 늘림 (지금 그림 자리 코드가 원래 그렇게 그림)
+- 목업에 없던 칸 더: --switch-knob(낮 = --surface, 밤 = --on-primary — 켜진 스위치 --strong 위 3:1), --lv-full-text(사람 글자색, 달력 꽉 찬 칸 위 4.5:1이 안 되면 같은 색을 더 진하게 — 위 줄)
+- contrast.md 표의 --warn 줄은 기획 값(#C62F3A) 기준이라 위에서 바꾼 판은 실제 값과 조금 다름 — 저장소 시험(--warn/--surface · --warn/--raised 4.5:1)이 기준
+- 화면 읽기용 색 이름은 색 하나에 이름 하나라, 이미 있던 색은 기존 이름으로 읽힘 (예: #F2D27A 「햇살」, #E9B949 「금빛 별」, #F2C14E 「트램 노랑」)
