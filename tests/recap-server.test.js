@@ -162,3 +162,18 @@ test('F-L 옮기지 않은 옛 지도 칸(stars · visits[].note)도 결산이 �
   const p = RDm.toInput(raw, { kind: 'month', key: '2026-11' }).places[0];
   assert.deepEqual([p.code, p.entries.a.v1.stars, p.entries.a.v1.note, p.entries.b.v1.stars], ['11110', 5, '좋았다', 4]);
 });
+
+test('F-E 출출 쿠키: 서버 시각(Timestamp)을 서울 날짜로 · 뺀 쿠키 제외 · 깨기에서 고른 것만 꺼낸 쿠키 (11-23)', () => {
+  const RDm = require('../functions/recap-read.js');
+  const ts = (iso) => ({ toDate: () => new Date(iso) });
+  const raw = { people: [], routines: [], checks: [], todos: [], kungs: [], events: [], spends: [], spendCats: [], qdays: [], qanswers: {}, couple: null, places: [],
+    eats: [
+      { id: 'k1', by: 'a', at: ts('2026-10-31T15:30:00Z'), state: 'jar' },                       // 서울 11-01 00:30
+      { id: 'k2', by: 'b', at: ts('2026-11-05T03:00:00Z'), state: 'eaten', eaten: { at: ts('2026-11-06T10:00:00Z'), by: 'a', together: true } },
+      { id: 'k3', by: 'a', at: ts('2026-11-07T03:00:00Z'), state: 'out' }],
+    eatDraws: [{ id: 'd1', by: 'a', at: ts('2026-11-06T09:00:00Z'), picked: 'k2' }, { id: 'd2', by: 'b', at: ts('2026-11-08T09:00:00Z') }] };
+  const inp = RDm.toInput(raw, { kind: 'month', key: '2026-11' });
+  assert.deepEqual(inp.eats, [{ by: 'a', at: '2026-11-01', eatenAt: null, together: false }, { by: 'b', at: '2026-11-05', eatenAt: '2026-11-06', together: true }]);
+  assert.deepEqual(inp.eatPicks, [{ by: 'a', at: '2026-11-06' }]);
+  assert.equal(RDm.tsDay(null), null);
+});

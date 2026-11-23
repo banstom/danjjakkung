@@ -15,6 +15,8 @@
      qdays:       교환 쪽지 [{ date, text, done: { uid: 1 }, likes: { uid: true } }]   기간 안 (카드 8, 11-21 식탁 → 교환 쪽지)
      qanswers:    { date: { uid: { text } } }           마음에 남은 쪽지 후보 날의 작성자 쪽지만
      spends:      단짝 영수증 기록 (아직 없으면 [])
+     eats:        출출 쿠키 [{ by, at: 'YYYY-MM-DD', eatenAt: 'YYYY-MM-DD'|null, together }]  뺀 쿠키 제외 (11-23)
+     eatPicks:    깨기에서 꺼낸 쿠키 [{ by, at: 'YYYY-MM-DD' }]
    }
    prevData = 바로 앞 기간의 같은 모양 (없으면 null → 비교 숫자 없음) */
 'use strict';
@@ -239,6 +241,18 @@ function noteCard(period, data, prev) {
   return c ? Object.assign({ id: 'note' }, c) : null;
 }
 
+// ── 출출 쿠키 카드 (11-23 사용자 결정: 넣은 쿠키 · 꺼낸 쿠키 수) ── 교환 쪽지 다음, 영수증 앞. 둘 다 0 이면 카드 없음
+function eatCard(period, data) {
+  const r = periodRange(period);
+  const put = (data.eats || []).filter((e) => inRange(e.at, r));
+  const picked = (data.eatPicks || []).filter((d) => inRange(d.at, r));
+  if (!put.length && !picked.length) return null;
+  const eaten = (data.eats || []).filter((e) => inRange(e.eatenAt, r));
+  const byPerson = {};
+  data.uids.forEach((u) => { byPerson[u] = { put: put.filter((e) => e.by === u).length, picked: picked.filter((d) => d.by === u).length }; });
+  return { id: 'eat', put: put.length, picked: picked.length, eaten: eaten.length, together: eaten.filter((e) => e.together).length, byPerson };
+}
+
 // ── 카드 9 단짝 영수증 ── 영수증 화면과 같은 모듈 (functions/ledger-sum.js = js/ledger-sum.js)
 function spendsCard(period, data) {
   const r = periodRange(period);
@@ -293,6 +307,8 @@ function computeRecap(rawData, rawPrev) {
   }
   const pc = placesCard(p, data); if (pc) cards.push(pc);
   const nc = noteCard(p, data, prev); if (nc) cards.push(nc);
+  const ec = eatCard(p, data);
+  if (ec) { const pe = prev ? eatCard(prev.period, prev) : null; ec.diffPrev = pe ? diff(ec.put, pe.put) : null; cards.push(ec); }
   const sc = spendsCard(p, data); if (sc) cards.push(sc);
   // 마무리: 위 숫자를 한 장에 (있는 카드만)
   const pick = (id) => cards.find((c) => c.id === id);

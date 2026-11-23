@@ -235,3 +235,22 @@ test('C4-1 각자의 루틴 비교가 0이면 「지난달과 같아요」 (11-2
   const y = Object.assign({}, r, { period: { kind: 'year', key: '2026' } });
   assert.equal(cardText(c, y, 'a').rows[0].cmp, '작년과 같아요');
 });
+
+test('C-E 출출 쿠키 카드: 넣은 · 꺼낸 · 먹은 수, 둘 다 0 이면 없음, 교환 쪽지 다음 · 영수증 앞, 앞 기간에 카드가 있을 때만 비교 (11-23)', () => {
+  const base = (eats, eatPicks, key) => ({ period: { kind: 'month', key: key || '2026-11' }, people: [{ uid: 'a', name: '가' }, { uid: 'b', name: '나' }], coupleSince: '2026-01-01',
+    routines: [], checks: [], todos: [], kungs: [], events: [], places: [], qdays: [], qanswers: {}, spends: [{ date: '2026-11-03', amount: 1000, paidBy: 'a', cat: 'food' }], eats, eatPicks });
+  const eats = [{ by: 'a', at: '2026-11-01', eatenAt: null, together: false }, { by: 'b', at: '2026-11-05', eatenAt: '2026-11-06', together: true }, { by: 'b', at: '2026-10-20', eatenAt: null, together: false }];
+  const r = computeRecap(base(eats, [{ by: 'a', at: '2026-11-06' }]), null);
+  const c = r.cards.find((x) => x.id === 'eat');
+  assert.deepEqual([c.put, c.picked, c.eaten, c.together, c.byPerson.a, c.byPerson.b, c.diffPrev], [2, 1, 1, 1, { put: 1, picked: 1 }, { put: 1, picked: 0 }, null]);
+  const ids = r.cards.map((x) => x.id);
+  assert.ok(ids.indexOf('eat') === ids.indexOf('spends') - 1);
+  assert.ok(!computeRecap(base([], []), null).cards.some((x) => x.id === 'eat'));
+  // 비교: 10월에도 카드가 있으면 넣은 쿠키 차이
+  const r2 = computeRecap(base(eats, []), base(eats, [], '2026-10'));
+  assert.equal(r2.cards.find((x) => x.id === 'eat').diffPrev, 1);
+  const t = cardText(c, r, 'b');
+  assert.equal(t.kick, '출출 쿠키'); assert.equal(t.big, 2); assert.equal(t.lead, '이번 달 통에 넣은 쿠키예요.');
+  assert.deepEqual(t.rows.map((x) => x.name + ' ' + x.value), ['나 1개 넣음 · 0개 꺼냄', '가 1개 넣음 · 1개 꺼냄']);
+  assert.deepEqual(t.more, ['통에서 꺼낸 쿠키 1개', '먹었어요 1개 · 단짝과 함께 1개']);
+});

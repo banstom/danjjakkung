@@ -22,6 +22,15 @@ function regionName(code) {
   return parts.length > 1 ? parts.slice(1).join(' ') : full;
 }
 
+/** Firestore 서버 시각(Timestamp) · ms 숫자 · ISO → 서울 날짜 (이상하면 null) — 출출 쿠키는 서버 시각으로 저장 */
+function tsDay(v) {
+  let t = null;
+  if (v && typeof v.toDate === 'function') t = v.toDate();
+  else if (typeof v === 'number') t = new Date(v);
+  else if (typeof v === 'string') t = new Date(v);
+  return t && !isNaN(t.getTime()) ? N.kstParts(t).dateKey : null;
+}
+
 /** ISO 시각 → 서울 날짜 (이상하면 null) */
 function kstDay(iso) {
   const t = new Date(iso);
@@ -74,7 +83,14 @@ function toInput(raw, period) {
     date: s.date, amount: s.amount, paidBy: s.paidBy, shares: s.shares || undefined, cat: s.cat
   }));
 
-  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats };
+  // 출출 쿠키 (11-23): 넣은 쿠키 = eats.at (뺀 쿠키 'out' 은 안 셈, 또 먹고 싶어요로 다시 넣은 쿠키는 셈) · 꺼낸 쿠키 = 깨기에서 고른 것(eatDraws.picked)
+  //   · 먹은 쿠키 = eats.eaten.at. 기간은 recap.js 가 거름
+  const eats = (raw.eats || []).filter((e) => e.state !== 'out' && typeof e.by === 'string').map((e) => ({
+    by: e.by, at: tsDay(e.at), eatenAt: e.eaten ? tsDay(e.eaten.at) : null, together: !!(e.eaten && e.eaten.together === true)
+  }));
+  const eatPicks = (raw.eatDraws || []).filter((d) => typeof d.picked === 'string' && d.picked && typeof d.by === 'string').map((d) => ({ by: d.by, at: tsDay(d.at) }));
+
+  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats, eats, eatPicks };
 }
 
 const docs = (q) => q.docs.map((d) => Object.assign({ id: d.id }, d.data()));
@@ -87,7 +103,7 @@ async function fetchRaw(db, range) {
   const startIso = new Date(range.start + 'T00:00:00+09:00').toISOString();
   const endIso = new Date(R.addDays(range.end, 1) + 'T00:00:00+09:00').toISOString();
   const couple = await db.doc('couple/main').get();
-  const [members, routines, checks, todos, kungs, events, places, qdaysAll, spends, spendCats] = await Promise.all([
+  const [members, routines, checks, todos, kungs, events, places, qdaysAll, spends, spendCats, eats, eatDraws] = await Promise.all([
     getAll(db.collection('members')),
     getAll(db.collection('routines')),
     getAll(between('checks', 'date')),
@@ -97,7 +113,9 @@ async function fetchRaw(db, range) {
     getAll(db.collection('places')),
     getAll(db.collection('qdays')), // 하루 하나 · 한 해 수백 개라 통째로 읽고 기간은 아래에서 거름 (색인 추가 없음)
     getAll(between('spends', 'date')),
-    getAll(db.collection('spendCats'))
+    getAll(db.collection('spendCats')),
+    getAll(db.collection('eats')), // 출출 쿠키 — 한 해 수백 개라 통째로 (시각이 서버 Timestamp 라 범위 조건 대신 아래에서 거름)
+    getAll(db.collection('eatDraws'))
   ]);
   const qdays = qdaysAll.filter((d) => inRange(d.id, range));
   // 마음에 남은 쪽지 후보: 둘 다 남긴 날 · 좋아요가 있는 날 → 누른 사람의 상대(작성자) 쪽지만 읽는다
@@ -113,9 +131,9 @@ async function fetchRaw(db, range) {
       if (a.exists) { qanswers[d.id] = qanswers[d.id] || {}; qanswers[d.id][author] = { text: String(a.data().text || '') }; }
     }
   }
-  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats };
+  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats, eats, eatDraws };
 }
 
 async function loadPeriod(db, period) { return toInput(await fetchRaw(db, R.periodRange(period)), period); }
 
-module.exports = { toInput, fetchRaw, loadPeriod, regionName, kstDay };
+module.exports = { toInput, fetchRaw, loadPeriod, regionName, kstDay, tsDay };

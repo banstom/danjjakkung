@@ -135,6 +135,17 @@
           rows: people.map(function (p) { return { uid: p.uid, name: p.name, value: '목표 맞춘 날 ' + ((card.goalDays || {})[p.uid] || 0) + '일' }; }),
           note: '몸 정보 · 체중은 결산에 넣지 않아요'
         };
+      case 'eat': { // 출출 쿠키 (11-23) — 이름은 js/eat-text.js NAME 한 곳 (스크립트 순서와 상관없이 여기서 읽음)
+        var et = NODE ? require('./eat-text.js') : root.RT.eatText;
+        var em = [];
+        if (card.picked) em.push('통에서 꺼낸 쿠키 ' + card.picked + '개');
+        if (card.eaten) em.push('먹었어요 ' + card.eaten + '개' + (card.together ? ' · 단짝과 함께 ' + card.together + '개' : ''));
+        return {
+          kick: et ? et.NAME : '출출 쿠키', big: card.put, unit: '개', lead: per + ' 통에 넣은 쿠키예요.',
+          rows: people.map(function (p) { var b = (card.byPerson || {})[p.uid] || { put: 0, picked: 0 }; return { uid: p.uid, name: p.name, value: b.put + '개 넣음 · ' + b.picked + '개 꺼냄' }; }),
+          more: em, cmp: cmpText(card.diffPrev, '개', kind)
+        };
+      }
       case 'spends':
         return {
           kick: '단짝 영수증', title: recap.cards[0].dateLabel.replace(/^\d+년 /, '') + '의 단짝 영수증', bigText: L.won(card.total), lead: per + ' 함께 쓴 돈이에요.',

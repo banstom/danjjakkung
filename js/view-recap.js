@@ -125,6 +125,7 @@
         }).join('') + '</div>';
       case 'todos':
       case 'kungs':
+      case 'eat':
       case 'meals':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p>' +
           prows(t.rows, slots) + (t.more && t.more.length ? '<p class="rc-more">' + lines(t.more) + '</p>' : '') + (t.note ? '<p class="rc-note">' + esc(t.note) + '</p>' : '') + '</div>';
