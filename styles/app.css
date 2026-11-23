@@ -1892,3 +1892,80 @@ button.lg-entry--cell { margin-top: 0; padding: 16px; min-height: 150px; } /* �
 .dfe__in { width: 100%; min-height: 48px; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 14px; background: var(--input-bg); padding: 0 44px 0 12px; font: inherit; font-size: 16px; color: var(--text); }
 .dfe__in:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .dfe__u { position: absolute; right: 12px; font-size: 13px; color: var(--sub); pointer-events: none; }
+
+/* ── 짝꿍과의 연말 문답 (docs/yearqa/spec.md) — 색은 테마 변수만 ── */
+.yq-entry { width: 100%; border: 0; text-align: left; margin-top: 10px; display: flex; align-items: flex-start; gap: 14px; padding: 16px; font: inherit; color: var(--text); border-radius: 20px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line); flex-wrap: wrap; }
+.yq-entry__env { color: var(--tint-text); flex: none; margin-top: 2px; }
+.yq-entry__tx { flex: 1 1 180px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.yq-entry__kick { font-size: 12px; font-weight: 700; color: var(--tint-text); }
+.yq-entry__title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; }
+.yq-entry__sub { font-size: 13px; color: var(--sub); line-height: 1.45; word-break: keep-all; }
+.yq-entry__who { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--sub); flex-wrap: wrap; }
+.yq-entry__sep { width: 8px; }
+.yq-entry__go { align-self: flex-end; margin-left: auto; font-size: 13px; font-weight: 700; color: var(--tint-text); white-space: nowrap; }
+.yq-entry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.sheet.yq { top: 0; height: 100%; max-height: none; border-radius: 0; padding: 0; display: flex; flex-direction: column; background: var(--bg, var(--surface)); }
+.yq-head { display: flex; align-items: center; gap: 6px; padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px 4px; border-bottom: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.yq-back { width: 44px; height: 44px; border: 0; background: none; display: flex; align-items: center; justify-content: center; color: var(--text); flex: none; }
+.yq-head__tx { flex: 1 1 160px; display: flex; flex-direction: column; min-width: 0; }
+.yq-head__t { margin: 0; font-size: 17px; font-weight: 800; }
+.yq-head__s { font-size: 12px; color: var(--sub); line-height: 1.4; word-break: keep-all; }
+.yq-save { font-size: 12px; color: var(--sub); white-space: nowrap; margin-left: auto; }
+.yq-save--err { color: var(--warn); white-space: normal; }
+.yq-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); max-width: 560px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+.yq-intro { margin: 0 2px 14px; font-size: 14px; line-height: 1.55; color: var(--sub); word-break: keep-all; }
+.yq-intro b { color: var(--text); }
+.yq-letter { background: var(--tint); border-radius: 14px 4px 14px 14px; padding: 14px 16px; margin-bottom: 14px; }
+.yq-letter__k { font-size: 12px; font-weight: 700; color: var(--tint-text); }
+.yq-letter__t { margin: 6px 0 0; font-size: 16px; line-height: 1.55; overflow-wrap: anywhere; }
+.yq-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; margin: 0 -2px; scrollbar-width: none; }
+.yq-tabs::-webkit-scrollbar { display: none; }
+.yq-tab { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.yq-tab[aria-selected="true"] { border-color: var(--accent); background: var(--primary); color: var(--on-primary); }
+.yq-tab__n { font-weight: 800; }
+.yq-tab__c { font-size: 11px; opacity: .8; font-variant-numeric: tabular-nums; }
+.yq-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.yq-qs { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.yq-q { background: var(--surface); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--lift, none); }
+.yq-q--capsule { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.yq-q__q { display: flex; gap: 8px; font-size: 16px; font-weight: 700; line-height: 1.4; word-break: keep-all; }
+.yq-q__no { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--tint); color: var(--tint-text); font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+.yq-q__note, .yq-q__hint { margin: 0 0 0 30px; font-size: 12px; color: var(--sub); line-height: 1.45; display: flex; align-items: center; gap: 4px; word-break: keep-all; }
+.yq-q__hint { color: var(--tint-text); }
+.yq-q__a { min-height: 72px; font-size: 15px; }
+.yq-q__a[readonly] { background: var(--raised, var(--surface)); }
+.yq-q__cnt { align-self: flex-end; font-size: 11px; color: var(--sub); font-variant-numeric: tabular-nums; }
+.yq-q__cnt.is-over { color: var(--warn); font-weight: 700; }
+.yq-foot { display: flex; gap: 8px; margin-top: 18px; }
+.yq-foot .rc-btn svg { width: 22px; height: 17px; }
+.yq-foot__note { margin: 10px 2px 0; font-size: 12px; color: var(--sub); text-align: center; }
+.yq-confirm { position: fixed; }
+.yq-confirm__t { margin: 0; font-size: 18px; font-weight: 800; }
+.yq-confirm__p { margin: 4px 0 8px; font-size: 14px; line-height: 1.55; color: var(--sub); word-break: keep-all; }
+.yq-confirm__p b { color: var(--text); }
+
+/* 연말결산 뒤 문답 카드 */
+.yq-title { font-size: 34px; }
+.yq-env-big { color: var(--tint-text); }
+.yq-env-big svg { width: 68px; height: 52px; }
+.yq-acts { margin-top: 8px; }
+.yq-sec { gap: 10px; margin: 0 auto; }
+.yq-row { display: flex; flex-direction: column; gap: 10px; }
+.yq-row__q { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.4; word-break: keep-all; }
+.yq-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.yq-ans { background: var(--raised, var(--tint)); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.yq-ans__who { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--sub); }
+.yq-ans__t { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; word-break: keep-all; }
+.yq-ans__t.is-empty { color: var(--faint, var(--sub)); font-size: 13px; }
+.yq-pair--big { grid-template-columns: 1fr; gap: 10px; }
+.yq-pair--big .yq-ans { background: var(--surface); padding: 16px; }
+.yq-pair--big .yq-ans__t { font-size: 20px; font-weight: 700; line-height: 1.45; }
+.yq-capsules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.yq-capsule { background: var(--surface); border-radius: 16px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.yq-capsule__env { color: var(--tint-text); transform: rotate(-6deg); }
+.yq-capsule__env svg { width: 52px; height: 40px; }
+.yq-capsule__s { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--sub); font-weight: 600; }
+.yq-capsule.is-empty { opacity: .6; }
+@media (max-width: 340px) { .yq-pair { grid-template-columns: 1fr; } }
+@media (max-height: 680px) { .yq-title { font-size: 28px; } }

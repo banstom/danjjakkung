@@ -435,6 +435,36 @@
       },
       editAnswer: function (date, uid, text) { return db.doc('qdays/' + date + '/a/' + uid).update({ text: text, editedAt: ts() }); },
       setLike: function (date, uid, on) { var p = {}; p['likes.' + uid] = on ? true : del(); return db.doc('qdays/' + date).update(p); },
+      // ── 짝꿍과의 연말 문답 (docs/yearqa) ── yearqa/{YYYY} = { sealed: { uid: 시각 } } · yearqa/{YYYY}/a/{uid} = { answers, sealed, updatedAt, sealedAt? }
+      //   짝꿍 답은 둘 다 봉투를 붙이고 1월 1일(서울)이 지나야 get 가능 (규칙). 그 전엔 부르지도 않는다 (js/app-yearqa.js)
+      watchYearQa: function (year, next, fail) {
+        return db.doc('yearqa/' + year).onSnapshot(function (snap) {
+          var d = snap.exists ? snap.data(EST) : null, sealed = {};
+          Object.keys((d && d.sealed) || {}).forEach(function (u) { sealed[u] = msOf(d.sealed[u]) || 1; });
+          next({ sealed: sealed });
+        }, fail);
+      },
+      watchYearAnswer: function (year, uid, next, fail) {
+        return db.doc('yearqa/' + year + '/a/' + uid).onSnapshot(function (snap) {
+          var d = snap.exists ? snap.data(EST) : null;
+          next(d ? { answers: Object.assign({}, d.answers || {}), sealed: d.sealed === true, updatedAt: msOf(d.updatedAt) } : null);
+        }, fail);
+      },
+      getYearAnswer: function (year, uid) {
+        return db.doc('yearqa/' + year + '/a/' + uid).get().then(function (snap) { var d = snap.exists ? snap.data() : null; return d ? { answers: Object.assign({}, d.answers || {}), sealed: d.sealed === true } : null; });
+      },
+      /** 임시 저장 · 고치기: 답 전체를 덮어씀 (붙인 봉투는 그대로 붙어 있음) */
+      saveYearAnswers: function (year, uid, answers, sealed) {
+        return db.doc('yearqa/' + year + '/a/' + uid).set({ answers: answers, sealed: !!sealed, updatedAt: ts() });
+      },
+      /** 봉투 붙이기: 내 답(sealed) + 표시(yearqa/{year}.sealed.{나})를 한 묶음으로 — 규칙이 둘이 같이 오는지 확인 */
+      sealYear: function (year, uid, answers) {
+        var b = db.batch(), mark = {};
+        mark[uid] = ts();
+        b.set(db.doc('yearqa/' + year + '/a/' + uid), { answers: answers, sealed: true, updatedAt: ts(), sealedAt: ts() });
+        b.set(db.doc('yearqa/' + year), { sealed: mark }, { merge: true });
+        return b.commit();
+      },
       addOurs: function (uid, text, ask) { return db.doc('ourQuestions/' + newKey().replace(/^r/, 'o')).set({ text: text, by: uid, ask: !!ask, createdAt: ts() }); },
       editOurs: function (id, text, ask) { return db.doc('ourQuestions/' + id).update({ text: text, ask: !!ask }); },
       deleteOurs: function (id) { return db.doc('ourQuestions/' + id).delete(); },

@@ -102,6 +102,7 @@
   var composing = false, deferred = false, deferTimer = null;
   var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
+  if (RT.yearqa) RT.yearqa.ALL.forEach(function (q) { INPUT_IDS.push('yq-a-' + q.id); }); // 연말 문답 답 칸
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
   var TAB_IDS = ['routine', 'schedule', 'todo', 'look', 'all']; // v47: 「전체」
@@ -427,6 +428,8 @@
     if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || !appEl.contains(btn)) return;
     var act = btn.getAttribute('data-act');
     if (act.indexOf('q-') === 0 && qc && qc.act(act, btn)) return; // 교환 쪽지 (js/app-question.js)
+    if (act === 'yq-reveal') { var yv = btn.getAttribute('data-v'); if (state.recap.list === null) { state.recap.pending = yv; state.tab = 'look'; state.review.mode = 'recap'; loadRecaps(); render(true); } else openRecap(yv); return; } // 연말 문답 펼쳐 보기 = 연말결산 덱 (문답 카드는 끝에)
+    if (act.indexOf('yq-') === 0 && yc) { if (act === 'yq-open') { state.recap.open = null; state.recap.noteOpen = null; if (state.recap.list === null && !state.recap.loading) loadRecaps(); } if (yc.act(act, btn)) return; } // 연말 문답 (js/app-yearqa.js)
     if (act.indexOf('ek-') === 0 && ec && ec.act(act, btn)) return; // eat(쿠키) 기능 (js/app-eat.js)
     if (act === 'filter') { state.filter = btn.getAttribute('data-id'); state.page = 0; render(); }
     else if (act === 'page') { state.page = state.page + Number(btn.getAttribute('data-dir')); render(); }
@@ -824,10 +827,12 @@
     if (state.tab === 'look' && other) out.tab = state.review.mode === 'recap' ? RT.viewRecap.tab(recapEntryModel()) : RT.viewReview.tab(reviewModel());
     if (state.tab === 'look' && state.recap.open) { var dmRc = recapDeckModel(); if (dmRc) out.sheet = RT.viewRecap.deck(dmRc, state.sheetEntering); else state.recap.open = null; }
     if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
+    if (state.status === 'ready' && yc) yc.tick();
+    if (yc && yc.isOpen()) out.sheet = yc.sheetHtml(); // 연말 문답 쓰는 화면은 어느 탭에서나 맨 위
     if (state.status === 'ready' && qc) qc.tick();
     if (state.status === 'ready' && ec) ec.tick();
-    if (state.tab === 'all' && other && qc && qc.isOpen()) { out.tab = qc.screenHtml(); var qsh = qc.sheetHtml(); if (qsh) out.sheet = qsh; return out; }
-    if (state.tab === 'all' && other && ec && ec.isOpen()) { out.tab = ec.screenHtml(); var esh = ec.sheetHtml(); if (esh) out.sheet = esh; return out; }
+    if (state.tab === 'all' && other && qc && qc.isOpen()) { out.tab = qc.screenHtml(); var qsh = qc.sheetHtml(); if (qsh && !(yc && yc.isOpen())) out.sheet = qsh; return out; }
+    if (state.tab === 'all' && other && ec && ec.isOpen()) { out.tab = ec.screenHtml(); var esh = ec.sheetHtml(); if (esh && !(yc && yc.isOpen())) out.sheet = esh; return out; }
     if (state.tab === 'all' && other) out.tab = state.map ? RT.viewMap.screen(mapModel()) : state.diet ? RT.viewDiet.home(dietTableModel()) : state.ledger ? RT.viewLedger.screen(ledgerModel()) : RT.viewAll.tab(allModel());
     if (state.tab === 'all' && state.ledger && state.ledger.sheet) out.sheet = RT.viewLedger.sheet(state.ledger.sheet, ledgerSheetCtx(), state.sheetEntering);
     if (state.diet && state.diet.meal && !state.diet.log && !curMeal()) { // 다른 곳에서 지웠거나 날짜가 넘어감 → 상세를 닫고 알림 (보이지 않는 상세가 뒤로가기를 먹지 않게)
@@ -982,7 +987,7 @@
     rc.loading = true; rc.error = '';
     store.loadRecaps().then(function (list) {
       rc.list = list; rc.loading = false;
-      if (rc.pending) { var k = rc.pending; rc.pending = null; if (list.some(function (r) { return r.key === k; })) { openRecap(k); return; } }
+      if (rc.pending) { var k = rc.pending; rc.pending = null; if (list.some(function (r) { return r.key === k; }) || (/^\d{4}$/.test(k) && yc)) { openRecap(k); return; } }
       render();
     }, function () { rc.loading = false; rc.list = rc.list || []; rc.error = '결산을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 불러와 주세요.'; render(); });
   }
@@ -990,14 +995,21 @@
     var rc = state.recap;
     if (rc.list === null && !rc.loading && !rc.error) setTimeout(loadRecaps, 0);
     var p = D.parts(state.today);
-    return RT.viewRecap.entryModel(rc.list || [], { y: p.y, m: p.m, d: p.d }, { loading: rc.list === null || rc.loading, error: rc.error });
+    return RT.viewRecap.entryModel(rc.list || [], { y: p.y, m: p.m, d: p.d }, { loading: rc.list === null || rc.loading, error: rc.error, yqHtml: yc && RT.viewYearqa ? RT.viewYearqa.entry(yc.entryModel()) : '' });
   }
   function recapDeckModel() {
     var rc = state.recap, row = (rc.list || []).filter(function (r) { return r.key === rc.open; })[0];
-    if (!row || !row.doc || !row.doc.cards) return null;
+    var isYear = /^\d{4}$/.test(String(rc.open || ''));
+    var doc = row && row.doc && row.doc.cards ? row.doc : null;
+    // 연말 문답만 있고 연말결산 문서가 없을 때(서버가 못 만든 해 · 결산을 불러오는 중) → 문답 카드만으로 덱을 연다
+    if (!doc && isYear && yc && Number(rc.open) >= 2026 && rc.list !== null) doc = { period: { kind: 'year', key: String(rc.open) }, people: [state.me, ledgerPartner()].filter(Boolean).map(function (u) { return { uid: u, name: nameOf(u) }; }), cards: [] };
+    if (!doc) return null;
     var sm = slotMap();
-    var m = RT.viewRecap.deckModel(row.doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
-      { saving: rc.saving, noteOpen: rc.noteOpen, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
+    var after = isYear && yc && Number(rc.open) >= 2026 ? yc.deckCards(rc.open) : []; // 연말 문답은 2026년부터
+    var m = RT.viewRecap.deckModel(doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
+      { saving: rc.saving, noteOpen: rc.noteOpen, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '', after: after,
+        viewer: state.me, partnerUid: ledgerPartner(), nameOf: nameOf, yqYear: isYear ? String(rc.open) : null });
+    if (!m.n) return null;
     rc.idx = m.idx;
     return m;
   }
@@ -2064,7 +2076,7 @@
   }
   /** 알림으로 연 지역 (v54): 「전체」 탭 → 단짝 지도 → 지도 데이터가 오면 그 지역 시트 */
   // ── 교환 쪽지 (docs/question) · eat(쿠키) 기능 (docs/eat) — 화면 상태는 각 모듈(js/app-question.js · js/app-eat.js)이 갖고, 여기선 이어 붙이기만 ──
-  var qc = null, ec = null;
+  var qc = null, ec = null, yc = null;
   function featureHost() {
     return {
       store: function () { return store; },
@@ -2080,6 +2092,7 @@
       kung: { ready: function () { var k = state.status === 'ready' ? model().kung : null; return !!(k && k.status === 'ready' && !state.kungOff); }, send: function () { sendKung(); } },
       user: function () { return state.userDoc || null; },
       now: function () { return Date.now(); },
+      recaps: function () { return state.recap.list; },
       openMapPaint: function (code, food) { return paintFromEat(code, food); },
       paintedSigungu: function () { return new Set(Object.keys(state.placeDocs || {}).filter(function (c) { var d = state.placeDocs[c]; return d && d.visits && d.visits.length; })); },
       areaName: function (code) { return mapData && mapData.names ? mapData.names[code] : null; },
@@ -2089,6 +2102,7 @@
   function makeFeatures() {
     if (RT.appQuestion && RT.viewQuestion && RT.question) qc = RT.appQuestion.create(featureHost());
     if (RT.appEat && RT.viewEat && RT.eat) ec = RT.appEat.create(featureHost());
+    if (RT.appYearqa && RT.viewYearqa && RT.yearqa) yc = RT.appYearqa.create(featureHost());
   }
   function openPendingFeature() {
     var f = state.pendingOpen;
@@ -4099,6 +4113,7 @@
   appEl.addEventListener('input', function (ev) {
     var id = ev.target.id;
     if (qc && /^q-/.test(id) && qc.input(id, ev.target.value)) return;
+    if (yc && /^yq-/.test(id) && yc.input(id, ev.target.value)) return;
     if (ec && /^ek-/.test(id) && ec.input(id, ev.target.value)) return;
     if (id === 'ava-zoom' && state.avaCrop) { var ac = state.avaCrop, vw = ac.view / 2; ac.st = RT.avatarCrop.zoomAt(ac.st, (ac.st.min * parseFloat(ev.target.value)) / ac.st.scale, vw, vw, ac.iw, ac.ih, ac.view); avaApply(); return; }
     if (state.ledger && state.ledger.sheet) {
@@ -4188,7 +4203,7 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!(qc && qc.hasSheet()) || !!(ec && ec.hasSheet()) || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!(yc && yc.isOpen()) || !!(qc && qc.hasSheet()) || !!(ec && ec.hasSheet()) || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
@@ -4197,6 +4212,7 @@
     if (state.avaView) { closeAvaView(); return; }
     if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
+    if (yc && yc.isOpen()) { yc.back(); return; }
     if (qc && qc.isOpen() && state.tab === 'all') { qc.back(); return; }
     if (ec && ec.isOpen() && state.tab === 'all') { ec.back(); return; }
     if (state.diet && state.diet.log && state.diet.log.find) { dietFindClose(); return; }
@@ -4311,11 +4327,11 @@
   });
 
   appEl.addEventListener('keydown', function (ev) {
-    if ((state.sheetDay === null && !(qc && qc.hasSheet()) && !(ec && ec.hasSheet()) && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log || state.diet.meal || state.diet.cal || state.diet.set)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
+    if ((state.sheetDay === null && !(yc && yc.isOpen()) && !(qc && qc.hasSheet()) && !(ec && ec.hasSheet()) && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log || state.diet.meal || state.diet.cal || state.diet.set)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
     if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && ev.target.id === 'lg-cat-name' && !ev.isComposing) { ev.preventDefault(); addLedgerCat(); return; }
     if (ev.key === 'Enter' && state.ledger && state.ledger.sheet && ev.target && (ev.target.id === 'lg-line' || ev.target.id === 'lg-what' || ev.target.id === 'lg-amount') && !ev.isComposing) { ev.preventDefault(); saveLedger(); return; }
-    if (state.recap.open && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
+    if (state.recap.open && !(yc && yc.isOpen()) && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') && !ev.altKey) { ev.preventDefault(); recapStep(ev.key === 'ArrowRight' ? 1 : -1); return; }
     if (ev.key === 'Enter' && ev.target.id === 'cat-name' && !ev.isComposing && !composing) { ev.preventDefault(); ev.target.blur(); saveCat(); return; }
     if (ev.key === 'Escape') { ev.preventDefault(); closeTopSheet(); return; }
     if (ev.key === 'Enter' && ec && (ev.target.id === 'ek-place-q' || ev.target.id === 'ek-place-nm') && !ev.isComposing && !composing) { ev.preventDefault(); ec.enter(ev.target.id); return; }
@@ -4466,7 +4482,7 @@
     kungUnsub = store.watchKungs(D.toKey(state.today), function (list) { state.kungs = list; state.kungOff = false; if (state.status === 'ready') render(); },
       function () { state.kungOff = true; state.kungs = []; if (state.status === 'ready') render(); }); // 규칙이 아직 없어도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
   }
-  function unsubscribe() { if (qc) qc.stop(); if (ec) ec.stop(); subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
+  function unsubscribe() { if (yc) yc.stop(); if (qc) qc.stop(); if (ec) ec.stop(); subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
   function subscribe() {
     unsubscribe();
     subs = [

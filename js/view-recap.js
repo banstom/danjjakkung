@@ -46,7 +46,7 @@
       var tg = (r.doc && r.doc.cards || []).filter(function (c) { return c.id === 'together'; })[0];
       return { key: r.key, name: nameOf(r.key, today.y), value: '함께 해낸 날 ' + (tg ? tg.fullDays + '일' : '—') };
     });
-    return { banner: banner, rows: rows, loading: !!opts.loading, error: opts.error || '' };
+    return { banner: banner, rows: rows, loading: !!opts.loading, error: opts.error || '', yqHtml: opts.yqHtml || '' };
   }
 
   function seg() {
@@ -67,7 +67,7 @@
     else list = '<div class="card rc-list">' + m.rows.map(function (r) {
       return '<button type="button" class="rc-row" data-act="rc-open" data-v="' + esc(r.key) + '"><span class="rc-row__nm">' + esc(r.name) + '</span><span class="rc-row__vl">' + esc(r.value) + '</span></button>';
     }).join('') + '</div>';
-    return '<div class="rv recap-tab">' + seg() + banner + '<h3 class="mgroup rc-sec">지난 결산</h3>' + list +
+    return '<div class="rv recap-tab">' + seg() + banner + (m.yqHtml || '') + '<h3 class="mgroup rc-sec">지난 결산</h3>' + list +
       '<p class="muted rc-hint">결산은 그달 1일에 계산해 둔 숫자예요. 나중에 기록을 고쳐도 바뀌지 않아요.</p></div>';
   }
 
@@ -158,8 +158,8 @@
           (t.spends ? '<div class="rc-tile rc-tile--spend"><span>함께 쓴 돈 · 단짝 영수증</span><b>' + esc(t.spends.total) + '</b>' + ratio(m.finalRows || [], slots) + '<span>' + esc(t.spends.line) + '</span></div>' : '') +
           '<div class="rc-fill"></div><div class="rc-actions"><button type="button" class="rc-btn2" data-act="rc-restart">처음부터</button>' +
           '<button type="button" class="rc-btn" data-act="rc-save"' + (m.saving ? ' disabled aria-busy="true"' : '') + '>' + DL + (m.saving ? '만드는 중…' : '이미지로 저장') + '</button></div></div>';
-      default:
-        return '';
+      default: // 짝꿍과의 연말 문답 카드 (연말결산 끝에 붙음, js/view-yearqa.js)
+        return /^yq-/.test(card.id) && root.RT && root.RT.viewYearqa ? root.RT.viewYearqa.card(card, t, m) : '';
     }
   }
   function ratio(rows, slots) {
@@ -173,6 +173,7 @@
    */
   function deckModel(doc, viewer, idx, slotOf, extra) {
     var cards = (doc.cards || []).map(function (c) { var t = null; try { t = T.cardText(c, doc, viewer); } catch (e) { t = null; } return { card: c, text: t }; }).filter(function (x) { return x.text; }); // 모양이 이상한 옛 카드 하나 때문에 결산 전체가 안 열리지 않게 (11-23)
+    if (extra && extra.after && extra.after.length) cards = cards.concat(extra.after); // 연말결산 뒤 「짝꿍과의 연말 문답」 카드
     var n = cards.length;
     var i = Math.max(0, Math.min(n - 1, idx | 0));
     var sp = (doc.cards || []).filter(function (c) { return c.id === 'spends'; })[0];
