@@ -578,6 +578,169 @@
   --bg-art: url('../themes/train-trip/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/train-trip/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 테니스 · 도시 업데이트 (11/23, docs/themes-tennis-cities) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 통통 테니스 코트 (낮) */
+[data-theme="tennis-court"] {
+  color-scheme: light;
+  --bg: #EEF3E6; --surface: #FCFEF8; --raised: #E2EBD6; --input-bg: #FCFEF8;
+  --text: #1F2A1B; --sub: #4E5E46; --faint: #AFC0A0; --line: #D2DEC2;
+  --divider: #D2DEC2; --primary: #B5D334; --primary-edge: #B5D334; --on-primary: #1C2610;
+  --secondary: #E6F0D0; --accent: #5E8A2E; --strong: #3A6324; --icon: #4E5E46;
+  --tab-bg: #FCFEF8; --tab-active: #3A6324; --tab-inactive: #4E5E46; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F29C7E; --her-ink: #1C2616;
+  --me: #F2D45C; --me-ink: #1C2616; --both: #8CC9A0; --both-ink: #1C2616;
+  --tint: #E4F0C8; --tint-text: #355A1E; --today: #1F2A1B; --on-today: #FCFEF8;
+  --lv-full: #5E9E58; --lv-full-text: #1C2616; --lv-half: #D4E8C8;
+  --lv-half-text: #1F2A1B; --empty: #E5EBDC; --empty-text: #4F5C48; --switch-knob: #FCFEF8;
+  --scrim: rgba(31, 42, 27, 0.45); --shadow: 0 -8px 24px rgba(36, 54, 31, 0.12); --lift: 0 1px 3px rgba(36, 54, 31, 0.18); --toast-bg: #1F2A1B;
+  --toast-fg: #FCFEF8; --toast-shadow: 0 4px 0 #C8D6B6; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #24361F; --sh: #C8D6B6; --btn-hi: #D2E86E; --btn-lo: #7F9A1C;
+  --sec-dot: #7F9A1C; --deco-a: #3F7A3A; --deco-b: #FFFFFF; --dash: #C8D6B6;
+  --bg-art: url('../themes/tennis-court/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/tennis-court/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(63, 122, 58, 0.06);
+}
+
+/* 통통 테니스 코트 (밤) */
+[data-theme="tennis-court-night"] {
+  color-scheme: dark;
+  --bg: #0F1D1F; --surface: #172A2C; --raised: #213638; --input-bg: #172A2C;
+  --text: #F0F6EA; --sub: #C0CFC4; --faint: #48625F; --line: #2C4447;
+  --divider: #2C4447; --primary: #CDE65C; --primary-edge: #CDE65C; --on-primary: #1C2610;
+  --secondary: #22383A; --accent: #BBD84E; --strong: #CDE65C; --icon: #C0CFC4;
+  --tab-bg: #172A2C; --tab-active: #DDF08A; --tab-inactive: #C0CFC4; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F29C7E; --her-ink: #0E1A18;
+  --me: #F2D45C; --me-ink: #0E1A18; --both: #8CC9A0; --both-ink: #0E1A18;
+  --tint: #273C2A; --tint-text: #DDF08A; --today: #F0F6EA; --on-today: #172A2C;
+  --lv-full: #8CC9A0; --lv-full-text: #0E1A18; --lv-half: #3A5A48;
+  --lv-half-text: #F0F6EA; --empty: #22383A; --empty-text: #C0CFC4; --switch-knob: #1C2610;
+  --scrim: rgba(8, 18, 19, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F0F6EA;
+  --toast-fg: #0E1A18; --toast-shadow: 0 4px 0 #081213; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #5C8A80; --sh: #081213; --btn-hi: #E4F39A; --btn-lo: #93AD2A;
+  --sec-dot: #CDE65C; --deco-a: #2E5A3A; --deco-b: #E8F2E4; --dash: #3A5650;
+  --bg-art: url('../themes/tennis-court/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/tennis-court/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 또각또각 포르투 (낮) */
+[data-theme="porto"] {
+  color-scheme: light;
+  --bg: #EEF2FA; --surface: #FCFDFF; --raised: #E2E8F5; --input-bg: #FCFDFF;
+  --text: #1C2440; --sub: #4C5677; --faint: #AAB5D2; --line: #D2DBEE;
+  --divider: #D2DBEE; --primary: #2B4E9E; --primary-edge: #2B4E9E; --on-primary: #FCFDFF;
+  --secondary: #DDE5F7; --accent: #4A6AB8; --strong: #24438A; --icon: #4C5677;
+  --tab-bg: #FCFDFF; --tab-active: #24438A; --tab-inactive: #4C5677; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #EE9A6E; --her-ink: #1A2036;
+  --me: #F2C14E; --me-ink: #1A2036; --both: #8FB5E8; --both-ink: #1A2036;
+  --tint: #DFE7F8; --tint-text: #223F84; --today: #1C2440; --on-today: #FCFDFF;
+  --lv-full: #5F82C9; --lv-full-text: #14192B; --lv-half: #D3DEF3;
+  --lv-half-text: #1C2440; --empty: #E6EAF3; --empty-text: #4E5670; --switch-knob: #FCFDFF;
+  --scrim: rgba(28, 36, 64, 0.45); --shadow: 0 -8px 24px rgba(30, 44, 85, 0.12); --lift: 0 1px 3px rgba(30, 44, 85, 0.18); --toast-bg: #1C2440;
+  --toast-fg: #FCFDFF; --toast-shadow: 0 4px 0 #C6D0E8; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #1E2C55; --sh: #C6D0E8; --btn-hi: #4B6EBE; --btn-lo: #1C3678;
+  --sec-dot: #D9773F; --deco-a: #2B4E9E; --deco-b: #FFFFFF; --dash: #C6D0E8;
+  --bg-art: url('../themes/porto/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/porto/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(43, 78, 158, 0.06);
+}
+
+/* 또각또각 포르투 (밤) */
+[data-theme="porto-night"] {
+  color-scheme: dark;
+  --bg: #0F1730; --surface: #18223F; --raised: #222D4E; --input-bg: #18223F;
+  --text: #F0F3FC; --sub: #BFC7E2; --faint: #47527A; --line: #2E3A5F;
+  --divider: #2E3A5F; --primary: #8FB0F5; --primary-edge: #8FB0F5; --on-primary: #0E1730;
+  --secondary: #1E2A4C; --accent: #7FA2EE; --strong: #8FB0F5; --icon: #BFC7E2;
+  --tab-bg: #18223F; --tab-active: #C2D3FA; --tab-inactive: #BFC7E2; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #EE9A6E; --her-ink: #0C1328;
+  --me: #F2C14E; --me-ink: #0C1328; --both: #8FB5E8; --both-ink: #0C1328;
+  --tint: #22305A; --tint-text: #C2D3FA; --today: #F0F3FC; --on-today: #18223F;
+  --lv-full: #8FB5E8; --lv-full-text: #0C1328; --lv-half: #34497A;
+  --lv-half-text: #F0F3FC; --empty: #1F2A4A; --empty-text: #BFC7E2; --switch-knob: #0E1730;
+  --scrim: rgba(7, 11, 26, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F0F3FC;
+  --toast-fg: #0C1328; --toast-shadow: 0 4px 0 #070B1A; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #5A72B0; --sh: #070B1A; --btn-hi: #C2D3FA; --btn-lo: #5578C8;
+  --sec-dot: #F0A06A; --deco-a: #22407E; --deco-b: #D4E0F8; --dash: #3A4A70;
+  --bg-art: url('../themes/porto/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/porto/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 뾰족뾰족 프라하 (낮) */
+[data-theme="prague"] {
+  color-scheme: light;
+  --bg: #F3EFE8; --surface: #FFFDF9; --raised: #EBE5DA; --input-bg: #FFFDF9;
+  --text: #262A33; --sub: #575D69; --faint: #BDB6A8; --line: #DED6C8;
+  --divider: #DED6C8; --primary: #3F4E66; --primary-edge: #3F4E66; --on-primary: #FFFDF9;
+  --secondary: #E4E6EC; --accent: #5A6A84; --strong: #35435A; --icon: #575D69;
+  --tab-bg: #FFFDF9; --tab-active: #35435A; --tab-inactive: #575D69; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #BE2D37; --her: #E08A6A; --her-ink: #22252C;
+  --me: #E8BE55; --me-ink: #22252C; --both: #9DB0C8; --both-ink: #22252C;
+  --tint: #E3E6EE; --tint-text: #33405A; --today: #262A33; --on-today: #FFFDF9;
+  --lv-full: #6F829E; --lv-full-text: #16181C; --lv-half: #D8DEE8;
+  --lv-half-text: #262A33; --empty: #EBE6DE; --empty-text: #56595F; --switch-knob: #FFFDF9;
+  --scrim: rgba(38, 42, 51, 0.45); --shadow: 0 -8px 24px rgba(42, 47, 58, 0.12); --lift: 0 1px 3px rgba(42, 47, 58, 0.18); --toast-bg: #262A33;
+  --toast-fg: #FFFDF9; --toast-shadow: 0 4px 0 #D6CDBD; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #2A2F3A; --sh: #D6CDBD; --btn-hi: #5E6E88; --btn-lo: #2A364A;
+  --sec-dot: #C8623C; --deco-a: #C8623C; --deco-b: #3F4E66; --dash: #D6CDBD;
+  --bg-art: url('../themes/prague/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/prague/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(63, 78, 102, 0.06);
+}
+
+/* 뾰족뾰족 프라하 (밤) */
+[data-theme="prague-night"] {
+  color-scheme: dark;
+  --bg: #16181F; --surface: #20232D; --raised: #2A2E3A; --input-bg: #20232D;
+  --text: #F3F1EC; --sub: #C6C6CC; --faint: #4E5366; --line: #363B4A;
+  --divider: #363B4A; --primary: #C9CFDC; --primary-edge: #C9CFDC; --on-primary: #1A1D26;
+  --secondary: #272B38; --accent: #B5BCCC; --strong: #C9CFDC; --icon: #C6C6CC;
+  --tab-bg: #20232D; --tab-active: #E6E9F0; --tab-inactive: #C6C6CC; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #E08A6A; --her-ink: #14161C;
+  --me: #E8BE55; --me-ink: #14161C; --both: #9DB0C8; --both-ink: #14161C;
+  --tint: #2E3240; --tint-text: #E6E9F0; --today: #F3F1EC; --on-today: #20232D;
+  --lv-full: #9DB0C8; --lv-full-text: #14161C; --lv-half: #3E485C;
+  --lv-half-text: #F3F1EC; --empty: #282C38; --empty-text: #C6C6CC; --switch-knob: #1A1D26;
+  --scrim: rgba(10, 11, 16, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F3F1EC;
+  --toast-fg: #14161C; --toast-shadow: 0 4px 0 #0A0B10; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #6E7894; --sh: #0A0B10; --btn-hi: #E6E9F0; --btn-lo: #8C95AA;
+  --sec-dot: #F0B05E; --deco-a: #8E4A34; --deco-b: #F0B05E; --dash: #40465A;
+  --bg-art: url('../themes/prague/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/prague/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 살랑살랑 토스카나 (낮) */
+[data-theme="tuscany"] {
+  color-scheme: light;
+  --bg: #F6F1E2; --surface: #FFFDF5; --raised: #EEE7D2; --input-bg: #FFFDF5;
+  --text: #2B2C1C; --sub: #5C5D45; --faint: #C4BC9E; --line: #E2D9BF;
+  --divider: #E2D9BF; --primary: #5C6B24; --primary-edge: #5C6B24; --on-primary: #FFFDF5;
+  --secondary: #E8EBD2; --accent: #76863A; --strong: #4E5C1C; --icon: #5C5D45;
+  --tab-bg: #FFFDF5; --tab-active: #4E5C1C; --tab-inactive: #5C5D45; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #E0906E; --her-ink: #262618;
+  --me: #F2C94C; --me-ink: #262618; --both: #A9BC6E; --both-ink: #262618;
+  --tint: #E9EDCF; --tint-text: #4A571A; --today: #2B2C1C; --on-today: #FFFDF5;
+  --lv-full: #7E9446; --lv-full-text: #262618; --lv-half: #E0E6C4;
+  --lv-half-text: #2B2C1C; --empty: #EEE8D8; --empty-text: #5A5947; --switch-knob: #FFFDF5;
+  --scrim: rgba(43, 44, 28, 0.45); --shadow: 0 -8px 24px rgba(51, 54, 28, 0.12); --lift: 0 1px 3px rgba(51, 54, 28, 0.18); --toast-bg: #2B2C1C;
+  --toast-fg: #FFFDF5; --toast-shadow: 0 4px 0 #DCD1B2; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #33361C; --sh: #DCD1B2; --btn-hi: #7A8A3C; --btn-lo: #424E15;
+  --sec-dot: #D9A62E; --deco-a: #4E6A30; --deco-b: #F2C94C; --dash: #DCD1B2;
+  --bg-art: url('../themes/tuscany/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/tuscany/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(92, 107, 36, 0.06);
+}
+
+/* 살랑살랑 토스카나 (밤) */
+[data-theme="tuscany-night"] {
+  color-scheme: dark;
+  --bg: #1E1620; --surface: #2A202C; --raised: #352A38; --input-bg: #2A202C;
+  --text: #F8F0EA; --sub: #D2C4C8; --faint: #5A4A5E; --line: #433647;
+  --divider: #433647; --primary: #D9B4E2; --primary-edge: #D9B4E2; --on-primary: #24152A;
+  --secondary: #2F2434; --accent: #C9A0D6; --strong: #D9B4E2; --icon: #D2C4C8;
+  --tab-bg: #2A202C; --tab-active: #ECD5F1; --tab-inactive: #D2C4C8; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #E0906E; --her-ink: #1A1218;
+  --me: #F2C94C; --me-ink: #1A1218; --both: #A9BC6E; --both-ink: #1A1218;
+  --tint: #3A2A3E; --tint-text: #ECD5F1; --today: #F8F0EA; --on-today: #2A202C;
+  --lv-full: #A9BC6E; --lv-full-text: #1A1218; --lv-half: #4E4A3A;
+  --lv-half-text: #F8F0EA; --empty: #33283A; --empty-text: #D2C4C8; --switch-knob: #24152A;
+  --scrim: rgba(15, 10, 16, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F8F0EA;
+  --toast-fg: #1A1218; --toast-shadow: 0 4px 0 #0F0A10; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #86708C; --sh: #0F0A10; --btn-hi: #ECD5F1; --btn-lo: #A57CB4;
+  --sec-dot: #F2C94C; --deco-a: #3E4A28; --deco-b: #F2C94C; --dash: #4E4052;
+  --bg-art: url('../themes/tuscany/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/tuscany/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -585,7 +748,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }

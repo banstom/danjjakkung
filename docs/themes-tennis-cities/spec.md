@@ -61,4 +61,16 @@
 - 글꼴은 시험용(Noto Sans CJK). 실제는 Galmuri — 크기 위계 · 줄바꿈만 맞으면 됨
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 목업에 없던 칸(--input-bg · --divider · --icon · --tab-bg · --tab-inactive · --on-today · --lv-half-text)은 공통 규칙대로 카드 · 선 · 보조 글자색으로, --scrim · --shadow · --lift · --toast-shadow 는 봄소풍과 같은 식(낮: 글자 · 외곽선 색 rgba, 밤: 검정), 토마토 두 색은 봄소풍 낮 · 밤 값 그대로
+- 바탕 체크 색 --checker 는 기획 장식 CSS 의 체크 rgba 그대로, 그림 · 머리 장식은 토큰(--bg-art · --head-art · --head-h 42/60px · --head-w 72px)으로 — styles/pixel.css 는 손대지 않음 (밤 판 머리말 내림도 --head-h 로 이미 됨)
+- 규칙: 지금 validColors 는 사람 색 값이 아니라 테마 칸(id)을 검사함 → 테마 id 를 hasOnly 목록 · validPair 줄에 더함 (색 값 목록을 따로 넣지 않음). 배포는 FIN 에서 한 번
+- 사람 색 후보 순서: js/themes.js 규칙대로 앞 둘 = 짝꿍(--her) · 나(--me) 기본색, 그다음 spec 표 순서
+- 시험: tests/themes-2026-11.test.js (A1~A9 + 밤 판 · 빨강) · tests/themes.test.js 테마 목록
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: tennis-court --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: porto --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: porto --lv-full-text #14192B (사람 글자색 #1A2036은 --lv-full #5F82C9 위에서 4.5:1 미만이라 더 진하게)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: prague --warn #C62F3A → #BE2D37 (--surface/--raised 위 4.5:1 맞추려고)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: prague --lv-full-text #16181C (사람 글자색 #22252C은 --lv-full #6F829E 위에서 4.5:1 미만이라 더 진하게)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: tuscany --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
+- 버튼 글자: 저장소 버튼(styles/app.css · pixel.css 의 채운 버튼 · 고른 칸)은 이미 모두 --on-primary 를 써서 고칠 코드 없음 → 테니스 낮 진한 글씨(#1C2610)가 그대로 나옴 (tests/web-themes 사진으로 확인)
+- 알아 둘 것(고치지 않음): 단짝 영수증 지우기 확인 버튼 .lg-del-yes 는 --warn 바탕에 --on-primary 글자라, 글자가 진한 판(테니스 · 공항 낮, 그리고 기존 소프트 파스텔 · 사쿠라 드림 등 9판)에서 대비가 낮음 — 기존 테마 화면을 안 바꾸려고 이번엔 그대로

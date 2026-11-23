@@ -46,7 +46,16 @@
     { id: 'observatory', group: 'outing', name: '반짝반짝 천문대', ko: '반짝반짝 천문대', desc: '새벽 하늘 라벤더와 깊은 밤 별빛', dark: false, skin: 'pixel',
       modes: { light: 'observatory', dark: 'observatory-night' }, tags: ['NEW'] },
     { id: 'train-trip', group: 'travel', name: '덜컹덜컹 기차 여행', ko: '덜컹덜컹 기차 여행', desc: '레트로 청록 객차와 야간열차 창문 불빛', dark: false, skin: 'pixel',
-      modes: { light: 'train-trip', dark: 'train-trip-night' }, tags: ['NEW'] }
+      modes: { light: 'train-trip', dark: 'train-trip-night' }, tags: ['NEW'] },
+    // 테니스 · 도시 업데이트 (11/23, docs/themes-tennis-cities) — 도트 테마, 낮 · 밤 판
+    { id: 'tennis-court', group: 'outing', name: '통통 테니스 코트', ko: '통통 테니스 코트', desc: '잔디 코트와 야간 경기 조명', dark: false, skin: 'pixel',
+      modes: { light: 'tennis-court', dark: 'tennis-court-night' }, tags: ['NEW'] },
+    { id: 'porto', group: 'travel', name: '또각또각 포르투', ko: '또각또각 포르투', desc: '아줄레주 타일과 도루강 다리 불빛', dark: false, skin: 'pixel',
+      modes: { light: 'porto', dark: 'porto-night' }, tags: ['NEW'] },
+    { id: 'prague', group: 'travel', name: '뾰족뾰족 프라하', ko: '뾰족뾰족 프라하', desc: '첨탑과 주홍 지붕, 은빛 가로등', dark: false, skin: 'pixel',
+      modes: { light: 'prague', dark: 'prague-night' }, tags: ['NEW'] },
+    { id: 'tuscany', group: 'travel', name: '살랑살랑 토스카나', ko: '살랑살랑 토스카나', desc: '올리브 · 해바라기 · 사이프러스 언덕', dark: false, skin: 'pixel',
+      modes: { light: 'tuscany', dark: 'tuscany-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -95,7 +104,11 @@
     'summer-sea': { ink: '#1C2A30', both: '#7DC9BC', colors: ['#F2917D', '#F2CE5A', '#7DC9BC', '#7FB8E0', '#EE8A8A', '#E3C48D', '#B5D67A', '#B9A6E6'] },
     'autumn-forest': { ink: '#2E2117', both: '#A6B46C', colors: ['#DE7A52', '#EBC04F', '#A6B46C', '#EE9A4F', '#C49A6C', '#C7A6D9', '#8FB3D9', '#D9C7A0'] },
     'observatory': { ink: '#221F38', both: '#9EC3EC', colors: ['#E9A3BC', '#F2D27A', '#9EC3EC', '#B9A6E6', '#9FD8C8', '#F2B896', '#EDE3C4', '#A8D99A'] },
-    'train-trip': { ink: '#262A27', both: '#86C1B4', colors: ['#DE8A7E', '#E9B949', '#86C1B4', '#AED8E6', '#EADBB8', '#B5CF8A', '#C3AEDF', '#EFA066'] }
+    'train-trip': { ink: '#262A27', both: '#86C1B4', colors: ['#DE8A7E', '#E9B949', '#86C1B4', '#AED8E6', '#EADBB8', '#B5CF8A', '#C3AEDF', '#EFA066'] },
+    'tennis-court': { ink: '#1C2616', both: '#8CC9A0', colors: ['#F29C7E', '#F2D45C', '#8CC9A0', '#C9E04A', '#9CC8EA', '#BFAEE6', '#F0A0A8', '#E6CFA0'] },
+    'porto': { ink: '#1A2036', both: '#8FB5E8', colors: ['#EE9A6E', '#F2C14E', '#8FB5E8', '#A9C9A0', '#F0A8B4', '#B8A8E0', '#EAD9B4', '#9ED6C8'] },
+    'prague': { ink: '#22252C', both: '#9DB0C8', colors: ['#E08A6A', '#E8BE55', '#9DB0C8', '#E8A8B8', '#A8BE88', '#C0B0DC', '#DCC8A0', '#8EC8C0'] },
+    'tuscany': { ink: '#262618', both: '#A9BC6E', colors: ['#E0906E', '#F2C94C', '#A9BC6E', '#F2B8C6', '#C9E08A', '#C4AEE0', '#9CC4E4', '#E2CFA6'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -116,7 +129,8 @@
    ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'], // 11/19 겨울 도트 테마
    ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'], // 11/20 봄소풍
    ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'], // 여름 · 가을 업데이트
-   ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'] // 천문대 · 기차 업데이트
+   ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'], // 천문대 · 기차 업데이트
+   ['#F2D45C','공 노랑'],['#F29C7E','코랄'],['#8CC9A0','민트'],['#C9E04A','연두'],['#9CC8EA','하늘'],['#BFAEE6','라벤더'],['#F0A0A8','딸기'],['#E6CFA0','모래'],['#F2C14E','트램 노랑'],['#EE9A6E','산호'],['#8FB5E8','타일 하늘'],['#A9C9A0','세이지'],['#F0A8B4','분홍 집'],['#B8A8E0','연보라'],['#EAD9B4','크림'],['#9ED6C8','민트'],['#E8BE55','금빛'],['#E08A6A','연주홍'],['#9DB0C8','슬레이트 하늘'],['#E8A8B8','연분홍'],['#A8BE88','이끼'],['#C0B0DC','라일락'],['#DCC8A0','모래'],['#8EC8C0','청록'],['#F2C94C','해바라기'],['#E0906E','테라코타'],['#A9BC6E','올리브'],['#F2B8C6','젤라토 분홍'],['#C9E08A','피스타치오'],['#C4AEE0','라벤더'],['#9CC4E4','하늘'],['#E2CFA6','돌 베이지'] // 테니스 · 도시 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -149,6 +163,22 @@
     'train-trip': {
       s1: { w: 26, h: 33, x: 2, alt: '기차 앞모습' }, s2: { w: 32, h: 29, x: 2, alt: '기차 도시락' },
       s3: { w: 33, h: 20, x: 4, alt: '도장 찍힌 기차표' }, s4: { w: 35, h: 29, x: 4, alt: '달리는 기차' }
+    },
+    'tennis-court': {
+      s1: { w: 30, h: 32, x: 2, alt: '라켓과 공' }, s2: { w: 23, h: 25, x: 3, alt: '딸기와 크림' },
+      s3: { w: 25, h: 24, x: 5, alt: '트로피' }, s4: { w: 34, h: 26, x: 4, alt: '벤치' }
+    },
+    'porto': {
+      s1: { w: 21, h: 30, x: 2, alt: '노란 트램' }, s2: { w: 34, h: 25, x: 2, alt: '에그타르트 둘' },
+      s3: { w: 34, h: 32, x: 4, alt: '아줄레주 타일' }, s4: { w: 34, h: 31, x: 4, alt: '강가 집들과 다리' }
+    },
+    'prague': {
+      s1: { w: 54, h: 74, x: 1, alt: '천문시계' }, s2: { w: 68, h: 62, x: 1, alt: '굴뚝빵 둘' },
+      s3: { w: 58, h: 77, x: 2, alt: '첨탑 성' }, s4: { w: 65, h: 61, x: 2, alt: '다리와 지붕들' }
+    },
+    'tuscany': {
+      s1: { w: 38, h: 38, x: 2, alt: '사이프러스 언덕' }, s2: { w: 34, h: 30, x: 2, alt: '젤라토 둘' },
+      s3: { w: 28, h: 37, x: 4, alt: '해바라기' }, s4: { w: 37, h: 32, x: 4, alt: '언덕 위 돌집' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

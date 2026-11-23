@@ -16,7 +16,11 @@ const NEW = [
   { id: 'summer-sea', group: 'season', folder: 'themes-summer-autumn', ko: '찰방찰방 여름 바다' },
   { id: 'autumn-forest', group: 'season', folder: 'themes-summer-autumn', ko: '알록달록 가을 숲' },
   { id: 'observatory', group: 'outing', folder: 'themes-observatory-train', ko: '반짝반짝 천문대' },
-  { id: 'train-trip', group: 'travel', folder: 'themes-observatory-train', ko: '덜컹덜컹 기차 여행' }
+  { id: 'train-trip', group: 'travel', folder: 'themes-observatory-train', ko: '덜컹덜컹 기차 여행' },
+  { id: 'tennis-court', group: 'outing', folder: 'themes-tennis-cities', ko: '통통 테니스 코트' },
+  { id: 'porto', group: 'travel', folder: 'themes-tennis-cities', ko: '또각또각 포르투' },
+  { id: 'prague', group: 'travel', folder: 'themes-tennis-cities', ko: '뾰족뾰족 프라하' },
+  { id: 'tuscany', group: 'travel', folder: 'themes-tennis-cities', ko: '살랑살랑 토스카나' }
 ];
 const boardsOf = (t) => [t.id, t.id + '-night'];
 
