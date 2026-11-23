@@ -104,6 +104,18 @@
     return '<span class="rc-stars" aria-label="별 ' + n + '개">' + '★★★★★'.slice(0, n) + '<i>' + '★★★★★'.slice(n) + '</i></span>';
   }
 
+  /** 연말 미니 지도 (목업 Y3, 11-23) — 단짝 지도와 같은 data/kr-map.json, 올해 다녀온 지역만 진하게. 지도 데이터가 아직이면 같은 높이의 빈 칸 */
+  var MINI_VB = '20 150 840 890'; // 지역이 있는 자리 전체 (서쪽 섬 ~ 독도 · 제주) // 단짝 지도 처음 자리(본토 + 제주)와 같음
+  function miniMap(map, codes) {
+    if (!map || !map.regions) return '<div class="rc-mini rc-mini--wait" aria-hidden="true"></div>';
+    var on = {}; (codes || []).forEach(function (c) { on[c] = 1; });
+    return '<svg class="rc-mini" viewBox="' + MINI_VB + '" role="img" aria-label="올해 다녀온 곳 ' + (codes || []).length + '곳을 칠한 지도" preserveAspectRatio="xMidYMid meet">' +
+      // 이웃 나라(context)는 그리지 않음 — 작은 칸에서는 얼룩처럼 보임. 칠한 곳은 맨 뒤에 그려 테두리가 안 가려지게
+      map.regions.filter(function (r) { return !on[r.c]; }).map(function (r) { return '<path class="rg" d="' + r.d + '"/>'; }).join('') +
+      (map.groupBorder ? '<path class="gb" d="' + map.groupBorder + '"/>' : '') +
+      map.regions.filter(function (r) { return on[r.c]; }).map(function (r) { return '<path class="rg on" d="' + r.d + '"/>'; }).join('') + '</svg>';
+  }
+
   /** 카드 한 장의 속 (진행 막대 · 닫기 · 안내는 deck 이 붙임) */
   function cardBody(card, t, m) {
     var slots = m.slotOf;
@@ -141,6 +153,11 @@
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p></div>';
       case 'places': {
         var b = t.best;
+        if (t.codes) { // 연말 (목업 Y3)
+          return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + '<p class="rc-lead">' + esc(t.lead) + (t.more.length ? '<br>' + lines(t.more) : '') + '</p>' +
+            (t.top ? '<div class="rc-panel rc-top"><span class="rc-top__k">올해 별점 1위</span><span class="rc-top__v">' + esc(t.top.name + ' ' + t.top.stars) + '</span></div>' : '') +
+            miniMap(m.mapData, t.codes) + '</div>';
+        }
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + '<p class="rc-lead">' + esc(t.lead) + (t.more.length ? '<br>' + lines(t.more) : '') + '</p>' +
           (b ? '<div class="rc-panel rc-best"><span class="rc-best__k">별점 가장 높은 방문</span><span class="rc-best__t">' + esc(b.title + ' · ★' + b.stars.toFixed(1)) + '</span>' +
             b.memos.map(function (x) {
@@ -209,7 +226,7 @@
   function step(idx, n, dir) { return Math.max(0, Math.min(n - 1, idx + dir)); }
   function tapDir(x, width) { return x < width / 3 ? -1 : 1; }
 
-  var api = { nameOf: nameOf, entryModel: entryModel, tab: tab, deckModel: deckModel, deck: deck, step: step, tapDir: tapDir, longNote: longNote };
+  var api = { miniMap: miniMap, nameOf: nameOf, entryModel: entryModel, tab: tab, deckModel: deckModel, deck: deck, step: step, tapDir: tapDir, longNote: longNote };
   root.RT = root.RT || {};
   root.RT.viewRecap = api;
   if (NODE) module.exports = api;

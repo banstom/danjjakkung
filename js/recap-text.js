@@ -107,8 +107,14 @@
       case 'places': {
         var lines = [];
         if (card.newPlaces.length) lines.push('새로 칠한 곳 ' + card.newPlaces.length + '곳 · ' + card.newPlaces.slice(0, 3).join(' · ') + (card.newPlaces.length > 3 ? ' 외' : ''));
-        if (kind === 'year' && card.topRegion) lines.push('올해 별점 1위 ' + card.topRegion.name + ' ★' + card.topRegion.avg.toFixed(1));
         var best = card.best;
+        if (kind === 'year') { // 연말 (목업 Y3): 별점 1위는 따로 칸 · 미니 지도 (올해 다녀온 곳만 진하게) · 별점 가장 높은 방문 칸은 없음
+          return {
+            kick: '단짝 지도 · 올해', big: card.visits, unit: '번', lead: card.places + '곳을 함께 다녀왔어요.', more: lines,
+            top: card.topRegion ? { name: card.topRegion.name, stars: '★' + card.topRegion.avg.toFixed(1) } : null,
+            codes: card.codes || [], best: null
+          };
+        }
         return {
           kick: '단짝 지도', big: card.visits, unit: '번', lead: card.places + '곳을 함께 다녀왔어요.', more: lines,
           best: best ? {

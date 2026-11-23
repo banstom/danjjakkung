@@ -228,6 +228,7 @@ function placesCard(period, data) {
     }
     const top = Object.values(by).sort((a, b) => b.sum / b.n - a.sum / a.n || b.visits.size - a.visits.size)[0];
     out.topRegion = top ? { name: top.name, avg: Math.round(top.sum / top.n * 10) / 10 } : null;
+    out.codes = [...new Set(visits.map((v) => v.code))].sort(); // 연말 미니 지도 (목업 Y3): 올해 다녀온 지역만 진하게 (11-23)
   }
   return out;
 }

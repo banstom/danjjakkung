@@ -1600,6 +1600,16 @@ button.rv-srow { cursor: pointer; }
 .rc-ratio { display: flex; height: 12px; border-radius: 7px; overflow: hidden; gap: 2px; }
 .rc-body--final { flex: 1 0 auto; margin: 0 auto; justify-content: flex-start; }
 .rc-final__t { margin: 2px 0 0; font-size: 26px; font-weight: 800; }
+/* 연말 지도 카드 (목업 Y3, 11-23) — 별점 1위 칸 + 미니 지도 */
+.rc-top { display: flex; align-items: center; gap: 14px; }
+.rc-top__k { font-size: 13px; font-weight: 700; color: var(--sub); }
+.rc-top__v { font-size: 20px; font-weight: 800; }
+.rc-mini { display: block; width: 100%; height: 180px; }
+.rc-mini--wait { border-radius: 18px; background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.rc-mini .rg { fill: color-mix(in srgb, var(--text) 9%, var(--surface)); stroke: var(--surface); stroke-width: 0.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+/* 칠한 곳: 작은 구 · 군도 보이게 같은 색 테두리를 두껍게 (지도가 작아서) */
+.rc-mini .rg.on { fill: var(--both); stroke: var(--both); stroke-width: 3; }
+.rc-mini .gb { fill: none; stroke: var(--surface); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .rc-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rc-tile { background: var(--surface); border-radius: 18px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rc-tile b { font-size: 24px; font-weight: 800; line-height: 1.5; }
@@ -1636,6 +1646,7 @@ button.rv-srow { cursor: pointer; }
   .rc-tile { padding: 8px 12px; }
   .rc-tile b { font-size: 20px; line-height: 1.35; }
   .rc-tile span { line-height: 1.4; }
+  .rc-mini { height: 140px; }
 }
 @media (prefers-reduced-motion: reduce) { .sheet.recap.is-entering { animation: none; } }
 

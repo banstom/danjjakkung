@@ -119,3 +119,12 @@ test('U8-1 카드 8 쪽지가 길면 「전체 보기」 → 쪽지 전체가 �
   // 다른 카드에서는 noteOpen 이 있어도 안 뜸
   assert.doesNotMatch(V.deck(V.deckModel(d, 'jm', 0, slot, { noteOpen: 0 })), /rc-notesheet/);
 });
+
+test('Y3 연말 미니 지도: 올해 다녀온 지역만 칠함 · 지도 데이터가 없으면 같은 높이 빈 칸 (11-23)', () => {
+  const map = { regions: [{ c: '11010', d: 'M0 0L1 1' }, { c: '42150', d: 'M2 2L3 3' }], context: [], groupBorder: 'M0 0' };
+  const h = V.miniMap(map, ['42150']);
+  assert.match(h, /<svg class="rc-mini"[^>]*aria-label="올해 다녀온 곳 1곳을 칠한 지도"/);
+  assert.equal((h.match(/class="rg on"/g) || []).length, 1);
+  assert.match(h, /class="rg on" d="M2 2L3 3"/);
+  assert.match(V.miniMap(null, ['42150']), /rc-mini--wait/);
+});

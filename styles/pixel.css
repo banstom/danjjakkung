@@ -115,6 +115,7 @@
 [data-skin="pixel"] :is(.rc-d, .rc-hbar, .rc-ratio, .rc-prog span) { border-radius: 0; }
 [data-skin="pixel"] .rc-cmp { border-radius: 0; box-shadow: var(--px-frame-2); }
 [data-skin="pixel"] :is(.rc-btn, .rc-btn2) { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo, var(--sh)); }
+[data-skin="pixel"] .rc-mini--wait { border-radius: 0; }
 [data-skin="pixel"] .rc-notesheet__card { border-radius: 0; box-shadow: var(--px-frame), 0 6px 0 var(--sh); }
 
 /* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */
@@ -532,6 +533,8 @@
 [data-skin="pixel"]:not([data-font="plain"]) .rc-ld { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-ld__total { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-final__t { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-top__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-top__v { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-tile b { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-tile span { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-btn, [data-skin="pixel"]:not([data-font="plain"]) .rc-btn2 { font-size: 15px; font-family: var(--px-font-14); }

@@ -143,7 +143,10 @@ test('Y1 연말결산 — 같은 틀, 1년치', () => {
   assert.equal(tg.big, 28);
   assert.ok(tg.more.includes('가장 잘 해낸 달은 11월 (15일)'));
   const pl = cardText(card('places', r), r, 'jm');
-  assert.ok(pl.more.includes('올해 별점 1위 강릉시 ★5.0'));
+  // 11-23 목업 Y3: 별점 1위는 따로 칸 · 미니 지도용 지역 코드 · 별점 가장 높은 방문 칸 없음
+  assert.deepEqual(pl.top, { name: '강릉시', stars: '★5.0' });
+  assert.equal(pl.kick, '단짝 지도 · 올해'); assert.equal(pl.best, null);
+  assert.deepEqual(pl.codes, card('places', r).codes); assert.ok(pl.codes.length >= 1);
   assert.equal(cardText(card('final', r), r, 'jm').title, '우리의 한 해 요약');
 });
 

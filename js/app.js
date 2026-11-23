@@ -997,7 +997,7 @@
     if (!row || !row.doc || !row.doc.cards) return null;
     var sm = slotMap();
     var m = RT.viewRecap.deckModel(row.doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
-      { saving: rc.saving, noteOpen: rc.noteOpen, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
+      { saving: rc.saving, noteOpen: rc.noteOpen, mapData: mapReady() ? mapData : null, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
     rc.idx = m.idx;
     return m;
   }
@@ -1005,6 +1005,7 @@
     if (!key) return;
     state.tab = 'look'; state.review.mode = 'recap'; state.review.row = null;
     state.recap.open = key; state.recap.idx = 0; state.recap.noteOpen = null; state.sheetEntering = true;
+    if (String(key).length === 4) loadMapData(); // 연말결산 지도 카드의 미니 지도 (불러오면 다시 그림)
     focusAfter = ['[data-act="rc-close"]']; focusInSheet = true;
     render(true);
   }
