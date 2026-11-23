@@ -62,4 +62,10 @@
 - 전체 탭은 지금 앱 모양(2×2: 단짝 지도 · 교환 쪽지 · 출출 쿠키 · 단짝 영수증)
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 목업에 없던 칸(--input-bg · --divider · --icon · --tab-bg · --tab-inactive · --on-today · --lv-half-text)은 공통 규칙대로 카드 · 선 · 보조 글자색으로, --scrim · --shadow · --lift · --toast-shadow 는 봄소풍과 같은 식(낮: 글자 · 외곽선 색 rgba, 밤: 검정), 토마토 두 색은 봄소풍 낮 · 밤 값 그대로
+- 바탕 체크 색 --checker 는 기획 장식 CSS 의 체크 rgba 그대로, 그림 · 머리 장식은 토큰(--bg-art · --head-art · --head-h 42/60px · --head-w 72px)으로 — styles/pixel.css 는 손대지 않음 (밤 판 머리말 내림도 --head-h 로 이미 됨)
+- 규칙: 지금 validColors 는 사람 색 값이 아니라 테마 칸(id)을 검사함 → 테마 id 를 hasOnly 목록 · validPair 줄에 더함 (색 값 목록을 따로 넣지 않음). 배포는 FIN 에서 한 번
+- 사람 색 후보 순서: js/themes.js 규칙대로 앞 둘 = 짝꿍(--her) · 나(--me) 기본색, 그다음 spec 표 순서
+- 시험: tests/themes-2026-11.test.js (A1~A9 + 밤 판 · 빨강) · tests/themes.test.js 테마 목록
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: summer-sea --lv-full-text #1A272D (사람 글자색 #1C2A30은 --lv-full #3E9A8B 위에서 4.5:1 미만이라 더 진하게)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: autumn-forest --warn #C62F3A → #BE2D37 (--surface/--raised 위 4.5:1 맞추려고)

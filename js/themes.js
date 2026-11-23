@@ -36,7 +36,12 @@
       modes: { light: 'merry-xmas', dark: 'merry-xmas-night' }, tags: ['NEW'] },
     // 봄 업데이트 (11/20, docs/themes-spring) — 도트 테마, 낮 · 밤 판(밤 = 밤벚꽃 소풍). 1년 내내 고를 수 있다
     { id: 'spring-picnic', group: 'season', name: '몽글몽글 봄소풍', ko: '몽글몽글 봄소풍', desc: '벚꽃 아래 피크닉 깃발과 도시락', dark: false, skin: 'pixel',
-      modes: { light: 'spring-picnic', dark: 'spring-picnic-night' }, tags: ['NEW'] }
+      modes: { light: 'spring-picnic', dark: 'spring-picnic-night' }, tags: ['NEW'] },
+    // 여름 · 가을 업데이트 (11/23, docs/themes-summer-autumn) — 도트 테마, 낮 · 밤 판
+    { id: 'summer-sea', group: 'season', name: '찰방찰방 여름 바다', ko: '찰방찰방 여름 바다', desc: '파도 줄과 밤바다의 작은 불꽃', dark: false, skin: 'pixel',
+      modes: { light: 'summer-sea', dark: 'summer-sea-night' }, tags: ['NEW'] },
+    { id: 'autumn-forest', group: 'season', name: '알록달록 가을 숲', ko: '알록달록 가을 숲', desc: '단풍 · 은행잎 가랜드와 반딧불 숲', dark: false, skin: 'pixel',
+      modes: { light: 'autumn-forest', dark: 'autumn-forest-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -81,7 +86,9 @@
     // 낮 · 밤 판이 있는 테마는 묶음 id 하나로 (앞 둘 · both = 낮 판 값, 밤 판 기본색은 tokens.css 의 밤 블록)
     'winter-snack': { ink: '#2E1C12', both: '#D49A5A', colors: ['#D9825B', '#F0C27B', '#D49A5A', '#E8A0A0', '#A8C27A', '#9FC0D0', '#C9A27A', '#B49AD8'] },
     'merry-xmas': { ink: '#29291F', both: '#6E9E5A', colors: ['#D07A6A', '#E9B949', '#6E9E5A', '#8FB5D0', '#C49AC0', '#F2A08A', '#B8C8A8', '#E8A0A0'] },
-    'spring-picnic': { ink: '#2E2128', both: '#A5CB93', colors: ['#E89AB0', '#F3C96B', '#A5CB93', '#9FC8DC', '#F4B8A0', '#C9B8E8', '#E8D58A', '#D8A0C0'] }
+    'spring-picnic': { ink: '#2E2128', both: '#A5CB93', colors: ['#E89AB0', '#F3C96B', '#A5CB93', '#9FC8DC', '#F4B8A0', '#C9B8E8', '#E8D58A', '#D8A0C0'] },
+    'summer-sea': { ink: '#1C2A30', both: '#7DC9BC', colors: ['#F2917D', '#F2CE5A', '#7DC9BC', '#7FB8E0', '#EE8A8A', '#E3C48D', '#B5D67A', '#B9A6E6'] },
+    'autumn-forest': { ink: '#2E2117', both: '#A6B46C', colors: ['#DE7A52', '#EBC04F', '#A6B46C', '#EE9A4F', '#C49A6C', '#C7A6D9', '#8FB3D9', '#D9C7A0'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -100,7 +107,8 @@
    ['#EAB45B','머스터드'],['#B5B581','올리브'],['#D9925B','호박'],['#F1E2A1','밀짚'],['#C9A27A','볏단'],['#A8C0A0','세이지'],['#C98A7A','사과'],['#9DB4C8','가을 하늘'],
    ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'], // 10/28 시간표 색 바꿈
    ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'], // 11/19 겨울 도트 테마
-   ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'] // 11/20 봄소풍
+   ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'], // 11/20 봄소풍
+   ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'] // 여름 · 가을 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -117,6 +125,14 @@
     'spring-picnic': {
       s1: { w: 29, h: 29, x: 2, alt: '피크닉 바구니' }, s2: { w: 35, h: 30, x: 2, alt: '딸기 샌드위치 둘' },
       s3: { w: 30, h: 28, x: 4, alt: '벚꽃 한 송이' }, s4: { w: 42, h: 35, x: 4, alt: '도시락 한 상' }
+    },
+    'summer-sea': {
+      s1: { w: 36, h: 37, x: 2, alt: '파라솔' }, s2: { w: 38, h: 23, x: 2, alt: '수박 두 조각' },
+      s3: { w: 29, h: 35, x: 4, alt: '빙수 한 그릇' }, s4: { w: 38, h: 31, x: 4, alt: '바닷가 한 상' }
+    },
+    'autumn-forest': {
+      s1: { w: 42, h: 31, x: 2, alt: '도토리 둘' }, s2: { w: 43, h: 24, x: 2, alt: '홍시 둘' },
+      s3: { w: 39, h: 42, x: 3, alt: '단풍잎 한 장' }, s4: { w: 40, h: 28, x: 4, alt: '송편 한 접시와 홍시' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

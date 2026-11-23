@@ -412,6 +412,89 @@
   --bg-art: url('../themes/spring-picnic/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/spring-picnic/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 여름 · 가을 업데이트 (11/23, docs/themes-summer-autumn) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 찰방찰방 여름 바다 (낮) */
+[data-theme="summer-sea"] {
+  color-scheme: light;
+  --bg: #EEF6F4; --surface: #FBFEFD; --raised: #E0EFEC; --input-bg: #FBFEFD;
+  --text: #1D323F; --sub: #4C6470; --faint: #A6C2C6; --line: #CDE2DF;
+  --divider: #CDE2DF; --primary: #1F6A92; --primary-edge: #1F6A92; --on-primary: #FBFEFD;
+  --secondary: #DCEDF3; --accent: #3A88AE; --strong: #195C80; --icon: #4C6470;
+  --tab-bg: #FBFEFD; --tab-active: #195C80; --tab-inactive: #4C6470; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C62F3A; --her: #F2917D; --her-ink: #1C2A30;
+  --me: #F2CE5A; --me-ink: #1C2A30; --both: #7DC9BC; --both-ink: #1C2A30;
+  --tint: #DAEEF5; --tint-text: #165577; --today: #1D323F; --on-today: #FBFEFD;
+  --lv-full: #3E9A8B; --lv-full-text: #1A272D; --lv-half: #C3E5DE;
+  --lv-half-text: #1D323F; --empty: #E2ECEA; --empty-text: #4C5F66; --switch-knob: #FBFEFD;
+  --scrim: rgba(29, 50, 63, 0.45); --shadow: 0 -8px 24px rgba(35, 70, 90, 0.12); --lift: 0 1px 3px rgba(35, 70, 90, 0.18); --toast-bg: #1D323F;
+  --toast-fg: #FBFEFD; --toast-shadow: 0 4px 0 #C3DAD8; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #23465A; --sh: #C3DAD8; --btn-hi: #3D8BB3; --btn-lo: #134D6C;
+  --sec-dot: #E0705A; --deco-a: #3F9AC2; --deco-b: #FFFFFF; --dash: #C3DAD8;
+  --bg-art: url('../themes/summer-sea/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/summer-sea/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(63, 154, 194, 0.07);
+}
+
+/* 찰방찰방 여름 바다 (밤) */
+[data-theme="summer-sea-night"] {
+  color-scheme: dark;
+  --bg: #0F1B2D; --surface: #17273E; --raised: #21344E; --input-bg: #17273E;
+  --text: #EEF6FA; --sub: #B8CAD7; --faint: #4A5F7A; --line: #2D425E;
+  --divider: #2D425E; --primary: #7FCFE5; --primary-edge: #7FCFE5; --on-primary: #0D212F;
+  --secondary: #1E3452; --accent: #6BC1DA; --strong: #7FCFE5; --icon: #B8CAD7;
+  --tab-bg: #17273E; --tab-active: #A8E1EF; --tab-inactive: #B8CAD7; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F2917D; --her-ink: #0D1A26;
+  --me: #F2CE5A; --me-ink: #0D1A26; --both: #7DC9BC; --both-ink: #0D1A26;
+  --tint: #1E3D54; --tint-text: #A8E1EF; --today: #EEF6FA; --on-today: #17273E;
+  --lv-full: #6EC1B3; --lv-full-text: #0D1A26; --lv-half: #3B6767;
+  --lv-half-text: #EEF6FA; --empty: #253858; --empty-text: #B8CAD7; --switch-knob: #0D212F;
+  --scrim: rgba(8, 16, 27, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #EEF6FA;
+  --toast-fg: #0D1A26; --toast-shadow: 0 4px 0 #08101B; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #4E78A4; --sh: #08101B; --btn-hi: #B5E5F2; --btn-lo: #3E98B6;
+  --sec-dot: #F7A08C; --deco-a: #3A7EA7; --deco-b: #CDE3EB; --dash: #3A5272;
+  --bg-art: url('../themes/summer-sea/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/summer-sea/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 알록달록 가을 숲 (낮) */
+[data-theme="autumn-forest"] {
+  color-scheme: light;
+  --bg: #F7EEDF; --surface: #FFFBF3; --raised: #F1E3CD; --input-bg: #FFFBF3;
+  --text: #35261A; --sub: #6A5340; --faint: #CBB497; --line: #E6D4BA;
+  --divider: #E6D4BA; --primary: #A3441E; --primary-edge: #A3441E; --on-primary: #FFFBF3;
+  --secondary: #F6E0CF; --accent: #BE643A; --strong: #913A17; --icon: #6A5340;
+  --tab-bg: #FFFBF3; --tab-active: #913A17; --tab-inactive: #6A5340; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #BE2D37; --her: #DE7A52; --her-ink: #2E2117;
+  --me: #EBC04F; --me-ink: #2E2117; --both: #A6B46C; --both-ink: #2E2117;
+  --tint: #F8E0CC; --tint-text: #813516; --today: #35261A; --on-today: #FFFBF3;
+  --lv-full: #84964D; --lv-full-text: #2E2117; --lv-half: #DDE3C0;
+  --lv-half-text: #35261A; --empty: #EFE3D2; --empty-text: #66503C; --switch-knob: #FFFBF3;
+  --scrim: rgba(53, 38, 26, 0.45); --shadow: 0 -8px 24px rgba(74, 48, 32, 0.12); --lift: 0 1px 3px rgba(74, 48, 32, 0.18); --toast-bg: #35261A;
+  --toast-fg: #FFFBF3; --toast-shadow: 0 4px 0 #E0CBAA; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #4A3020; --sh: #E0CBAA; --btn-hi: #C4653A; --btn-lo: #783012;
+  --sec-dot: #7C8A3D; --deco-a: #D9692F; --deco-b: #E9B83E; --dash: #E0CBAA;
+  --bg-art: url('../themes/autumn-forest/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/autumn-forest/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(217, 105, 47, 0.07);
+}
+
+/* 알록달록 가을 숲 (밤) */
+[data-theme="autumn-forest-night"] {
+  color-scheme: dark;
+  --bg: #1E1A26; --surface: #2A2433; --raised: #362E40; --input-bg: #2A2433;
+  --text: #FAF0E2; --sub: #D6C4AE; --faint: #5D5068; --line: #45394F;
+  --divider: #45394F; --primary: #F2A66B; --primary-edge: #F2A66B; --on-primary: #2A160B;
+  --secondary: #3A2E3A; --accent: #E8955C; --strong: #F2A66B; --icon: #D6C4AE;
+  --tab-bg: #2A2433; --tab-active: #F6C08F; --tab-inactive: #D6C4AE; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #DE7A52; --her-ink: #241A12;
+  --me: #EBC04F; --me-ink: #241A12; --both: #A6B46C; --both-ink: #241A12;
+  --tint: #4A3428; --tint-text: #F6C08F; --today: #FAF0E2; --on-today: #2A2433;
+  --lv-full: #A6B46C; --lv-full-text: #241A12; --lv-half: #5E6640;
+  --lv-half-text: #FAF0E2; --empty: #3A3046; --empty-text: #D6C4AE; --switch-knob: #2A160B;
+  --scrim: rgba(17, 14, 22, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #FAF0E2;
+  --toast-fg: #241A12; --toast-shadow: 0 4px 0 #110E16; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #86709A; --sh: #110E16; --btn-hi: #F8C79C; --btn-lo: #C2713A;
+  --sec-dot: #B9C77A; --deco-a: #C2602E; --deco-b: #D9A93A; --dash: #54465F;
+  --bg-art: url('../themes/autumn-forest/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/autumn-forest/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -419,7 +502,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }
