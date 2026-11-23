@@ -41,7 +41,12 @@
     { id: 'summer-sea', group: 'season', name: '찰방찰방 여름 바다', ko: '찰방찰방 여름 바다', desc: '파도 줄과 밤바다의 작은 불꽃', dark: false, skin: 'pixel',
       modes: { light: 'summer-sea', dark: 'summer-sea-night' }, tags: ['NEW'] },
     { id: 'autumn-forest', group: 'season', name: '알록달록 가을 숲', ko: '알록달록 가을 숲', desc: '단풍 · 은행잎 가랜드와 반딧불 숲', dark: false, skin: 'pixel',
-      modes: { light: 'autumn-forest', dark: 'autumn-forest-night' }, tags: ['NEW'] }
+      modes: { light: 'autumn-forest', dark: 'autumn-forest-night' }, tags: ['NEW'] },
+    // 천문대 · 기차 업데이트 (11/23, docs/themes-observatory-train) — 도트 테마, 낮 · 밤 판
+    { id: 'observatory', group: 'outing', name: '반짝반짝 천문대', ko: '반짝반짝 천문대', desc: '새벽 하늘 라벤더와 깊은 밤 별빛', dark: false, skin: 'pixel',
+      modes: { light: 'observatory', dark: 'observatory-night' }, tags: ['NEW'] },
+    { id: 'train-trip', group: 'travel', name: '덜컹덜컹 기차 여행', ko: '덜컹덜컹 기차 여행', desc: '레트로 청록 객차와 야간열차 창문 불빛', dark: false, skin: 'pixel',
+      modes: { light: 'train-trip', dark: 'train-trip-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -88,7 +93,9 @@
     'merry-xmas': { ink: '#29291F', both: '#6E9E5A', colors: ['#D07A6A', '#E9B949', '#6E9E5A', '#8FB5D0', '#C49AC0', '#F2A08A', '#B8C8A8', '#E8A0A0'] },
     'spring-picnic': { ink: '#2E2128', both: '#A5CB93', colors: ['#E89AB0', '#F3C96B', '#A5CB93', '#9FC8DC', '#F4B8A0', '#C9B8E8', '#E8D58A', '#D8A0C0'] },
     'summer-sea': { ink: '#1C2A30', both: '#7DC9BC', colors: ['#F2917D', '#F2CE5A', '#7DC9BC', '#7FB8E0', '#EE8A8A', '#E3C48D', '#B5D67A', '#B9A6E6'] },
-    'autumn-forest': { ink: '#2E2117', both: '#A6B46C', colors: ['#DE7A52', '#EBC04F', '#A6B46C', '#EE9A4F', '#C49A6C', '#C7A6D9', '#8FB3D9', '#D9C7A0'] }
+    'autumn-forest': { ink: '#2E2117', both: '#A6B46C', colors: ['#DE7A52', '#EBC04F', '#A6B46C', '#EE9A4F', '#C49A6C', '#C7A6D9', '#8FB3D9', '#D9C7A0'] },
+    'observatory': { ink: '#221F38', both: '#9EC3EC', colors: ['#E9A3BC', '#F2D27A', '#9EC3EC', '#B9A6E6', '#9FD8C8', '#F2B896', '#EDE3C4', '#A8D99A'] },
+    'train-trip': { ink: '#262A27', both: '#86C1B4', colors: ['#DE8A7E', '#E9B949', '#86C1B4', '#AED8E6', '#EADBB8', '#B5CF8A', '#C3AEDF', '#EFA066'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -108,7 +115,8 @@
    ['#D78EAD','장밋빛'],['#B0A5E8','라벤더'],['#D98E94','로즈'],['#267C91','깊은 청록'],['#7052B8','보라'],['#A84F88','성운 자주'],['#55AEB5','청록'],['#D5A85D','모래'],['#91A779','이끼'],['#C4A05D','겨자'],['#C58B88','바랜 장밋빛'],['#8F9BD0','페리윙클'],['#C88CA5','노을 분홍'],['#D88A7E','노을 로즈'],['#F2BFD0','연벚꽃'],['#A54D61','버건디'],['#6A6F85','차콜 블루'],['#8E5E2C','위스키'],['#879FB8','서리 청색'],['#B99583','밀크 모카'],['#92A77A','피스타치오'],['#D39A70','아몬드'],['#CA8D7D','사과'], // 10/28 시간표 색 바꿈
    ['#D9825B','군고구마'],['#F0C27B','붕어빵'],['#D49A5A','군밤'],['#D07A6A','방울 빨강'],['#E9B949','금빛 별'],['#6E9E5A','솔잎'],['#F2A08A','볼 분홍'], // 11/19 겨울 도트 테마
    ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'], // 11/20 봄소풍
-   ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'] // 여름 · 가을 업데이트
+   ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'], // 여름 · 가을 업데이트
+   ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'] // 천문대 · 기차 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -133,6 +141,14 @@
     'autumn-forest': {
       s1: { w: 42, h: 31, x: 2, alt: '도토리 둘' }, s2: { w: 43, h: 24, x: 2, alt: '홍시 둘' },
       s3: { w: 39, h: 42, x: 3, alt: '단풍잎 한 장' }, s4: { w: 40, h: 28, x: 4, alt: '송편 한 접시와 홍시' }
+    },
+    'observatory': {
+      s1: { w: 45, h: 44, x: 2, alt: '망원경' }, s2: { w: 47, h: 36, x: 2, alt: '별 · 달 모양 쿠키' },
+      s3: { w: 40, h: 41, x: 3, alt: '잠든 초승달' }, s4: { w: 41, h: 46, x: 3, alt: '천문대 돔' }
+    },
+    'train-trip': {
+      s1: { w: 26, h: 33, x: 2, alt: '기차 앞모습' }, s2: { w: 32, h: 29, x: 2, alt: '기차 도시락' },
+      s3: { w: 33, h: 20, x: 4, alt: '도장 찍힌 기차표' }, s4: { w: 35, h: 29, x: 4, alt: '달리는 기차' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

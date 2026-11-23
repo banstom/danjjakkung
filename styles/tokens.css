@@ -495,6 +495,89 @@
   --bg-art: url('../themes/autumn-forest/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/autumn-forest/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 천문대 · 기차 업데이트 (11/23, docs/themes-observatory-train) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 반짝반짝 천문대 (낮) */
+[data-theme="observatory"] {
+  color-scheme: light;
+  --bg: #F0EEF8; --surface: #FCFBFF; --raised: #E6E2F3; --input-bg: #FCFBFF;
+  --text: #24213F; --sub: #585379; --faint: #B7B0D3; --line: #D8D2EC;
+  --divider: #D8D2EC; --primary: #5446A0; --primary-edge: #5446A0; --on-primary: #FCFBFF;
+  --secondary: #E8E3F7; --accent: #7466BC; --strong: #4A3D92; --icon: #585379;
+  --tab-bg: #FCFBFF; --tab-active: #4A3D92; --tab-inactive: #585379; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #BE2D37; --her: #E9A3BC; --her-ink: #221F38;
+  --me: #F2D27A; --me-ink: #221F38; --both: #9EC3EC; --both-ink: #221F38;
+  --tint: #E6E0F8; --tint-text: #463A8C; --today: #24213F; --on-today: #FCFBFF;
+  --lv-full: #6F86C9; --lv-full-text: #201D35; --lv-half: #D3DCF1;
+  --lv-half-text: #24213F; --empty: #E9E6F2; --empty-text: #55506F; --switch-knob: #FCFBFF;
+  --scrim: rgba(36, 33, 63, 0.45); --shadow: 0 -8px 24px rgba(46, 42, 85, 0.12); --lift: 0 1px 3px rgba(46, 42, 85, 0.18); --toast-bg: #24213F;
+  --toast-fg: #FCFBFF; --toast-shadow: 0 4px 0 #CFC8E6; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #2E2A55; --sh: #CFC8E6; --btn-hi: #7366BE; --btn-lo: #3A2F7A;
+  --sec-dot: #E0B54A; --deco-a: #3B3577; --deco-b: #F2D27A; --dash: #CFC8E6;
+  --bg-art: url('../themes/observatory/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/observatory/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(84, 70, 160, 0.06);
+}
+
+/* 반짝반짝 천문대 (밤) */
+[data-theme="observatory-night"] {
+  color-scheme: dark;
+  --bg: #12122A; --surface: #1C1C3A; --raised: #26264A; --input-bg: #1C1C3A;
+  --text: #F1EFFF; --sub: #C3C0E3; --faint: #4A4A78; --line: #33335A;
+  --divider: #33335A; --primary: #C7BBF5; --primary-edge: #C7BBF5; --on-primary: #1A1636;
+  --secondary: #2A2852; --accent: #B3A5EE; --strong: #C7BBF5; --icon: #C3C0E3;
+  --tab-bg: #1C1C3A; --tab-active: #E0D8FF; --tab-inactive: #C3C0E3; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #E9A3BC; --her-ink: #141228;
+  --me: #F2D27A; --me-ink: #141228; --both: #9EC3EC; --both-ink: #141228;
+  --tint: #2E2A58; --tint-text: #E0D8FF; --today: #F1EFFF; --on-today: #1C1C3A;
+  --lv-full: #9EC3EC; --lv-full-text: #141228; --lv-half: #3F4F78;
+  --lv-half-text: #F1EFFF; --empty: #2A2A4C; --empty-text: #C3C0E3; --switch-knob: #1A1636;
+  --scrim: rgba(8, 8, 26, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F1EFFF;
+  --toast-fg: #141228; --toast-shadow: 0 4px 0 #08081A; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #6A6AA8; --sh: #08081A; --btn-hi: #E3DBFF; --btn-lo: #8E7FD6;
+  --sec-dot: #F2D27A; --deco-a: #2A2860; --deco-b: #F2D27A; --dash: #3A3A66;
+  --bg-art: url('../themes/observatory/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/observatory/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 덜컹덜컹 기차 여행 (낮) */
+[data-theme="train-trip"] {
+  color-scheme: light;
+  --bg: #F5EFE2; --surface: #FFFCF5; --raised: #EFE6D3; --input-bg: #FFFCF5;
+  --text: #2A2E2B; --sub: #5C625C; --faint: #C4BBA6; --line: #E3D7BF;
+  --divider: #E3D7BF; --primary: #22666A; --primary-edge: #22666A; --on-primary: #FFFCF5;
+  --secondary: #DDEBE8; --accent: #3C8387; --strong: #1C5A5E; --icon: #5C625C;
+  --tab-bg: #FFFCF5; --tab-active: #1C5A5E; --tab-inactive: #5C625C; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #DE8A7E; --her-ink: #262A27;
+  --me: #E9B949; --me-ink: #262A27; --both: #86C1B4; --both-ink: #262A27;
+  --tint: #DCEDEA; --tint-text: #1A5558; --today: #2A2E2B; --on-today: #FFFCF5;
+  --lv-full: #4D9A8E; --lv-full-text: #242725; --lv-half: #CFE6E0;
+  --lv-half-text: #2A2E2B; --empty: #EDE6D8; --empty-text: #5A5A50; --switch-knob: #FFFCF5;
+  --scrim: rgba(42, 46, 43, 0.45); --shadow: 0 -8px 24px rgba(47, 58, 54, 0.12); --lift: 0 1px 3px rgba(47, 58, 54, 0.18); --toast-bg: #2A2E2B;
+  --toast-fg: #FFFCF5; --toast-shadow: 0 4px 0 #DCCFB3; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #2F3A36; --sh: #DCCFB3; --btn-hi: #3F8589; --btn-lo: #144A4D;
+  --sec-dot: #9C3B45; --deco-a: #9C3B45; --deco-b: #FFF4DC; --dash: #DCCFB3;
+  --bg-art: url('../themes/train-trip/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/train-trip/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(34, 102, 106, 0.06);
+}
+
+/* 덜컹덜컹 기차 여행 (밤) */
+[data-theme="train-trip-night"] {
+  color-scheme: dark;
+  --bg: #13202A; --surface: #1B2B36; --raised: #253743; --input-bg: #1B2B36;
+  --text: #F6F0E2; --sub: #C6C9C0; --faint: #46596A; --line: #314552;
+  --divider: #314552; --primary: #F0C36A; --primary-edge: #F0C36A; --on-primary: #2A1E08;
+  --secondary: #263A40; --accent: #E8B65A; --strong: #F0C36A; --icon: #C6C9C0;
+  --tab-bg: #1B2B36; --tab-active: #F6D592; --tab-inactive: #C6C9C0; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #DE8A7E; --her-ink: #161E24;
+  --me: #E9B949; --me-ink: #161E24; --both: #86C1B4; --both-ink: #161E24;
+  --tint: #2F3B33; --tint-text: #F6D592; --today: #F6F0E2; --on-today: #1B2B36;
+  --lv-full: #86C1B4; --lv-full-text: #161E24; --lv-half: #3E5A57;
+  --lv-half-text: #F6F0E2; --empty: #263845; --empty-text: #C6C9C0; --switch-knob: #2A1E08;
+  --scrim: rgba(10, 18, 24, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F6F0E2;
+  --toast-fg: #161E24; --toast-shadow: 0 4px 0 #0A1218; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #557C88; --sh: #0A1218; --btn-hi: #F8DC9E; --btn-lo: #BE8F33;
+  --sec-dot: #E07A82; --deco-a: #7E2E38; --deco-b: #F0C36A; --dash: #3A5060;
+  --bg-art: url('../themes/train-trip/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/train-trip/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -502,7 +585,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }

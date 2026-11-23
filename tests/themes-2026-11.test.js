@@ -14,7 +14,9 @@ const css = read('styles/tokens.css');
 // 들어간 새 테마: id · 묶음 · 기획 폴더 · 이름 (이름은 기획 문서 표 그대로)
 const NEW = [
   { id: 'summer-sea', group: 'season', folder: 'themes-summer-autumn', ko: '찰방찰방 여름 바다' },
-  { id: 'autumn-forest', group: 'season', folder: 'themes-summer-autumn', ko: '알록달록 가을 숲' }
+  { id: 'autumn-forest', group: 'season', folder: 'themes-summer-autumn', ko: '알록달록 가을 숲' },
+  { id: 'observatory', group: 'outing', folder: 'themes-observatory-train', ko: '반짝반짝 천문대' },
+  { id: 'train-trip', group: 'travel', folder: 'themes-observatory-train', ko: '덜컹덜컹 기차 여행' }
 ];
 const boardsOf = (t) => [t.id, t.id + '-night'];
 
