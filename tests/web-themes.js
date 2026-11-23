@@ -106,7 +106,7 @@ async function main() {
       const a = await p.$eval(sel, (img) => ({ w: img.getBoundingClientRect().width, h: img.getBoundingClientRect().height, nw: img.naturalWidth, nh: img.naturalHeight, src: img.getAttribute('src'), done: img.complete }));
       const k = a.w / a.nw;
       assert.ok(a.done && a.nw > 0, tag + ' ' + slot + ' 그림 불러옴 ' + a.src);
-      assert.ok(Number.isInteger(k) && k >= 2 && Math.abs(a.h / a.nh - k) < 0.01, `${tag} ${slot} 정수 배율 ${JSON.stringify(a)}`);
+      assert.ok(Number.isInteger(k) && k >= 1 && Math.abs(a.h / a.nh - k) < 0.01, `${tag} ${slot} 정수 배율 ${JSON.stringify(a)}`); // 프라하 S1 · S2 는 1배 (명세 4절)
       assert.ok(a.src === `themes/${id}/${slot}.png`, tag + ' ' + slot + ' 낮 · 밤 같은 그림');
     }
     await p.click('[data-act="tab"][data-tab="all"]'); await p.waitForTimeout(100);
@@ -114,9 +114,19 @@ async function main() {
   };
 
   // ── 도트 테마 화면 ──
-  for (const [id, mode, tag] of [['winter-snack', 'light', 'snack-day'], ['winter-snack', 'dark', 'snack-night'], ['merry-xmas', 'light', 'xmas-day'], ['merry-xmas', 'dark', 'xmas-night']]) {
+  // 11/23 새 도트 테마 11개(docs/themes-2026-11)도 낮 · 밤 판마다 같은 점검 — 그 테마 폴더 그림만 받는지도 (A4)
+  const NEW_DOT = ['summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping'];
+  const boardList = [['winter-snack', 'light', 'snack-day'], ['winter-snack', 'dark', 'snack-night'], ['merry-xmas', 'light', 'xmas-day'], ['merry-xmas', 'dark', 'xmas-night']]
+    .concat(...NEW_DOT.map((id) => [[id, 'light', id + '-day'], [id, 'dark', id + '-night']]));
+  for (const [id, mode, tag] of boardList) {
     await setTheme(jm, id, mode);
+    net.length = 0;
     await jm.reload(); await jm.waitForSelector('.tabbar');
+    if (NEW_DOT.includes(id)) {
+      await jm.waitForTimeout(150);
+      const other = net.filter((u) => u.startsWith('themes/') && !u.startsWith('themes/' + id + '/'));
+      assert.deepStrictEqual(other, [], tag + ' A4 다른 테마 그림 요청 없음');
+    }
     const board = id + (mode === 'dark' ? '-night' : '');
     assert.deepStrictEqual(await themeOf(jm), [board, 'pixel'], tag + ' 판 · 스킨');
     for (const tab of ['routine', 'schedule', 'todo', 'look', 'all']) {
@@ -157,7 +167,7 @@ async function main() {
     assert.deepStrictEqual(await themeOf(p), ['merry-xmas-night'.replace('merry-xmas', 'winter-snack'), 'pixel'], 'B3 밤 고정은 시스템과 상관없이');
     // 꼬리표 · 묶음 (11/23 C안): 열면 지금 테마(겨울 간식)의 「계절 · 기념일」이 펼쳐져 있음, 「더 보기」 없음
     const cards = await p.$$eval('.tgl__cards .tpick', (a) => a.map((e) => e.getAttribute('data-v')));
-    assert.deepStrictEqual(cards, ['spring-picnic', 'winter-snack', 'merry-xmas'], 'E 계절 · 기념일 묶음이 펼쳐짐 (지금 있는 도트 3)');
+    assert.deepStrictEqual(cards, ['spring-picnic', 'summer-sea', 'autumn-forest', 'winter-snack', 'merry-xmas'], 'E 계절 · 기념일 묶음이 펼쳐짐 (spec 2절 순서)');
     assert.match(await p.textContent('.tgl__cards .tpick[data-v="winter-snack"] .tpick__tags'), /사용 중.*낮·밤.*NEW/);
     assert.strictEqual(await p.$$eval('[data-act="theme-more"]', (a) => a.length), 0, 'S8 더 보기 없음');
     await p.click('[data-act="theme-group"][data-v="basic"]');
