@@ -177,3 +177,14 @@ test('F-E 출출 쿠키: 서버 시각(Timestamp)을 서울 날짜로 · 뺀 쿠
   assert.deepEqual(inp.eatPicks, [{ by: 'a', at: '2026-11-06' }]);
   assert.equal(RDm.tsDay(null), null);
 });
+
+test('F-E2 깨기 기록에 picked 가 없어도 쿠키에 남은 pick 으로 꺼낸 쿠키를 셈 · 같은 쿠키를 두 번 세지 않음 (11-23 점검 AI)', () => {
+  const RDm = require('../functions/recap-read.js');
+  const ts = (iso) => ({ toDate: () => new Date(iso) });
+  const raw = { people: [], routines: [], checks: [], todos: [], kungs: [], events: [], spends: [], spendCats: [], qdays: [], qanswers: {}, couple: null, places: [],
+    eats: [{ id: 'k1', by: 'a', at: ts('2026-11-01T03:00:00Z'), state: 'eaten', pick: { by: 'b', at: ts('2026-11-02T03:00:00Z') }, eaten: { at: ts('2026-11-02T10:00:00Z'), by: 'b' } },
+      { id: 'k2', by: 'a', at: ts('2026-11-01T03:00:00Z'), state: 'today', pick: { by: 'a', at: ts('2026-11-03T03:00:00Z') } }],
+    eatDraws: [{ id: 'd1', by: 'a', at: ts('2026-11-03T02:59:00Z'), picked: 'k2' }] };
+  const inp = RDm.toInput(raw, { kind: 'month', key: '2026-11' });
+  assert.deepEqual(inp.eatPicks.sort((x, y) => (x.at < y.at ? -1 : 1)), [{ by: 'b', at: '2026-11-02' }, { by: 'a', at: '2026-11-03' }]);
+});

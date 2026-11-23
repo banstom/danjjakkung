@@ -247,8 +247,8 @@ function eatCard(period, data) {
   const r = periodRange(period);
   const put = (data.eats || []).filter((e) => inRange(e.at, r));
   const picked = (data.eatPicks || []).filter((d) => inRange(d.at, r));
-  if (!put.length && !picked.length) return null;
   const eaten = (data.eats || []).filter((e) => inRange(e.eatenAt, r));
+  if (!put.length && !picked.length && !eaten.length) return null; // 먹기만 있는 달(12-31 고르고 1-01 먹음)도 카드 (11-23 점검 AI)
   const byPerson = {};
   data.uids.forEach((u) => { byPerson[u] = { put: put.filter((e) => e.by === u).length, picked: picked.filter((d) => d.by === u).length }; });
   return { id: 'eat', put: put.length, picked: picked.length, eaten: eaten.length, together: eaten.filter((e) => e.together).length, byPerson };

@@ -88,7 +88,11 @@ function toInput(raw, period) {
   const eats = (raw.eats || []).filter((e) => e.state !== 'out' && typeof e.by === 'string').map((e) => ({
     by: e.by, at: tsDay(e.at), eatenAt: e.eaten ? tsDay(e.eaten.at) : null, together: !!(e.eaten && e.eaten.together === true)
   }));
-  const eatPicks = (raw.eatDraws || []).filter((d) => typeof d.picked === 'string' && d.picked && typeof d.by === 'string').map((d) => ({ by: d.by, at: tsDay(d.at) }));
+  const drawPicks = (raw.eatDraws || []).filter((d) => typeof d.picked === 'string' && d.picked && typeof d.by === 'string');
+  const seen = new Set(drawPicks.map((d) => d.picked));
+  // 깨기 기록에 picked 가 안 적힌 경우(네트워크가 느려 깨기 기록보다 고르기가 먼저 끝남) — 쿠키에 남은 pick 으로 보충 (11-23 점검 AI)
+  const eatPicks = drawPicks.map((d) => ({ by: d.by, at: tsDay(d.at) })).concat((raw.eats || [])
+    .filter((e) => e.pick && typeof e.pick.by === 'string' && !seen.has(e.id) && e.state !== 'out').map((e) => ({ by: e.pick.by, at: tsDay(e.pick.at) })));
 
   return { period, people, coupleSince, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats, eats, eatPicks };
 }

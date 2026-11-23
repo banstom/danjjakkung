@@ -997,7 +997,7 @@
     if (!row || !row.doc || !row.doc.cards) return null;
     var sm = slotMap();
     var m = RT.viewRecap.deckModel(row.doc, state.me, rc.idx, function (uid) { return sm[uid] || (uid === state.me ? 'me' : 'her'); },
-      { saving: rc.saving, noteOpen: rc.noteOpen, mapData: mapReady() ? mapData : null, art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
+      { saving: rc.saving, noteOpen: rc.noteOpen, mapData: mapReady() ? mapData : null, mapFailed: mapDataState === 'error', art: RT.themes ? RT.themes.artHtml('s4', 'rc-art__img') : '' });
     rc.idx = m.idx;
     return m;
   }

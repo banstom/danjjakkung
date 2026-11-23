@@ -128,3 +128,7 @@ test('Y3 연말 미니 지도: 올해 다녀온 지역만 칠함 · 지도 데�
   assert.match(h, /class="rg on" d="M2 2L3 3"/);
   assert.match(V.miniMap(null, ['42150']), /rc-mini--wait/);
 });
+
+test('Y3-1 지도 데이터를 못 받으면 안내 한 줄 (11-23 점검 AI)', () => {
+  assert.match(V.miniMap(null, ['42150'], true), /role="note">지도를 불러오지 못했어요/);
+});

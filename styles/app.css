@@ -1606,6 +1606,7 @@ button.rv-srow { cursor: pointer; }
 .rc-top__v { font-size: 20px; font-weight: 800; }
 .rc-mini { display: block; width: 100%; height: 180px; }
 .rc-mini--wait { border-radius: 18px; background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.rc-mini--err { display: flex; align-items: center; justify-content: center; padding: 0 20px; text-align: center; font-size: 13px; color: var(--sub); }
 .rc-mini .rg { fill: color-mix(in srgb, var(--text) 9%, var(--surface)); stroke: var(--surface); stroke-width: 0.5; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 /* 칠한 곳: 작은 구 · 군도 보이게 같은 색 테두리를 두껍게 (지도가 작아서) */
 .rc-mini .rg.on { fill: var(--both); stroke: var(--both); stroke-width: 3; }

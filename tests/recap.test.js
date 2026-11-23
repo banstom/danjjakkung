@@ -257,3 +257,14 @@ test('C-E 출출 쿠키 카드: 넣은 · 꺼낸 · 먹은 수, 둘 다 0 이면
   assert.deepEqual(t.rows.map((x) => x.name + ' ' + x.value), ['나 1개 넣음 · 0개 꺼냄', '가 1개 넣음 · 1개 꺼냄']);
   assert.deepEqual(t.more, ['통에서 꺼낸 쿠키 1개', '먹었어요 1개 · 단짝과 함께 1개']);
 });
+
+test('C-E2 쿠키 카드: 먹기만 있는 달도 카드 · 넣은 게 없으면 큰 숫자는 꺼낸(없으면 먹은) 쿠키 (11-23 점검 AI)', () => {
+  const base = (eats, eatPicks) => ({ period: { kind: 'month', key: '2027-01' }, people: [{ uid: 'a', name: '가' }, { uid: 'b', name: '나' }], coupleSince: '2026-01-01',
+    routines: [], checks: [], todos: [], kungs: [], events: [], places: [], qdays: [], qanswers: {}, spends: [], eats, eatPicks });
+  const r = computeRecap(base([{ by: 'a', at: '2026-12-20', eatenAt: '2027-01-01', together: true }], [{ by: 'b', at: '2026-12-31' }]), null);
+  const t = cardText(r.cards.find((x) => x.id === 'eat'), r, 'a');
+  assert.deepEqual([t.big, t.lead, t.more], [1, '이번 달 먹은 쿠키예요.', ['먹었어요 1개 · 단짝과 함께 1개']]);
+  const r2 = computeRecap(base([], [{ by: 'b', at: '2027-01-03' }]), null);
+  const t2 = cardText(r2.cards.find((x) => x.id === 'eat'), r2, 'a');
+  assert.deepEqual([t2.big, t2.lead, t2.more], [1, '이번 달 통에서 꺼낸 쿠키예요.', []]);
+});

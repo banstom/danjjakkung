@@ -144,10 +144,12 @@
       case 'eat': { // 출출 쿠키 (11-23) — 이름은 js/eat-text.js NAME 한 곳 (스크립트 순서와 상관없이 여기서 읽음)
         var et = NODE ? require('./eat-text.js') : root.RT.eatText;
         var em = [];
-        if (card.picked) em.push('통에서 꺼낸 쿠키 ' + card.picked + '개');
+        // 큰 숫자 = 넣은 쿠키. 넣은 게 없는 달은 꺼낸 쿠키, 그것도 없으면 먹은 쿠키 (「0개 · 넣은 쿠키예요」가 안 나오게, 11-23 점검 AI)
+        var head = card.put ? { big: card.put, lead: per + ' 통에 넣은 쿠키예요.' } : card.picked ? { big: card.picked, lead: per + ' 통에서 꺼낸 쿠키예요.' } : { big: card.eaten, lead: per + ' 먹은 쿠키예요.' };
+        if (card.picked && card.put) em.push('통에서 꺼낸 쿠키 ' + card.picked + '개');
         if (card.eaten) em.push('먹었어요 ' + card.eaten + '개' + (card.together ? ' · 단짝과 함께 ' + card.together + '개' : ''));
         return {
-          kick: et ? et.NAME : '출출 쿠키', big: card.put, unit: '개', lead: per + ' 통에 넣은 쿠키예요.',
+          kick: et ? et.NAME : '출출 쿠키', big: head.big, unit: '개', lead: head.lead,
           rows: people.map(function (p) { var b = (card.byPerson || {})[p.uid] || { put: 0, picked: 0 }; return { uid: p.uid, name: p.name, value: b.put + '개 넣음 · ' + b.picked + '개 꺼냄' }; }),
           more: em, cmp: cmpText(card.diffPrev, '개', kind)
         };

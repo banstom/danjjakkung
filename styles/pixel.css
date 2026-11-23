@@ -535,6 +535,7 @@
 [data-skin="pixel"]:not([data-font="plain"]) .rc-final__t { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-top__k { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-top__v { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rc-mini--err { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-tile b { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-tile span { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .rc-btn, [data-skin="pixel"]:not([data-font="plain"]) .rc-btn2 { font-size: 15px; font-family: var(--px-font-14); }
