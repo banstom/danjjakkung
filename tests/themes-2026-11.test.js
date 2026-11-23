@@ -20,7 +20,10 @@ const NEW = [
   { id: 'tennis-court', group: 'outing', folder: 'themes-tennis-cities', ko: '통통 테니스 코트' },
   { id: 'porto', group: 'travel', folder: 'themes-tennis-cities', ko: '또각또각 포르투' },
   { id: 'prague', group: 'travel', folder: 'themes-tennis-cities', ko: '뾰족뾰족 프라하' },
-  { id: 'tuscany', group: 'travel', folder: 'themes-tennis-cities', ko: '살랑살랑 토스카나' }
+  { id: 'tuscany', group: 'travel', folder: 'themes-tennis-cities', ko: '살랑살랑 토스카나' },
+  { id: 'airport', group: 'travel', folder: 'themes-airport-outing', ko: '둥실둥실 공항' },
+  { id: 'amusement-park', group: 'outing', folder: 'themes-airport-outing', ko: '빙글빙글 놀이공원' },
+  { id: 'camping', group: 'outing', folder: 'themes-airport-outing', ko: '타닥타닥 캠핑' }
 ];
 const boardsOf = (t) => [t.id, t.id + '-night'];
 
@@ -179,7 +182,7 @@ test('밤 판은 어두운 판 목록(쿠키 그림 색)에 · 빨강은 경고 
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16) / 255);
     const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
     if (d < 0.25 || mx !== r) return false;
-    const hue = ((g - b) / d) * 60;
+    const hue = ((((g - b) / d) * 60) + 360) % 360; // 자홍(놀이공원 #A42A72 = 325°)은 빨강이 아님
     return (hue < 12 || hue > 345) && l > 0.25 && l < 0.75;
   };
   for (const t of NEW) for (const b of boardsOf(t)) for (const [k, x] of Object.entries(block(b).v)) if (/^#[0-9A-F]{6}$/.test(x) && red(x)) assert.ok(ALLOWED.includes(k), `${b}: --${k} ${x}`);

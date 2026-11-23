@@ -741,6 +741,129 @@
   --bg-art: url('../themes/tuscany/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/tuscany/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 공항 · 나들이 업데이트 (11/23, docs/themes-airport-outing) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 둥실둥실 공항 (낮) */
+[data-theme="airport"] {
+  color-scheme: light;
+  --bg: #EFF2F6; --surface: #FCFDFE; --raised: #E3E8EF; --input-bg: #FCFDFE;
+  --text: #1F232B; --sub: #4E5664; --faint: #AEB6C4; --line: #D3DAE4;
+  --divider: #D3DAE4; --primary: #F2C230; --primary-edge: #F2C230; --on-primary: #1E2024;
+  --secondary: #E8EDF4; --accent: #5A6475; --strong: #2E3440; --icon: #4E5664;
+  --tab-bg: #FCFDFE; --tab-active: #2E3440; --tab-inactive: #4E5664; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F2A07E; --her-ink: #1C2028;
+  --me: #9CCAF0; --me-ink: #1C2028; --both: #A6D8B8; --both-ink: #1C2028;
+  --tint: #FFF1C2; --tint-text: #4A3D08; --today: #1F232B; --on-today: #FCFDFE;
+  --lv-full: #5E86B8; --lv-full-text: #191C24; --lv-half: #D6E2F0;
+  --lv-half-text: #1F232B; --empty: #E6EAF0; --empty-text: #4E5664; --switch-knob: #FCFDFE;
+  --scrim: rgba(31, 35, 43, 0.45); --shadow: 0 -8px 24px rgba(35, 40, 51, 0.12); --lift: 0 1px 3px rgba(35, 40, 51, 0.18); --toast-bg: #1F232B;
+  --toast-fg: #FCFDFE; --toast-shadow: 0 4px 0 #C9D1DC; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #232833; --sh: #C9D1DC; --btn-hi: #F8DA74; --btn-lo: #B88E10;
+  --sec-dot: #F2C230; --deco-a: #2E3440; --deco-b: #F2C230; --dash: #C9D1DC;
+  --bg-art: url('../themes/airport/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/airport/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(46, 52, 64, 0.06);
+}
+
+/* 둥실둥실 공항 (밤) */
+[data-theme="airport-night"] {
+  color-scheme: dark;
+  --bg: #11151E; --surface: #1A202B; --raised: #242B38; --input-bg: #1A202B;
+  --text: #F1F3F7; --sub: #C2C8D4; --faint: #4A5468; --line: #303848;
+  --divider: #303848; --primary: #F5CD4A; --primary-edge: #F5CD4A; --on-primary: #1E1A08;
+  --secondary: #222936; --accent: #E8BE3E; --strong: #F5CD4A; --icon: #C2C8D4;
+  --tab-bg: #1A202B; --tab-active: #FAE08E; --tab-inactive: #C2C8D4; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F2A07E; --her-ink: #10141C;
+  --me: #9CCAF0; --me-ink: #10141C; --both: #A6D8B8; --both-ink: #10141C;
+  --tint: #33301E; --tint-text: #FAE08E; --today: #F1F3F7; --on-today: #1A202B;
+  --lv-full: #9CCAF0; --lv-full-text: #10141C; --lv-half: #34425A;
+  --lv-half-text: #F1F3F7; --empty: #232A38; --empty-text: #C2C8D4; --switch-knob: #1E1A08;
+  --scrim: rgba(8, 10, 16, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F1F3F7;
+  --toast-fg: #10141C; --toast-shadow: 0 4px 0 #080A10; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #66738E; --sh: #080A10; --btn-hi: #FAE08E; --btn-lo: #C49A1E;
+  --sec-dot: #F5CD4A; --deco-a: #2A303C; --deco-b: #F5CD4A; --dash: #3A4254;
+  --bg-art: url('../themes/airport/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/airport/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 빙글빙글 놀이공원 (낮) */
+[data-theme="amusement-park"] {
+  color-scheme: light;
+  --bg: #FBF0F5; --surface: #FFFBFD; --raised: #F5E4EE; --input-bg: #FFFBFD;
+  --text: #33192A; --sub: #69495C; --faint: #D2B4C6; --line: #EBD4E1;
+  --divider: #EBD4E1; --primary: #A42A72; --primary-edge: #A42A72; --on-primary: #FFFBFD;
+  --secondary: #F7E1EE; --accent: #B8448A; --strong: #922464; --icon: #69495C;
+  --tab-bg: #FFFBFD; --tab-active: #922464; --tab-inactive: #69495C; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F29AB8; --her-ink: #2A1622;
+  --me: #F2CE5A; --me-ink: #2A1622; --both: #8ED3C4; --both-ink: #2A1622;
+  --tint: #FADCEB; --tint-text: #7E1E56; --today: #33192A; --on-today: #FFFBFD;
+  --lv-full: #3C9484; --lv-full-text: #2A1622; --lv-half: #D2EEE8;
+  --lv-half-text: #33192A; --empty: #F2E6EC; --empty-text: #62485A; --switch-knob: #FFFBFD;
+  --scrim: rgba(51, 25, 42, 0.45); --shadow: 0 -8px 24px rgba(62, 31, 51, 0.12); --lift: 0 1px 3px rgba(62, 31, 51, 0.18); --toast-bg: #33192A;
+  --toast-fg: #FFFBFD; --toast-shadow: 0 4px 0 #E6CCDA; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3E1F33; --sh: #E6CCDA; --btn-hi: #C04E90; --btn-lo: #7A1652;
+  --sec-dot: #3FA894; --deco-a: #E0559E; --deco-b: #FFFFFF; --dash: #E6CCDA;
+  --bg-art: url('../themes/amusement-park/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/amusement-park/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(164, 42, 114, 0.06);
+}
+
+/* 빙글빙글 놀이공원 (밤) */
+[data-theme="amusement-park-night"] {
+  color-scheme: dark;
+  --bg: #1D1226; --surface: #291A34; --raised: #352442; --input-bg: #291A34;
+  --text: #FBEFF6; --sub: #D8C2D2; --faint: #5C4468; --line: #433052;
+  --divider: #433052; --primary: #F39AD0; --primary-edge: #F39AD0; --on-primary: #2A0E20;
+  --secondary: #30203C; --accent: #EE86C4; --strong: #F39AD0; --icon: #D8C2D2;
+  --tab-bg: #291A34; --tab-active: #F8C4E4; --tab-inactive: #D8C2D2; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F29AB8; --her-ink: #1C0E18;
+  --me: #F2CE5A; --me-ink: #1C0E18; --both: #8ED3C4; --both-ink: #1C0E18;
+  --tint: #42253E; --tint-text: #F8C4E4; --today: #FBEFF6; --on-today: #291A34;
+  --lv-full: #8ED3C4; --lv-full-text: #1C0E18; --lv-half: #3A5458;
+  --lv-half-text: #FBEFF6; --empty: #33233E; --empty-text: #D8C2D2; --switch-knob: #2A0E20;
+  --scrim: rgba(14, 8, 20, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #FBEFF6;
+  --toast-fg: #1C0E18; --toast-shadow: 0 4px 0 #0E0814; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #8A5E9E; --sh: #0E0814; --btn-hi: #F8C4E4; --btn-lo: #C2629E;
+  --sec-dot: #8ED3C4; --deco-a: #8E2A66; --deco-b: #F2CE5A; --dash: #4A3458;
+  --bg-art: url('../themes/amusement-park/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/amusement-park/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
+/* 타닥타닥 캠핑 (낮) */
+[data-theme="camping"] {
+  color-scheme: light;
+  --bg: #F2EEE6; --surface: #FFFCF7; --raised: #E9E3D8; --input-bg: #FFFCF7;
+  --text: #2A2622; --sub: #5C564E; --faint: #BEB5A6; --line: #DDD5C7;
+  --divider: #DDD5C7; --primary: #4A433A; --primary-edge: #4A433A; --on-primary: #FFFCF7;
+  --secondary: #E8E4DC; --accent: #6A6052; --strong: #3E3830; --icon: #5C564E;
+  --tab-bg: #FFFCF7; --tab-active: #3E3830; --tab-inactive: #5C564E; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #BE2D37; --her: #E58A64; --her-ink: #24201C;
+  --me: #F2C14E; --me-ink: #24201C; --both: #9DB87A; --both-ink: #24201C;
+  --tint: #ECE6DA; --tint-text: #3E3830; --today: #2A2622; --on-today: #FFFCF7;
+  --lv-full: #78905A; --lv-full-text: #24201C; --lv-half: #DFE6D2;
+  --lv-half-text: #2A2622; --empty: #ECE7DE; --empty-text: #58524A; --switch-knob: #FFFCF7;
+  --scrim: rgba(42, 38, 34, 0.45); --shadow: 0 -8px 24px rgba(44, 40, 36, 0.12); --lift: 0 1px 3px rgba(44, 40, 36, 0.18); --toast-bg: #2A2622;
+  --toast-fg: #FFFCF7; --toast-shadow: 0 4px 0 #D5CCBC; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #2C2824; --sh: #D5CCBC; --btn-hi: #6A6256; --btn-lo: #302B25;
+  --sec-dot: #D9733A; --deco-a: #4E6A3A; --deco-b: #D9733A; --dash: #D5CCBC;
+  --bg-art: url('../themes/camping/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/camping/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(78, 106, 58, 0.06);
+}
+
+/* 타닥타닥 캠핑 (밤) */
+[data-theme="camping-night"] {
+  color-scheme: dark;
+  --bg: #15130F; --surface: #211E19; --raised: #2C2822; --input-bg: #211E19;
+  --text: #F7F1E6; --sub: #CFC6B6; --faint: #544C40; --line: #3A352D;
+  --divider: #3A352D; --primary: #EDE0C4; --primary-edge: #EDE0C4; --on-primary: #221D14;
+  --secondary: #28241E; --accent: #E2D2B0; --strong: #EDE0C4; --icon: #CFC6B6;
+  --tab-bg: #211E19; --tab-active: #F7EEDC; --tab-inactive: #CFC6B6; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #E58A64; --her-ink: #16130E;
+  --me: #F2C14E; --me-ink: #16130E; --both: #9DB87A; --both-ink: #16130E;
+  --tint: #3A3022; --tint-text: #F4C98A; --today: #F7F1E6; --on-today: #211E19;
+  --lv-full: #9DB87A; --lv-full-text: #16130E; --lv-half: #3E4A32;
+  --lv-half-text: #F7F1E6; --empty: #2C2822; --empty-text: #CFC6B6; --switch-knob: #221D14;
+  --scrim: rgba(10, 9, 7, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F7F1E6;
+  --toast-fg: #16130E; --toast-shadow: 0 4px 0 #0A0907; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #7A7060; --sh: #0A0907; --btn-hi: #F7EEDC; --btn-lo: #B8A882;
+  --sec-dot: #F29A4E; --deco-a: #22301C; --deco-b: #F29A4E; --dash: #3E3830;
+  --bg-art: url('../themes/camping/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/camping/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -748,7 +871,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"], [data-theme="airport-night"], [data-theme="amusement-park-night"], [data-theme="camping-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }

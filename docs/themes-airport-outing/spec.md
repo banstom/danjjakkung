@@ -54,4 +54,14 @@
 - 글꼴은 시험용(Noto Sans CJK)
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 목업에 없던 칸(--input-bg · --divider · --icon · --tab-bg · --tab-inactive · --on-today · --lv-half-text)은 공통 규칙대로 카드 · 선 · 보조 글자색으로, --scrim · --shadow · --lift · --toast-shadow 는 봄소풍과 같은 식(낮: 글자 · 외곽선 색 rgba, 밤: 검정), 토마토 두 색은 봄소풍 낮 · 밤 값 그대로
+- 바탕 체크 색 --checker 는 기획 장식 CSS 의 체크 rgba 그대로, 그림 · 머리 장식은 토큰(--bg-art · --head-art · --head-h 42/60px · --head-w 72px)으로 — styles/pixel.css 는 손대지 않음 (밤 판 머리말 내림도 --head-h 로 이미 됨)
+- 규칙: 지금 validColors 는 사람 색 값이 아니라 테마 칸(id)을 검사함 → 테마 id 를 hasOnly 목록 · validPair 줄에 더함 (색 값 목록을 따로 넣지 않음). 배포는 FIN 에서 한 번
+- 사람 색 후보 순서: js/themes.js 규칙대로 앞 둘 = 짝꿍(--her) · 나(--me) 기본색, 그다음 spec 표 순서
+- 시험: tests/themes-2026-11.test.js (A1~A9 + 밤 판 · 빨강) · tests/themes.test.js 테마 목록
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: airport --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: airport --lv-full-text #191C24 (사람 글자색 #1C2028은 --lv-full #5E86B8 위에서 4.5:1 미만이라 더 진하게)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: amusement-park --warn #C62F3A → #C22E38 (--surface/--raised 위 4.5:1 맞추려고)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: camping --warn #C62F3A → #BE2D37 (--surface/--raised 위 4.5:1 맞추려고)
+- 버튼 글자: 공항 낮 · 캠핑 밤도 저장소 버튼이 이미 --on-primary 를 써서 그대로 진한 글씨
+- 빨강 검사: 놀이공원 자홍 #A42A72(색상각 325°)는 빨강이 아님 — 새 시험(tests/themes-2026-11.test.js)의 색상각을 0~360 으로 맞춤

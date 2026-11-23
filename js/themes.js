@@ -55,7 +55,14 @@
     { id: 'prague', group: 'travel', name: '뾰족뾰족 프라하', ko: '뾰족뾰족 프라하', desc: '첨탑과 주홍 지붕, 은빛 가로등', dark: false, skin: 'pixel',
       modes: { light: 'prague', dark: 'prague-night' }, tags: ['NEW'] },
     { id: 'tuscany', group: 'travel', name: '살랑살랑 토스카나', ko: '살랑살랑 토스카나', desc: '올리브 · 해바라기 · 사이프러스 언덕', dark: false, skin: 'pixel',
-      modes: { light: 'tuscany', dark: 'tuscany-night' }, tags: ['NEW'] }
+      modes: { light: 'tuscany', dark: 'tuscany-night' }, tags: ['NEW'] },
+    // 공항 · 나들이 업데이트 (11/23, docs/themes-airport-outing) — 도트 테마, 낮 · 밤 판
+    { id: 'airport', group: 'travel', name: '둥실둥실 공항', ko: '둥실둥실 공항', desc: '출발 안내판 노랑과 활주로 불빛', dark: false, skin: 'pixel',
+      modes: { light: 'airport', dark: 'airport-night' }, tags: ['NEW'] },
+    { id: 'amusement-park', group: 'outing', name: '빙글빙글 놀이공원', ko: '빙글빙글 놀이공원', desc: '사탕 줄무늬 천막과 불 켜진 전구', dark: false, skin: 'pixel',
+      modes: { light: 'amusement-park', dark: 'amusement-park-night' }, tags: ['NEW'] },
+    { id: 'camping', group: 'outing', name: '타닥타닥 캠핑', ko: '타닥타닥 캠핑', desc: '소나무 숲과 모닥불 별밤', dark: false, skin: 'pixel',
+      modes: { light: 'camping', dark: 'camping-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -108,7 +115,10 @@
     'tennis-court': { ink: '#1C2616', both: '#8CC9A0', colors: ['#F29C7E', '#F2D45C', '#8CC9A0', '#C9E04A', '#9CC8EA', '#BFAEE6', '#F0A0A8', '#E6CFA0'] },
     'porto': { ink: '#1A2036', both: '#8FB5E8', colors: ['#EE9A6E', '#F2C14E', '#8FB5E8', '#A9C9A0', '#F0A8B4', '#B8A8E0', '#EAD9B4', '#9ED6C8'] },
     'prague': { ink: '#22252C', both: '#9DB0C8', colors: ['#E08A6A', '#E8BE55', '#9DB0C8', '#E8A8B8', '#A8BE88', '#C0B0DC', '#DCC8A0', '#8EC8C0'] },
-    'tuscany': { ink: '#262618', both: '#A9BC6E', colors: ['#E0906E', '#F2C94C', '#A9BC6E', '#F2B8C6', '#C9E08A', '#C4AEE0', '#9CC4E4', '#E2CFA6'] }
+    'tuscany': { ink: '#262618', both: '#A9BC6E', colors: ['#E0906E', '#F2C94C', '#A9BC6E', '#F2B8C6', '#C9E08A', '#C4AEE0', '#9CC4E4', '#E2CFA6'] },
+    'airport': { ink: '#1C2028', both: '#A6D8B8', colors: ['#F2A07E', '#9CCAF0', '#A6D8B8', '#F2C230', '#BBAEE6', '#C9D1DC', '#F2C08E', '#F0AEC0'] },
+    'amusement-park': { ink: '#2A1622', both: '#8ED3C4', colors: ['#F29AB8', '#F2CE5A', '#8ED3C4', '#9CC8EA', '#C6AEE6', '#E2B47A', '#F8C4E4', '#F2A66A'] },
+    'camping': { ink: '#24201C', both: '#9DB87A', colors: ['#E58A64', '#F2C14E', '#9DB87A', '#9CC4E4', '#F0E2C8', '#F29A4E', '#C0AEDC', '#B8CC8A'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -130,7 +140,8 @@
    ['#E89AB0','벚꽃'],['#F3C96B','유채'],['#A5CB93','새싹'],['#9FC8DC','봄 하늘'],['#F4B8A0','살구'],['#C9B8E8','라일락'],['#E8D58A','개나리'],['#D8A0C0','진달래'], // 11/20 봄소풍
    ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'], // 여름 · 가을 업데이트
    ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'], // 천문대 · 기차 업데이트
-   ['#F2D45C','공 노랑'],['#F29C7E','코랄'],['#8CC9A0','민트'],['#C9E04A','연두'],['#9CC8EA','하늘'],['#BFAEE6','라벤더'],['#F0A0A8','딸기'],['#E6CFA0','모래'],['#F2C14E','트램 노랑'],['#EE9A6E','산호'],['#8FB5E8','타일 하늘'],['#A9C9A0','세이지'],['#F0A8B4','분홍 집'],['#B8A8E0','연보라'],['#EAD9B4','크림'],['#9ED6C8','민트'],['#E8BE55','금빛'],['#E08A6A','연주홍'],['#9DB0C8','슬레이트 하늘'],['#E8A8B8','연분홍'],['#A8BE88','이끼'],['#C0B0DC','라일락'],['#DCC8A0','모래'],['#8EC8C0','청록'],['#F2C94C','해바라기'],['#E0906E','테라코타'],['#A9BC6E','올리브'],['#F2B8C6','젤라토 분홍'],['#C9E08A','피스타치오'],['#C4AEE0','라벤더'],['#9CC4E4','하늘'],['#E2CFA6','돌 베이지'] // 테니스 · 도시 업데이트
+   ['#F2D45C','공 노랑'],['#F29C7E','코랄'],['#8CC9A0','민트'],['#C9E04A','연두'],['#9CC8EA','하늘'],['#BFAEE6','라벤더'],['#F0A0A8','딸기'],['#E6CFA0','모래'],['#F2C14E','트램 노랑'],['#EE9A6E','산호'],['#8FB5E8','타일 하늘'],['#A9C9A0','세이지'],['#F0A8B4','분홍 집'],['#B8A8E0','연보라'],['#EAD9B4','크림'],['#9ED6C8','민트'],['#E8BE55','금빛'],['#E08A6A','연주홍'],['#9DB0C8','슬레이트 하늘'],['#E8A8B8','연분홍'],['#A8BE88','이끼'],['#C0B0DC','라일락'],['#DCC8A0','모래'],['#8EC8C0','청록'],['#F2C94C','해바라기'],['#E0906E','테라코타'],['#A9BC6E','올리브'],['#F2B8C6','젤라토 분홍'],['#C9E08A','피스타치오'],['#C4AEE0','라벤더'],['#9CC4E4','하늘'],['#E2CFA6','돌 베이지'], // 테니스 · 도시 업데이트
+   ['#9CCAF0','하늘'],['#F2A07E','코랄'],['#A6D8B8','민트'],['#F2C230','안내판 노랑'],['#BBAEE6','라벤더'],['#C9D1DC','구름 회색'],['#F2C08E','살구'],['#F0AEC0','연분홍'],['#F29AB8','사탕 분홍'],['#8ED3C4','민트'],['#C6AEE6','라벤더'],['#E2B47A','츄러스'],['#F8C4E4','솜사탕'],['#F2A66A','귤'],['#E58A64','텐트'],['#9DB87A','이끼'],['#F0E2C8','마시멜로'],['#F29A4E','모닥불'],['#C0AEDC','라벤더'],['#B8CC8A','솔잎'] // 공항 · 나들이 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -179,6 +190,18 @@
     'tuscany': {
       s1: { w: 38, h: 38, x: 2, alt: '사이프러스 언덕' }, s2: { w: 34, h: 30, x: 2, alt: '젤라토 둘' },
       s3: { w: 28, h: 37, x: 4, alt: '해바라기' }, s4: { w: 37, h: 32, x: 4, alt: '언덕 위 돌집' }
+    },
+    'airport': {
+      s1: { w: 24, h: 38, x: 2, alt: '여행 가방' }, s2: { w: 38, h: 28, x: 2, alt: '기내식' },
+      s3: { w: 36, h: 22, x: 4, alt: '이륙하는 비행기' }, s4: { w: 37, h: 30, x: 4, alt: '관제탑과 활주로' }
+    },
+    'amusement-park': {
+      s1: { w: 36, h: 42, x: 2, alt: '풍선 다발' }, s2: { w: 38, h: 39, x: 2, alt: '솜사탕과 츄러스' },
+      s3: { w: 36, h: 40, x: 3, alt: '회전목마 말' }, s4: { w: 41, h: 34, x: 4, alt: '관람차와 회전목마' }
+    },
+    'camping': {
+      s1: { w: 34, h: 21, x: 2, alt: '텐트' }, s2: { w: 32, h: 24, x: 2, alt: '마시멜로 꼬치' },
+      s3: { w: 25, h: 29, x: 4, alt: '모닥불' }, s4: { w: 38, h: 32, x: 4, alt: '텐트 · 소나무 · 랜턴' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';
