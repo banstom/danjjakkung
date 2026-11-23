@@ -15,29 +15,45 @@
 (function (root) {
   'use strict';
   var THEMES = [
-    { id: 'soft-pastel', name: 'Soft Pastel', ko: '소프트 파스텔', desc: '포근하고 귀여운 파스텔', dark: false },
-    { id: 'cosmic-dream', name: 'Cosmic Dream', ko: '코즈믹 드림', desc: '깊은 우주와 성운 · 어두운 화면', dark: true },
-    { id: 'ocean-breeze', name: 'Ocean Breeze', ko: '오션 브리즈', desc: '맑은 바다, 청량한 휴식', dark: false },
-    { id: 'forest-diary', name: 'Forest Diary', ko: '포레스트 다이어리', desc: '숲과 이끼, 차분한 초록', dark: false },
-    { id: 'vintage-film', name: 'Vintage Film', ko: '빈티지 필름', desc: '오래된 사진첩, 따뜻한 추억', dark: false },
-    { id: 'blue-hour', name: 'Blue Hour', ko: '블루 아워', desc: '해 진 직후의 고요한 하늘', dark: false },
-    { id: 'golden-hour', name: 'Golden Hour', ko: '골든 아워', desc: '따뜻한 노을과 황금빛 햇살', dark: false },
-    { id: 'sakura-dream', name: 'Sakura Dream', ko: '사쿠라 드림', desc: '부드러운 벚꽃과 봄의 설렘', dark: false },
-    { id: 'midnight-noir', name: 'Midnight Noir', ko: '미드나잇 누아르', desc: '깊은 밤과 도시의 세련미', dark: true },
-    { id: 'arctic-frost', name: 'Arctic Frost', ko: '아크틱 프로스트', desc: '얼음과 서리의 맑은 색감', dark: false },
-    { id: 'chocolate-noir', name: 'Chocolate Noir', ko: '초콜릿 누아르', desc: '다크 초콜릿과 크리미한 브라운', dark: false },
-    { id: 'roast-nuts', name: 'Roast Nuts', ko: '로스트 너츠', desc: '구운 견과류와 달콤한 황금빛', dark: false },
-    { id: 'winter-knit', name: 'Winter Knit', ko: '윈터 니트', desc: '포근한 니트와 부드러운 겨울', dark: false },
-    { id: 'harvest', name: 'Harvest', ko: '하베스트', desc: '황금빛 들판과 차분한 가을', dark: false },
+    { id: 'soft-pastel', name: 'Soft Pastel', ko: '소프트 파스텔', desc: '포근하고 귀여운 파스텔', dark: false, group: 'basic' },
+    { id: 'cosmic-dream', name: 'Cosmic Dream', ko: '코즈믹 드림', desc: '깊은 우주와 성운 · 어두운 화면', dark: true, group: 'basic' },
+    { id: 'ocean-breeze', name: 'Ocean Breeze', ko: '오션 브리즈', desc: '맑은 바다, 청량한 휴식', dark: false, group: 'basic' },
+    { id: 'forest-diary', name: 'Forest Diary', ko: '포레스트 다이어리', desc: '숲과 이끼, 차분한 초록', dark: false, group: 'basic' },
+    { id: 'vintage-film', name: 'Vintage Film', ko: '빈티지 필름', desc: '오래된 사진첩, 따뜻한 추억', dark: false, group: 'basic' },
+    { id: 'blue-hour', name: 'Blue Hour', ko: '블루 아워', desc: '해 진 직후의 고요한 하늘', dark: false, group: 'basic' },
+    { id: 'golden-hour', name: 'Golden Hour', ko: '골든 아워', desc: '따뜻한 노을과 황금빛 햇살', dark: false, group: 'basic' },
+    { id: 'sakura-dream', name: 'Sakura Dream', ko: '사쿠라 드림', desc: '부드러운 벚꽃과 봄의 설렘', dark: false, group: 'basic' },
+    { id: 'midnight-noir', name: 'Midnight Noir', ko: '미드나잇 누아르', desc: '깊은 밤과 도시의 세련미', dark: true, group: 'basic' },
+    { id: 'arctic-frost', name: 'Arctic Frost', ko: '아크틱 프로스트', desc: '얼음과 서리의 맑은 색감', dark: false, group: 'basic' },
+    { id: 'chocolate-noir', name: 'Chocolate Noir', ko: '초콜릿 누아르', desc: '다크 초콜릿과 크리미한 브라운', dark: false, group: 'basic' },
+    { id: 'roast-nuts', name: 'Roast Nuts', ko: '로스트 너츠', desc: '구운 견과류와 달콤한 황금빛', dark: false, group: 'basic' },
+    { id: 'winter-knit', name: 'Winter Knit', ko: '윈터 니트', desc: '포근한 니트와 부드러운 겨울', dark: false, group: 'basic' },
+    { id: 'harvest', name: 'Harvest', ko: '하베스트', desc: '황금빛 들판과 차분한 가을', dark: false, group: 'basic' },
     // 겨울 업데이트 (11/19) — 도트 테마, 낮 · 밤 판. 1년 내내 고를 수 있다
-    { id: 'winter-snack', name: '도란도란 겨울 간식', ko: '도란도란 겨울 간식', desc: '군밤 · 붕어빵 노점의 도트 간식', dark: false, skin: 'pixel',
+    { id: 'winter-snack', group: 'season', name: '도란도란 겨울 간식', ko: '도란도란 겨울 간식', desc: '군밤 · 붕어빵 노점의 도트 간식', dark: false, skin: 'pixel',
       modes: { light: 'winter-snack', dark: 'winter-snack-night' }, tags: ['NEW'] },
-    { id: 'merry-xmas', name: '두근두근 크리스마스', ko: '두근두근 크리스마스', desc: '솔잎 가랜드와 반짝이는 전구', dark: false, skin: 'pixel',
+    { id: 'merry-xmas', group: 'season', name: '두근두근 크리스마스', ko: '두근두근 크리스마스', desc: '솔잎 가랜드와 반짝이는 전구', dark: false, skin: 'pixel',
       modes: { light: 'merry-xmas', dark: 'merry-xmas-night' }, tags: ['NEW'] },
     // 봄 업데이트 (11/20, docs/themes-spring) — 도트 테마, 낮 · 밤 판(밤 = 밤벚꽃 소풍). 1년 내내 고를 수 있다
-    { id: 'spring-picnic', name: '몽글몽글 봄소풍', ko: '몽글몽글 봄소풍', desc: '벚꽃 아래 피크닉 깃발과 도시락', dark: false, skin: 'pixel',
+    { id: 'spring-picnic', group: 'season', name: '몽글몽글 봄소풍', ko: '몽글몽글 봄소풍', desc: '벚꽃 아래 피크닉 깃발과 도시락', dark: false, skin: 'pixel',
       modes: { light: 'spring-picnic', dark: 'spring-picnic-night' }, tags: ['NEW'] }
   ];
+  // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
+  // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
+  // order 에 없는 테마는 묶음 끝에 THEMES 순서대로 (기본 묶음은 order 없이 THEMES 순서 그대로).
+  var GROUPS = [
+    { id: 'season', name: '계절 · 기념일', order: ['spring-picnic', 'summer-sea', 'autumn-forest', 'winter-snack', 'merry-xmas'] },
+    { id: 'travel', name: '여행', order: ['airport', 'train-trip', 'porto', 'prague', 'tuscany'] },
+    { id: 'outing', name: '나들이', order: ['observatory', 'tennis-court', 'amusement-park', 'camping'] },
+    { id: 'basic', name: '기본', order: null }
+  ];
+  // 「○월에 어울리는 테마」 (spec 3절, 서울 날짜의 달) — 기획 계정이 정한 표. 아직 안 들어간 테마는 빠진다
+  var MONTHLY = {
+    1: ['winter-snack', 'observatory'], 2: ['winter-snack', 'train-trip'], 3: ['spring-picnic', 'prague'],
+    4: ['spring-picnic', 'amusement-park'], 5: ['spring-picnic', 'tennis-court'], 6: ['summer-sea', 'airport'],
+    7: ['summer-sea', 'camping'], 8: ['summer-sea', 'porto'], 9: ['autumn-forest', 'tuscany'],
+    10: ['autumn-forest', 'camping'], 11: ['autumn-forest', 'winter-snack'], 12: ['merry-xmas', 'winter-snack']
+  };
   var KEY = 'danjjakkung.theme';
   var MODE_KEY = 'danjjakkung.themeMode';
   var MODES = ['auto', 'light', 'dark'];
@@ -333,7 +349,30 @@
   }
   function forget() { setPeople(null, {}); try { root.localStorage.removeItem(COLOR_KEY); } catch (e) {} }
 
-  var api = { THEMES: THEMES, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
+  // ── 테마 시트 묶음 · 이번 달 ──
+  function groupOf(id) { var t = byId(id); return t ? t.group : null; }
+  /** 묶음 목록: [{ id, name, themes: [테마…] }] — 들어간 테마가 없는 묶음은 뺀다 */
+  function groups() {
+    return GROUPS.map(function (g) {
+      var mine = THEMES.filter(function (t) { return t.group === g.id; });
+      if (g.order) {
+        var ord = g.order;
+        mine = mine.slice().sort(function (a, b) {
+          var x = ord.indexOf(a.id), y = ord.indexOf(b.id);
+          return (x < 0 ? 999 : x) - (y < 0 ? 999 : y) || THEMES.indexOf(a) - THEMES.indexOf(b);
+        });
+      }
+      return { id: g.id, name: g.name, themes: mine };
+    }).filter(function (g) { return g.themes.length > 0; });
+  }
+  /** 서울 날짜의 달 (1~12) — 휴대폰 시간대와 상관없이 */
+  function seoulMonth(date) { var d = date ? new Date(date) : new Date(); return new Date(d.getTime() + 9 * 3600000).getUTCMonth() + 1; }
+  /** 이번 달 어울리는 테마 id (들어간 것만, 0~2개) */
+  function monthly(date) { return (MONTHLY[seoulMonth(date)] || []).filter(function (id) { return !!byId(id); }); }
+  /** 미리보기 · 색 띠에 쓸 판: 낮 · 밤 판이 있으면 낮 판 */
+  function dayBoard(id) { var t = byId(id); return t ? (t.modes ? t.modes.light : t.id) : null; }
+
+  var api = { THEMES: THEMES, GROUPS: GROUPS, MONTHLY: MONTHLY, groups: groups, groupOf: groupOf, monthly: monthly, seoulMonth: seoulMonth, dayBoard: dayBoard, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
     ART: ART, art: art, artHtml: artHtml, FONT_KEY: FONT_KEY, font: font, saveFont: saveFont, chooseFont: chooseFont, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
     palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};

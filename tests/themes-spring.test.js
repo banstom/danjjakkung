@@ -117,10 +117,10 @@ test('SP6 · D 그림 파일 8개 · 합계 150KB 이하, 픽셀 스킨은 토�
   assert.match(px, /var\(--dash, var\(--line\)\)/);
 });
 
-test('SP10 테마 시트: 봄소풍이 맨 앞 · 낮·밤 · NEW 꼬리표 · 사람 색 후보 8개', () => {
-  const vsrc = fs.readFileSync(path.join(ROOT, 'js/view.js'), 'utf8');
-  assert.match(vsrc, /var FEATURED = \['spring-picnic', 'winter-snack', 'merry-xmas', 'soft-pastel'\]/);
+test('SP10 테마 시트: 봄소풍이 「계절 · 기념일」 맨 앞 (11/23 C안) · 사람 색 후보 8개', () => {
   const T = boot({}, false).T;
+  assert.strictEqual(T.groups()[0].id, 'season');
+  assert.strictEqual(T.groups()[0].themes[0].id, 'spring-picnic');
   const pal = T.palette('spring-picnic');
   assert.strictEqual(pal.length, 8);
   assert.strictEqual(JSON.stringify(pal.slice(0, 3)), JSON.stringify(['#E89AB0', '#F3C96B', '#A5CB93']));

@@ -90,7 +90,7 @@ async function main() {
       const bad = Object.keys(sizes).filter((f) => !['12px', '15px', '24px', '36px'].includes(f));
       assert.deepStrictEqual(bad, [], `${tag} ${tab} C4 표 밖 글씨 크기 ${JSON.stringify(sizes)}`);
       // C6: 누르는 것 44px 이상 (세그먼트 · 아래 탭 · 버튼)
-      const small = await p.evaluate(() => [...document.querySelectorAll('.seg__btn, .tabbar__btn, .solid-btn, .ghost-btn, .close-btn, .tpick, .tset__more')]
+      const small = await p.evaluate(() => [...document.querySelectorAll('.seg__btn, .tabbar__btn, .solid-btn, .ghost-btn, .close-btn, .tpick, .tgl__row')]
         .filter((e) => { const r = e.getBoundingClientRect(); return r.width && r.height < 44; }).map((e) => e.className + ' ' + Math.round(e.getBoundingClientRect().height)));
       assert.deepStrictEqual(small, [], `${tag} ${tab} C6 44px 미만`);
     }
@@ -155,13 +155,14 @@ async function main() {
     assert.strictEqual((await hint()).trim(), '늘 밤으로 보여요');
     await p.emulateMedia({ colorScheme: 'light' }); await p.waitForTimeout(300);
     assert.deepStrictEqual(await themeOf(p), ['merry-xmas-night'.replace('merry-xmas', 'winter-snack'), 'pixel'], 'B3 밤 고정은 시스템과 상관없이');
-    // 꼬리표 · 앞 네 장 · 더 보기
-    const cards = await p.$$eval('.tpick', (a) => a.map((e) => e.getAttribute('data-v')));
-    assert.deepStrictEqual(cards, ['spring-picnic', 'winter-snack', 'merry-xmas', 'soft-pastel'], 'E 앞 네 장 (v72: 도트 3 → 소프트 파스텔, 코스믹 드림은 더 보기)');
-    assert.match(await p.textContent('.tpick[data-v="winter-snack"] .tpick__tags'), /사용 중.*낮·밤.*NEW/);
-    await p.click('[data-act="theme-more"]');
+    // 꼬리표 · 묶음 (11/23 C안): 열면 지금 테마(겨울 간식)의 「계절 · 기념일」이 펼쳐져 있음, 「더 보기」 없음
+    const cards = await p.$$eval('.tgl__cards .tpick', (a) => a.map((e) => e.getAttribute('data-v')));
+    assert.deepStrictEqual(cards, ['spring-picnic', 'winter-snack', 'merry-xmas'], 'E 계절 · 기념일 묶음이 펼쳐짐 (지금 있는 도트 3)');
+    assert.match(await p.textContent('.tgl__cards .tpick[data-v="winter-snack"] .tpick__tags'), /사용 중.*낮·밤.*NEW/);
+    assert.strictEqual(await p.$$eval('[data-act="theme-more"]', (a) => a.length), 0, 'S8 더 보기 없음');
+    await p.click('[data-act="theme-group"][data-v="basic"]');
     assert.match(await p.textContent('.tpick[data-v="cosmic-dream"] .tpick__tags'), /어둡게/);
-    assert.strictEqual(await p.$$eval('.tpick', (a) => a.length), 17, 'E 더 보기 → 17장 (v72 봄소풍 포함)');
+    assert.strictEqual(await p.$$eval('.tgl__cards .tpick', (a) => a.length), 14, 'E 기본 묶음 → 14장');
     // v61 글씨체: 기본 → 글자만 프리텐다드, 테두리는 그대로 · 다시 열어도 그대로 · 도트로 되돌리기
     const look = () => p.evaluate(() => ({ fam: getComputedStyle(document.querySelector('.sheet__title')).fontFamily, frame: getComputedStyle(document.querySelector('.tpick')).boxShadow !== 'none', font: document.documentElement.getAttribute('data-font') }));
     assert.match((await look()).fam, /Galmuri/, '도트 글씨가 기본');
@@ -176,7 +177,7 @@ async function main() {
     await p.click('[data-act="tab"][data-tab="all"]'); await p.click('[data-act="open-theme"]'); await p.waitForSelector('#theme-title');
     await p.click('[data-act="theme-font"][data-v="pixel"]'); await p.waitForTimeout(200);
     assert.match((await look()).fam, /Galmuri/, 'v61 도트로 되돌리기');
-    if (!(await p.$('.tpick[data-v="soft-pastel"]'))) await p.click('[data-act="theme-more"]');
+    if (!(await p.$('.tpick[data-v="soft-pastel"]'))) await p.click('[data-act="theme-group"][data-v="basic"]');
     // 판이 없는 테마 → 낮 · 밤 줄 숨김 + 안내
     await p.click('.tpick[data-v="soft-pastel"]'); await p.waitForTimeout(400);
     assert.strictEqual(await p.$$eval('[data-act="theme-mode"]', (a) => a.length), 0, 'E 판 없는 테마는 낮 · 밤 숨김');

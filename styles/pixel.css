@@ -55,14 +55,14 @@
   border: 0; border-radius: 0; background: var(--primary); color: var(--on-primary);
   box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi);
 }
-[data-skin="pixel"] :is(.ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn, .tset__more) {
+[data-skin="pixel"] :is(.ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn) {
   border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--sh);
 }
 [data-skin="pixel"] .close-btn { background: var(--raised); }
 [data-skin="pixel"] .pill-btn.is-done { box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
 [data-skin="pixel"] .pill-btn.is-locked { box-shadow: var(--px-frame-2); }
 [data-skin="pixel"] .add-btn { border-radius: 0; border-width: 3px; }
-[data-skin="pixel"] :is(.solid-btn, .kung__btn, .ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn, .add-btn, .tset__more):active:not(:disabled) { transform: translateY(2px); }
+[data-skin="pixel"] :is(.solid-btn, .kung__btn, .ghost-btn, .close-btn, .mbtn, .madd, .acct__out, .small-btn, .mini-btn, .pill-btn, .add-btn):active:not(:disabled) { transform: translateY(2px); }
 [data-skin="pixel"] :is(.chip, .dday, .mchip, .uchip, .tag) { border: 0; border-radius: 0; box-shadow: var(--px-frame-2); }
 [data-skin="pixel"] .chip[aria-pressed="true"] { box-shadow: var(--px-frame-2), inset 0 -3px 0 var(--btn-lo); }
 [data-skin="pixel"] :is(.field__input, .nselect, .icon-pick) { border-radius: 0; }
@@ -70,6 +70,10 @@
 [data-skin="pixel"] .tpick { border: 0; border-radius: 0; box-shadow: var(--px-frame); }
 [data-skin="pixel"] .tpick.is-on { box-shadow: var(--px-frame), 0 0 0 6px var(--primary); }
 [data-skin="pixel"] .tprev { border-radius: 0; }
+[data-skin="pixel"] .tgl { border: 0; border-radius: 0; box-shadow: var(--px-frame); margin: 3px; }
+[data-skin="pixel"] .tgl__row { border-bottom: 0; background-image: linear-gradient(90deg, var(--dash, var(--line)) 50%, transparent 50%); background-size: 6px 3px; background-repeat: repeat-x; background-position: bottom; }
+[data-skin="pixel"] .tgl__row:last-child { background-image: none; }
+[data-skin="pixel"] .tgl__strip i { border-radius: 0; }
 [data-skin="pixel"] :is(.switch, .switch__knob) { border-radius: 0; }
 
 /* 5. 목록 구분선 — 6px 간격 픽셀 점선 */
@@ -207,7 +211,9 @@
 [data-skin="pixel"]:not([data-font="plain"]) .slanes-head > span { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .tset__sec { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .tset__hint { font-size: 12px; font-family: var(--px-font-11); }
-[data-skin="pixel"]:not([data-font="plain"]) .tset__more { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tgl__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .tgl__names { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .tgl__arrow { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .tpick__name { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .ttag { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .tcolors__title { font-size: 15px; font-family: var(--px-font-14); }

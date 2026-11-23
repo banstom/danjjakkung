@@ -117,52 +117,77 @@
       '</section>';
   }
 
-  // 「테마」 시트 (11/19 겨울 업데이트, docs/themes-winter/spec.md 7절 — 제목은 v53 결정대로 「테마」) — 위에서부터 낮 · 밤 / 테마 카드 / 다른 테마 더 보기 / 사람 색.
+  // 「테마」 시트 (11/19 겨울 업데이트 → 11/23 C안, docs/themes-sheet/spec.md — 제목은 v53 결정대로 「테마」)
+  // 위에서부터 낮 · 밤 / 「○월에 어울리는 테마」 카드 2장 / 「모든 테마」 묶음 목록(한 번에 한 묶음 펼침) / 글씨체 / 사람 색.
   // 카드 미리보기는 CSS 만: 그 테마의 지금 판(낮 · 밤) 색을 data-theme 으로 받는다. 누르면 바로 바뀌고 저장 버튼은 없다.
-  var FEATURED = ['spring-picnic', 'winter-snack', 'merry-xmas', 'soft-pastel']; // 11/20 봄소풍 목업 T1 순서 (코스믹 드림은 「다른 테마 더 보기」)
+  // 묶음 · 이번 달 표는 js/themes.js 한 곳에 (t.groups · t.monthly 로 받음).
   var MODE_LABEL = { auto: '자동', light: '낮', dark: '밤' };
-  function themeCard(th, t) {
+  function themeCard(th, t, where) {
     var on = th.id === t.current;
     var tags = (on ? ['<span class="ttag ttag--on">사용 중</span>'] : []).concat(th.modes ? ['<span class="ttag">낮·밤</span>'] : [])
       .concat((th.tags || []).map(function (x) { return '<span class="ttag">' + esc(x) + '</span>'; }))
       .concat(th.modes ? [] : ['<span class="ttag">' + (th.dark ? '어둡게' : '밝게') + '</span>']);
-    return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-act="pick-theme" data-v="' + esc(th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.ko + (th.name !== th.ko ? ' (' + th.name + ')' : '') + ' — ' + th.desc + (th.modes ? ', 낮·밤' : '') + (on ? ', 사용 중' : '')) + '">' +
+    return '<button type="button" class="tpick' + (on ? ' is-on' : '') + '" data-act="pick-theme" data-v="' + esc(th.id) + '" data-key="' + esc(where + ':' + th.id) + '" aria-pressed="' + on + '" aria-label="' + esc(th.ko + (th.name !== th.ko ? ' (' + th.name + ')' : '') + ' — ' + th.desc + (th.modes ? ', 낮·밤' : '') + (on ? ', 사용 중' : '')) + '">' +
       '<span class="tprev' + (th.skin ? ' tprev--' + th.skin : '') + '" data-theme="' + esc(th.board) + '" aria-hidden="true"><span class="tprev__card"><i class="tprev__bar"></i><i class="tprev__bar tprev__bar--sub"></i></span></span>' +
       '<span class="tpick__name">' + esc(th.ko) + '</span>' +
       '<span class="tpick__tags">' + tags.join('') + '</span>' +
       '</button>';
   }
+  /** 묶음 줄의 테마 이름 나열 — 기본 묶음은 앞 두 개 + 「외 N」 */
+  function groupNames(g) {
+    var names = g.themes.map(function (th) { return th.ko; });
+    if (g.id === 'basic' && names.length > 2) return names.slice(0, 2).join(' · ') + ' 외 ' + (names.length - 2);
+    return names.join(' · ');
+  }
+  function groupRow(g, open) {
+    return '<button type="button" class="tgl__row" data-act="theme-group" data-v="' + esc(g.id) + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="tg-' + esc(g.id) + '"' : '') +
+      ' aria-label="' + esc(g.name + ' · ' + g.themes.length + '개 — ' + g.themes.map(function (th) { return th.ko; }).join(', ') + (open ? ', 펼침' : '')) + '">' +
+      '<span class="tgl__nm"><span class="tgl__title">' + esc(g.name) + ' · ' + g.themes.length + '</span><small class="tgl__names">' + esc(groupNames(g)) + '</small></span>' +
+      '<span class="tgl__strip" aria-hidden="true">' + g.themes.slice(0, 5).map(function (th) { return '<i data-theme="' + esc(th.day) + '"></i>'; }).join('') + '</span>' +
+      '<span class="tgl__arrow" aria-hidden="true">' + (open ? '⌄' : '›') + '</span></button>';
+  }
+  /** 「모든 테마」: 줄을 상자에 담다가 펼친 줄 바로 아래에서 상자를 끊고 그 묶음 카드를 2열로 */
+  function groupList(t) {
+    var out = '', rows = '';
+    function flush() { if (rows) out += '<div class="tgl">' + rows + '</div>'; rows = ''; }
+    t.groups.forEach(function (g) {
+      var open = g.id === t.open;
+      rows += groupRow(g, open);
+      if (open) {
+        flush();
+        out += '<div class="tgrid tgl__cards" id="tg-' + esc(g.id) + '" role="group" aria-label="' + esc(g.name + ' 테마') + '">' + g.themes.map(function (th) { return themeCard(th, t, 'g'); }).join('') + '</div>';
+      }
+    });
+    flush();
+    return out;
+  }
   function themeSheet(t, entering) {
     if (!t) return '';
-    var feat = FEATURED.slice();
-    if (feat.indexOf(t.current) < 0) feat.push(t.current); // 지금 테마는 늘 보이게
-    var main = t.themes.filter(function (th) { return feat.indexOf(th.id) >= 0; }).sort(function (a, b) { return feat.indexOf(a.id) - feat.indexOf(b.id); }); // 목업 순서: 도트 2 → 기본 밝게 · 어둡게
-    var rest = t.themes.filter(function (th) { return feat.indexOf(th.id) < 0; });
     var modeSec = t.hasModes ?
       '<section class="tset" aria-labelledby="tmode-title"><h3 id="tmode-title" class="tset__sec">낮 · 밤</h3>' +
       '<div class="seg seg--full" role="group" aria-label="낮 · 밤 고르기">' + ['auto', 'light', 'dark'].map(function (m) {
         return '<button type="button" class="seg__btn" data-act="theme-mode" data-v="' + m + '" aria-pressed="' + (t.mode === m) + '">' + MODE_LABEL[m] + '</button>';
       }).join('') + '</div>' +
       '<p class="tset__hint" aria-live="polite">' + (t.mode === 'auto' ? '지금은 ' + (t.night ? '밤' : '낮') + '이에요 · 휴대폰 설정을 따라요' : '늘 ' + (t.mode === 'dark' ? '밤' : '낮') + '으로 보여요') + '</p></section>' : '';
+    var monthSec = t.monthly && t.monthly.length ?
+      '<section class="tset tset--month" aria-labelledby="tmonth-title"><h3 id="tmonth-title" class="tset__sec">' + esc(t.month) + '월에 어울리는 테마</h3>' +
+      '<div class="tgrid" role="group" aria-label="' + esc(t.month) + '월에 어울리는 테마">' + t.monthly.map(function (th) { return themeCard(th, t, 'm'); }).join('') + '</div></section>' : '';
     return '<div class="sheet-layer">' +
       '<button type="button" class="scrim" data-act="close-theme" aria-label="닫기"></button>' +
       '<section class="sheet sheet--tall' + (entering ? ' is-entering' : '') + '" role="dialog" aria-modal="true" aria-labelledby="theme-title">' +
       '<span class="grabber" aria-hidden="true"></span>' +
       '<div class="sheet__head"><h2 id="theme-title" class="sheet__title">테마</h2></div>' +
       '<p class="sheet__sub">고르면 바로 바뀌어요 · 테마와 낮·밤은 이 기기에 저장돼요</p>' +
-      modeSec +
+      modeSec + monthSec +
+      '<section class="tset" aria-labelledby="tpick-title"><h3 id="tpick-title" class="tset__sec">모든 테마</h3>' +
+      (t.hasModes ? '' : '<p class="tset__hint">이 테마는 한 가지 밝기만 있어서 낮·밤 고르기가 없어요</p>') +
+      groupList(t) + '</section>' +
       // 글씨체 (v61) — 도트 테마에서만: 도트 글씨가 읽기 불편하면 글자만 기본 글꼴로
       (t.pixel ? '<section class="tset" aria-labelledby="tfont-title"><h3 id="tfont-title" class="tset__sec">글씨체</h3>' +
         '<div class="seg seg--full" role="group" aria-label="글씨체 고르기">' + [['pixel', '도트'], ['plain', '기본']].map(function (f) {
           return '<button type="button" class="seg__btn" data-act="theme-font" data-v="' + f[0] + '" aria-pressed="' + (t.font === f[0]) + '">' + f[1] + '</button>';
         }).join('') + '</div>' +
         '<p class="tset__hint">' + (t.font === 'plain' ? '글자만 기본 글꼴로 · 테두리와 그림은 도트 그대로' : '그림과 어울리는 도트 글씨') + '</p></section>' : '') +
-      '<section class="tset" aria-labelledby="tpick-title"><h3 id="tpick-title" class="tset__sec">테마</h3>' +
-      (t.hasModes ? '' : '<p class="tset__hint">이 테마는 한 가지 밝기만 있어서 낮·밤 고르기가 없어요</p>') +
-      '<div class="tgrid" role="group" aria-label="테마 고르기">' + main.map(function (th) { return themeCard(th, t); }).join('') +
-      (t.more ? rest.map(function (th) { return themeCard(th, t); }).join('') : '') + '</div>' +
-      (rest.length ? '<button type="button" class="tset__more" data-act="theme-more" aria-expanded="' + !!t.more + '">' + (t.more ? '접기' : '다른 테마 더 보기 · ' + rest.length + '개') + '</button>' : '') +
-      '</section>' +
       (t.colors ? '<section class="tset" aria-labelledby="tcolor-sec"><h3 id="tcolor-sec" class="tset__sec">사람 색</h3>' + personColors(t.colors) + '</section>' : '') +
       '<button type="button" class="close-btn" data-act="close-theme">닫기</button>' +
       '</section></div>';
@@ -598,7 +623,7 @@
     return out;
   }
 
-  var api = { questBody: questBody, page: page, esc: esc, TITLE: TITLE, recapCover: recapCover };
+  var api = { questBody: questBody, page: page, esc: esc, TITLE: TITLE, recapCover: recapCover, themeSheet: themeSheet };
   root.RT = root.RT || {};
   root.RT.view = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -1824,8 +1824,9 @@ async function tick(page, dateKey, key) {
   // 4-4) 테마: 처음엔 기본(밝은 화면 → Soft Pastel), 🎨에서 고르면 바로 바뀌고 새로 열어도 그대로. 짝꿍 기기는 그대로.
   const THEME_IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas'];
   const themeOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-theme'));
-  // 테마 카드 누르기 — 앞 네 개 밖은 「다른 테마 더 보기」를 먼저 연다 (11/19)
-  const tpick = async (p, id) => { if (!(await p.$(`.tpick[data-v="${id}"]`))) await p.click('[data-act="theme-more"]'); await p.click(`.tpick[data-v="${id}"]`); };
+  // 테마 카드 누르기 — 안 보이면 그 테마의 묶음 줄을 먼저 편다 (11/23 C안, docs/themes-sheet)
+  const openGroupOf = async (p, id) => { if (!(await p.$(`.tpick[data-v="${id}"]`))) await p.click(`[data-act="theme-group"][data-v="${await p.evaluate((v) => RT.themes.groupOf(v), id)}"]`); };
+  const tpick = async (p, id) => { await openGroupOf(p, id); await p.click(`.tpick[data-v="${id}"]`); };
   await toAll(jm);
   console.log('테마 처음:', await themeOf(jm), '| 계절 칩 없음:', (await jm.$$('.season-chip')).length === 0, '| 🎨:', await jm.getAttribute('[data-act="open-theme"]', 'aria-label'));
   await jm.click('[data-act="open-theme"]');
@@ -1836,8 +1837,8 @@ async function tick(page, dateKey, key) {
   // 카드 미리보기는 그 테마(지금 판) 바탕색 (11/19: 미리보기 상자 .tprev 가 data-theme 을 받음)
   console.log('카드 바탕:', (await jm.$$eval('.tpick', (els) => els.map((e) => e.getAttribute('data-v') + '=' + getComputedStyle(e.querySelector('.tprev')).backgroundColor))).join(' '));
   for (const id of THEME_IDS) {
-    // 앞 네 개(도트 2 · 소프트 파스텔 · 코스믹 드림) 밖은 「다른 테마 더 보기」 안에
-    if (!(await jm.$(`.tpick[data-v="${id}"]`))) await jm.click('[data-act="theme-more"]');
+    // 지금 펼친 묶음 밖이면 그 묶음 줄을 먼저 편다
+    await openGroupOf(jm, id);
     await jm.click(`.tpick[data-v="${id}"]`);
     await jm.waitForTimeout(380);
     const st = await jm.evaluate(() => ({ t: document.documentElement.getAttribute('data-theme'), saved: localStorage.getItem('danjjakkung.theme'),
