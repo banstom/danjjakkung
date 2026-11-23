@@ -12,10 +12,11 @@ const ROOT = path.join(__dirname, '..');
 const J = 'u-junmin', D = 'u-dajin';
 const at = (s) => Date.parse(s + '+09:00');
 
-test('YQ1 질문 29개 · 묶음 5개 · id 겹침 없음 · {next} 채움 · 물음표 또는 요청문', () => {
-  assert.equal(Y.ALL.length, 29);
+test('YQ1 질문 30개 · 묶음 5개 · id 겹침 없음 · {next} 채움 · 물음표 또는 요청문', () => {
+  assert.equal(Y.ALL.length, 30);
   assert.equal(Y.SECTIONS.length, 5);
-  assert.equal(new Set(Y.ALL.map((q) => q.id)).size, 29);
+  assert.equal(new Set(Y.ALL.map((q) => q.id)).size, 30);
+  assert.equal(Y.sections(2026)[0].title, '올해의 취향');
   const secs = Y.sections(2026);
   assert.equal(secs[4].title, '2027 우리');
   const all = secs.flatMap((s) => s.qs);
@@ -53,7 +54,7 @@ test('YQ3 답 정리 · 봉투 조건 · 묶음별 개수', () => {
   assert.equal(Y.len('😀가'), 2, '이모지는 한 글자');
   const p = Y.progress({ t1: 'a', t2: 'b', n6: 'c' }, 2026);
   assert.deepEqual(p.map((x) => x.done), [2, 0, 0, 0, 1]);
-  assert.deepEqual(p.map((x) => x.total), [5, 6, 6, 6, 6]);
+  assert.deepEqual(p.map((x) => x.total), [6, 6, 6, 6, 6]);
 });
 
 const month = (key, cards) => ({ key, doc: { period: { kind: 'month', key }, cards } });
@@ -193,15 +194,15 @@ test('YQ10 작년 짝꿍의 「내년의 짝꿍에게」: 작년 문답이 펼�
 test('YQ11 그리기: 입구 · 쓰는 화면 (힌트 · 타임캡슐 안내 · 봉투 확인)', () => {
   assert.equal(V.entry(null), '');
   assert.equal(V.entry({ phase: 'before' }), '');
-  const e = V.entry({ year: 2026, phase: 'write', done: 3, total: 29, partnerSealed: true, pname: '다진', slotMe: 'me', slotHer: 'her' });
-  assert.match(e, /data-act="yq-open"/); assert.match(e, /3 \/ 29 답함/); assert.match(e, /다진이 먼저 봉투를 붙였어요/);
-  assert.match(V.entry({ year: 2026, phase: 'open', done: 3, total: 29, partnerSealed: true, pname: '다진', slotMe: 'me', slotHer: 'her' }), /data-act="yq-reveal"/);
+  const e = V.entry({ year: 2026, phase: 'write', done: 3, total: 30, partnerSealed: true, pname: '다진', slotMe: 'me', slotHer: 'her' });
+  assert.match(e, /data-act="yq-open"/); assert.match(e, /3 \/ 30 답함/); assert.match(e, /다진이 먼저 봉투를 붙였어요/);
+  assert.match(V.entry({ year: 2026, phase: 'open', done: 3, total: 30, partnerSealed: true, pname: '다진', slotMe: 'me', slotHer: 'her' }), /data-act="yq-reveal"/);
   const secs = Y.sections(2026).map((s) => ({ id: s.id, title: s.title, done: 0, total: s.qs.length }));
   const qs = Y.sections(2026)[4].qs.map((q) => ({ id: q.id, q: q.q, note: q.note, capsule: q.capsule, hint: q.id === 'n2' ? '내가 가장 잘 지킨 루틴 · 러닝' : '', value: '' }));
-  const h = V.sheet({ year: 2026, phase: 'write', sealed: false, secs, cur: 'next', qs, save: 'saved', confirm: { done: 4, empty: 25 }, pname: '다진' });
+  const h = V.sheet({ year: 2026, phase: 'write', sealed: false, secs, cur: 'next', qs, save: 'saved', confirm: { done: 4, empty: 26 }, pname: '다진' });
   assert.match(h, /id="yq-a-n5"/); assert.match(h, /2027년 연말 문답을 열 때 펼쳐져요/);
   assert.match(h, /힌트 · 내가 가장 잘 지킨 루틴/);
-  assert.match(h, /data-act="yq-seal-ask"/); assert.match(h, /봉투를 붙일까요\?/); assert.match(h, /건너뛴 질문 25개/);
+  assert.match(h, /data-act="yq-seal-ask"/); assert.match(h, /봉투를 붙일까요\?/); assert.match(h, /건너뛴 질문 26개/);
 });
 
 test('YQ12 규칙 · 연결: 규칙에 1월 1일 · 둘 다 봉인 조건, 화면 파일이 index · 서비스워커에', () => {

@@ -33,7 +33,7 @@ async function main() {
   await toRecap(jm);
   await jm.waitForSelector('.yq-entry', { timeout: 6000 });
   assert.match(await jm.textContent('.yq-entry'), /2026년 · 짝꿍과의 연말 문답/);
-  assert.match(await jm.textContent('.yq-entry'), /0 \/ 29 답함/);
+  assert.match(await jm.textContent('.yq-entry'), /0 \/ 30 답함/);
   await shot(jm, 'yq-01-entry');
 
   // Y-C2 쓰기: 첫 묶음 · 입력하면 잠시 뒤 저장 (정리된 글)
@@ -42,7 +42,7 @@ async function main() {
   assert.match(await jm.textContent('.yq-intro'), /1월 1일 연말결산 뒤/);
   await jm.fill('#yq-a-t1', '  밤양갱  ');
   await jm.fill('#yq-a-t3', '순대국');
-  assert.strictEqual(await jm.textContent('#yq-c-taste'), '2/5');
+  assert.strictEqual(await jm.textContent('#yq-c-taste'), '2/6');
   await jm.waitForTimeout(1600);
   assert.deepStrictEqual(docs.get('yearqa/2026/a/' + J).answers, { t1: '밤양갱', t3: '순대국' });
   assert.strictEqual(docs.get('yearqa/2026/a/' + J).sealed, false);
@@ -58,7 +58,7 @@ async function main() {
   // Y-C3 봉투 붙이기 확인 → 붙이기
   await jm.click('[data-act="yq-seal-ask"]');
   await jm.waitForSelector('.yq-confirm');
-  assert.match(await jm.textContent('.yq-confirm'), /답한 질문 4개 · 건너뛴 질문 25개/);
+  assert.match(await jm.textContent('.yq-confirm'), /답한 질문 4개 · 건너뛴 질문 26개/);
   await shot(jm, 'yq-04-confirm');
   await jm.click('.yq-confirm [data-act="yq-seal"]');
   await jm.waitForFunction(() => !document.querySelector('.yq-confirm'));
