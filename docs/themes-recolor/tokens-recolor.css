@@ -1,0 +1,41 @@
+/* 색 바꿈 — 타닥타닥 캠핑 · 뾰족뾰족 프라하 (기획 계정 2026-11-24, 사용자 확정)
+   종합 묶음 1의 tokens-airport-outing.css(캠핑) · tokens-tennis-cities.css(프라하)에서 아래 값만 바꿔요. 나머지 토큰 · 그림 · 장식 · 사람 색은 그대로. */
+
+[data-theme="camping"]{
+  --primary:#3E5E36; /* 전 #4A433A */
+  --btn-hi:#748B6E; /* 전 #6A6256 */
+  --btn-lo:#2E4628; /* 전 #302B25 */
+  --secondary:#E5E4DA; /* 전 #E8E4DC */
+  --accent:#4E6A3A; /* 전 #6A6052 */
+  --strong:#36522F; /* 전 #3E3830 */
+  --tab-active:#36522F; /* 전 #3E3830 */
+  --tint:#E2ECD8; /* 전 #ECE6DA */
+  --tint-text:#2E4A28; /* 전 #3E3830 */
+  --primary-edge:#3E5E36; /* 전 #4A433A */
+}
+
+[data-theme="camping-night"]{
+  --primary:#F29A4E; /* 전 #EDE0C4 */
+  --on-primary:#2A1606; /* 전 #221D14 */
+  --btn-hi:#F7BD8C; /* 전 #F7EEDC */
+  --btn-lo:#BD783D; /* 전 #B8A882 */
+  --accent:#F0A060; /* 전 #E2D2B0 */
+  --strong:#F29A4E; /* 전 #EDE0C4 */
+  --tab-active:#F7BD8C; /* 전 #F7EEDC */
+  --tint:#3A2818; /* 전 #3A3022 */
+  --tint-text:#FFC890; /* 전 #F4C98A */
+  --primary-edge:#F29A4E; /* 전 #EDE0C4 */
+}
+
+[data-theme="prague"]{
+  --primary:#A8482A; /* 전 #3F4E66 */
+  --btn-hi:#C07B66; /* 전 #5E6E88 */
+  --btn-lo:#7C351F; /* 전 #2A364A */
+  --secondary:#EEE3DB; /* 전 #E4E6EC */
+  --accent:#B85A3A; /* 전 #5A6A84 */
+  --strong:#8E3C22; /* 전 #35435A */
+  --tab-active:#8E3C22; /* 전 #35435A */
+  --tint:#F6E2D8; /* 전 #E3E6EE */
+  --tint-text:#7A3018; /* 전 #33405A */
+  --primary-edge:#A8482A; /* 전 #3F4E66 */
+}

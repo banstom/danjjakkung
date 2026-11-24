@@ -1,0 +1,31 @@
+/* 뉴욕 · 시드니 · 발리 · 카이로 · 과나후아토 — 테마별 장식만 (기획 계정 2026-11-24)
+   픽셀 부품은 저장소 styles/pixel.css 그대로. 그림 · 장식 경로는 앞 테마들과 같은 자리(themes/<id>/).
+   목업 이름: .dscr = 화면, .dawn = 머리 장식 띠 — 저장소 선택자에 맞춰 바꿔 써 주세요 */
+
+[data-theme="new-york"] .dscr{background-image:url("themes/new-york/bg.svg"),repeating-conic-gradient(rgba(78,138,126,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="new-york-night"] .dscr{background-image:url("themes/new-york/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="new-york"] .dawn{height:42px;background:url("themes/new-york/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="new-york-night"] .dawn{height:60px;background:url("themes/new-york/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="sydney"] .dscr{background-image:url("themes/sydney/bg.svg"),repeating-conic-gradient(rgba(61,127,184,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="sydney-night"] .dscr{background-image:url("themes/sydney/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="sydney"] .dawn{height:42px;background:url("themes/sydney/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="sydney-night"] .dawn{height:60px;background:url("themes/sydney/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="bali"] .dscr{background-image:url("themes/bali/bg.svg"),repeating-conic-gradient(rgba(106,154,78,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="bali-night"] .dscr{background-image:url("themes/bali/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="bali"] .dawn{height:42px;background:url("themes/bali/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="bali-night"] .dawn{height:60px;background:url("themes/bali/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="cairo"] .dscr{background-image:url("themes/cairo/bg.svg"),repeating-conic-gradient(rgba(168,122,42,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="cairo-night"] .dscr{background-image:url("themes/cairo/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="cairo"] .dawn{height:42px;background:url("themes/cairo/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="cairo-night"] .dawn{height:60px;background:url("themes/cairo/head-night.svg") 0 0/72px 60px repeat-x}
+
+[data-theme="guanajuato"] .dscr{background-image:url("themes/guanajuato/bg.svg"),repeating-conic-gradient(rgba(194,31,106,.06) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 40px,0 0}
+[data-theme="guanajuato-night"] .dscr{background-image:url("themes/guanajuato/bg-night.svg"),repeating-conic-gradient(rgba(255,255,255,.025) 0 25%,transparent 0 50%);background-size:84px 84px,24px 24px;background-position:0 60px,0 0}
+[data-theme="guanajuato"] .dawn{height:42px;background:url("themes/guanajuato/head.svg") 0 0/72px 42px repeat-x}
+[data-theme="guanajuato-night"] .dawn{height:60px;background:url("themes/guanajuato/head-night.svg") 0 0/72px 60px repeat-x}
+
+/* 밤 판: 머리 장식 60px → 머리말 56px 내림, 고른 탭 테두리 = --btn-lo (다른 도트 테마 밤과 같음) */
+[data-theme$="-night"] .dhead{margin-top:56px}
