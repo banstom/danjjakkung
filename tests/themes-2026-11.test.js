@@ -28,7 +28,10 @@ const NEW = [
   { id: 'sydney', group: 'travel', folder: 'themes-travel-5', ko: '깡충깡충 시드니' },
   { id: 'bali', group: 'travel', folder: 'themes-travel-5', ko: '느긋느긋 발리' },
   { id: 'cairo', group: 'travel', folder: 'themes-travel-5', ko: '사락사락 카이로' },
-  { id: 'guanajuato', group: 'travel', folder: 'themes-travel-5', ko: '팔랑팔랑 과나후아토' }
+  { id: 'guanajuato', group: 'travel', folder: 'themes-travel-5', ko: '팔랑팔랑 과나후아토' },
+  { id: 'under-sea', group: 'outing', folder: 'themes-outing-3', ko: '뽀글뽀글 바닷속' },
+  { id: 'safari', group: 'outing', folder: 'themes-outing-3', ko: '어흥어흥 사파리' },
+  { id: 'cinema', group: 'outing', folder: 'themes-outing-3', ko: '소곤소곤 영화관' }
 ];
 const boardsOf = (t) => [t.id, t.id + '-night'];
 
@@ -184,7 +187,7 @@ test('A9 묶음(group) · 테마 시트 순서 = docs/themes-sheet/spec.md 2절 
 test('밤 판은 어두운 판 목록(쿠키 그림 색)에 · 빨강은 경고 · 장식 · 토마토 · 사람 색에만', () => {
   const dark = /(\[data-theme="cosmic-dream"\], \[data-theme="midnight-noir"\][^{]*)\{\n\s*--ck-hi/.exec(css)[1];
   for (const t of NEW) assert.ok(dark.includes(`[data-theme="${t.id}-night"]`), t.id + '-night');
-  const ALLOWED = ['warn', 'sec-dot', 'deco-a', 'tomato-red', 'her'];
+  const ALLOWED = ['warn', 'sec-dot', 'deco-a', 'deco-b', 'tomato-red', 'her']; // deco-b: 바닷속 산호 #F2917D (11/24) — 장식은 빨강 계열 괜찮음
   const red = (h) => {
     const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16) / 255);
     const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
@@ -192,5 +195,8 @@ test('밤 판은 어두운 판 목록(쿠키 그림 색)에 · 빨강은 경고 
     const hue = ((((g - b) / d) * 60) + 360) % 360; // 자홍(놀이공원 #A42A72 = 325°)은 빨강이 아님
     return (hue < 12 || hue > 345) && l > 0.25 && l < 0.75;
   };
-  for (const t of NEW) for (const b of boardsOf(t)) for (const [k, x] of Object.entries(block(b).v)) if (/^#[0-9A-F]{6}$/.test(x) && red(x)) assert.ok(ALLOWED.includes(k), `${b}: --${k} ${x}`);
+  // 영화관 낮 --accent(테두리 · 오늘 칸 · 포커스 강조선) · --tint-text(강조 칸 글자)는 기획이 정한 벨벳 빨강 — 넓은 버튼 색(--primary)은 검정이라 경고와 안 헷갈림 (11/24)
+  const EXTRA = { cinema: ['accent', 'tint-text'] };
+  for (const t of NEW) for (const b of boardsOf(t)) for (const [k, x] of Object.entries(block(b).v)) if (/^#[0-9A-F]{6}$/.test(x) && red(x)) assert.ok(ALLOWED.includes(k) || (EXTRA[b] || []).includes(k), `${b}: --${k} ${x}`);
+  for (const id of ['cinema', 'cinema-night']) assert.ok(!red(block(id).v.primary), id + ' 버튼은 빨강이 아님');
 });

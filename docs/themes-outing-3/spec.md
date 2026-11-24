@@ -50,4 +50,10 @@
 - `design/mockups/chosen/themes-outing-3/screens/` — 테마마다 4장(전체 낮 · 전체 밤 · 할 일 끝 S3 · 결산 표지 밤 S4) + 마지막 그림 · 장식. 같은 폴더 html은 브라우저로 열림 (글꼴은 시험용)
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 목업에 없던 칸 · 바탕 체크 · 그림 토큰은 TR1(themes-travel-5 「바뀐 것」 첫 두 줄)과 같은 규칙
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: --warn #C62F3A → under-sea · safari #C22E38, cinema #BE2D37 (--raised 위 4.34~4.42 였음)
+- 대비 시험을 맞추려고 조금 바꾼 값: safari --lv-full-text #271F14 → #201A10 (4.48), cinema --lv-full-text #1A1618 → #FFFFFF (달력 꽉 찬 칸 #8A6A70 위 진한 글자는 검정이어도 4.38이라 흰 글자 4.80)
+- 영화관 낮 --accent #B3202E(테두리 · 오늘 칸 테두리 · 포커스 선) · --tint-text #8A1A26(강조 칸 글자)은 기획 값 그대로 빨강 — 버튼(--primary)은 검정 · 크림이라 빨강 검사에서 이 두 칸만 예외로 둠. 폰에서 경고와 헷갈리면 알려 주기
+- 빨강 검사: 바닷속 낮 --deco-b 산호 #F2917D(장식)는 허용 목록(장식)에 넣음 — 원래 목록에 deco-a 만 있었음
+- 사람 색 후보 순서 · 색 이름 · 규칙은 TR1 과 같은 방식 (3개 id 를 hasOnly · validPair 에)
+- 시험: tests/themes-2026-11.test.js NEW 표에 3테마 + 영화관 버튼 빨강 아님 · tests/themes.test.js 테마 목록

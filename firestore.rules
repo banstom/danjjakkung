@@ -339,7 +339,7 @@ service cloud.firestore {
     }
     // 테마마다 고른 사람 색. 11/19 겨울 도트 테마(winter-snack · merry-xmas)는 낮 · 밤 판을 묶음 id 하나로 저장
     function validColors(c) {
-      return c is map && c.keys().hasOnly(['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas', 'spring-picnic', 'summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping', 'new-york', 'sydney', 'bali', 'cairo', 'guanajuato'])
+      return c is map && c.keys().hasOnly(['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas', 'spring-picnic', 'summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping', 'new-york', 'sydney', 'bali', 'cairo', 'guanajuato', 'under-sea', 'safari', 'cinema'])
         && (!('soft-pastel' in c) || validPair(c['soft-pastel']))
         && (!('cosmic-dream' in c) || validPair(c['cosmic-dream']))
         && (!('ocean-breeze' in c) || validPair(c['ocean-breeze']))
@@ -372,7 +372,10 @@ service cloud.firestore {
         && (!('sydney' in c) || validPair(c['sydney']))
         && (!('bali' in c) || validPair(c['bali']))
         && (!('cairo' in c) || validPair(c['cairo']))
-        && (!('guanajuato' in c) || validPair(c['guanajuato']));
+        && (!('guanajuato' in c) || validPair(c['guanajuato']))
+        && (!('under-sea' in c) || validPair(c['under-sea']))
+        && (!('safari' in c) || validPair(c['safari']))
+        && (!('cinema' in c) || validPair(c['cinema']));
     }
     match /users/{uid} {
       allow read: if isMember() && request.auth.uid == uid;

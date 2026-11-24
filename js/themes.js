@@ -73,7 +73,14 @@
     { id: 'cairo', group: 'travel', name: '사락사락 카이로', ko: '사락사락 카이로', desc: '피라미드 줄과 모래 · 사막 달빛', dark: false, skin: 'pixel',
       modes: { light: 'cairo', dark: 'cairo-night' }, tags: ['NEW'] },
     { id: 'guanajuato', group: 'travel', name: '팔랑팔랑 과나후아토', ko: '팔랑팔랑 과나후아토', desc: '줄에 매단 파펠 피카도와 색색 집', dark: false, skin: 'pixel',
-      modes: { light: 'guanajuato', dark: 'guanajuato-night' }, tags: ['NEW'] }
+      modes: { light: 'guanajuato', dark: 'guanajuato-night' }, tags: ['NEW'] },
+    // 나들이 3 업데이트 (11/24, docs/themes-outing-3) — 도트 테마, 낮 · 밤 판
+    { id: 'under-sea', group: 'outing', name: '뽀글뽀글 바닷속', ko: '뽀글뽀글 바닷속', desc: '물빛 띠와 물방울 · 빛나는 해파리', dark: false, skin: 'pixel',
+      modes: { light: 'under-sea', dark: 'under-sea-night' }, tags: ['NEW'] },
+    { id: 'safari', group: 'outing', name: '어흥어흥 사파리', ko: '어흥어흥 사파리', desc: '아카시아 노을과 발자국 · 달 뜬 사바나', dark: false, skin: 'pixel',
+      modes: { light: 'safari', dark: 'safari-night' }, tags: ['NEW'] },
+    { id: 'cinema', group: 'outing', name: '소곤소곤 영화관', ko: '소곤소곤 영화관', desc: '빨강 벨벳 커튼과 극장 전구 · 스크린 빛', dark: false, skin: 'pixel',
+      modes: { light: 'cinema', dark: 'cinema-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안 · 11/24 TS2 고침 — 여행 · 도시를 여행 하나로, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -134,7 +141,10 @@
     'sydney': { ink: '#241D1B', both: '#A6D0B0', colors: ['#9CCAF0', '#F2C14E', '#A6D0B0', '#F2A07E', '#D9A878', '#E8E4DE', '#C0AEE6', '#7FC4E0'] },
     'bali': { ink: '#241F16', both: '#B8D88A', colors: ['#8ED3C4', '#F2A0B8', '#B8D88A', '#F2C14E', '#E2C08E', '#9CCAF0', '#F2A66A', '#C6AEE6'] },
     'cairo': { ink: '#251F13', both: '#8ED3C4', colors: ['#F2A07E', '#9CCAF0', '#8ED3C4', '#F2C86A', '#D9A878', '#B8CC8A', '#A8B8F0', '#F0AEC0'] },
-    'guanajuato': { ink: '#251A1F', both: '#9CCAF0', colors: ['#7FCFC0', '#F2C14E', '#9CCAF0', '#F59AC8', '#F2A66A', '#C6AEE6', '#A8CC8A', '#F2D48A'] }
+    'guanajuato': { ink: '#251A1F', both: '#9CCAF0', colors: ['#7FCFC0', '#F2C14E', '#9CCAF0', '#F59AC8', '#F2A66A', '#C6AEE6', '#A8CC8A', '#F2D48A'] },
+    'under-sea': { ink: '#0E2027', both: '#9ED6C4', colors: ['#F29AB8', '#F2C14E', '#9ED6C4', '#C7A6F2', '#9FE3EE', '#E8D4A8', '#F2A07E', '#A6D0A0'] },
+    'safari': { ink: '#271F14', both: '#9CCAF0', colors: ['#9ED0A8', '#F2C14E', '#9CCAF0', '#F5A25A', '#F2C98A', '#C8C4C0', '#F29A9A', '#C6AEE6'] },
+    'cinema': { ink: '#1A1618', both: '#A6D8B8', colors: ['#9CCAF0', '#F2C14E', '#A6D8B8', '#F0A0AA', '#F29AB8', '#E8E4DE', '#E2C07A', '#C6AEE6'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -158,7 +168,8 @@
    ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'], // 천문대 · 기차 업데이트
    ['#F2D45C','공 노랑'],['#F29C7E','코랄'],['#8CC9A0','민트'],['#C9E04A','연두'],['#9CC8EA','하늘'],['#BFAEE6','라벤더'],['#F0A0A8','딸기'],['#E6CFA0','모래'],['#F2C14E','트램 노랑'],['#EE9A6E','산호'],['#8FB5E8','타일 하늘'],['#A9C9A0','세이지'],['#F0A8B4','분홍 집'],['#B8A8E0','연보라'],['#EAD9B4','크림'],['#9ED6C8','민트'],['#E8BE55','금빛'],['#E08A6A','연주홍'],['#9DB0C8','슬레이트 하늘'],['#E8A8B8','연분홍'],['#A8BE88','이끼'],['#C0B0DC','라일락'],['#DCC8A0','모래'],['#8EC8C0','청록'],['#F2C94C','해바라기'],['#E0906E','테라코타'],['#A9BC6E','올리브'],['#F2B8C6','젤라토 분홍'],['#C9E08A','피스타치오'],['#C4AEE0','라벤더'],['#9CC4E4','하늘'],['#E2CFA6','돌 베이지'], // 테니스 · 도시 업데이트
    ['#9CCAF0','하늘'],['#F2A07E','코랄'],['#A6D8B8','민트'],['#F2C230','안내판 노랑'],['#BBAEE6','라벤더'],['#C9D1DC','구름 회색'],['#F2C08E','살구'],['#F0AEC0','연분홍'],['#F29AB8','사탕 분홍'],['#8ED3C4','민트'],['#C6AEE6','라벤더'],['#E2B47A','츄러스'],['#F8C4E4','솜사탕'],['#F2A66A','귤'],['#E58A64','텐트'],['#9DB87A','이끼'],['#F0E2C8','마시멜로'],['#F29A4E','모닥불'],['#C0AEDC','라벤더'],['#B8CC8A','솔잎'], // 공항 · 나들이 업데이트
-   ['#9ED6C4','여신상'],['#C0AEE6','라벤더'],['#F5D06A','창문 불빛'],['#A6D0B0','유칼립투스'],['#D9A878','쿼카'],['#E8E4DE','돛 흰색'],['#7FC4E0','파도'],['#F2A0B8','프랑지파니'],['#B8D88A','계단논'],['#E2C08E','라탄'],['#F2C86A','모래'],['#A8B8F0','라피스'],['#7FCFC0','민트 벽'],['#F59AC8','핑크'],['#A8CC8A','선인장'],['#F2D48A','타코'] // 여행 5 업데이트
+   ['#9ED6C4','여신상'],['#C0AEE6','라벤더'],['#F5D06A','창문 불빛'],['#A6D0B0','유칼립투스'],['#D9A878','쿼카'],['#E8E4DE','돛 흰색'],['#7FC4E0','파도'],['#F2A0B8','프랑지파니'],['#B8D88A','계단논'],['#E2C08E','라탄'],['#F2C86A','모래'],['#A8B8F0','라피스'],['#7FCFC0','민트 벽'],['#F59AC8','핑크'],['#A8CC8A','선인장'],['#F2D48A','타코'], // 여행 5 업데이트
+   ['#C7A6F2','해파리'],['#9FE3EE','물빛'],['#E8D4A8','모래'],['#A6D0A0','거북'],['#9ED0A8','풀잎'],['#F5A25A','노을'],['#F2C98A','기린'],['#C8C4C0','코끼리'],['#F29A9A','수박'],['#F0A0AA','벨벳 분홍'],['#E2C07A','금'] // 나들이 3 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -239,6 +250,18 @@
     'guanajuato': {
       s1: { w: 24, h: 34, x: 2, alt: '선인장 화분' }, s2: { w: 38, h: 24, x: 2, alt: '타코 둘' },
       s3: { w: 42, h: 43, x: 4, alt: '별 피냐타' }, s4: { w: 32, h: 32, x: 4, alt: '색색 집 언덕과 성당 돔' }
+    },
+    'under-sea': {
+      s1: { w: 22, h: 28, x: 2, alt: '해파리' }, s2: { w: 35, h: 26, x: 2, alt: '조개 마들렌 둘' },
+      s3: { w: 31, h: 21, x: 4, alt: '바다거북' }, s4: { w: 31, h: 29, x: 4, alt: '산호초와 물고기 떼' }
+    },
+    'safari': {
+      s1: { w: 42, h: 41, x: 2, alt: '사자 얼굴' }, s2: { w: 40, h: 30, x: 2, alt: '망고와 수박 컵' },
+      s3: { w: 44, h: 27, x: 4, alt: '사파리 지프' }, s4: { w: 43, h: 30, x: 4, alt: '아카시아 · 코끼리 · 노을' }
+    },
+    'cinema': {
+      s1: { w: 32, h: 31, x: 2, alt: '영화표 두 장' }, s2: { w: 31, h: 30, x: 2, alt: '팝콘과 콜라' },
+      s3: { w: 27, h: 23, x: 4, alt: '필름 카메라' }, s4: { w: 31, h: 26, x: 4, alt: '스크린 · 빨강 커튼 · 좌석' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

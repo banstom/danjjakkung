@@ -1062,6 +1062,124 @@
   --bg-art: url('../themes/guanajuato/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/guanajuato/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 나들이 3 업데이트 (11/24, docs/themes-outing-3) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 뽀글뽀글 바닷속 (낮) */
+[data-theme="under-sea"] {
+  color-scheme: light;
+  --bg: #EAF4F6; --surface: #F9FCFC; --raised: #DFEAEC; --input-bg: #F9FCFC;
+  --text: #11262E; --sub: #52646A; --faint: #A5B2B6; --line: #D0DBDE;
+  --divider: #D0DBDE; --primary: #1E7F96; --primary-edge: #1E7F96; --on-primary: #FFFFFF;
+  --secondary: #DCECEF; --accent: #2E8CA2; --strong: #18697C; --icon: #52646A;
+  --tab-bg: #F9FCFC; --tab-active: #18697C; --tab-inactive: #52646A; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F29AB8; --her-ink: #0E2027;
+  --me: #F2C14E; --me-ink: #0E2027; --both: #9ED6C4; --both-ink: #0E2027;
+  --tint: #D6EEF2; --tint-text: #145666; --today: #11262E; --on-today: #F9FCFC;
+  --lv-full: #3E9AA8; --lv-full-text: #0E2027; --lv-half: #CDE5E8;
+  --lv-half-text: #11262E; --empty: #DDE8EA; --empty-text: #495C62; --switch-knob: #F9FCFC;
+  --scrim: rgba(17, 38, 46, 0.45); --shadow: 0 -8px 24px rgba(23, 58, 70, 0.12); --lift: 0 1px 3px rgba(23, 58, 70, 0.18); --toast-bg: #11262E;
+  --toast-fg: #F9FCFC; --toast-shadow: 0 4px 0 #C7D3D6; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #173A46; --sh: #C7D3D6; --btn-hi: #5DA3B3; --btn-lo: #165E6F;
+  --sec-dot: #F2917D; --deco-a: #2E8CA2; --deco-b: #F2917D; --dash: #C7D3D6;
+  --bg-art: url('../themes/under-sea/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/under-sea/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(46, 140, 162, 0.06);
+}
+/* 뽀글뽀글 바닷속 (밤) */
+[data-theme="under-sea-night"] {
+  color-scheme: dark;
+  --bg: #0A1626; --surface: #162231; --raised: #222D3C; --input-bg: #162231;
+  --text: #EEF6FA; --sub: #C0C9D0; --faint: #535E6A; --line: #313B49;
+  --divider: #313B49; --primary: #9FE3EE; --primary-edge: #9FE3EE; --on-primary: #0C2A30;
+  --secondary: #1E2937; --accent: #8FD6E4; --strong: #9FE3EE; --icon: #C0C9D0;
+  --tab-bg: #162231; --tab-active: #C1EDF4; --tab-inactive: #C0C9D0; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F29AB8; --her-ink: #070F1B;
+  --me: #F2C14E; --me-ink: #070F1B; --both: #9ED6C4; --both-ink: #070F1B;
+  --tint: #16303A; --tint-text: #C4F2F8; --today: #EEF6FA; --on-today: #162231;
+  --lv-full: #9FE3EE; --lv-full-text: #070F1B; --lv-half: #375462;
+  --lv-half-text: #EEF6FA; --empty: #222D3C; --empty-text: #C0C9D0; --switch-knob: #0C2A30;
+  --scrim: rgba(5, 11, 19, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #EEF6FA;
+  --toast-fg: #070F1B; --toast-shadow: 0 4px 0 #050B13; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #5E7A92; --sh: #050B13; --btn-hi: #C1EDF4; --btn-lo: #7CB1BA;
+  --sec-dot: #C7A6F2; --deco-a: #122A40; --deco-b: #C7A6F2; --dash: #313B49;
+  --bg-art: url('../themes/under-sea/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/under-sea/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 어흥어흥 사파리 (낮) */
+[data-theme="safari"] {
+  color-scheme: light;
+  --bg: #F7F0E4; --surface: #FDFAF7; --raised: #EDE6DA; --input-bg: #FDFAF7;
+  --text: #2E2418; --sub: #6A6155; --faint: #B7AFA3; --line: #DFD8CC;
+  --divider: #DFD8CC; --primary: #B05A1E; --primary-edge: #B05A1E; --on-primary: #FFFBF4;
+  --secondary: #F2E6D6; --accent: #C46A2A; --strong: #954A16; --icon: #6A6155;
+  --tab-bg: #FDFAF7; --tab-active: #954A16; --tab-inactive: #6A6155; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #9ED0A8; --her-ink: #271F14;
+  --me: #F2C14E; --me-ink: #271F14; --both: #9CCAF0; --both-ink: #271F14;
+  --tint: #F6E2CC; --tint-text: #6E3410; --today: #2E2418; --on-today: #FDFAF7;
+  --lv-full: #8A8A3E; --lv-full-text: #201A10; --lv-half: #E1E1CD;
+  --lv-half-text: #2E2418; --empty: #EBE4D8; --empty-text: #62594D; --switch-knob: #FDFAF7;
+  --scrim: rgba(46, 36, 24, 0.45); --shadow: 0 -8px 24px rgba(58, 42, 24, 0.12); --lift: 0 1px 3px rgba(58, 42, 24, 0.18); --toast-bg: #2E2418;
+  --toast-fg: #FDFAF7; --toast-shadow: 0 4px 0 #D7CFC3; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3A2A18; --sh: #D7CFC3; --btn-hi: #C6885D; --btn-lo: #824316;
+  --sec-dot: #6E7A3A; --deco-a: #6E7A3A; --deco-b: #F2C14E; --dash: #D7CFC3;
+  --bg-art: url('../themes/safari/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/safari/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(176, 90, 30, 0.06);
+}
+/* 어흥어흥 사파리 (밤) */
+[data-theme="safari-night"] {
+  color-scheme: dark;
+  --bg: #18120E; --surface: #241E1A; --raised: #2F2A26; --input-bg: #241E1A;
+  --text: #F8F0E6; --sub: #CBC4BB; --faint: #605953; --line: #3D3835;
+  --divider: #3D3835; --primary: #F5A25A; --primary-edge: #F5A25A; --on-primary: #2A1606;
+  --secondary: #2A2521; --accent: #F29A4E; --strong: #F5A25A; --icon: #CBC4BB;
+  --tab-bg: #241E1A; --tab-active: #F8C394; --tab-inactive: #CBC4BB; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #9ED0A8; --her-ink: #110D0A;
+  --me: #F2C14E; --me-ink: #110D0A; --both: #9CCAF0; --both-ink: #110D0A;
+  --tint: #36261A; --tint-text: #FFD2A8; --today: #F8F0E6; --on-today: #241E1A;
+  --lv-full: #F5A25A; --lv-full-text: #110D0A; --lv-half: #5A3D25;
+  --lv-half-text: #F8F0E6; --empty: #2F2A26; --empty-text: #CBC4BB; --switch-knob: #2A1606;
+  --scrim: rgba(12, 9, 7, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F8F0E6;
+  --toast-fg: #110D0A; --toast-shadow: 0 4px 0 #0C0907; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #7E6A58; --sh: #0C0907; --btn-hi: #F8C394; --btn-lo: #BF7E46;
+  --sec-dot: #F2C14E; --deco-a: #2A2016; --deco-b: #F5A25A; --dash: #3D3835;
+  --bg-art: url('../themes/safari/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/safari/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 소곤소곤 영화관 (낮) */
+[data-theme="cinema"] {
+  color-scheme: light;
+  --bg: #F4F0F0; --surface: #FCFAFA; --raised: #E9E5E5; --input-bg: #FCFAFA;
+  --text: #1E1A1C; --sub: #5E5A5C; --faint: #B0ACAC; --line: #DAD6D7;
+  --divider: #DAD6D7; --primary: #26222A; --primary-edge: #26222A; --on-primary: #FFFFFF;
+  --secondary: #E6E2E2; --accent: #B3202E; --strong: #26222A; --icon: #5E5A5C;
+  --tab-bg: #FCFAFA; --tab-active: #26222A; --tab-inactive: #5E5A5C; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #BE2D37; --her: #9CCAF0; --her-ink: #1A1618;
+  --me: #F2C14E; --me-ink: #1A1618; --both: #A6D8B8; --both-ink: #1A1618;
+  --tint: #F8DCDE; --tint-text: #8A1A26; --today: #1E1A1C; --on-today: #FCFAFA;
+  --lv-full: #8A6A70; --lv-full-text: #FFFFFF; --lv-half: #E1D8DA;
+  --lv-half-text: #1E1A1C; --empty: #E7E3E3; --empty-text: #565253; --switch-knob: #FCFAFA;
+  --scrim: rgba(30, 26, 28, 0.45); --shadow: 0 -8px 24px rgba(26, 22, 24, 0.12); --lift: 0 1px 3px rgba(26, 22, 24, 0.18); --toast-bg: #1E1A1C;
+  --toast-fg: #FCFAFA; --toast-shadow: 0 4px 0 #D2CECE; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #1A1618; --sh: #D2CECE; --btn-hi: #636066; --btn-lo: #1C191F;
+  --sec-dot: #B3202E; --deco-a: #B3202E; --deco-b: #1A1618; --dash: #D2CECE;
+  --bg-art: url('../themes/cinema/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/cinema/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(26, 22, 24, 0.06);
+}
+/* 소곤소곤 영화관 (밤) */
+[data-theme="cinema-night"] {
+  color-scheme: dark;
+  --bg: #0E0B0C; --surface: #1A1718; --raised: #262324; --input-bg: #1A1718;
+  --text: #F8F2F0; --sub: #C9C4C2; --faint: #595555; --line: #353233;
+  --divider: #353233; --primary: #F2ECE2; --primary-edge: #F2ECE2; --on-primary: #1A1618;
+  --secondary: #211F1F; --accent: #E8DCCF; --strong: #F2ECE2; --icon: #C9C4C2;
+  --tab-bg: #1A1718; --tab-active: #F7F3EC; --tab-inactive: #C9C4C2; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #9CCAF0; --her-ink: #0A0808;
+  --me: #F2C14E; --me-ink: #0A0808; --both: #A6D8B8; --both-ink: #0A0808;
+  --tint: #3A1418; --tint-text: #FFB8BE; --today: #F8F2F0; --on-today: #1A1718;
+  --lv-full: #F2ECE2; --lv-full-text: #0A0808; --lv-half: #524E4C;
+  --lv-half-text: #F8F2F0; --empty: #262324; --empty-text: #C9C4C2; --switch-knob: #1A1618;
+  --scrim: rgba(7, 6, 6, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F8F2F0;
+  --toast-fg: #0A0808; --toast-shadow: 0 4px 0 #070606; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #7A6266; --sh: #070606; --btn-hi: #F7F3EC; --btn-lo: #BDB8B0;
+  --sec-dot: #F2C14E; --deco-a: #2A0E12; --deco-b: #B3202E; --dash: #353233;
+  --bg-art: url('../themes/cinema/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/cinema/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -1069,7 +1187,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"], [data-theme="airport-night"], [data-theme="amusement-park-night"], [data-theme="camping-night"], [data-theme="new-york-night"], [data-theme="sydney-night"], [data-theme="bali-night"], [data-theme="cairo-night"], [data-theme="guanajuato-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"], [data-theme="airport-night"], [data-theme="amusement-park-night"], [data-theme="camping-night"], [data-theme="new-york-night"], [data-theme="sydney-night"], [data-theme="bali-night"], [data-theme="cairo-night"], [data-theme="guanajuato-night"], [data-theme="under-sea-night"], [data-theme="safari-night"], [data-theme="cinema-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }

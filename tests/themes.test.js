@@ -5,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const T = require('../js/themes.js');
 
-const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas', 'spring-picnic', 'summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping', 'new-york', 'sydney', 'bali', 'cairo', 'guanajuato'];
+const IDS = ['soft-pastel', 'cosmic-dream', 'ocean-breeze', 'forest-diary', 'vintage-film', 'blue-hour', 'golden-hour', 'sakura-dream', 'midnight-noir', 'arctic-frost', 'chocolate-noir', 'roast-nuts', 'winter-knit', 'harvest', 'winter-snack', 'merry-xmas', 'spring-picnic', 'summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping', 'new-york', 'sydney', 'bali', 'cairo', 'guanajuato', 'under-sea', 'safari', 'cinema'];
 // 화면에 다는 판 id — 낮 · 밤 판이 있는 테마는 판 둘 (11/19 겨울 도트 테마)
-const BOARDS = IDS.concat(['winter-snack-night', 'merry-xmas-night', 'spring-picnic-night', 'summer-sea-night', 'autumn-forest-night', 'observatory-night', 'train-trip-night', 'tennis-court-night', 'porto-night', 'prague-night', 'tuscany-night', 'airport-night', 'amusement-park-night', 'camping-night', 'new-york-night', 'sydney-night', 'bali-night', 'cairo-night', 'guanajuato-night']);
+const BOARDS = IDS.concat(['winter-snack-night', 'merry-xmas-night', 'spring-picnic-night', 'summer-sea-night', 'autumn-forest-night', 'observatory-night', 'train-trip-night', 'tennis-court-night', 'porto-night', 'prague-night', 'tuscany-night', 'airport-night', 'amusement-park-night', 'camping-night', 'new-york-night', 'sydney-night', 'bali-night', 'cairo-night', 'guanajuato-night', 'under-sea-night', 'safari-night', 'cinema-night']);
 const css = fs.readFileSync(path.join(__dirname, '../styles/tokens.css'), 'utf8');
 const appCss = fs.readFileSync(path.join(__dirname, '../styles/app.css'), 'utf8');
 
