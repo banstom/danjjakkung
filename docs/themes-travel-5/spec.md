@@ -50,4 +50,12 @@
 - `design/mockups/chosen/themes-travel-5/screens/` — 테마마다 4장(전체 낮 · 전체 밤 · 할 일 끝 S3 · 결산 표지 밤 S4) + 마지막 그림 · 장식. 같은 폴더 html은 브라우저로 열림 (글꼴은 시험용)
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 목업에 없던 칸은 AO1 과 같은 규칙: --input-bg · --tab-bg · --on-today = --surface, --divider = --line, --icon · --tab-inactive = --sub, --lv-half-text = --text, --lv-full-text = --me-ink, --switch-knob = 낮 --surface · 밤 --on-primary, --scrim · --shadow · --lift · --toast-shadow 는 봄소풍 식(낮: 글자 · 외곽선 rgba, 밤: --sh · 검정), 토마토 두 색은 봄소풍 낮 · 밤 값
+- 바탕 체크 --checker = 장식 CSS 의 체크 rgba, 그림 · 머리 장식은 토큰(--bg-art · --head-art · --head-h 42/60px · --head-w 72px)으로 — styles/pixel.css 는 손대지 않음
+- 시드니 밤 --both: 토큰 파일 #A6D8B8 → spec 1 · 5절 「낮 · 밤 같음」대로 낮과 같은 유칼립투스 #A6D0B0 (함께 글자 대비 그대로 통과)
+- 대비 시험(tests/themes.test.js)을 맞추려고 조금 바꾼 값: 5판 낮 --warn #C62F3A → #C22E38 (--raised 위 4.5:1 — 4.40~4.44 였음)
+- 대비 시험을 맞추려고 조금 바꾼 값: new-york --lv-full-text #1A2022 → #121618, sydney --lv-full-text #241D1B → #1F1917 (달력 꽉 찬 칸 글자 4.13 · 4.31 이었음)
+- 뉴욕 낮 · 발리 낮은 버튼 글자가 진해서 단짝 영수증 지우기 확인 버튼(--warn 바탕)에 --on-warn = 그 판 --surface 를 더함 (테니스 · 공항 낮과 같음)
+- 사람 색 후보 순서: 앞 둘 = 짝꿍(--her) · 나(--me), 그다음 함께, 그다음 spec 표 순서. 화면 읽기용 색 이름은 처음 나온 색만 더함 — 이미 있던 색(#F2C14E 「트램 노랑」 등)은 옛 이름으로 읽힘
+- 규칙: validColors 는 테마 id 칸을 검사 → 5개 id 를 hasOnly · validPair 에 더함 (색 값 목록은 따로 없음). 배포는 FIN2 에서 한 번
+- 시험: tests/themes-2026-11.test.js NEW 표에 5테마 (A1~A9 + 밤 판 · 빨강) · tests/themes.test.js 테마 목록

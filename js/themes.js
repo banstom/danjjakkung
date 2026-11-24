@@ -62,7 +62,18 @@
     { id: 'amusement-park', group: 'outing', name: '빙글빙글 놀이공원', ko: '빙글빙글 놀이공원', desc: '사탕 줄무늬 천막과 불 켜진 전구', dark: false, skin: 'pixel',
       modes: { light: 'amusement-park', dark: 'amusement-park-night' }, tags: ['NEW'] },
     { id: 'camping', group: 'outing', name: '타닥타닥 캠핑', ko: '타닥타닥 캠핑', desc: '소나무 숲과 모닥불 별밤', dark: false, skin: 'pixel',
-      modes: { light: 'camping', dark: 'camping-night' }, tags: ['NEW'] }
+      modes: { light: 'camping', dark: 'camping-night' }, tags: ['NEW'] },
+    // 여행 5 업데이트 (11/24, docs/themes-travel-5) — 도트 테마, 낮 · 밤 판
+    { id: 'new-york', group: 'travel', name: '우뚝우뚝 뉴욕', ko: '우뚝우뚝 뉴욕', desc: '마천루 줄과 불 켜진 창문 · 노란 택시', dark: false, skin: 'pixel',
+      modes: { light: 'new-york', dark: 'new-york-night' }, tags: ['NEW'] },
+    { id: 'sydney', group: 'travel', name: '깡충깡충 시드니', ko: '깡충깡충 시드니', desc: '오페라하우스 돛과 하버 물결 · 남십자성', dark: false, skin: 'pixel',
+      modes: { light: 'sydney', dark: 'sydney-night' }, tags: ['NEW'] },
+    { id: 'bali', group: 'travel', name: '느긋느긋 발리', ko: '느긋느긋 발리', desc: '갈라진 사원 문과 프랑지파니 · 정글 횃불', dark: false, skin: 'pixel',
+      modes: { light: 'bali', dark: 'bali-night' }, tags: ['NEW'] },
+    { id: 'cairo', group: 'travel', name: '사락사락 카이로', ko: '사락사락 카이로', desc: '피라미드 줄과 모래 · 사막 달빛', dark: false, skin: 'pixel',
+      modes: { light: 'cairo', dark: 'cairo-night' }, tags: ['NEW'] },
+    { id: 'guanajuato', group: 'travel', name: '팔랑팔랑 과나후아토', ko: '팔랑팔랑 과나후아토', desc: '줄에 매단 파펠 피카도와 색색 집', dark: false, skin: 'pixel',
+      modes: { light: 'guanajuato', dark: 'guanajuato-night' }, tags: ['NEW'] }
   ];
   // 테마 시트 묶음 (11/23 C안 · 11/24 TS2 고침 — 여행 · 도시를 여행 하나로, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
@@ -118,7 +129,12 @@
     'tuscany': { ink: '#262618', both: '#A9BC6E', colors: ['#E0906E', '#F2C94C', '#A9BC6E', '#F2B8C6', '#C9E08A', '#C4AEE0', '#9CC4E4', '#E2CFA6'] },
     'airport': { ink: '#1C2028', both: '#A6D8B8', colors: ['#F2A07E', '#9CCAF0', '#A6D8B8', '#F2C230', '#BBAEE6', '#C9D1DC', '#F2C08E', '#F0AEC0'] },
     'amusement-park': { ink: '#2A1622', both: '#8ED3C4', colors: ['#F29AB8', '#F2CE5A', '#8ED3C4', '#9CC8EA', '#C6AEE6', '#E2B47A', '#F8C4E4', '#F2A66A'] },
-    'camping': { ink: '#24201C', both: '#9DB87A', colors: ['#E58A64', '#F2C14E', '#9DB87A', '#9CC4E4', '#F0E2C8', '#F29A4E', '#C0AEDC', '#B8CC8A'] }
+    'camping': { ink: '#24201C', both: '#9DB87A', colors: ['#E58A64', '#F2C14E', '#9DB87A', '#9CC4E4', '#F0E2C8', '#F29A4E', '#C0AEDC', '#B8CC8A'] },
+    'new-york': { ink: '#1A2022', both: '#9CCAF0', colors: ['#F2A07E', '#F2C14E', '#9CCAF0', '#9ED6C4', '#E2B47A', '#C0AEE6', '#F5D06A', '#F0AEC0'] },
+    'sydney': { ink: '#241D1B', both: '#A6D0B0', colors: ['#9CCAF0', '#F2C14E', '#A6D0B0', '#F2A07E', '#D9A878', '#E8E4DE', '#C0AEE6', '#7FC4E0'] },
+    'bali': { ink: '#241F16', both: '#B8D88A', colors: ['#8ED3C4', '#F2A0B8', '#B8D88A', '#F2C14E', '#E2C08E', '#9CCAF0', '#F2A66A', '#C6AEE6'] },
+    'cairo': { ink: '#251F13', both: '#8ED3C4', colors: ['#F2A07E', '#9CCAF0', '#8ED3C4', '#F2C86A', '#D9A878', '#B8CC8A', '#A8B8F0', '#F0AEC0'] },
+    'guanajuato': { ink: '#251A1F', both: '#9CCAF0', colors: ['#7FCFC0', '#F2C14E', '#9CCAF0', '#F59AC8', '#F2A66A', '#C6AEE6', '#A8CC8A', '#F2D48A'] }
   };
   var COLOR_NAMES = {}; // 화면 읽기 프로그램용 짧은 이름
   [['#E59BBA','장밋빛'],['#A9A2EE','라벤더'],['#F4A7A3','코랄'],['#F5C58A','살구'],['#E8D27A','버터'],['#9FD3B5','민트'],['#8EC5E8','하늘'],['#C7A4E0','라일락'],
@@ -141,7 +157,8 @@
    ['#F2CE5A','레몬'],['#F2917D','산호'],['#7DC9BC','민트'],['#7FB8E0','하늘'],['#EE8A8A','수박'],['#E3C48D','모래'],['#B5D67A','라임'],['#B9A6E6','라벤더'],['#EBC04F','은행'],['#DE7A52','단풍'],['#A6B46C','이끼'],['#EE9A4F','홍시'],['#C49A6C','도토리'],['#C7A6D9','들국화'],['#8FB3D9','가을 하늘'],['#D9C7A0','갈대'], // 여름 · 가을 업데이트
    ['#E9A3BC','노을 분홍'],['#9EC3EC','새벽 하늘'],['#9FD8C8','민트 별'],['#F2B896','복숭아'],['#EDE3C4','달빛'],['#A8D99A','오로라'],['#DE8A7E','연벽돌'],['#86C1B4','연청록'],['#AED8E6','창문 하늘'],['#EADBB8','크림'],['#B5CF8A','들판 연두'],['#C3AEDF','라일락'],['#EFA066','귤'], // 천문대 · 기차 업데이트
    ['#F2D45C','공 노랑'],['#F29C7E','코랄'],['#8CC9A0','민트'],['#C9E04A','연두'],['#9CC8EA','하늘'],['#BFAEE6','라벤더'],['#F0A0A8','딸기'],['#E6CFA0','모래'],['#F2C14E','트램 노랑'],['#EE9A6E','산호'],['#8FB5E8','타일 하늘'],['#A9C9A0','세이지'],['#F0A8B4','분홍 집'],['#B8A8E0','연보라'],['#EAD9B4','크림'],['#9ED6C8','민트'],['#E8BE55','금빛'],['#E08A6A','연주홍'],['#9DB0C8','슬레이트 하늘'],['#E8A8B8','연분홍'],['#A8BE88','이끼'],['#C0B0DC','라일락'],['#DCC8A0','모래'],['#8EC8C0','청록'],['#F2C94C','해바라기'],['#E0906E','테라코타'],['#A9BC6E','올리브'],['#F2B8C6','젤라토 분홍'],['#C9E08A','피스타치오'],['#C4AEE0','라벤더'],['#9CC4E4','하늘'],['#E2CFA6','돌 베이지'], // 테니스 · 도시 업데이트
-   ['#9CCAF0','하늘'],['#F2A07E','코랄'],['#A6D8B8','민트'],['#F2C230','안내판 노랑'],['#BBAEE6','라벤더'],['#C9D1DC','구름 회색'],['#F2C08E','살구'],['#F0AEC0','연분홍'],['#F29AB8','사탕 분홍'],['#8ED3C4','민트'],['#C6AEE6','라벤더'],['#E2B47A','츄러스'],['#F8C4E4','솜사탕'],['#F2A66A','귤'],['#E58A64','텐트'],['#9DB87A','이끼'],['#F0E2C8','마시멜로'],['#F29A4E','모닥불'],['#C0AEDC','라벤더'],['#B8CC8A','솔잎'] // 공항 · 나들이 업데이트
+   ['#9CCAF0','하늘'],['#F2A07E','코랄'],['#A6D8B8','민트'],['#F2C230','안내판 노랑'],['#BBAEE6','라벤더'],['#C9D1DC','구름 회색'],['#F2C08E','살구'],['#F0AEC0','연분홍'],['#F29AB8','사탕 분홍'],['#8ED3C4','민트'],['#C6AEE6','라벤더'],['#E2B47A','츄러스'],['#F8C4E4','솜사탕'],['#F2A66A','귤'],['#E58A64','텐트'],['#9DB87A','이끼'],['#F0E2C8','마시멜로'],['#F29A4E','모닥불'],['#C0AEDC','라벤더'],['#B8CC8A','솔잎'], // 공항 · 나들이 업데이트
+   ['#9ED6C4','여신상'],['#C0AEE6','라벤더'],['#F5D06A','창문 불빛'],['#A6D0B0','유칼립투스'],['#D9A878','쿼카'],['#E8E4DE','돛 흰색'],['#7FC4E0','파도'],['#F2A0B8','프랑지파니'],['#B8D88A','계단논'],['#E2C08E','라탄'],['#F2C86A','모래'],['#A8B8F0','라피스'],['#7FCFC0','민트 벽'],['#F59AC8','핑크'],['#A8CC8A','선인장'],['#F2D48A','타코'] // 여행 5 업데이트
   ].forEach(function (p) { COLOR_NAMES[p[0]] = p[1]; });
   // 도트 테마 그림 자리 S1~S4 (docs/themes-winter/spec.md 6절). w · h = 원본 PNG 크기(크림 테두리 포함), x = 정수 배율.
   // 낮 · 밤 판이 같은 그림. 그림이 없는 테마는 자리 자체를 그리지 않는다.
@@ -202,6 +219,26 @@
     'camping': {
       s1: { w: 34, h: 21, x: 2, alt: '텐트' }, s2: { w: 32, h: 24, x: 2, alt: '마시멜로 꼬치' },
       s3: { w: 25, h: 29, x: 4, alt: '모닥불' }, s4: { w: 38, h: 32, x: 4, alt: '텐트 · 소나무 · 랜턴' }
+    },
+    'new-york': {
+      s1: { w: 24, h: 44, x: 2, alt: '엠파이어 스테이트 빌딩' }, s2: { w: 41, h: 32, x: 2, alt: '베이글과 프레첼' },
+      s3: { w: 38, h: 25, x: 4, alt: '노란 택시' }, s4: { w: 36, h: 37, x: 4, alt: '자유의 여신상과 스카이라인' }
+    },
+    'sydney': {
+      s1: { w: 27, h: 34, x: 2, alt: '쿼카' }, s2: { w: 40, h: 29, x: 2, alt: '초코 비스킷과 미트파이' },
+      s3: { w: 34, h: 39, x: 4, alt: '캥거루' }, s4: { w: 42, h: 28, x: 4, alt: '오페라하우스와 하버브리지' }
+    },
+    'bali': {
+      s1: { w: 40, h: 37, x: 2, alt: '갈라진 사원 문과 프랑지파니' }, s2: { w: 40, h: 32, x: 2, alt: '나시고렝과 코코넛' },
+      s3: { w: 38, h: 38, x: 4, alt: '야자수 해먹' }, s4: { w: 37, h: 38, x: 4, alt: '계단논과 사원' }
+    },
+    'cairo': {
+      s1: { w: 37, h: 31, x: 2, alt: '피라미드와 해' }, s2: { w: 36, h: 31, x: 2, alt: '코샤리와 대추야자' },
+      s3: { w: 40, h: 35, x: 4, alt: '낙타' }, s4: { w: 39, h: 36, x: 4, alt: '피라미드와 나일 강 돛단배' }
+    },
+    'guanajuato': {
+      s1: { w: 24, h: 34, x: 2, alt: '선인장 화분' }, s2: { w: 38, h: 24, x: 2, alt: '타코 둘' },
+      s3: { w: 42, h: 43, x: 4, alt: '별 피냐타' }, s4: { w: 32, h: 32, x: 4, alt: '색색 집 언덕과 성당 돔' }
     }
   };
   var LIGHT_DEFAULT = 'soft-pastel';

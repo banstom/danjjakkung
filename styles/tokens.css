@@ -866,6 +866,202 @@
   --bg-art: url('../themes/camping/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/camping/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }
 
+/* ── 여행 5 업데이트 (11/24, docs/themes-travel-5) — 도트 테마 낮 · 밤 판 ──
+   기획 토큰 파일 값 + 봄소풍 판에만 있던 칸은 같은 계열로 채움 (그 폴더 spec 「바뀐 것」) */
+
+/* 우뚝우뚝 뉴욕 (낮) */
+[data-theme="new-york"] {
+  color-scheme: light;
+  --bg: #EEF2F2; --surface: #FAFBFB; --raised: #E4E8E8; --input-bg: #FAFBFB;
+  --text: #1E2628; --sub: #5C6365; --faint: #ABB1B1; --line: #D5DADA;
+  --divider: #D5DADA; --primary: #6FAE9C; --primary-edge: #6FAE9C; --on-primary: #10241E;
+  --secondary: #E5EDEC; --accent: #3E7F72; --strong: #2E6A5E; --icon: #5C6365;
+  --tab-bg: #FAFBFB; --tab-active: #2E6A5E; --tab-inactive: #5C6365; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F2A07E; --her-ink: #1A2022;
+  --me: #F2C14E; --me-ink: #1A2022; --both: #9CCAF0; --both-ink: #1A2022;
+  --tint: #DCEEE8; --tint-text: #1E4A40; --today: #1E2628; --on-today: #FAFBFB;
+  --lv-full: #4E8A7E; --lv-full-text: #121618; --lv-half: #D1E1DD;
+  --lv-half-text: #1E2628; --empty: #E2E6E6; --empty-text: #545B5D; --switch-knob: #FAFBFB;
+  --scrim: rgba(30, 38, 40, 0.45); --shadow: 0 -8px 24px rgba(34, 48, 46, 0.12); --lift: 0 1px 3px rgba(34, 48, 46, 0.18); --toast-bg: #1E2628;
+  --toast-fg: #FAFBFB; --toast-shadow: 0 4px 0 #CDD1D2; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #22302E; --sh: #CDD1D2; --btn-hi: #97C5B8; --btn-lo: #528173;
+  --sec-dot: #F2C230; --deco-a: #5A6670; --deco-b: #F2C230; --dash: #CDD1D2;
+  --bg-art: url('../themes/new-york/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/new-york/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(78, 138, 126, 0.06);
+  --on-warn: #FAFBFB; /* 경고 버튼 글자 — --on-primary 가 진한 판이라 카드색 */
+}
+/* 우뚝우뚝 뉴욕 (밤) */
+[data-theme="new-york-night"] {
+  color-scheme: dark;
+  --bg: #10141E; --surface: #1C2029; --raised: #282C34; --input-bg: #1C2029;
+  --text: #F2F4F8; --sub: #C5C7CC; --faint: #585C64; --line: #363A42;
+  --divider: #363A42; --primary: #F5D06A; --primary-edge: #F5D06A; --on-primary: #2A2006;
+  --secondary: #232730; --accent: #F2C650; --strong: #F5D06A; --icon: #C5C7CC;
+  --tab-bg: #1C2029; --tab-active: #F8E09E; --tab-inactive: #C5C7CC; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F2A07E; --her-ink: #0B0E15;
+  --me: #F2C14E; --me-ink: #0B0E15; --both: #9CCAF0; --both-ink: #0B0E15;
+  --tint: #2E2A1C; --tint-text: #FAE2A0; --today: #F2F4F8; --on-today: #1C2029;
+  --lv-full: #8FD6C4; --lv-full-text: #0B0E15; --lv-half: #364E50;
+  --lv-half-text: #F2F4F8; --empty: #282C34; --empty-text: #C5C7CC; --switch-knob: #2A2006;
+  --scrim: rgba(8, 10, 15, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F2F4F8;
+  --toast-fg: #0B0E15; --toast-shadow: 0 4px 0 #080A0F; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #66708A; --sh: #080A0F; --btn-hi: #F8E09E; --btn-lo: #BFA253;
+  --sec-dot: #8FD6C4; --deco-a: #1E2434; --deco-b: #F5D06A; --dash: #363A42;
+  --bg-art: url('../themes/new-york/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/new-york/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 깡충깡충 시드니 (낮) */
+[data-theme="sydney"] {
+  color-scheme: light;
+  --bg: #F8F1EC; --surface: #FDFBF9; --raised: #EEE7E2; --input-bg: #FDFBF9;
+  --text: #2A2220; --sub: #68605D; --faint: #B6AFAB; --line: #DFD8D4;
+  --divider: #DFD8D4; --primary: #1E6FA8; --primary-edge: #1E6FA8; --on-primary: #FFFFFF;
+  --secondary: #E9E8E7; --accent: #3D7FB8; --strong: #1A5F90; --icon: #68605D;
+  --tab-bg: #FDFBF9; --tab-active: #1A5F90; --tab-inactive: #68605D; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #9CCAF0; --her-ink: #241D1B;
+  --me: #F2C14E; --me-ink: #241D1B; --both: #A6D0B0; --both-ink: #241D1B;
+  --tint: #DCEAF6; --tint-text: #18507C; --today: #2A2220; --on-today: #FDFBF9;
+  --lv-full: #4E8A9E; --lv-full-text: #1F1917; --lv-half: #D1E1E6;
+  --lv-half-text: #2A2220; --empty: #ECE5E0; --empty-text: #605855; --switch-knob: #FDFBF9;
+  --scrim: rgba(42, 34, 32, 0.45); --shadow: 0 -8px 24px rgba(58, 42, 38, 0.12); --lift: 0 1px 3px rgba(58, 42, 38, 0.18); --toast-bg: #2A2220;
+  --toast-fg: #FDFBF9; --toast-shadow: 0 4px 0 #D7D0CB; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3A2A26; --sh: #D7D0CB; --btn-hi: #5D97C0; --btn-lo: #16527C;
+  --sec-dot: #3D7FB8; --deco-a: #3D7FB8; --deco-b: #FFFFFF; --dash: #D7D0CB;
+  --bg-art: url('../themes/sydney/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/sydney/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(61, 127, 184, 0.06);
+}
+/* 깡충깡충 시드니 (밤) */
+[data-theme="sydney-night"] {
+  color-scheme: dark;
+  --bg: #0F1626; --surface: #1B2231; --raised: #272D3C; --input-bg: #1B2231;
+  --text: #F2F4FA; --sub: #C5C8D0; --faint: #585D6A; --line: #353B49;
+  --divider: #353B49; --primary: #F7A98A; --primary-edge: #F7A98A; --on-primary: #2A1208;
+  --secondary: #222937; --accent: #F59A78; --strong: #F7A98A; --icon: #C5C8D0;
+  --tab-bg: #1B2231; --tab-active: #FAC7B3; --tab-inactive: #C5C8D0; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #9CCAF0; --her-ink: #0A0F1B;
+  --me: #F2C14E; --me-ink: #0A0F1B; --both: #A6D0B0; --both-ink: #0A0F1B;
+  --tint: #2E2430; --tint-text: #FFC8B0; --today: #F2F4FA; --on-today: #1B2231;
+  --lv-full: #9CCAF0; --lv-full-text: #0A0F1B; --lv-half: #394C63;
+  --lv-half-text: #F2F4FA; --empty: #272D3C; --empty-text: #C5C8D0; --switch-knob: #2A1208;
+  --scrim: rgba(8, 11, 19, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F2F4FA;
+  --toast-fg: #0A0F1B; --toast-shadow: 0 4px 0 #080B13; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #64708E; --sh: #080B13; --btn-hi: #FAC7B3; --btn-lo: #C1846C;
+  --sec-dot: #F7A98A; --deco-a: #1E2E4A; --deco-b: #F2C14E; --dash: #353B49;
+  --bg-art: url('../themes/sydney/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/sydney/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 느긋느긋 발리 (낮) */
+[data-theme="bali"] {
+  color-scheme: light;
+  --bg: #F6F1E6; --surface: #FCFBF8; --raised: #ECE7DC; --input-bg: #FCFBF8;
+  --text: #2A241A; --sub: #676257; --faint: #B5AFA5; --line: #DED8CE;
+  --divider: #DED8CE; --primary: #C9A26A; --primary-edge: #C9A26A; --on-primary: #2A2010;
+  --secondary: #F3EBDD; --accent: #9A7440; --strong: #7A5A2A; --icon: #676257;
+  --tab-bg: #FCFBF8; --tab-active: #7A5A2A; --tab-inactive: #676257; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #8ED3C4; --her-ink: #241F16;
+  --me: #F2A0B8; --me-ink: #241F16; --both: #B8D88A; --both-ink: #241F16;
+  --tint: #F2E6CC; --tint-text: #5A4218; --today: #2A241A; --on-today: #FCFBF8;
+  --lv-full: #6A9A4E; --lv-full-text: #241F16; --lv-half: #D8E5D1;
+  --lv-half-text: #2A241A; --empty: #EAE5DA; --empty-text: #5F594F; --switch-knob: #FCFBF8;
+  --scrim: rgba(42, 36, 26, 0.45); --shadow: 0 -8px 24px rgba(58, 48, 34, 0.12); --lift: 0 1px 3px rgba(58, 48, 34, 0.18); --toast-bg: #2A241A;
+  --toast-fg: #FCFBF8; --toast-shadow: 0 4px 0 #D5D0C5; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3A3022; --sh: #D5D0C5; --btn-hi: #D8BC94; --btn-lo: #95784E;
+  --sec-dot: #E07AA0; --deco-a: #4E7A3E; --deco-b: #FFFFFF; --dash: #D5D0C5;
+  --bg-art: url('../themes/bali/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/bali/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(106, 154, 78, 0.06);
+  --on-warn: #FCFBF8; /* 경고 버튼 글자 — --on-primary 가 진한 판이라 카드색 */
+}
+/* 느긋느긋 발리 (밤) */
+[data-theme="bali-night"] {
+  color-scheme: dark;
+  --bg: #0F1812; --surface: #1B241E; --raised: #272F2A; --input-bg: #1B241E;
+  --text: #F2F5EC; --sub: #C5C9C0; --faint: #585F58; --line: #353D38;
+  --divider: #353D38; --primary: #F2B866; --primary-edge: #F2B866; --on-primary: #2A1A06;
+  --secondary: #222A25; --accent: #F0AC54; --strong: #F2B866; --icon: #C5C9C0;
+  --tab-bg: #1B241E; --tab-active: #F7D19C; --tab-inactive: #C5C9C0; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #8ED3C4; --her-ink: #0A110D;
+  --me: #F2A0B8; --me-ink: #0A110D; --both: #B8D88A; --both-ink: #0A110D;
+  --tint: #2E2A18; --tint-text: #FFD8A0; --today: #F2F5EC; --on-today: #1B241E;
+  --lv-full: #B8D88A; --lv-full-text: #0A110D; --lv-half: #425236;
+  --lv-half-text: #F2F5EC; --empty: #272F2A; --empty-text: #C5C9C0; --switch-knob: #2A1A06;
+  --scrim: rgba(8, 12, 9, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F2F5EC;
+  --toast-fg: #0A110D; --toast-shadow: 0 4px 0 #080C09; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #62786A; --sh: #080C09; --btn-hi: #F7D19C; --btn-lo: #BD9050;
+  --sec-dot: #F2B866; --deco-a: #1C3424; --deco-b: #F2B866; --dash: #353D38;
+  --bg-art: url('../themes/bali/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/bali/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 사락사락 카이로 (낮) */
+[data-theme="cairo"] {
+  color-scheme: light;
+  --bg: #F7F1E6; --surface: #FDFBF8; --raised: #EDE7DC; --input-bg: #FDFBF8;
+  --text: #2C2416; --sub: #696254; --faint: #B6AFA3; --line: #DFD8CD;
+  --divider: #DFD8CD; --primary: #8C6420; --primary-edge: #8C6420; --on-primary: #FFFBF2;
+  --secondary: #F0E7D8; --accent: #A87A2A; --strong: #6E4E14; --icon: #696254;
+  --tab-bg: #FDFBF8; --tab-active: #6E4E14; --tab-inactive: #696254; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #F2A07E; --her-ink: #251F13;
+  --me: #9CCAF0; --me-ink: #251F13; --both: #8ED3C4; --both-ink: #251F13;
+  --tint: #F2E4C4; --tint-text: #5A4010; --today: #2C2416; --on-today: #FDFBF8;
+  --lv-full: #A88A3A; --lv-full-text: #251F13; --lv-half: #E8E1CC;
+  --lv-half-text: #2C2416; --empty: #EBE5DA; --empty-text: #61594C; --switch-knob: #FDFBF8;
+  --scrim: rgba(44, 36, 22, 0.45); --shadow: 0 -8px 24px rgba(58, 46, 24, 0.12); --lift: 0 1px 3px rgba(58, 46, 24, 0.18); --toast-bg: #2C2416;
+  --toast-fg: #FDFBF8; --toast-shadow: 0 4px 0 #D7D0C5; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3A2E18; --sh: #D7D0C5; --btn-hi: #AC8F5E; --btn-lo: #684A18;
+  --sec-dot: #2F4C9A; --deco-a: #C9A24A; --deco-b: #2F4C9A; --dash: #D7D0C5;
+  --bg-art: url('../themes/cairo/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/cairo/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(168, 122, 42, 0.06);
+}
+/* 사락사락 카이로 (밤) */
+[data-theme="cairo-night"] {
+  color-scheme: dark;
+  --bg: #16120C; --surface: #221E18; --raised: #2D2A24; --input-bg: #221E18;
+  --text: #F8F2E6; --sub: #CBC5BA; --faint: #5E5A52; --line: #3B3833;
+  --divider: #3B3833; --primary: #F2C86A; --primary-edge: #F2C86A; --on-primary: #2A1E06;
+  --secondary: #29251F; --accent: #F0BE52; --strong: #F2C86A; --icon: #CBC5BA;
+  --tab-bg: #221E18; --tab-active: #F7DB9E; --tab-inactive: #CBC5BA; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #F2A07E; --her-ink: #0F0D08;
+  --me: #9CCAF0; --me-ink: #0F0D08; --both: #8ED3C4; --both-ink: #0F0D08;
+  --tint: #33291A; --tint-text: #FFE0A0; --today: #F8F2E6; --on-today: #221E18;
+  --lv-full: #F2C86A; --lv-full-text: #0F0D08; --lv-half: #584928;
+  --lv-half-text: #F8F2E6; --empty: #2D2A24; --empty-text: #CBC5BA; --switch-knob: #2A1E06;
+  --scrim: rgba(11, 9, 6, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F8F2E6;
+  --toast-fg: #0F0D08; --toast-shadow: 0 4px 0 #0B0906; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #7E7058; --sh: #0B0906; --btn-hi: #F7DB9E; --btn-lo: #BD9C53;
+  --sec-dot: #9DB4F2; --deco-a: #2E2618; --deco-b: #F2C86A; --dash: #3B3833;
+  --bg-art: url('../themes/cairo/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/cairo/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+/* 팔랑팔랑 과나후아토 (낮) */
+[data-theme="guanajuato"] {
+  color-scheme: light;
+  --bg: #FAF0F2; --surface: #FEFAFB; --raised: #F0E6E8; --input-bg: #FEFAFB;
+  --text: #2C1E24; --sub: #6A5D62; --faint: #B8ADB0; --line: #E1D7D9;
+  --divider: #E1D7D9; --primary: #C21F6A; --primary-edge: #C21F6A; --on-primary: #FFFFFF;
+  --secondary: #F6E1E8; --accent: #D03C80; --strong: #A81A5C; --icon: #6A5D62;
+  --tab-bg: #FEFAFB; --tab-active: #A81A5C; --tab-inactive: #6A5D62; --success: #2E7D4F;
+  --warning: #9A5B00; --warn: #C22E38; --her: #7FCFC0; --her-ink: #251A1F;
+  --me: #F2C14E; --me-ink: #251A1F; --both: #9CCAF0; --both-ink: #251A1F;
+  --tint: #FBDCE8; --tint-text: #8A1650; --today: #2C1E24; --on-today: #FEFAFB;
+  --lv-full: #3E9A8A; --lv-full-text: #251A1F; --lv-half: #CDE5E1;
+  --lv-half-text: #2C1E24; --empty: #EEE3E6; --empty-text: #62555A; --switch-knob: #FEFAFB;
+  --scrim: rgba(44, 30, 36, 0.45); --shadow: 0 -8px 24px rgba(58, 30, 44, 0.12); --lift: 0 1px 3px rgba(58, 30, 44, 0.18); --toast-bg: #2C1E24;
+  --toast-fg: #FEFAFB; --toast-shadow: 0 4px 0 #D9CED1; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
+  --ol: #3A1E2C; --sh: #D9CED1; --btn-hi: #D35E94; --btn-lo: #90174E;
+  --sec-dot: #2E9AA0; --deco-a: #F29A4E; --deco-b: #2E9AA0; --dash: #D9CED1;
+  --bg-art: url('../themes/guanajuato/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/guanajuato/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(194, 31, 106, 0.06);
+}
+/* 팔랑팔랑 과나후아토 (밤) */
+[data-theme="guanajuato-night"] {
+  color-scheme: dark;
+  --bg: #160E1A; --surface: #221A25; --raised: #2D2631; --input-bg: #221A25;
+  --text: #FAF0F6; --sub: #CCC3CA; --faint: #5F5660; --line: #3B353F;
+  --divider: #3B353F; --primary: #F59AC8; --primary-edge: #F59AC8; --on-primary: #2A0E1E;
+  --secondary: #29212C; --accent: #F28AC0; --strong: #F59AC8; --icon: #CCC3CA;
+  --tab-bg: #221A25; --tab-active: #F8BDDB; --tab-inactive: #CCC3CA; --success: #5BD08A;
+  --warning: #F2B84B; --warn: #FF7B86; --her: #7FCFC0; --her-ink: #0F0A12;
+  --me: #F2C14E; --me-ink: #0F0A12; --both: #9CCAF0; --both-ink: #0F0A12;
+  --tint: #3A1E30; --tint-text: #FFC8E2; --today: #FAF0F6; --on-today: #221A25;
+  --lv-full: #F59AC8; --lv-full-text: #0F0A12; --lv-half: #59384E;
+  --lv-half-text: #FAF0F6; --empty: #2D2631; --empty-text: #CCC3CA; --switch-knob: #2A0E1E;
+  --scrim: rgba(11, 7, 13, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #FAF0F6;
+  --toast-fg: #0F0A12; --toast-shadow: 0 4px 0 #0B070D; --tomato-green: #8FC07E; --tomato-red: #E2584A;
+  --ol: #80667E; --sh: #0B070D; --btn-hi: #F8BDDB; --btn-lo: #BF789C;
+  --sec-dot: #7FCFC0; --deco-a: #2E1630; --deco-b: #F2C14E; --dash: #3B353F;
+  --bg-art: url('../themes/guanajuato/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/guanajuato/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
+}
+
 /* ── 출출 쿠키 그림 토큰 (docs/eat/spec.md 9절 · 가이드라인 예외 5번) ──
    쿠키 그림(js/eat-cookie-svg.js)에만 쓰는 색 — 토마토(--tomato-*)처럼 화면 글 색이 아니라 대비 검사 없음.
    밝은 판 = 소프트 파스텔에서 고른 금빛, 어두운 판(코스믹 드림 · 미드나잇 누아르 · 도트 밤판) = 코스믹 드림 값. 도트 테마도 일단 같은 값 */
@@ -873,7 +1069,7 @@
   --ck-hi: #FCE6BC; --ck: #F0C27B; --ck-mid: #DDA25B; --ck-dk: #B37435; --ck-ol: #7A4C22;
   --ck-paper: var(--surface);
 }
-[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"], [data-theme="airport-night"], [data-theme="amusement-park-night"], [data-theme="camping-night"] {
+[data-theme="cosmic-dream"], [data-theme="midnight-noir"], [data-theme="winter-snack-night"], [data-theme="merry-xmas-night"], [data-theme="spring-picnic-night"], [data-theme="summer-sea-night"], [data-theme="autumn-forest-night"], [data-theme="observatory-night"], [data-theme="train-trip-night"], [data-theme="tennis-court-night"], [data-theme="porto-night"], [data-theme="prague-night"], [data-theme="tuscany-night"], [data-theme="airport-night"], [data-theme="amusement-park-night"], [data-theme="camping-night"], [data-theme="new-york-night"], [data-theme="sydney-night"], [data-theme="bali-night"], [data-theme="cairo-night"], [data-theme="guanajuato-night"] {
   --ck-hi: #F7DCA6; --ck: #E6B56C; --ck-mid: #C88F4D; --ck-dk: #8E5B2A; --ck-ol: #4A2F17;
   --ck-paper: color-mix(in srgb, var(--text) 90%, var(--raised));
 }

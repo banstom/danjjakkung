@@ -1,5 +1,5 @@
 // 새 도트 테마 (11/23 종합 묶음, docs/themes-2026-11) — 각 폴더 tests.md 자동 시험 A1 ~ A9 를 테마 표 하나로.
-// 단계(SA1 · OT1 · TC1 · AO1)가 들어올 때마다 NEW 표에 그 테마를 더한다.
+// 단계(SA1 · OT1 · TC1 · AO1, 11/24 종합 묶음 2 TR1 · OS1)가 들어올 때마다 NEW 표에 그 테마를 더한다.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -23,7 +23,12 @@ const NEW = [
   { id: 'tuscany', group: 'travel', folder: 'themes-tennis-cities', ko: '살랑살랑 토스카나' },
   { id: 'airport', group: 'travel', folder: 'themes-airport-outing', ko: '둥실둥실 공항' },
   { id: 'amusement-park', group: 'outing', folder: 'themes-airport-outing', ko: '빙글빙글 놀이공원' },
-  { id: 'camping', group: 'outing', folder: 'themes-airport-outing', ko: '타닥타닥 캠핑' }
+  { id: 'camping', group: 'outing', folder: 'themes-airport-outing', ko: '타닥타닥 캠핑' },
+  { id: 'new-york', group: 'travel', folder: 'themes-travel-5', ko: '우뚝우뚝 뉴욕' },
+  { id: 'sydney', group: 'travel', folder: 'themes-travel-5', ko: '깡충깡충 시드니' },
+  { id: 'bali', group: 'travel', folder: 'themes-travel-5', ko: '느긋느긋 발리' },
+  { id: 'cairo', group: 'travel', folder: 'themes-travel-5', ko: '사락사락 카이로' },
+  { id: 'guanajuato', group: 'travel', folder: 'themes-travel-5', ko: '팔랑팔랑 과나후아토' }
 ];
 const boardsOf = (t) => [t.id, t.id + '-night'];
 
