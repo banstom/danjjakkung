@@ -1,4 +1,4 @@
-// 테마 시트 C안 (11/23) — docs/themes-sheet/tests.md 자동 S1 ~ S9
+// 테마 시트 C안 (11/23, 11/24 TS2 표) — docs/themes-sheet/tests.md 자동 S1 ~ S9
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const T = require('../js/themes.js');
@@ -8,14 +8,14 @@ const GROUP_IDS = ['season', 'travel', 'outing', 'basic'];
 // spec 2절 표 (묶음 안 순서) — 아직 안 들어간 테마는 빠지고 순서만 지킴
 const SPEC_ORDER = {
   season: ['spring-picnic', 'summer-sea', 'autumn-forest', 'winter-snack', 'merry-xmas'],
-  travel: ['airport', 'train-trip', 'porto', 'prague', 'tuscany'],
-  outing: ['observatory', 'tennis-court', 'amusement-park', 'camping']
+  travel: ['airport', 'train-trip', 'tuscany', 'bali', 'porto', 'prague', 'new-york', 'sydney', 'cairo', 'guanajuato'],
+  outing: ['observatory', 'tennis-court', 'amusement-park', 'camping', 'under-sea', 'safari', 'cinema']
 };
-// spec 3절 표
+// spec 3절 표 (11/24 판)
 const SPEC_MONTH = {
   1: ['winter-snack', 'observatory'], 2: ['winter-snack', 'train-trip'], 3: ['spring-picnic', 'prague'], 4: ['spring-picnic', 'amusement-park'],
-  5: ['spring-picnic', 'tennis-court'], 6: ['summer-sea', 'airport'], 7: ['summer-sea', 'camping'], 8: ['summer-sea', 'porto'],
-  9: ['autumn-forest', 'tuscany'], 10: ['autumn-forest', 'camping'], 11: ['autumn-forest', 'winter-snack'], 12: ['merry-xmas', 'winter-snack']
+  5: ['spring-picnic', 'tennis-court'], 6: ['summer-sea', 'under-sea'], 7: ['summer-sea', 'bali'], 8: ['summer-sea', 'camping'],
+  9: ['autumn-forest', 'tuscany'], 10: ['autumn-forest', 'safari'], 11: ['autumn-forest', 'cinema'], 12: ['merry-xmas', 'winter-snack']
 };
 const has = (id) => !!T.byId(id);
 

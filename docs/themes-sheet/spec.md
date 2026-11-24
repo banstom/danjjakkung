@@ -60,4 +60,6 @@
 - `aria-controls`는 펼친 줄에만 (접힌 줄이 없는 칸을 가리키지 않게)
 - 시험: `tests/themes-sheet.test.js`(S1~S9, npm test) · `tests/web-themes.js` E(계절 묶음 펼침 · 기본 14장) · `tests/web.js` 테마 고르기는 묶음 줄을 먼저 폄
 (TS2 · 11-24)
-
+- 묶음 표 · 이번 달 표는 js/themes.js GROUPS · MONTHLY 두 곳만 고침 (화면 · 펼침 코드는 그대로). 새 테마 8개는 TR1 · OS1 에서 들어오기 전까지 목록 · 이번 달 칸에서 빠짐
+- 기본 묶음 소제목 「앞 두 이름 외 N」은 11-23 구현 그대로 둠 (11-24 명세에서 그 줄이 빠졌지만 화면 구조는 같다고 해서)
+- 시험: tests/themes-sheet.test.js SPEC_ORDER · SPEC_MONTH 를 11-24 표로

@@ -64,21 +64,21 @@
     { id: 'camping', group: 'outing', name: '타닥타닥 캠핑', ko: '타닥타닥 캠핑', desc: '소나무 숲과 모닥불 별밤', dark: false, skin: 'pixel',
       modes: { light: 'camping', dark: 'camping-night' }, tags: ['NEW'] }
   ];
-  // 테마 시트 묶음 (11/23 C안, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
+  // 테마 시트 묶음 (11/23 C안 · 11/24 TS2 고침 — 여행 · 도시를 여행 하나로, docs/themes-sheet/spec.md 2절) — 묶음 이름 · 순서 · 묶음 안 순서는 여기 한 곳에만.
   // 테마는 THEMES 의 group 칸으로 묶음에 들어간다. order 에 있지만 아직 안 들어간 테마는 그냥 빠지고,
   // order 에 없는 테마는 묶음 끝에 THEMES 순서대로 (기본 묶음은 order 없이 THEMES 순서 그대로).
   var GROUPS = [
     { id: 'season', name: '계절 · 기념일', order: ['spring-picnic', 'summer-sea', 'autumn-forest', 'winter-snack', 'merry-xmas'] },
-    { id: 'travel', name: '여행', order: ['airport', 'train-trip', 'porto', 'prague', 'tuscany'] },
-    { id: 'outing', name: '나들이', order: ['observatory', 'tennis-court', 'amusement-park', 'camping'] },
+    { id: 'travel', name: '여행', order: ['airport', 'train-trip', 'tuscany', 'bali', 'porto', 'prague', 'new-york', 'sydney', 'cairo', 'guanajuato'] },
+    { id: 'outing', name: '나들이', order: ['observatory', 'tennis-court', 'amusement-park', 'camping', 'under-sea', 'safari', 'cinema'] },
     { id: 'basic', name: '기본', order: null }
   ];
-  // 「○월에 어울리는 테마」 (spec 3절, 서울 날짜의 달) — 기획 계정이 정한 표. 아직 안 들어간 테마는 빠진다
+  // 「○월에 어울리는 테마」 (spec 3절 11/24 판, 서울 날짜의 달) — 기획 계정이 정한 표. 아직 안 들어간 테마는 빠진다
   var MONTHLY = {
     1: ['winter-snack', 'observatory'], 2: ['winter-snack', 'train-trip'], 3: ['spring-picnic', 'prague'],
-    4: ['spring-picnic', 'amusement-park'], 5: ['spring-picnic', 'tennis-court'], 6: ['summer-sea', 'airport'],
-    7: ['summer-sea', 'camping'], 8: ['summer-sea', 'porto'], 9: ['autumn-forest', 'tuscany'],
-    10: ['autumn-forest', 'camping'], 11: ['autumn-forest', 'winter-snack'], 12: ['merry-xmas', 'winter-snack']
+    4: ['spring-picnic', 'amusement-park'], 5: ['spring-picnic', 'tennis-court'], 6: ['summer-sea', 'under-sea'],
+    7: ['summer-sea', 'bali'], 8: ['summer-sea', 'camping'], 9: ['autumn-forest', 'tuscany'],
+    10: ['autumn-forest', 'safari'], 11: ['autumn-forest', 'cinema'], 12: ['merry-xmas', 'winter-snack']
   };
   var KEY = 'danjjakkung.theme';
   var MODE_KEY = 'danjjakkung.themeMode';
