@@ -115,7 +115,9 @@ async function main() {
 
   // ── 도트 테마 화면 ──
   // 11/23 새 도트 테마 11개(docs/themes-2026-11)도 낮 · 밤 판마다 같은 점검 — 그 테마 폴더 그림만 받는지도 (A4)
-  const NEW_DOT = ['summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping'];
+  // 11/24 종합 묶음 2(docs/themes-2026-11b): 여행 5 · 나들이 3 더함
+  const NEW_DOT = ['summer-sea', 'autumn-forest', 'observatory', 'train-trip', 'tennis-court', 'porto', 'prague', 'tuscany', 'airport', 'amusement-park', 'camping',
+    'new-york', 'sydney', 'bali', 'cairo', 'guanajuato', 'under-sea', 'safari', 'cinema'];
   const boardList = [['winter-snack', 'light', 'snack-day'], ['winter-snack', 'dark', 'snack-night'], ['merry-xmas', 'light', 'xmas-day'], ['merry-xmas', 'dark', 'xmas-night']]
     .concat(...NEW_DOT.map((id) => [[id, 'light', id + '-day'], [id, 'dark', id + '-night']]));
   for (const [id, mode, tag] of boardList) {
