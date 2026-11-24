@@ -667,17 +667,17 @@
   color-scheme: light;
   --bg: #F3EFE8; --surface: #FFFDF9; --raised: #EBE5DA; --input-bg: #FFFDF9;
   --text: #262A33; --sub: #575D69; --faint: #BDB6A8; --line: #DED6C8;
-  --divider: #DED6C8; --primary: #3F4E66; --primary-edge: #3F4E66; --on-primary: #FFFDF9;
-  --secondary: #E4E6EC; --accent: #5A6A84; --strong: #35435A; --icon: #575D69;
-  --tab-bg: #FFFDF9; --tab-active: #35435A; --tab-inactive: #575D69; --success: #2E7D4F;
+  --divider: #DED6C8; --primary: #A8482A; --primary-edge: #A8482A; --on-primary: #FFFDF9;
+  --secondary: #EEE3DB; --accent: #B85A3A; --strong: #8E3C22; --icon: #575D69;
+  --tab-bg: #FFFDF9; --tab-active: #8E3C22; --tab-inactive: #575D69; --success: #2E7D4F;
   --warning: #9A5B00; --warn: #BE2D37; --her: #E08A6A; --her-ink: #22252C;
   --me: #E8BE55; --me-ink: #22252C; --both: #9DB0C8; --both-ink: #22252C;
-  --tint: #E3E6EE; --tint-text: #33405A; --today: #262A33; --on-today: #FFFDF9;
+  --tint: #F6E2D8; --tint-text: #7A3018; --today: #262A33; --on-today: #FFFDF9;
   --lv-full: #6F829E; --lv-full-text: #16181C; --lv-half: #D8DEE8;
   --lv-half-text: #262A33; --empty: #EBE6DE; --empty-text: #56595F; --switch-knob: #FFFDF9;
   --scrim: rgba(38, 42, 51, 0.45); --shadow: 0 -8px 24px rgba(42, 47, 58, 0.12); --lift: 0 1px 3px rgba(42, 47, 58, 0.18); --toast-bg: #262A33;
   --toast-fg: #FFFDF9; --toast-shadow: 0 4px 0 #D6CDBD; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
-  --ol: #2A2F3A; --sh: #D6CDBD; --btn-hi: #5E6E88; --btn-lo: #2A364A;
+  --ol: #2A2F3A; --sh: #D6CDBD; --btn-hi: #C07B66; --btn-lo: #7C351F;
   --sec-dot: #C8623C; --deco-a: #C8623C; --deco-b: #3F4E66; --dash: #D6CDBD;
   --bg-art: url('../themes/prague/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/prague/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(63, 78, 102, 0.06);
 }
@@ -831,17 +831,17 @@
   color-scheme: light;
   --bg: #F2EEE6; --surface: #FFFCF7; --raised: #E9E3D8; --input-bg: #FFFCF7;
   --text: #2A2622; --sub: #5C564E; --faint: #BEB5A6; --line: #DDD5C7;
-  --divider: #DDD5C7; --primary: #4A433A; --primary-edge: #4A433A; --on-primary: #FFFCF7;
-  --secondary: #E8E4DC; --accent: #6A6052; --strong: #3E3830; --icon: #5C564E;
-  --tab-bg: #FFFCF7; --tab-active: #3E3830; --tab-inactive: #5C564E; --success: #2E7D4F;
+  --divider: #DDD5C7; --primary: #3E5E36; --primary-edge: #3E5E36; --on-primary: #FFFCF7;
+  --secondary: #E5E4DA; --accent: #4E6A3A; --strong: #36522F; --icon: #5C564E;
+  --tab-bg: #FFFCF7; --tab-active: #36522F; --tab-inactive: #5C564E; --success: #2E7D4F;
   --warning: #9A5B00; --warn: #BE2D37; --her: #E58A64; --her-ink: #24201C;
   --me: #F2C14E; --me-ink: #24201C; --both: #9DB87A; --both-ink: #24201C;
-  --tint: #ECE6DA; --tint-text: #3E3830; --today: #2A2622; --on-today: #FFFCF7;
+  --tint: #E2ECD8; --tint-text: #2E4A28; --today: #2A2622; --on-today: #FFFCF7;
   --lv-full: #78905A; --lv-full-text: #24201C; --lv-half: #DFE6D2;
   --lv-half-text: #2A2622; --empty: #ECE7DE; --empty-text: #58524A; --switch-knob: #FFFCF7;
   --scrim: rgba(42, 38, 34, 0.45); --shadow: 0 -8px 24px rgba(44, 40, 36, 0.12); --lift: 0 1px 3px rgba(44, 40, 36, 0.18); --toast-bg: #2A2622;
   --toast-fg: #FFFCF7; --toast-shadow: 0 4px 0 #D5CCBC; --tomato-green: #5E9E5A; --tomato-red: #C9506A;
-  --ol: #2C2824; --sh: #D5CCBC; --btn-hi: #6A6256; --btn-lo: #302B25;
+  --ol: #2C2824; --sh: #D5CCBC; --btn-hi: #748B6E; --btn-lo: #2E4628;
   --sec-dot: #D9733A; --deco-a: #4E6A3A; --deco-b: #D9733A; --dash: #D5CCBC;
   --bg-art: url('../themes/camping/bg.svg'); --bg-art-size: 84px; --head-art: url('../themes/camping/head.svg'); --head-h: 42px; --head-w: 72px; --checker: rgba(78, 106, 58, 0.06);
 }
@@ -851,17 +851,17 @@
   color-scheme: dark;
   --bg: #15130F; --surface: #211E19; --raised: #2C2822; --input-bg: #211E19;
   --text: #F7F1E6; --sub: #CFC6B6; --faint: #544C40; --line: #3A352D;
-  --divider: #3A352D; --primary: #EDE0C4; --primary-edge: #EDE0C4; --on-primary: #221D14;
-  --secondary: #28241E; --accent: #E2D2B0; --strong: #EDE0C4; --icon: #CFC6B6;
-  --tab-bg: #211E19; --tab-active: #F7EEDC; --tab-inactive: #CFC6B6; --success: #5BD08A;
+  --divider: #3A352D; --primary: #F29A4E; --primary-edge: #F29A4E; --on-primary: #2A1606;
+  --secondary: #28241E; --accent: #F0A060; --strong: #F29A4E; --icon: #CFC6B6;
+  --tab-bg: #211E19; --tab-active: #F7BD8C; --tab-inactive: #CFC6B6; --success: #5BD08A;
   --warning: #F2B84B; --warn: #FF7B86; --her: #E58A64; --her-ink: #16130E;
   --me: #F2C14E; --me-ink: #16130E; --both: #9DB87A; --both-ink: #16130E;
-  --tint: #3A3022; --tint-text: #F4C98A; --today: #F7F1E6; --on-today: #211E19;
+  --tint: #3A2818; --tint-text: #FFC890; --today: #F7F1E6; --on-today: #211E19;
   --lv-full: #9DB87A; --lv-full-text: #16130E; --lv-half: #3E4A32;
   --lv-half-text: #F7F1E6; --empty: #2C2822; --empty-text: #CFC6B6; --switch-knob: #221D14;
   --scrim: rgba(10, 9, 7, 0.62); --shadow: 0 -8px 24px rgba(0, 0, 0, 0.45); --lift: 0 1px 3px rgba(0, 0, 0, 0.4); --toast-bg: #F7F1E6;
   --toast-fg: #16130E; --toast-shadow: 0 4px 0 #0A0907; --tomato-green: #8FC07E; --tomato-red: #E2584A;
-  --ol: #7A7060; --sh: #0A0907; --btn-hi: #F7EEDC; --btn-lo: #B8A882;
+  --ol: #7A7060; --sh: #0A0907; --btn-hi: #F7BD8C; --btn-lo: #BD783D;
   --sec-dot: #F29A4E; --deco-a: #22301C; --deco-b: #F29A4E; --dash: #3E3830;
   --bg-art: url('../themes/camping/bg-night.svg'); --bg-art-size: 84px; --head-art: url('../themes/camping/head-night.svg'); --head-h: 60px; --head-w: 72px; --checker: rgba(255, 255, 255, 0.025);
 }

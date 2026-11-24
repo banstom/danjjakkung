@@ -34,4 +34,6 @@
 | M1 | 폰에서 목업 6장과 대조 |
 
 ## 바뀐 것
-(구현하면서 문서와 다르게 정한 것을 한 줄씩)
+- 문서와 다르게 정한 것 없음 — styles/tokens.css 세 블록의 30칸만 tokens-recolor.css 값으로
+- 프라하 낮 --deco-b(장식)는 옛 슬레이트 #3F4E66 그대로 (바꿀 목록에 없어서)
+- 시험: tests/themes-recolor.test.js (R1 바뀐 값 + 나머지 토큰 해시 · R2 20쌍 · R3 11/23 판 19개 스냅숏 · R4 색 띠가 --primary)
