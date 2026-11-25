@@ -20,6 +20,10 @@
   //  접속 · 로그아웃 · 🔔 · 🎨 은 「전체」 탭 설정으로 옮겼다. 「전체」 탭은 제목 「전체」, 칩 없음(우리 둘 카드에 있음)
   function header(h) {
     if (h.hidden) return '';
+    // FT1 (docs/focus/tabs.md 3절): 전체 탭에서 연 돌아보기 화면 — ‹ 뒤로 + 제목, 날짜 · 칩 없음
+    if (h.back) return '<header class="top top--back"><button type="button" class="top__back" data-act="look-back" aria-label="' + esc(h.back.label || '뒤로') + '">' +
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>' +
+      '<h1 class="title title--back">' + esc(h.back.title) + '</h1></header>';
     return '<header class="top">' +
       '<div class="top__text"><p class="caption">' + esc(h.date) +
       (h.canRepick ? ' · ' + esc(h.meName) + ' <button type="button" class="link-btn" data-act="repick">바꾸기</button>' : '') + '</p>' +
@@ -85,7 +89,7 @@
       switchRow('pref-miss', p.miss !== false, '아침에 어제 놓친 루틴 알려 주기', '어제 못 한 내 루틴이 있으면 아침 8시에 알려 줘요 · 이틀 연속은 안 놓치게', off) +
       switchRow('pref-todo', p.todo !== false && p.partner, '함께 할 일 알림', '짝꿍이 함께 할 일을 추가하거나 끝내면 알려 줘요' + (p.partner ? '' : ' · 짝꿍 알림을 켜야 와요'), off || !p.partner) +
       switchRow('pref-map', p.map !== false, '단짝 지도 별점 알림', '짝꿍이 함께 다녀온 곳을 기록하면 「별점을 남겨 주세요」 하고 알려 줘요', off) +
-      switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기 탭', off) +
+      switchRow('pref-weekly', p.weekly !== false, '일요일 저녁 돌아보기', '밤 9시에 이번 주 함께 해낸 것을 알려 줘요 · 누르면 돌아보기', off) +
       switchRow('pref-recap', p.recap !== false, '매달 1일 결산 알림', '아침 9시에 지난달 결산이 나오면 알려 줘요 · 누르면 결산 카드', off) +
       switchRow('pref-hide', p.hide, '잠금 화면에서 루틴 이름 숨기기', '「새 기록이 있어요」처럼만 보여요 · 함께 할 일 이름도 숨겨요', off) +
       '</div>' + qNotifyRows(p, off) +

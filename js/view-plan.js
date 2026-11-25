@@ -13,16 +13,24 @@
   var TABS = [
     { id: 'routine', label: '루틴', d: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>' },
     { id: 'schedule', label: '시간표', d: '<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>' },
+    // FT1 (docs/focus/tabs.md): 돌아보기 탭은 전체 탭 카드로 옮기고, 가운데에 「집중」
+    { id: 'focus', label: '집중', d: '<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M10 3.5h4M18.2 7.3l1.3-1.3"/>' },
     { id: 'todo', label: '할 일', d: '<path d="M4 7l2 2 3.5-3.5M4 15l2 2 3.5-3.5M13 8h7M13 16h7"/>' },
-    { id: 'look', label: '돌아보기', d: '<path d="M5 20V11M12 20V5M19 20v-6"/>' },
     { id: 'all', label: '전체', d: '<path d="M4 7h16M4 12h16M4 17h16"/>' } // v47 — 기능 목록 · 설정
   ];
-  function tabbar(active) {
+  /** active = 지금 탭 id ('look' = 전체 탭에서 연 돌아보기 화면 → 「전체」가 켜짐)
+   *  dot = 집중 탭 점 { slots: ['me'] | ['her'] | ['me', 'her'], label } | null (docs/focus/spec.md 6-3, 집중 탭에 있을 때는 없음) */
+  function tabbar(active, dot) {
+    var cur = active === 'look' ? 'all' : active;
     return '<nav class="tabbar" aria-label="화면 이동">' + TABS.map(function (t) {
-      var on = t.id === active;
-      return '<button type="button" class="tabbar__btn" data-act="tab" data-tab="' + t.id + '"' + (on ? ' aria-current="page"' : '') + '>' +
+      var on = t.id === cur;
+      var d = t.id === 'focus' && dot && !on ? dot : null;
+      return '<button type="button" class="tabbar__btn" data-act="tab" data-tab="' + t.id + '"' + (on ? ' aria-current="page"' : '') +
+        (d && d.label ? ' aria-label="' + esc(t.label + ' · ' + d.label) + '"' : '') + '>' +
+        '<span class="tabbar__ic">' +
         '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + t.d + '</svg>' +
-        '<span>' + t.label + '</span></button>';
+        (d ? d.slots.map(function (s, i) { return '<span class="tabbar__dot tabbar__dot--' + esc(s) + (i ? ' tabbar__dot--2' : '') + '" aria-hidden="true"></span>'; }).join('') : '') +
+        '</span><span>' + t.label + '</span></button>';
     }).join('') + '</nav>';
   }
 

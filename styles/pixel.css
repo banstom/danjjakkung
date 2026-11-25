@@ -113,6 +113,7 @@
 [data-skin="pixel"]:not([data-font="plain"]) body { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .caption { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .title--back { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .tag { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .chip { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .grid-range { font-size: 15px; font-family: var(--px-font-14); }
@@ -325,6 +326,13 @@
 [data-skin="pixel"]:not([data-font="plain"]) .alist li { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .anniv-form__note { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .asec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__seg { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__new { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__line { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__line--btn { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .afeat__nm { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .afeat__ds { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .abadge { font-size: 12px; font-family: var(--px-font-11); }

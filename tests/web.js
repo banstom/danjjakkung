@@ -3,6 +3,13 @@
 const { chromium } = require('playwright');
 const assert = require('assert');
 const path = require('path');
+
+// FT1: 돌아보기는 탭이 아니라 전체 탭 카드에서 여는 화면 — 'look' 이면 전체 탭 → [주]
+async function goTab(p, t) {
+  if (t !== 'look') return p.click(`[data-act="tab"][data-tab="${t}"]`);
+  await p.click('[data-act="tab"][data-tab="all"]'); await p.waitForSelector('[data-act="open-look"][data-v="week"]');
+  return p.click('[data-act="open-look"][data-v="week"]');
+}
 const { spawn } = require('child_process');
 
 const OUT = process.argv[2] || '/tmp/shots';
@@ -275,7 +282,7 @@ async function open(browser, name, opts = {}) {
   });
   await page.exposeFunction('__isVerified', async (email) => !!(accounts.get(email) || {}).verified);
   pages.push(page);
-  await page.goto(URL);
+  await page.goto(opts.url || URL);
   await page.waitForSelector('.title');
   await page.waitForTimeout(150);
   return page;
@@ -733,8 +740,8 @@ async function tick(page, dateKey, key) {
   const rvNums = (p) => p.$$eval('.rv-us .stat__value', (e) => e.map((x) => x.textContent).join(' / '));
   const rvDone = (p) => p.textContent('.card[aria-label="끝낸 일 돌아보기"] .rv-sub');
   await jm.evaluate(() => { window.__reads = 0; });
-  await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForSelector('.rv-us'); await jm.waitForTimeout(250);
-  assert.strictEqual((await jm.$$eval('.tabbar__btn span', (e) => e.map((x) => x.textContent))).join(' · '), '루틴 · 시간표 · 할 일 · 돌아보기 · 전체');
+  await goTab(jm, 'look'); await jm.waitForSelector('.rv-us'); await jm.waitForTimeout(250);
+  assert.strictEqual((await jm.$$eval('.tabbar__btn > span:last-child', (e) => e.map((x) => x.textContent))).join(' · '), '루틴 · 시간표 · 집중 · 할 일 · 전체'); // FT1
   assert.strictEqual(await jm.textContent('.rv-us .rv-title'), '이번 주 우리');
   assert.strictEqual(await jm.textContent('.rv-us .grid-range'), '10월 26일 – 11월 1일');
   assert.ok(await jm.$eval('[data-act="rv-page"][data-dir="-1"]', (e) => e.disabled), '이번 주는 다음이 막힘');
@@ -779,7 +786,7 @@ async function tick(page, dateKey, key) {
   }
   await jm.setViewportSize({ width: 390, height: 844 });
   await jm.click('[data-act="rv-mode"][data-v="week"]'); await jm.waitForTimeout(250);
-  await dj.click('[data-act="tab"][data-tab="look"]'); await dj.waitForSelector('.rv-us'); await dj.waitForTimeout(250);
+  await goTab(dj, 'look'); await dj.waitForSelector('.rv-us'); await dj.waitForTimeout(250);
   assert.strictEqual(await rvNums(dj), await rvNums(jm), '두 사람 화면 숫자가 같다');
   // 짝꿍이 끝내면 탭을 떠나지 않아도 더해지고, 되돌리면 바로 빠진다 (회귀(점검 AI): 불러 둔 옛 사본이 남던 문제)
   const n0 = await rvDone(jm);
@@ -788,7 +795,7 @@ async function tick(page, dateKey, key) {
   await dj.click(`[data-act="todo-toggle"][data-id="${tid}"]`); await dj.waitForTimeout(300);
   const n1 = await rvDone(jm);
   assert.strictEqual(parseInt(n1, 10), parseInt(n0, 10) + 1, '짝꿍이 끝내면 바로 +1: ' + n0 + ' → ' + n1);
-  await jm.click('[data-act="tab"][data-tab="todo"]'); await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForTimeout(300); // 다시 열어 그 일을 불러 둔 상태로
+  await jm.click('[data-act="tab"][data-tab="todo"]'); await goTab(jm, 'look'); await jm.waitForTimeout(300); // 다시 열어 그 일을 불러 둔 상태로
   await dj.waitForTimeout(900); // 두 번 눌림 막기(0.8초)가 풀린 뒤
   if (!(await dj.$(`[data-act="todo-toggle"][data-id="${tid}"]`))) await dj.click('.tcard--together [data-act="todo-donelist"]');
   await dj.click(`[data-act="todo-toggle"][data-id="${tid}"]`); await dj.waitForTimeout(300);
@@ -823,7 +830,7 @@ async function tick(page, dateKey, key) {
   assert.match(await boxLine(jm, 1), /^\d[\d,]*일까지 D-\d+$|주년까지 D-\d+$/, '박스: 다음 기념일까지 D-n');
   assert.ok(await jm.$('.ubox--heart .ubox__heart'), 'v52 기본 모양 = 하트 잇기');
   assert.strictEqual(await jm.textContent('.ubox__big'), annivN + '일', '하트 잇기: 큰 숫자');
-  await jm.click('[data-act="tab"][data-tab="look"]'); await jm.waitForTimeout(100);
+  await goTab(jm, 'look'); await jm.waitForTimeout(100);
   assert.ok(!(await jm.$('.card.anniv')), '돌아보기엔 기념일 카드 없음 (v51)');
   await toAll(jm);
   await dj.waitForTimeout(200); await toAll(dj);
@@ -918,10 +925,52 @@ async function tick(page, dateKey, key) {
   await jm.setViewportSize({ width: 390, height: 844 });
   console.log('기념일 · 우리 둘 박스 · 사진 확인 끝 (' + annivN + '일 · 두 폰 · 짝꿍이 고침 · 사진 올리기/지우기 · 320px)');
 
+  // 4-1a2b) FT1 (docs/focus/tabs.md): 아래 탭 루틴 · 시간표 · 집중 · 할 일 · 전체, 돌아보기는 전체 탭 카드 → 쌓이는 화면
+  {
+    await toAll(jm);
+    const order = await jm.evaluate(() => [...document.querySelectorAll('.all > *')].map((e) => e.className.split(' ')[0] + ':' + (e.textContent || '').trim().slice(0, 6)));
+    const iBox = order.findIndex((x) => /^card:준/.test(x)), iLook = order.findIndex((x) => /^asec:돌아보기/.test(x)), iFeat = order.findIndex((x) => /^asec:단짝 기능/.test(x));
+    assert.ok(iBox >= 0 && iBox < iLook && iLook < iFeat, 'FT1 순서: 우리 둘 → 돌아보기 → 단짝 기능 ' + order.join(' | '));
+    assert.strictEqual(await jm.$$eval('.alook__c', (e) => e.length), 7, '이번 주 7칸');
+    assert.ok(await jm.$('.alook__c--today'), '오늘 칸 표시');
+    await jm.screenshot({ path: path.join(OUT, 'ft1-all-tab.png'), fullPage: true });
+    await jm.evaluate(() => window.scrollTo(0, 200)); await jm.waitForTimeout(50);
+    const y0 = await jm.evaluate(() => window.scrollY);
+    await jm.click('[data-act="open-look"][data-v="month"]'); await jm.waitForSelector('.top--back');
+    assert.strictEqual(await jm.textContent('h1.title--back'), '돌아보기');
+    assert.strictEqual(await jm.getAttribute('[data-act="rv-mode"][data-v="month"]', 'aria-pressed'), 'true', '[달] → 달 칸');
+    assert.strictEqual(await jm.getAttribute('[data-act="tab"][data-tab="all"]', 'aria-current'), 'page', '돌아보기 화면에서도 「전체」가 켜짐');
+    assert.ok(!(await jm.$('.top .caption')), '날짜 캡션 없음');
+    await jm.screenshot({ path: path.join(OUT, 'ft1-review-from-all.png') });
+    await jm.keyboard.press('Escape'); await jm.waitForSelector('.alook');
+    assert.ok(Math.abs((await jm.evaluate(() => window.scrollY)) - y0) <= 2, 'Esc → 전체 탭, 스크롤 그대로 ' + y0);
+    await jm.click('[data-act="open-look"][data-v="week"]'); await jm.waitForSelector('.top--back');
+    await jm.click('[data-act="look-back"]'); await jm.waitForSelector('.alook');
+    await jm.click('.alook__top'); await jm.waitForSelector('.top--back');
+    assert.strictEqual(await jm.getAttribute('[data-act="rv-mode"][data-v="week"]', 'aria-pressed'), 'true', '카드를 눌러도 「주」');
+    await jm.goBack(); await jm.waitForSelector('.alook'); // 기기 뒤로 가기
+    assert.ok(!(await jm.$('.exit-box')), '뒤로 = 전체 탭 (나갈까요? 아님)');
+    await jm.click('[data-act="open-look"][data-v="recap"]'); await jm.waitForSelector('.recap-tab');
+    await jm.click('[data-act="tab"][data-tab="all"]'); await jm.waitForSelector('.alook');
+    assert.ok(!(await jm.$('.top--back')), '「전체」를 다시 누르면 돌아보기 닫힘');
+    await jm.click('[data-act="tab"][data-tab="focus"]'); await jm.waitForTimeout(80);
+    assert.strictEqual(await jm.textContent('h1.title'), '집중');
+    // 예전 알림 주소 ?tab=look · 새 주소 ?tab=all&open=look&view=month 둘 다 돌아보기 화면으로
+    for (const [q, mode] of [['?tab=look', 'week'], ['?tab=all&open=look&view=month', 'month']]) {
+      const ol = await open(browser, '옛 주소', { ctx: jm.context(), url: URL + q });
+      await ol.waitForSelector('.top--back', { timeout: 8000 });
+      assert.strictEqual(await ol.getAttribute(`[data-act="rv-mode"][data-v="${mode}"]`, 'aria-pressed'), 'true', q + ' → ' + mode);
+      await ol.click('[data-act="look-back"]'); await ol.waitForSelector('.alook');
+      pages.splice(pages.indexOf(ol), 1); await ol.close();
+    }
+    await jm.click('[data-act="tab"][data-tab="routine"]'); await jm.waitForTimeout(80);
+    console.log('FT1 탭 정리 확인 끝 (순서 · 돌아보기 카드 · [주][달][결산] · Esc · ‹ · 뒤로 가기 · 옛 주소)');
+  }
+
   // 4-1a3) (v47) 「전체」 탭: 머리말엔 칩만, 설정 줄이 각 시트를 연다, 「사귄」이 어디에도 없다
   const topTxt = (p) => p.$eval('header.top', (h) => h.innerHTML);
   for (const t of ['routine', 'schedule', 'todo', 'look']) {
-    await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
+    await goTab(jm, t); await jm.waitForTimeout(80);
     const top = await topTxt(jm);
     assert.ok(!/sign-out|로그아웃|님으로 접속|open-notify|open-theme/.test(top), t + ' 머리말에 접속 · 로그아웃 · 🔔 · 🎨 없음');
     assert.ok(!/class="dday"/.test(top), t + ' 머리말 칩 없음 (v51)');
@@ -934,7 +983,7 @@ async function tick(page, dateKey, key) {
   docs.set('couple/main', Object.assign({}, docs.get('couple/main'), { label: '사귄 지' })); await pushAll(['couple/main']); await jm.waitForTimeout(150);
   assert.strictEqual(await boxLine(jm), '단짝이 된 지 ' + annivN + '일');
   for (const t of ['routine', 'look', 'all']) {
-    await jm.click(`[data-act="tab"][data-tab="${t}"]`); await jm.waitForTimeout(80);
+    await goTab(jm, t); await jm.waitForTimeout(80);
     assert.ok(!(await jm.evaluate(() => document.body.innerText)).includes('사귄'), t + ' 화면에 「사귄」 없음');
   }
   await jm.click('.ubox__mid'); await jm.waitForSelector('.abig');
@@ -1855,7 +1904,7 @@ async function tick(page, dateKey, key) {
   for (const id of THEME_IDS) {
     await jm.evaluate((v) => { localStorage.setItem('danjjakkung.theme', v); RT.themes.apply(v); }, id);
     for (const tab of ['routine', 'todo', 'look', 'all', 'schedule']) {
-      await jm.click(`[data-act="tab"][data-tab="${tab}"]`);
+      await goTab(jm, tab);
       await jm.waitForTimeout(120);
       await jm.screenshot({ path: path.join(OUT, `theme-${id}-${tab}.png`), fullPage: true });
       if (tab === 'look') { // v54 R1: 달 보기 카드 · 띠

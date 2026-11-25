@@ -33,7 +33,7 @@ setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10, memory: '256MiB'
 
 const APP_URL = 'https://banstom.github.io/danjjakkung/';
 const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으로 연다
-const LOOK_URL = APP_URL + '?tab=look';    // 일요일 돌아보기 알림은 돌아보기 탭으로
+const LOOK_URL = APP_URL + '?tab=all&open=look&view=week'; // 일요일 돌아보기 알림 → 전체 탭 위 돌아보기 「주」 (FT1 — 예전 ?tab=look 도 앱이 받음)
 const TODO_URL = APP_URL + '?tab=todo';    // 함께 할 일 알림은 할 일 탭으로
 const ICON = APP_URL + 'icons/icon-192.png';
 const REGIONS = require('./regions.json'); // 시군구코드 → 「서울 종로구」 (data/kr-map.json 에서 만든 표)

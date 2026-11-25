@@ -3,6 +3,13 @@
 // 흐름: 12월 5일 입구 → 쓰기 · 임시 저장 → 봉투 붙이기(둘 다) → 12월 31일엔 짝꿍 답을 안 읽음 → 1월 1일 연말결산 끝에 문답 카드
 const fs = require('fs');
 const path = require('path');
+
+// FT1: 돌아보기는 탭이 아니라 전체 탭 카드에서 여는 화면 — 'look' 이면 전체 탭 → [주]
+async function goTab(p, t) {
+  if (t !== 'look') return p.click(`[data-act="tab"][data-tab="${t}"]`);
+  await p.click('[data-act="tab"][data-tab="all"]'); await p.waitForSelector('[data-act="open-look"][data-v="week"]');
+  return p.click('[data-act="open-look"][data-v="week"]');
+}
 const src = fs.readFileSync(path.join(__dirname, 'web.js'), 'utf8');
 const cut = src.indexOf('\n(async () => {');
 if (cut < 0) throw new Error('tests/web.js 의 시험 본문 시작을 찾지 못했어요');
@@ -21,7 +28,7 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const shot = (p, name) => p.screenshot({ path: path.join(OUT, name + '.png') });
   const denied = (p) => p.evaluate(() => window.__yqDenied || 0);
-  const toRecap = async (p) => { await p.click('[data-act="tab"][data-tab="look"]'); await p.click('[data-act="rv-mode"][data-v="recap"]'); };
+  const toRecap = async (p) => { await goTab(p, 'look'); await p.click('[data-act="rv-mode"][data-v="recap"]'); };
 
   const jm = await open(browser, '준민');
   await signUp(jm, 'junmin@example.com', 'pass1234', '준민');

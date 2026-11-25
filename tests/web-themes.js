@@ -3,6 +3,13 @@
 // 가짜 Firebase · 로그인 · 두 사람 만들기는 tests/web.js 의 앞부분(시험 본문 전)을 그대로 빌려 쓴다 (포트만 다르게).
 const fs = require('fs');
 const path = require('path');
+
+// FT1: 돌아보기는 탭이 아니라 전체 탭 카드에서 여는 화면 — 'look' 이면 전체 탭 → [주]
+async function goTab(p, t) {
+  if (t !== 'look') return p.click(`[data-act="tab"][data-tab="${t}"]`);
+  await p.click('[data-act="tab"][data-tab="all"]'); await p.waitForSelector('[data-act="open-look"][data-v="week"]');
+  return p.click('[data-act="open-look"][data-v="week"]');
+}
 const src = fs.readFileSync(path.join(__dirname, 'web.js'), 'utf8');
 const cut = src.indexOf('\n(async () => {');
 if (cut < 0) throw new Error('tests/web.js 의 시험 본문 시작을 찾지 못했어요');
@@ -33,7 +40,7 @@ async function main() {
   // ── C2 · D1/D3: 다른 테마에서는 도트 글꼴 · 그림을 하나도 안 받는다 ──
   await setTheme(jm, 'soft-pastel');
   await jm.reload(); await jm.waitForSelector('.tabbar');
-  for (const tab of ['routine', 'todo', 'all']) { await jm.click(`[data-act="tab"][data-tab="${tab}"]`); await jm.waitForTimeout(120); }
+  for (const tab of ['routine', 'todo', 'all']) { await goTab(jm, tab); await jm.waitForTimeout(120); }
   assert.deepStrictEqual(net, [], 'C2 다른 테마에서 도트 글꼴 · 테마 그림 요청 0');
   assert.strictEqual(await jm.$$eval('.theme-art', (a) => a.length), 0, 'D3 다른 테마에는 그림 자리 없음');
   assert.deepStrictEqual(await themeOf(jm), ['soft-pastel', null], 'C1 다른 테마에는 data-skin 없음');
@@ -76,7 +83,7 @@ async function main() {
     assert.ok(/Galmuri11/.test(font.fam) && font.ok11 && font.ok14, tag + ' C3 도트 글꼴 ' + JSON.stringify(font));
     // C4: 화면에 보이는 글씨 크기는 12 · 15 · 24 · 36 만
     for (const tab of ['routine', 'schedule', 'todo', 'look', 'all']) {
-      await p.click(`[data-act="tab"][data-tab="${tab}"]`); await p.waitForTimeout(120);
+      await goTab(p, tab); await p.waitForTimeout(120);
       const sizes = await p.evaluate(() => {
         const out = {};
         document.querySelectorAll('#app *').forEach((e) => {
@@ -132,7 +139,7 @@ async function main() {
     const board = id + (mode === 'dark' ? '-night' : '');
     assert.deepStrictEqual(await themeOf(jm), [board, 'pixel'], tag + ' 판 · 스킨');
     for (const tab of ['routine', 'schedule', 'todo', 'look', 'all']) {
-      await jm.click(`[data-act="tab"][data-tab="${tab}"]`); await jm.waitForTimeout(150);
+      await goTab(jm, tab); await jm.waitForTimeout(150);
       await shot(jm, `${tag}-${tab}`, true);
     }
     await jm.evaluate(() => document.fonts.ready);
