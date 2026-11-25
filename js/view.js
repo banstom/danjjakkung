@@ -587,8 +587,8 @@
 
   /** status: 'loading' | 'nodb' | 'ready' | 'login' | 'setup' | 'denied' | 'unconfigured' */
   function page(status, m, toastText, opts) {
-    var out = header(m.header);
     opts = opts || {};
+    var out = header(m.header) + (status === 'ready' && opts.bandHtml ? opts.bandHtml : ''); // 집중 띠 (docs/focus/spec.md 6-1): 머리말 바로 아래
     if (status === 'login') return out + authScreen(opts.auth) + toast(toastText);
     if (status === 'setup') return out + setupScreen(opts.setup) + toast(toastText);
     if (status === 'verify') return out + verifyScreen(opts.verify, opts.email) + toast(toastText);

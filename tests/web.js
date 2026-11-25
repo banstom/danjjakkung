@@ -967,6 +967,72 @@ async function tick(page, dateKey, key) {
     console.log('FT1 탭 정리 확인 끝 (순서 · 돌아보기 카드 · [주][달][결산] · Esc · ‹ · 뒤로 가기 · 옛 주소)');
   }
 
+  // 4-1a2c) FC1 집중 (docs/focus/spec.md): 시작 → 짝꿍 띠 · 점 → 같이 하기 → 함께 배지 → 쉬기 · 다시 → 끝냄 요약 → 기록 고치기 → 1분 미만
+  {
+    const fcText = (p, sel) => p.$eval(sel, (e) => [...e.querySelectorAll('*')].length ? [...e.childNodes].map((n) => n.textContent).join(' ') : e.textContent).then((t) => t.replace(/\s+/g, ' ').trim());
+    await jm.click('[data-act="tab"][data-tab="focus"]'); await jm.waitForSelector('.fc-tab');
+    assert.ok(await jm.$('.fc-tip'), '처음 안내');
+    assert.match(await fcText(jm, '.fc-mode'), /느슨/);
+    await jm.screenshot({ path: path.join(OUT, 'fc-01-empty.png'), fullPage: true });
+    await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
+    assert.ok(await jm.evaluate(() => document.body.classList.contains('fc-full') && getComputedStyle(document.querySelector('.tabbar')).display === 'none'), '집중 화면 = 탭 줄 없음');
+    await dj.click('[data-act="tab"][data-tab="routine"]'); await dj.waitForSelector('.fc-band', { timeout: 5000 });
+    assert.match(await fcText(dj, '.fc-band'), /● 준민 · .+ 중 \d+분 같이 하기 ›/);
+    assert.ok(await dj.$('[data-tab="focus"] .tabbar__dot--me, [data-tab="focus"] .tabbar__dot--her'), '짝꿍 탭 점');
+    await dj.screenshot({ path: path.join(OUT, 'fc-32-band-partner.png') });
+    await jm.clock.fastForward(5 * 60000); await dj.clock.fastForward(5 * 60000);
+    await dj.click('.fc-band'); await dj.waitForSelector('.fc-sheet [data-act="fc-start"]');
+    await dj.fill('#fc-label', '생리학'); await dj.click('.fc-sheet [data-act="fc-start"]'); await dj.waitForSelector('.fc-screen');
+    await jm.waitForSelector('.fc-badge--both', { timeout: 5000 });
+    assert.match(await fcText(jm, '.fc-badge--both'), /🔥 함께 집중 중 · \d+분/);
+    assert.match(await fcText(jm, '.fc-pcard--screen'), /다진 · .+ · 생리학/);
+    await jm.clock.fastForward(12 * 60000); await dj.clock.fastForward(12 * 60000); await jm.waitForTimeout(1200);
+    assert.match(await fcText(jm, '[data-fc="run"]'), /^0:1[67]:\d\d$/, '시작 시각 기준 17분');
+    await jm.screenshot({ path: path.join(OUT, 'fc-11-focus-both.png') });
+    await jm.click('[data-act="fc-pause"]'); await jm.waitForSelector('.fc-badge--pause');
+    assert.ok(await jm.$('[data-act="fc-resume"]'));
+    await jm.clock.fastForward(3 * 60000); await jm.waitForTimeout(1100);
+    assert.match(await fcText(jm, '.fc-badge--pause'), /⏸ 잠깐 쉬는 중 · 3분/);
+    await jm.screenshot({ path: path.join(OUT, 'fc-12-focus-pause.png') });
+    await dj.waitForTimeout(200);
+    await dj.click('[data-act="fc-down"]'); await dj.waitForSelector('.fc-tab');
+    assert.match(await fcText(dj, '.fc-pcard__st'), /잠깐 쉬는 중/);
+    await jm.click('[data-act="fc-resume"]'); await jm.waitForSelector('[data-act="fc-pause"]');
+    await jm.clock.fastForward(10 * 60000); await dj.clock.fastForward(13 * 60000);
+    await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-screen--done');
+    assert.match(await fcText(jm, '.fc-done__t'), /오늘 0:2[67] 집중했어요/);
+    assert.match(await fcText(jm, '.fc-stats'), /다진 님과 함께/);
+    await jm.screenshot({ path: path.join(OUT, 'fc-14-done.png') });
+    await jm.waitForSelector('.fc-screen--done [data-act="fc-edit"]', { timeout: 3000 });
+    const logs = [...docs.keys()].filter((k) => k.startsWith('focusLogs/'));
+    assert.equal(logs.length, 1, '기록 하나');
+    const lg = docs.get(logs[0]);
+    assert.ok(lg.segs.length === 2 && lg.ms >= 26 * 60000 && lg.ms <= 28 * 60000, '쉬기 3분은 빼고 두 구간 ' + JSON.stringify(lg));
+    assert.equal(docs.get('focus/' + lg.by).state, 'idle');
+    await jm.click('[data-act="fc-done-ok"]'); await jm.waitForSelector('.fc-tab');
+    assert.match(await fcText(jm, '.fc-today'), /🔥 함께 0:\d\d/);
+    // 기록 고치기: 오늘 카드 → 오늘 기록 → 끝 시각을 앞으로
+    await jm.click('[data-act="fc-log"]'); await jm.waitForSelector('.fc-logrow');
+    await jm.click('.fc-logrow'); await jm.waitForSelector('#fc-ee');
+    const endVal = await jm.inputValue('#fc-ee'); const [eh, em] = endVal.split(':').map(Number);
+    const newEnd = String(eh).padStart(2, '0') + ':' + String(em - 5).padStart(2, '0');
+    await jm.fill('#fc-ee', newEnd); await jm.dispatchEvent('#fc-ee', 'input'); await jm.click('.fc-sheet .sheet__sub'); await jm.waitForTimeout(80);
+    await jm.click('[data-act="fc-editsave"]'); await jm.waitForTimeout(200);
+    assert.ok(docs.get(logs[0]).ms < lg.ms, '고친 시간이 저장됨');
+    // 1분 미만은 저장 안 함
+    await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
+    await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-tab');
+    assert.match(await jm.textContent('.toast'), /1분이 안 돼서 기록하지 않았어요/);
+    assert.equal([...docs.keys()].filter((k) => k.startsWith('focusLogs/')).length, 1);
+    // 다진: 루틴 탭 띠 = 나 집중 중 → 끝내기
+    await dj.click('[data-act="tab"][data-tab="routine"]'); await dj.waitForSelector('.fc-band.is-me');
+    await dj.click('[data-act="tab"][data-tab="focus"]'); await dj.click('.fc-today [data-act="fc-end"]'); await dj.waitForTimeout(200);
+    assert.match(await dj.textContent('.toast'), /집중했어요/);
+    assert.ok(!(await dj.$('.fc-band')));
+    await jm.click('[data-act="tab"][data-tab="routine"]'); await dj.click('[data-act="tab"][data-tab="routine"]');
+    console.log('FC1 집중 확인 끝 (시작 · 띠 · 점 · 같이 하기 · 함께 배지 · 쉬기 · 끝냄 요약 · 기록 고치기 · 1분 미만)');
+  }
+
   // 4-1a3) (v47) 「전체」 탭: 머리말엔 칩만, 설정 줄이 각 시트를 연다, 「사귄」이 어디에도 없다
   const topTxt = (p) => p.$eval('header.top', (h) => h.innerHTML);
   for (const t of ['routine', 'schedule', 'todo', 'look']) {

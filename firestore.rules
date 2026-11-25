@@ -381,7 +381,10 @@ service cloud.firestore {
       allow read: if isMember() && request.auth.uid == uid;
       // 알림 설정과 색은 따로 저장된다 (어느 한쪽만 있는 문서도 된다)
       allow create, update: if isMember() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'mapNudge', 'routineView', 'reviewMonthView', 'recap', 'qRemind', 'qPartner', 'eatDrawN', 'eatDrawWho', 'eatSeenAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['notify', 'tz', 'colors', 'weekly', 'todoNotify', 'missNotify', 'mapNudge', 'routineView', 'reviewMonthView', 'recap', 'qRemind', 'qPartner', 'eatDrawN', 'eatDrawWho', 'eatSeenAt', 'focusMode', 'focusStart', 'focusCall', 'updatedAt'])
+        && (!('focusMode' in request.resource.data) || request.resource.data.focusMode in ['loose', 'strict']) // 집중 엄격 모드 (없으면 느슨)
+        && (!('focusStart' in request.resource.data) || request.resource.data.focusStart is bool) // 짝꿍이 집중을 시작하면 알림 (없으면 켬, F2)
+        && (!('focusCall' in request.resource.data) || request.resource.data.focusCall is bool)   // 같이 하자 받기 (없으면 켬, F2)
         && (!('notify' in request.resource.data) || validNotify(request.resource.data.notify))
         && (!('weekly' in request.resource.data) || request.resource.data.weekly is bool)
         && (!('recap' in request.resource.data) || request.resource.data.recap is bool) // 매달 1일 결산 알림 (없으면 켬)
@@ -704,6 +707,41 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/eats/$(request.resource.data.eatId)).data.state == 'today'
         && get(/databases/$(database)/documents/eats/$(request.resource.data.eatId)).data.food == request.resource.data.food;
       allow read, update, delete: if false;
+    }
+
+    // 집중 F1 (docs/focus/spec.md): focus/{uid} = 지금 상태 (둘 다 읽고, 자기 것만 씀) · focusLogs/{id} = 끝낸 집중 기록 (자기 것만 만들고 고치고 지움)
+    //  자리 비움(엄격)은 상태 'away' 하나만 — 몇 번 · 얼마나 비웠는지는 저장하지 않는다 (spec 1 · tests C10)
+    function validFocusNum(v) { return v == null || (v is int && v >= 0); }
+    match /focus/{uid} {
+      allow read: if isMember();
+      allow create, update: if isMember() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['state', 'cat', 'label', 'start', 'segStart', 'segs', 'pauseAt', 'strict', 'call', 'updatedAt'])
+        && request.resource.data.state in ['idle', 'run', 'pause', 'away']
+        && (!('cat' in request.resource.data) || request.resource.data.cat == null || (request.resource.data.cat is string && request.resource.data.cat.matches('^[a-z0-9]{1,24}$')))
+        && (!('label' in request.resource.data) || request.resource.data.label == null || (request.resource.data.label is string && request.resource.data.label.size() <= 8))
+        && (!('start' in request.resource.data) || validFocusNum(request.resource.data.start))
+        && (!('segStart' in request.resource.data) || validFocusNum(request.resource.data.segStart))
+        && (!('pauseAt' in request.resource.data) || validFocusNum(request.resource.data.pauseAt))
+        && (!('call' in request.resource.data) || validFocusNum(request.resource.data.call))
+        && (!('segs' in request.resource.data) || (request.resource.data.segs is list && request.resource.data.segs.size() <= 60))
+        && (!('strict' in request.resource.data) || request.resource.data.strict is bool);
+      allow delete: if false;
+    }
+    function validFocusLog(d) {
+      return d.keys().hasOnly(['by', 'cat', 'label', 'day', 'start', 'end', 'ms', 'segs', 'strict', 'createdAt', 'editedAt'])
+        && d.by == request.auth.uid && isDate(d.day)
+        && (d.cat == null || (d.cat is string && d.cat.matches('^[a-z0-9]{1,24}$')))
+        && (!('label' in d) || d.label == null || (d.label is string && d.label.size() <= 8))
+        && d.start is int && d.end is int && d.end > d.start && d.end - d.start <= 86400000
+        && d.ms is int && d.ms >= 60000 && d.ms <= d.end - d.start
+        && d.segs is list && d.segs.size() >= 1 && d.segs.size() <= 60
+        && (!('strict' in d) || d.strict is bool);
+    }
+    match /focusLogs/{id} {
+      allow read: if isMember();
+      allow create: if isMember() && validFocusLog(request.resource.data);
+      allow update: if isMember() && resource.data.by == request.auth.uid && validFocusLog(request.resource.data);
+      allow delete: if isMember() && resource.data.by == request.auth.uid;
     }
 
     // 월말 · 연말결산 (docs/recap): recaps/<YYYY-MM | YYYY> — 서버 함수(monthlyRecap)만 쓴다. 둘 다 읽기만
