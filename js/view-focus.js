@@ -90,7 +90,14 @@
     return '<section class="card fc-card fc-week"><div class="fc-week__head"><h2 class="fc-week__t">' + esc(T.week) + '</h2><span class="fc-legend">' +
       '<span><i class="fc-legend__me"></i>' + esc(T.legMe) + '</span><span><i class="fc-legend__her"></i>' + esc(m.herName) + '</span><span><i class="fc-legend__both"></i>' + esc(T.legBoth) + '</span></span></div>' +
       '<div class="fc-wgrid" role="img" aria-label="' + esc(T.weekAria(w.days.map(function (d, i) { return { dow: T.dows[i], me: d.me, her: d.her }; }), m.herName)) + '">' + cols + '</div>' +
-      '<p class="fc-week__line">' + esc(T.weekLine(p.today ? T.weekToday : T.dows[w.pick], p.me, m.herName, p.her, p.both)) + '</p></section>';
+      '<p class="fc-week__line">' + esc(T.weekLine(p.today ? T.weekToday : T.dows[w.pick], p.me, m.herName, p.her, p.both)) + '</p>' + weekSubj(w.subjects) + '</section>';
+  }
+  function weekSubj(list) {
+    if (!list || !list.length) return '';
+    return '<div class="fc-wsub"><h3 class="fc-wsub__t">' + esc(T.weekSubjHead) + '</h3><ul class="fc-wsub__list">' + list.map(function (x) {
+      return '<li class="fc-wsub__row"><span class="fc-wsub__tx"><span class="fc-wsub__name">' + (x.icon ? '<span class="fc-row__ic" aria-hidden="true">' + esc(x.icon) + '</span>' : '') + esc(x.name) + '</span>' +
+        (x.labels ? '<span class="fc-wsub__labs">' + esc(x.labels) + '</span>' : '') + '</span><span class="fc-wsub__ms">' + esc(F.hm(x.ms)) + '</span></li>';
+    }).join('') + '</ul></div>';
   }
   function tab(m) {
     if (m.error) return head(m) + '<section class="card notice" role="status"><p class="notice__body">' + esc(m.error) + '</p></section>';
@@ -170,6 +177,10 @@
       '<button type="button" class="seg__btn" data-act="fc-mode" data-v="strict" aria-pressed="' + (!!s.strict) + '"' + (s.busy ? ' disabled' : '') + '>' + esc(T.modeStrictBtn) + '</button></div>' +
       '<p class="fc-explain">' + esc(s.strict ? T.setStrict : T.setLoose) + '</p>' +
       '<p class="fc-small">' + esc(T.setNote(s.herName)) + '</p>' + (s.busy ? '<p class="fc-small">' + esc(T.setBusy) + '</p>' : '') +
+      ((s.cats || []).length ? '<h3 class="fc-lab fc-set__h" id="fc-catvis-h">' + esc(T.catVisHead) + '</h3><p class="fc-small">' + esc(T.catVisSub) + '</p>' +
+        '<div class="fc-lchips fc-catvis" role="group" aria-labelledby="fc-catvis-h">' + s.cats.map(function (c) {
+          return '<button type="button" class="chip fc-cchip" data-act="fc-catvis" data-v="' + esc(c.id) + '" aria-pressed="' + (c.on ? 'true' : 'false') + '">' + (c.icon ? '<span aria-hidden="true">' + esc(c.icon) + '</span> ' : '') + esc(c.name) + '</button>';
+        }).join('') + '</div>' : '') +
       '<button type="button" class="close-btn" data-act="fc-sheet-close">' + esc(T.close) + '</button>', entering);
   }
   function stillSheet(s, entering) {

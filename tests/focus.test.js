@@ -237,3 +237,29 @@ test('규칙 · 연결: focus · focusLogs 규칙, 화면 파일이 index · 서
   const idx = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), sw = fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
   for (const f of ['js/focus.js', 'js/focus-text.js', 'js/focus-ring.js', 'js/view-focus.js', 'js/app-focus.js', 'styles/focus.css']) { assert.ok(idx.includes(f), f); assert.ok(sw.includes("'" + f + "'"), f); }
 });
+
+// ── 집중에 보일 카테고리 · 이번 주 과목별 (v86) ──
+test('카테고리 처음 값: 운동 · 약속 · 병원 · 식사는 숨김, 공부는 보임', () => {
+  const F = require('../js/focus.js');
+  const cats = [{ id: 'class', name: '수업' }, { id: 'exercise', name: '운동' }, { id: 'study', name: '공부' }, { id: 'meet', name: '약속' },
+    { id: 'c1', name: '병원' }, { id: 'c2', name: '식사' }, { id: 'c3', name: '토익' }];
+  assert.deepEqual(F.visibleCats(cats).map(c => c.id), ['class', 'study', 'c3']);
+  assert.deepEqual(F.visibleCats(cats, { exercise: false, study: true }).map(c => c.id), ['class', 'exercise', 'c3']);
+  assert.equal(F.visibleCats(cats, { class: true, study: true, c3: true }).length, 7, '다 끄면 전부 보임');
+});
+test('이번 주 과목별: 월 05시부터, 이름별 합계, 진행 중 포함', () => {
+  const F = require('../js/focus.js');
+  const now = Date.UTC(2026, 10, 25, 3, 0); // 수 12:00 KST
+  const ws = F.weekStart(F.dayKey(now)), H = F.H;
+  const logs = [
+    { by: 'a', cat: 'study', label: '일반생물학', day: ws, ms: 2 * H },
+    { by: 'a', cat: 'study', label: '토익', day: F.addDays(ws, 1), ms: H },
+    { by: 'a', cat: 'study', label: '일반생물학', day: F.addDays(ws, 1), ms: H },
+    { by: 'a', cat: 'work', label: null, day: F.addDays(ws, -1), ms: 5 * H },
+    { by: 'b', cat: 'study', label: '토익', day: ws, ms: 9 * H }];
+  const lv = { cat: 'work', label: '', segs: [[now - H, now]] };
+  const out = F.weekSubjects(logs, lv, 'a', now);
+  assert.equal(out[0].cat, 'study'); assert.equal(out[0].ms, 4 * H);
+  assert.deepEqual(out[0].labels, [{ label: '일반생물학', ms: 3 * H }, { label: '토익', ms: H }]);
+  assert.equal(out[1].cat, 'work'); assert.equal(out[1].ms, H);
+});

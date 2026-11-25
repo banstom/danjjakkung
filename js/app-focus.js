@@ -56,6 +56,8 @@
     function myState() { var s = myLive().state; return s === 'stale' ? 'stale' : s; }
     function catName(id) { var c = host.cats().filter(function (x) { return x.id === id; })[0]; return c ? c.name : T.noCat; }
     function catIcon(id) { var c = host.cats().filter(function (x) { return x.id === id; })[0]; return c ? c.icon : ''; }
+    function shownCats() { return F.visibleCats(host.cats(), loc.hide); }
+    function defCat() { var v = shownCats(); return v.some(function (c) { return c.id === loc.lastCat; }) ? loc.lastCat : (v[0] || {}).id || null; }
     function subjOf(cat, label) { return T.subj(catName(cat), label); }
     function strictPref() { var u = host.user(); return !!(u && u.focusMode === 'strict') || loc.mode === 'strict' && !(u && u.focusMode === 'loose'); }
     function totals() { return F.totals(st.logs || [], lives(), me(), her(), now()); }
@@ -258,7 +260,7 @@
         btn: state == null ? null : F.partnerButton(state === 'away' || state === 'pause' ? 'busy' : state, mine && mine.call, now()) };
     }
     function tabModel() {
-      var t = totals(), lv = myLive(), cats = host.cats(), logs = st.logs || [];
+      var t = totals(), lv = myLive(), cats = shownCats(), logs = st.logs || [];
       var on = lv.state === 'run' || lv.state === 'pause' || lv.state === 'away';
       var order = F.recentCats(cats, logs, me(), loc.cats);
       var todayLogs = logs.filter(function (l) { return l.by === me() && l.day === t.day; });
@@ -274,12 +276,15 @@
       var w = F.week(logs, lives(), me(), her(), now());
       var pick = st.wpick != null && !w.days[st.wpick].future ? st.wpick : F.weekdayOf(t.day);
       var hm = herModel(t);
+      var ws = F.weekSubjects(logs, lv, me(), now()).slice(0, 4).map(function (x) {
+        return { name: catName(x.cat), icon: catIcon(x.cat), ms: x.ms, labels: x.labels.slice(0, 3).map(function (l) { return l.label + ' ' + F.hm(l.ms); }).join(' · ') };
+      });
       return { date: host.dateText(), strict: on ? !!lv.strict : strictPref(), herName: host.nameOf(her()), herSlot: host.slotOf(her()),
         first: !on && !logs.some(function (l) { return l.by === me(); }) && !t.me,
         me: { state: lv.state, runMs: lv.runMs, subj: subjOf(lv.cat, lv.label) },
         today: { me: t.me, her: t.her, both: t.both, nowBoth: !!F.togetherSince(lv, herLive()), compare: on ? null : F.compare(t.me, t.yesterday) },
         her: hm, subjects: subjects, moreCount: Math.max(0, cats.length - subjects.length),
-        week: { days: w.days, empty: !w.weekMe && !w.weekHer, pick: pick } };
+        week: { days: w.days, empty: !w.weekMe && !w.weekHer, pick: pick, subjects: ws } };
     }
     function screenModel() {
       var t = totals(), lv = myLive(), hl = herLive(), since = F.togetherSince(lv, hl);
@@ -307,7 +312,7 @@
 
     // ── 시트 값 ──
     function subjSheetModel() {
-      var s = st.sheet, cats = host.cats(), order = F.recentCats(cats, st.logs || [], me(), loc.cats);
+      var s = st.sheet, cats = shownCats(), order = F.recentCats(cats, st.logs || [], me(), loc.cats);
       var list = (s.expanded ? order : order.slice(0, 6)).map(function (id) { return { id: id, name: catName(id), icon: catIcon(id), picked: id === s.cat }; });
       var labels = s.cat ? F.recentLabels(st.logs || [], me(), s.cat, loc.labels && loc.labels[s.cat]) : [];
       return { cats: list, more: s.expanded ? 0 : Math.max(0, order.length - 6), cat: s.cat, label: s.label || '', labels: labels, subj: s.cat ? subjOf(s.cat, s.label) : '', mode: s.mode };
@@ -358,7 +363,7 @@
       var s = st.sheet; if (!s) return '';
       var e = st.entering; st.entering = false;
       if (s.kind === 'subj') return V.subjSheet(subjSheetModel(), e);
-      if (s.kind === 'set') { var lv = myLive(); return V.settingsSheet({ strict: strictPref(), busy: lv.state === 'run' || lv.state === 'pause' || lv.state === 'away', herName: host.nameOf(her()) }, e); }
+      if (s.kind === 'set') { var lv = myLive(); return V.settingsSheet({ cats: host.cats().map(function (c) { return { id: c.id, name: c.name, icon: c.icon, on: !F.catHidden(c, loc.hide) }; }), strict: strictPref(), busy: lv.state === 'run' || lv.state === 'pause' || lv.state === 'away', herName: host.nameOf(her()) }, e); }
       if (s.kind === 'still') return V.stillSheet({ start: (myDoc() || {}).start }, e);
       if (s.kind === 'end') return myDoc() && myDoc().start ? V.endSheet(endSheetModel(), e) : '';
       if (s.kind === 'log') {
@@ -388,8 +393,8 @@
         case 'fc-resume': resume(); return true;
         case 'fc-done-ok': st.done = null; st.screen = false; render(true); return true;
         case 'fc-call': call(); return true;
-        case 'fc-join': openSheet({ kind: 'subj', mode: 'join', cat: loc.lastCat || (host.cats()[0] || {}).id || null, label: '' }); return true;
-        case 'fc-subj': openSheet({ kind: 'subj', mode: 'start', cat: loc.lastCat || (host.cats()[0] || {}).id || null, label: '', expanded: v !== 'label' }); if (v === 'label') host.focus(['#fc-label'], true); return true;
+        case 'fc-join': openSheet({ kind: 'subj', mode: 'join', cat: defCat(), label: '' }); return true;
+        case 'fc-subj': openSheet({ kind: 'subj', mode: 'start', cat: defCat(), label: '', expanded: v !== 'label' }); if (v === 'label') host.focus(['#fc-label'], true); return true;
         case 'fc-pick': st.sheet.cat = v; render(true); return true;
         case 'fc-catmore': st.sheet.expanded = true; render(true); return true;
         case 'fc-lchip': st.sheet.label = st.sheet.label === v ? '' : v; render(true); return true;
@@ -403,6 +408,10 @@
         case 'fc-mode': {
           var lv = myLive(); if (lv.state === 'run' || lv.state === 'pause' || lv.state === 'away') { toast(T.tBusyMode); return true; }
           loc.mode = v === 'strict' ? 'strict' : 'loose'; saveLoc(); host.saveUser('focusMode', loc.mode); render(true); return true;
+        }
+        case 'fc-catvis': {
+          var c = host.cats().filter(function (x) { return x.id === v; })[0]; if (!c) return true;
+          loc.hide = loc.hide || {}; loc.hide[v] = !F.catHidden(c, loc.hide); saveLoc(); render(true); return true;
         }
         case 'fc-sheet-close': closeSheet(); return true;
         case 'fc-still-yes': loc.asked = (myDoc() || {}).start; saveLoc(); st.sheet = null; render(true); return true;
@@ -423,7 +432,7 @@
         case 'fc-delyes': { var id = st.sheet.id; st.sheet = null; st.logs = (st.logs || []).filter(function (x) { return x.id !== id; }); render(true); S().deleteFocusLog(id).then(function () { toast(T.tDeleted); }, function () { toast(T.tFail); }); return true; }
         case 'fc-wday': st.wpick = Number(v); render(true); return true;
         case 'fc-band': {
-          if (v === 'partner') openSheet({ kind: 'subj', mode: 'join', cat: loc.lastCat || (host.cats()[0] || {}).id || null, label: '' });
+          if (v === 'partner') openSheet({ kind: 'subj', mode: 'join', cat: defCat(), label: '' });
           else { st.screen = true; host.screenOpened(); updateWake(); render(true); }
           return true;
         }

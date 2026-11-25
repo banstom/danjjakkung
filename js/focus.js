@@ -171,11 +171,41 @@
     return null;
   }
 
+  // ── 집중에 보일 카테고리 · 이번 주 과목별 ──
+  /** 처음 값: 기본 운동 · 약속, 이름에 아래 낱말이 있으면 숨김. prefs[id]가 있으면 그게 우선 (true = 숨김) */
+  var HIDE_IDS = { exercise: true, meet: true };
+  var HIDE_RE = /운동|약속|병원|진료|식사|밥|데이트|헬스|미용/;
+  function catHidden(cat, prefs) {
+    if (prefs && Object.prototype.hasOwnProperty.call(prefs, cat.id)) return !!prefs[cat.id];
+    return !!HIDE_IDS[cat.id] || HIDE_RE.test(String(cat.name || ''));
+  }
+  /** 다 숨기면 전부 보여 줌 (시작할 곳이 없어지지 않게) */
+  function visibleCats(cats, prefs) {
+    var v = (cats || []).filter(function (c) { return !catHidden(c, prefs); });
+    return v.length ? v : (cats || []).slice();
+  }
+  /** 이번 주(월 05시~) 나의 카테고리별 · 이름별 합계 → [{ cat, ms, labels: [{ label, ms }] }] 큰 순 */
+  function weekSubjects(logs, lv, me, now) {
+    var ws = weekStart(dayKey(now)), by = {};
+    function add(cat, label, ms) {
+      if (!(ms > 0)) return;
+      var k = cat || '', o = by[k] || (by[k] = { cat: cat || null, ms: 0, lab: {} });
+      o.ms += ms; if (label) o.lab[label] = (o.lab[label] || 0) + ms;
+    }
+    (logs || []).forEach(function (l) { if (l.by === me && l.day >= ws) add(l.cat, l.label, l.ms != null ? l.ms : sum(l.segs || [])); });
+    if (lv && lv.segs && lv.segs.length) { var d = byDay(lv.segs); Object.keys(d).forEach(function (k) { if (k >= ws) add(lv.cat, lv.label, sum(d[k])); }); }
+    return Object.keys(by).map(function (k) {
+      var o = by[k];
+      return { cat: o.cat, ms: o.ms, labels: Object.keys(o.lab).map(function (n) { return { label: n, ms: o.lab[n] }; }).sort(function (a, b) { return b.ms - a.ms; }) };
+    }).sort(function (a, b) { return b.ms - a.ms; });
+  }
+
   var api = { H: H, M: M, LONG_ASK: LONG_ASK, AUTO_STOP: AUTO_STOP, PAUSE_END: PAUSE_END, MIN_SAVE: MIN_SAVE, STRICT_GRACE: STRICT_GRACE, CALL_GAP: CALL_GAP,
     dayKey: dayKey, dayStart: dayStart, addDays: addDays, weekStart: weekStart, weekdayOf: weekdayOf,
     norm: norm, sum: sum, clip: clip, overlap: overlap, byDay: byDay, live: live, shownState: shownState, totals: totals, week: week,
     hms: hms, hm: hm, mins: mins, clock: clock, compare: compare, partnerButton: partnerButton, band: band, dot: dot, togetherSince: togetherSince,
-    recentCats: recentCats, recentLabels: recentLabels, cleanLabel: cleanLabel, checkEdit: checkEdit };
+    recentCats: recentCats, recentLabels: recentLabels, cleanLabel: cleanLabel, checkEdit: checkEdit,
+    catHidden: catHidden, visibleCats: visibleCats, weekSubjects: weekSubjects };
   root.RT = root.RT || {};
   root.RT.focus = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

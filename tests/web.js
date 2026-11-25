@@ -1053,6 +1053,18 @@ async function tick(page, dateKey, key) {
     const sl = [...docs.keys()].filter((k) => k.startsWith('focusLogs/')).map((k) => docs.get(k)).filter((l) => l.strict)[0];
     assert.ok(sl && sl.ms >= 3 * 60000 - 2000 && sl.ms <= 3 * 60000 + 6000, '나가 있던 6분은 빠짐 ' + (sl && sl.ms));
     await jm.click('[data-act="fc-done-ok"]'); await jm.click('[data-act="fc-settings"]'); await jm.click('[data-act="fc-mode"][data-v="loose"]'); await jm.click('.fc-sheet [data-act="fc-sheet-close"]');
+    // (v86) 이번 주 과목별 · 집중에 보일 카테고리
+    assert.ok(await jm.$('.fc-wsub .fc-wsub__row'), '이번 주 나는 목록');
+    await jm.click('[data-act="fc-settings"]'); await jm.waitForSelector('.fc-catvis');
+    assert.equal(await jm.getAttribute('[data-act="fc-catvis"][data-v="exercise"]', 'aria-pressed'), 'false', '운동은 처음에 꺼짐');
+    assert.equal(await jm.getAttribute('[data-act="fc-catvis"][data-v="meet"]', 'aria-pressed'), 'false', '약속은 처음에 꺼짐');
+    assert.equal(await jm.getAttribute('[data-act="fc-catvis"][data-v="study"]', 'aria-pressed'), 'true');
+    await jm.click('[data-act="fc-catvis"][data-v="study"]'); await jm.waitForTimeout(80);
+    assert.equal(await jm.getAttribute('[data-act="fc-catvis"][data-v="study"]', 'aria-pressed'), 'false');
+    await jm.click('.fc-sheet [data-act="fc-sheet-close"]'); await jm.waitForTimeout(100);
+    const rowNames = await jm.$$eval('.fc-row__name', (els) => els.map((e) => e.textContent));
+    assert.ok(!rowNames.some((t) => /공부|운동|약속/.test(t)), '끈 카테고리는 집중 목록에 없음 ' + rowNames);
+    await jm.click('[data-act="fc-settings"]'); await jm.click('[data-act="fc-catvis"][data-v="study"]'); await jm.click('.fc-sheet [data-act="fc-sheet-close"]');
     await jm.click('[data-act="tab"][data-tab="routine"]'); await dj.click('[data-act="tab"][data-tab="routine"]');
     console.log('FC1 집중 확인 끝 (시작 · 띠 · 점 · 같이 하기 · 함께 배지 · 쉬기 · 끝냄 요약 · 기록 고치기 · 1분 미만)');
   }
