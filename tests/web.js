@@ -1029,6 +1029,30 @@ async function tick(page, dateKey, key) {
     await dj.click('[data-act="tab"][data-tab="focus"]'); await dj.click('.fc-today [data-act="fc-end"]'); await dj.waitForTimeout(200);
     assert.match(await dj.textContent('.toast'), /집중했어요/);
     assert.ok(!(await dj.$('.fc-band')));
+    // 엄격 모드 (tests C9 · C10): 설정 → 엄격 → 시작 → 앱을 나가 5초 안 = 그대로 / 넘으면 자리 비움, 짝꿍은 「잠깐 자리 비움」만
+    await jm.click('[data-act="tab"][data-tab="focus"]'); await jm.click('[data-act="fc-settings"]'); await jm.waitForSelector('[data-act="fc-mode"][data-v="strict"]');
+    await jm.click('[data-act="fc-mode"][data-v="strict"]'); await jm.waitForTimeout(100);
+    assert.match(await jm.textContent('.fc-explain'), /5초가 지나면/);
+    await jm.click('.fc-sheet [data-act="fc-sheet-close"]'); await jm.waitForTimeout(100);
+    assert.match(await jm.textContent('.fc-mode'), /엄격/);
+    const hide = (p, h) => p.evaluate((v) => { Object.defineProperty(document, 'hidden', { get: () => v, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }, h);
+    await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
+    await jm.clock.fastForward(2 * 60000);
+    await hide(jm, true); await jm.clock.fastForward(3000); await hide(jm, false); await jm.waitForTimeout(150);
+    assert.ok(await jm.$('[data-act="fc-pause"]'), '5초 안에 돌아오면 그대로 집중 중');
+    await hide(jm, true); await jm.clock.fastForward(6 * 60000); await hide(jm, false); await jm.waitForSelector('.fc-away');
+    assert.match(await jm.textContent('.fc-away__b'), /앱을 나가 있던 6분은 빼 두었어요/);
+    const fdoc = docs.get('focus/' + lg.by);
+    assert.equal(fdoc.state, 'away'); assert.deepStrictEqual(Object.keys(fdoc).filter((k) => /away|count/i.test(k)), [], '자리 비움 횟수 · 시간은 저장하지 않음');
+    await dj.click('[data-act="tab"][data-tab="focus"]'); await dj.waitForTimeout(200);
+    assert.match(await dj.textContent('.fc-pcard__st'), /^잠깐 자리 비움$/);
+    assert.ok(!(await dj.$('.fc-pcard [data-act="fc-call"], .fc-pcard [data-act="fc-join"]')));
+    await jm.screenshot({ path: path.join(OUT, 'fc-13-focus-away.png') });
+    await jm.click('[data-act="fc-resume"]'); await jm.waitForSelector('[data-act="fc-pause"]');
+    await jm.clock.fastForward(60000); await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-screen--done');
+    const sl = [...docs.keys()].filter((k) => k.startsWith('focusLogs/')).map((k) => docs.get(k)).filter((l) => l.strict)[0];
+    assert.ok(sl && sl.ms >= 3 * 60000 - 2000 && sl.ms <= 3 * 60000 + 6000, '나가 있던 6분은 빠짐 ' + (sl && sl.ms));
+    await jm.click('[data-act="fc-done-ok"]'); await jm.click('[data-act="fc-settings"]'); await jm.click('[data-act="fc-mode"][data-v="loose"]'); await jm.click('.fc-sheet [data-act="fc-sheet-close"]');
     await jm.click('[data-act="tab"][data-tab="routine"]'); await dj.click('[data-act="tab"][data-tab="routine"]');
     console.log('FC1 집중 확인 끝 (시작 · 띠 · 점 · 같이 하기 · 함께 배지 · 쉬기 · 끝냄 요약 · 기록 고치기 · 1분 미만)');
   }
