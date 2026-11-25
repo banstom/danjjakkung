@@ -82,7 +82,7 @@ async function main() {
     const font = await p.evaluate(() => ({ fam: getComputedStyle(document.querySelector('.title')).fontFamily, ok11: document.fonts.check('24px Galmuri11', '전체'), ok14: document.fonts.check('15px Galmuri14', '루틴') }));
     assert.ok(/Galmuri11/.test(font.fam) && font.ok11 && font.ok14, tag + ' C3 도트 글꼴 ' + JSON.stringify(font));
     // C4: 화면에 보이는 글씨 크기는 12 · 15 · 24 · 36 만
-    for (const tab of ['routine', 'schedule', 'todo', 'look', 'all']) {
+    for (const tab of ['routine', 'schedule', 'focus', 'todo', 'look', 'all']) {
       await goTab(p, tab); await p.waitForTimeout(120);
       const sizes = await p.evaluate(() => {
         const out = {};
@@ -138,9 +138,17 @@ async function main() {
     }
     const board = id + (mode === 'dark' ? '-night' : '');
     assert.deepStrictEqual(await themeOf(jm), [board, 'pixel'], tag + ' 판 · 스킨');
-    for (const tab of ['routine', 'schedule', 'todo', 'look', 'all']) {
+    for (const tab of ['routine', 'schedule', 'focus', 'todo', 'look', 'all']) {
       await goTab(jm, tab); await jm.waitForTimeout(150);
       await shot(jm, `${tag}-${tab}`, true);
+    }
+    if (/snack|cinema|observatory/.test(tag)) { // FT2: 집중 화면 — 픽셀 계단 링 · S3 (docs/focus/theme-fit.md 3절)
+      await goTab(jm, 'focus'); await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
+      assert.ok(await jm.$('.fc-ring--pixel'), tag + ' 픽셀 링');
+      const s3 = await jm.$eval('.fc-s3 img', (i) => ({ w: i.width, h: i.height, nw: i.naturalWidth, nh: i.naturalHeight })).catch(() => null);
+      assert.ok(s3 && s3.h <= 140 && s3.w % s3.nw === 0 && s3.w / s3.nw === s3.h / s3.nh, tag + ' S3 정수 배율 · 140px 안 ' + JSON.stringify(s3));
+      await shot(jm, `${tag}-focus-screen`, false);
+      await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-tab');
     }
     await jm.evaluate(() => document.fonts.ready);
     globalThis.__checks && await globalThis.__checks(jm, id, mode, tag);

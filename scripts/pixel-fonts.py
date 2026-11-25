@@ -16,7 +16,7 @@ import sys
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 APP = os.path.join(ROOT, 'styles', 'app.css')
 # 기능별 스타일도 같은 표에 (v75: 교환 쪽지 · 출출 쿠키)
-EXTRA = [os.path.join(ROOT, 'styles', n) for n in ('question.css', 'eat.css')]
+EXTRA = [os.path.join(ROOT, 'styles', n) for n in ('question.css', 'eat.css', 'focus.css')]  # 집중 F1 (docs/focus)
 PIXEL = os.path.join(ROOT, 'styles', 'pixel.css')
 START = '/* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */'
 END = '/* ── 글씨 크기 표 끝 ── */'

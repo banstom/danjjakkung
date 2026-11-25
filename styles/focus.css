@@ -13,7 +13,7 @@
 .fc-today__kick { font-size: 13px; font-weight: 700; color: var(--sub); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fc-today__kick--on { color: var(--tint-text); }
 .fc-today__right { flex-shrink: 0; font-size: 13px; color: var(--sub); font-weight: 600; font-variant-numeric: tabular-nums; }
-.fc-big { font-size: min(52px, 13vw); font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fc-big { font-size: 52px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fc-big.is-zero { color: var(--sub); }
 .fc-today__zero { margin: -4px 0 0; font-size: 13px; color: var(--sub); }
 .fc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -103,7 +103,7 @@ body.fc-full .app { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)
 .fr-t { fill: var(--focus-track); } .fr-p { fill: var(--focus-ring); } .fr-s { fill: var(--faint); } .fr-o { fill: var(--ol, var(--line)); }
 .fc-ringbox__in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
 .fc-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.fc-time--big { font-size: min(50px, 13vw); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.fc-time--big { font-size: 50px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .fc-time--big.is-still { color: var(--sub); }
 .fc-ringbox__sum { font-size: 14px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
 .fc-note { margin: 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--sub); }
@@ -160,3 +160,4 @@ body.fc-full .app { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)
   .fc-time--big { font-size: 38px; }
   .fc-pcard__st { flex-wrap: wrap; }
 }
+.fc-pcard--screen .fc-pcard__name { white-space: normal; }
