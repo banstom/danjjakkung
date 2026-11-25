@@ -47,6 +47,28 @@
       '<span class="arow__chev">' + svg(18, ICON.chev) + '</span></button>';
   }
 
+  // FT1 (docs/focus/tabs.md 2절): 돌아보기 카드 — 이번 주 5단계 띠 · [주] [달] [결산] · 아래 한 줄
+  var DOWS = ['월', '화', '수', '목', '금', '토', '일'];
+  var CELL = { full: '모두 해냄', s3: '거의 다 함', s2: '반쯤 함', s1: '조금 함', none: '안 함', rest: '쉬는 날', pre: '루틴 없음', future: '아직' };
+  function lookCard(l) {
+    if (!l) return '';
+    var cells = (l.cells && l.cells.length === 7 ? l.cells : ['future', 'future', 'future', 'future', 'future', 'future', 'future']).map(function (c, i) {
+      var cls = c === 'full' ? 'lv-full' : c === 'none' ? 'lv-none' : c === 'pre' ? 'alook__c--pre' : c === 'rest' ? 'lv-rest' : /^s[123]$/.test(c) ? 'lv-' + c : 'alook__c--future';
+      return '<span class="alook__d"><span class="alook__c ' + cls + (i === l.todayIdx ? ' alook__c--today' : '') + '"></span><span class="alook__dow">' + DOWS[i] + '</span></span>';
+    }).join('');
+    var label = '이번 주 우리 · ' + DOWS.map(function (d, i) { return d + ' ' + CELL[(l.cells || [])[i] || 'future']; }).join(', ');
+    var seg = function (v, t, extra) { return '<button type="button" class="alook__seg" data-act="open-look" data-v="' + v + '">' + t + (extra || '') + '</button>'; };
+    var foot = l.fresh ? '<button type="button" class="alook__line alook__line--btn" data-act="rc-open" data-v="' + esc(l.fresh.key) + '">' + esc(l.fresh.text) + ' ›</button>'
+      : '<p class="alook__line">' + esc(l.line) + '</p>';
+    var yq = l.yq ? '<button type="button" class="alook__line alook__line--btn" data-act="' + esc(l.yq.act) + '" data-v="' + esc(l.yq.year) + '"><span aria-hidden="true">💌</span> 짝꿍과의 연말 문답 ›</button>' : '';
+    return '<h2 class="asec">돌아보기</h2><section class="card alook" aria-label="돌아보기">' +
+      '<button type="button" class="alook__top" data-act="open-look" data-v="week" aria-label="' + esc(label + ' · 모두 해낸 날 ' + (l.allDays || 0) + '일 · 돌아보기 열기') + '">' +
+      '<span class="alook__head"><span class="alook__title">이번 주 우리</span><span class="alook__sub">모두 해낸 날 ' + esc(l.allDays || 0) + '일</span></span>' +
+      '<span class="alook__strip" aria-hidden="true">' + cells + '</span></button>' +
+      '<div class="alook__segs">' + seg('week', '주') + seg('month', '달') + seg('recap', '결산', l.fresh ? '<span class="alook__new">새로</span>' : '') + '</div>' +
+      foot + yq + '</section>';
+  }
+
   /** m = { us(우리 둘 박스 — view-avatar.js), map: { count, ready, tiles }, diet, notify: '켜짐' | '꺼짐' | '', theme, meName } */
   function tab(m) {
     // v51: 「우리 둘」 박스 — 왼쪽 · 오른쪽 사진(또는 사람 색) + 가운데 디데이 · 다음 기념일 (view-avatar.js)
@@ -67,7 +89,7 @@
       (m.theme ? row('open-theme', 'palette', '테마', '', m.theme, '테마 (지금: ' + m.theme + ')') : '') +
       row('open-account', 'user', '계정', m.meName ? m.meName + ' 님으로 접속' : '', '', '계정' + (m.meName ? ' · ' + m.meName + ' 님으로 접속' : '')) +
       '</div>';
-    return '<div class="all">' + us + feats + set + '</div>';
+    return '<div class="all">' + us + lookCard(m.look) + feats + set + '</div>';
   }
 
   /** 계정 시트 — 접속한 사람 · 이메일 + 로그아웃. a = { meName, email } */
@@ -83,7 +105,7 @@
       '</section></div>';
   }
 
-  var api = { tab: tab, accountSheet: accountSheet, mapPreview: mapPreview, tilesFor: tilesFor, TILES: TILES, TILE_SIDO: TILE_SIDO };
+  var api = { lookCard: lookCard, tab: tab, accountSheet: accountSheet, mapPreview: mapPreview, tilesFor: tilesFor, TILES: TILES, TILE_SIDO: TILE_SIDO };
   root.RT = root.RT || {};
   root.RT.viewAll = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

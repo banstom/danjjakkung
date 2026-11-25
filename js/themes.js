@@ -388,6 +388,14 @@
     if (!a) return '';
     return '<img class="theme-art theme-art--' + slot + (cls ? ' ' + cls : '') + '" src="' + a.src + '" width="' + a.w + '" height="' + a.h + '" alt="' + a.alt + '" decoding="async">';
   }
+  /** 집중 화면 S3 (docs/focus/spec.md 3-3, tests B4): 할 일 탭과 같은 정수 배율, 높이가 maxH 를 넘으면 한 단계씩 낮춤 (1 아래로는 안 감) */
+  function fitScale(a, maxH) { var x = a.x; while (maxH && x > 1 && a.h * x > maxH) x--; return x; }
+  function artFit(slot, cls, maxH, id) {
+    var t = byId(id || current()), a = t && ART[t.id] && ART[t.id][slot];
+    if (!a) return '';
+    var x = fitScale(a, maxH);
+    return '<img class="theme-art theme-art--' + slot + (cls ? ' ' + cls : '') + '" src="themes/' + t.id + '/' + slot + '.png" width="' + a.w * x + '" height="' + a.h * x + '" alt="' + a.alt + '" decoding="async">';
+  }
   /** 글씨체 고르기 (도트 테마): 저장하고 바로 */
   function chooseFont(f) {
     if (!saveFont(f)) return false;
@@ -518,7 +526,7 @@
   function dayBoard(id) { var t = byId(id); return t ? (t.modes ? t.modes.light : t.id) : null; }
 
   var api = { THEMES: THEMES, GROUPS: GROUPS, MONTHLY: MONTHLY, groups: groups, groupOf: groupOf, monthly: monthly, seoulMonth: seoulMonth, dayBoard: dayBoard, KEY: KEY, MODE_KEY: MODE_KEY, MODES: MODES, COLOR_KEY: COLOR_KEY, PALETTES: PALETTES, byId: byId, ofBoard: ofBoard, current: current, chosen: chosen, defaultId: defaultId, apply: apply, save: save, choose: choose, syncMeta: syncMeta,
-    ART: ART, art: art, artHtml: artHtml, FONT_KEY: FONT_KEY, font: font, saveFont: saveFont, chooseFont: chooseFont, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
+    ART: ART, art: art, artHtml: artHtml, artFit: artFit, fitScale: fitScale, FONT_KEY: FONT_KEY, font: font, saveFont: saveFont, chooseFont: chooseFont, mode: mode, saveMode: saveMode, chooseMode: chooseMode, hasModes: hasModes, isNight: isNight, board: board, prefersDark: prefersDark,
     palette: palette, slotDefaults: slotDefaults, bothColor: bothColor, inkFor: inkFor, contrast: contrast, colorName: colorName, cleanColors: cleanColors, pairFor: pairFor, withPick: withPick, withReset: withReset, setPeople: setPeople, forget: forget };
   root.RT = root.RT || {};
   root.RT.themes = api;

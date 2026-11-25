@@ -93,7 +93,7 @@ test('F5 1월 1일: recaps/2026 과 recaps/2026-12 둘 다, 알림은 연말 하
   const sent = [];
   await RJ.runNotify(db, kst('2027-01-01T09:00:00'), { send: async (uid, msg, kind, tag, link) => sent.push([uid, msg.title, tag, link]), once: async () => true, appUrl: 'https://app/' });
   assert.deepEqual(sent.map((s) => s[1]), ['2026년의 단짝꿍이 나왔어요', '2026년의 단짝꿍이 나왔어요']);
-  assert.ok(sent.every((s) => s[2] === 'recap-2026' && s[3] === 'https://app/?tab=look&recap=2026'));
+  assert.ok(sent.every((s) => s[2] === 'recap-2026' && s[3] === 'https://app/?tab=all&open=look&recap=2026'));
 });
 
 test('F6 users.recap=false 면 안 보냄 · 같은 결산 알림은 한 번만 · 결산이 없으면 아무에게도', async () => {

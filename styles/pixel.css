@@ -109,10 +109,32 @@
 /* 결산 쪽지 전체 보기 (11-23) — 픽셀 테두리 상자 */
 [data-skin="pixel"] .rc-notesheet__card { border-radius: 0; box-shadow: 0 0 0 3px var(--text); }
 
+/* 집중 F1 (docs/focus/pixel-skin-focus.css · theme-fit.md 3절): 새 부품 없이 지금 도트 부품을 입힘 — 카드 · 게임 버튼 · 보조 버튼 · 점선 구분선 · 네모 점 */
+[data-skin="pixel"] :is(.fc-tip, .fc-band, .fc-stat) { border: 0; border-radius: 0; box-shadow: var(--px-frame); margin-left: 3px; margin-right: 3px; }
+[data-skin="pixel"] .fc-band { box-shadow: var(--px-frame), inset 6px 0 0 var(--her); }
+[data-skin="pixel"] .fc-band.is-me { box-shadow: var(--px-frame), inset 6px 0 0 var(--me); }
+[data-skin="pixel"] .fc-band.is-both { box-shadow: var(--px-frame), inset 6px 0 0 var(--both); }
+[data-skin="pixel"] :is(.fc-chip, .fc-badge:not(.fc-badge--none), .fc-subject, .fc-avatar, .fc-cat) { border: 0; border-radius: 0; box-shadow: var(--px-frame-2); margin: 2px; }
+[data-skin="pixel"] .fc-cat[aria-pressed="true"] { box-shadow: var(--px-frame-2), inset 0 -3px 0 var(--btn-lo); }
+[data-skin="pixel"] .fc-btn { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); margin: 3px; }
+[data-skin="pixel"] :is(.fc-btn.is-sub, .fc-btn.is-off, .fc-play, .fc-mode) { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--sh); margin: 3px; }
+[data-skin="pixel"] .fc-play.is-on { box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
+[data-skin="pixel"] :is(.fc-btn, .fc-play, .fc-mode):active:not(:disabled) { transform: translateY(2px); }
+[data-skin="pixel"] :is(.fc-dot, .tabbar__dot, .fc-legend i, .fc-donecheck) { border-radius: 0; }
+[data-skin="pixel"] .fc-row { border-bottom: 0; background-image: linear-gradient(90deg, var(--sh) 50%, transparent 50%); background-size: 6px 3px; background-repeat: repeat-x; background-position: bottom; }
+[data-skin="pixel"] .fc-row:last-child, [data-skin="pixel"] .fc-row.is-active { background-image: none; }
+[data-skin="pixel"] .fc-row.is-active { border-radius: 0; }
+[data-skin="pixel"] .fc-link--row { border-bottom: 0; }
+[data-skin="pixel"] .fc-bar { border-radius: 0; box-shadow: 0 0 0 2px var(--ol); width: 8px; }
+[data-skin="pixel"] .fc-bar--zero { box-shadow: none; }
+[data-skin="pixel"] .fc-ring--pixel { image-rendering: pixelated; }
+[data-skin="pixel"] .fc-wcol.is-pick { border-radius: 0; }
+
 /* ── 글씨 크기 표 (scripts/pixel-fonts.py 가 만듦 — 손으로 고치지 않기) ── */
 [data-skin="pixel"]:not([data-font="plain"]) body { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .caption { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .title { font-size: 24px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .title--back { font-size: 24px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .tag { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .chip { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .grid-range { font-size: 15px; font-family: var(--px-font-14); }
@@ -325,6 +347,13 @@
 [data-skin="pixel"]:not([data-font="plain"]) .alist li { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .anniv-form__note { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .asec { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__title { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__dow { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__seg { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__new { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__line { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .alook__line--btn { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .afeat__nm { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .afeat__ds { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .abadge { font-size: 12px; font-family: var(--px-font-11); }
@@ -719,4 +748,49 @@
 [data-skin="pixel"]:not([data-font="plain"]) .ek-entry__st { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .ek-new { font-size: 12px; font-family: var(--px-font-11); }
 @media (max-width: 340px) { [data-skin="pixel"]:not([data-font="plain"]) .ek-today__btns .ek-btn { font-size: 12px; font-family: var(--px-font-11); } }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-mode { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-tip { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-today__kick { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-today__right { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-today__zero { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-chip { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-btn { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-avatar { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-pcard__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-pcard__st { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-pcard__t { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-row__name { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-row__ic { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-row__sub { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-row__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-link { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-week__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-week__empty, [data-skin="pixel"]:not([data-font="plain"]) .fc-week__line { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-legend { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-wcol__d { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-band__l { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-band__r { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-subject { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-top__mode { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-badge { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-time--big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-ringbox__sum { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-note { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-away__t { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-away__b { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-done__t { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-done__s { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-stat__k { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-stat__v { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-cat { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-cat__ic { font-size: 24px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-lab { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-count { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-explain { font-size: 15px; font-family: var(--px-font-14); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-small { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-err { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-logrow__s { font-size: 15px; font-family: var(--px-font-14); }
+@media (max-width: 340px) { [data-skin="pixel"]:not([data-font="plain"]) .fc-big { font-size: 36px; font-family: var(--px-font-11); } }
+@media (max-width: 340px) { [data-skin="pixel"]:not([data-font="plain"]) .fc-time--big { font-size: 36px; font-family: var(--px-font-11); } }
 /* ── 글씨 크기 표 끝 ── */

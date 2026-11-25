@@ -40,6 +40,19 @@
     return null;
   }
   function msMap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { if (m[k] != null) o[k] = msOf(m[k]) || 1; }); return o; }
+  /** 집중 문서 ↔ 앱 모양: segs [{ s, e }] ↔ [[s, e]] */
+  function focusIn(d) {
+    var o = Object.assign({}, d || {});
+    o.segs = Array.isArray(o.segs) ? o.segs.map(function (x) { return Array.isArray(x) ? [x[0], x[1]] : [Number(x && x.s), Number(x && x.e)]; }).filter(function (x) { return isFinite(x[0]) && isFinite(x[1]); }) : [];
+    delete o.updatedAt; delete o.createdAt; delete o.editedAt;
+    return o;
+  }
+  function focusOut(d) {
+    var o = {};
+    Object.keys(d || {}).forEach(function (k) { if (k !== 'id' && d[k] !== undefined) o[k] = d[k]; });
+    if (Array.isArray(o.segs)) o.segs = o.segs.map(function (x) { return { s: Math.round(x[0]), e: Math.round(x[1]) }; });
+    return o;
+  }
   /** qdays 문서 → 계산 모듈 모양 */
   function qDayOf(date, d) {
     d = d || {};
@@ -468,6 +481,26 @@
       addOurs: function (uid, text, ask) { return db.doc('ourQuestions/' + newKey().replace(/^r/, 'o')).set({ text: text, by: uid, ask: !!ask, createdAt: ts() }); },
       editOurs: function (id, text, ask) { return db.doc('ourQuestions/' + id).update({ text: text, ask: !!ask }); },
       deleteOurs: function (id) { return db.doc('ourQuestions/' + id).delete(); },
+      // ── 집중 F1 (docs/focus) ── focus/{uid} 지금 상태 · focusLogs/{id} 끝낸 기록 (시각은 모두 ms 숫자)
+      //  Firestore 는 배열 안 배열을 못 담아서 구간은 [{ s, e }] 로 저장하고, 앱에는 [[s, e]] 로 준다
+      watchFocus: function (uid, next, fail) {
+        return db.doc('focus/' + uid).onSnapshot(function (snap) { next(snap.exists ? focusIn(snap.data()) : null); }, fail);
+      },
+      setFocus: function (uid, body) { return db.doc('focus/' + uid).set(Object.assign(focusOut(body), { updatedAt: ts() })); },
+      watchFocusLogs: function (fromDay, next, fail) {
+        return db.collection('focusLogs').where('day', '>=', fromDay).onSnapshot(function (q) {
+          next(q.docs.map(function (doc) { return Object.assign(focusIn(doc.data()), { id: doc.id }); }));
+        }, fail);
+      },
+      /** 끝내기: 기록(하루별로 나눈 것) 만들기 + 지금 상태를 쉬는 중으로 — 한 묶음 */
+      endFocus: function (uid, logs, idle) {
+        var b = db.batch(), ids = [];
+        (logs || []).forEach(function (l) { var id = newKey().replace(/^r/, 'f'); ids.push(id); b.set(db.doc('focusLogs/' + id), Object.assign(focusOut(l), { createdAt: Date.now() })); });
+        b.set(db.doc('focus/' + uid), Object.assign(focusOut(idle), { updatedAt: ts() }));
+        return b.commit().then(function () { return ids; });
+      },
+      updateFocusLog: function (id, body) { return db.doc('focusLogs/' + id).set(Object.assign(focusOut(body), { editedAt: Date.now() })); },
+      deleteFocusLog: function (id) { return db.doc('focusLogs/' + id).delete(); },
       // ── 출출 쿠키 (docs/eat) ── eats/{id} · eatState/today · eatDraws/{id}. 시각은 서버 시각 → 앱에는 ms
       watchEats: function (next, fail) {
         return db.collection('eats').onSnapshot(function (q) { next(q.docs.map(function (doc) { return eatOf(doc.id, doc.data(EST)); })); }, fail);

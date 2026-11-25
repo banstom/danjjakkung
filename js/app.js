@@ -100,28 +100,42 @@
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'fc-label', 'fc-endtime', 'fc-es', 'fc-ee', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   if (RT.yearqa) RT.yearqa.ALL.forEach(function (q) { INPUT_IDS.push('yq-a-' + q.id); }); // 연말 문답 답 칸
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
   var LS_QUEST = 'danjjakkung.questSeen';
-  var TAB_IDS = ['routine', 'schedule', 'todo', 'look', 'all']; // v47: 「전체」
+  // FT1 (docs/focus/tabs.md): 아래 탭은 루틴 · 시간표 · 집중 · 할 일 · 전체. 'look' 은 이제 탭이 아니라 전체 탭(또는 루틴 탭 퀘스트)에서 여는 돌아보기 화면
+  var TAB_IDS = ['routine', 'schedule', 'focus', 'todo', 'look', 'all']; // v47: 「전체」
   var LS_TAB = 'danjjakkung.tab', LS_VIEW = 'danjjakkung.todoView', LS_UNIMODE = 'danjjakkung.uniMode', LS_TODOCAT = 'danjjakkung.todoCat';
   if (lsGet(LS_VIEW) === 'plane') state.todoView = 'plane';
   if (lsGet(LS_UNIMODE) === 'dot') state.uni.mode = 'dot';
   (function () {
-    var q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(root.location.search || '');
+    var lk = lookLink(root.location.search || '');
+    var q = lk.tab ? [null, lk.tab] : null;
     var mq = /[?&]map=(\d{5})/.exec(root.location.search || ''); // v54 단짝 지도 알림 → 그 지역 시트
     var rq = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(root.location.search || ''); // 결산 알림 → 그 결산 카드
     var oq = /[?&]open=(question|eat)/.exec(root.location.search || ''); // 교환 쪽지 · eat(쿠키) 기능 알림 → 그 화면
     if (oq) { state.pendingOpen = oq[1]; if (!q) q = [null, 'all']; }
-    if (rq) { state.recap.pending = rq[1]; state.review.mode = 'recap'; if (!q) q = [null, 'look']; }
+    if (rq) { state.recap.pending = rq[1]; state.review.mode = 'recap'; q = [null, 'look']; }
+    else if (lk.view) state.review.mode = lk.view;
     if (mq) { state.pendingMap = mq[1]; if (!q) q = [null, 'all']; }
     var t = q ? q[1] : lsGet(LS_TAB);
+    if (t === 'look' && !q) t = 'all'; // 예전 기기에 남은 마지막 탭 「돌아보기」 → 전체 탭 (돌아보기 화면은 띄우지 않음)
     if (TAB_IDS.indexOf(t) >= 0) state.tab = t;
+    if (state.tab === 'look') state.lookFrom = 'all';
     // 돌아보기는 언제나 이번 주부터 (주소로 열어도 · 다시 열어도)
-    if (q || rq || oq) { lsSet(LS_TAB, t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
+    if (q || rq || oq) { lsSet(LS_TAB, t === 'look' ? 'all' : t); try { root.history.replaceState(null, '', root.location.pathname); } catch (e) {} }
   })();
+  /** 알림 · 바로가기 주소 → { tab, view }. 새 꼴 ?tab=all&open=look&view=week|month|recap, 예전 꼴 ?tab=look 도 그대로 받는다 (FT1) */
+  function lookLink(str) {
+    var q = /[?&]tab=(routine|schedule|focus|todo|look|all)/.exec(str || '');
+    var ol = /[?&]open=look\b/.test(str || '');
+    var vq = /[?&]view=(week|month|recap)/.exec(str || '');
+    var tab = q ? q[1] : null;
+    if (ol || tab === 'look') tab = 'look';
+    return { tab: tab, view: tab === 'look' && vq ? vq[1] : null };
+  }
   function typing() {
     var el = document.activeElement;
     return !!el && INPUT_IDS.indexOf(el.id) >= 0 && appEl.contains(el);
@@ -178,11 +192,16 @@
     var entering = state.sheetEntering;
     if (state.status !== 'ready') m.header.meName = '';
     var onAll = state.status === 'ready' && state.tab === 'all';
-    m.header.title = onAll ? '전체' : '';
+    m.header.title = onAll ? '전체' : state.status === 'ready' && state.tab === 'focus' ? '집중' : '';
+    m.header.back = state.status === 'ready' && state.tab === 'look' ? { title: '돌아보기', label: state.lookFrom === 'routine' ? '루틴으로 돌아가기' : '전체로 돌아가기' } : null; // FT1: 전체 탭 위에 쌓인 돌아보기 화면
     m.header.hidden = onAll && (!!state.map || !!state.diet || !!state.ledger || !!(qc && qc.isOpen()) || !!(ec && ec.isOpen())); // 지도 화면은 자기 머리줄(뒤로 · 단짝 지도 · 찾기)
+    var onFocus = state.status === 'ready' && state.tab === 'focus' && !!fc;
+    if (onFocus) m.header.hidden = true; // 집중 탭은 자기 머리말(⚙ 느슨 알약) — js/view-focus.js
+    document.body.classList.toggle('fc-full', onFocus && fc.screenOpen()); // 집중 화면 = 전체 화면 (탭 줄 없음)
     m.header.dday = null; // v51: 디데이는 「전체」의 「우리 둘」 박스에서만 (사용자 결정)
     appEl.innerHTML = RT.view.page(state.status, m, state.toast, { sheetEntering: entering, auth: state.auth, setup: state.setup, verify: state.verify, email: state.email, web: true, grow: state.growOpen && ex ? ex.grow : null, notify: state.notifyOpen ? notifyModel() : null, theme: state.themeOpen && !state.notifyOpen ? themeModel() : null,
-      tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab) : '' });
+      tab: state.tab, tabHtml: plan.tab, sheetHtml: plan.sheet, tabbarHtml: state.status === 'ready' ? RT.viewPlan.tabbar(state.tab, fc ? fc.dot(state.tab === 'focus') : null) : '',
+      bandHtml: state.status === 'ready' && fc && state.tab !== 'focus' && !m.header.hidden && !state.recap.open ? fc.bandHtml() : '' });
     document.body.classList.toggle('has-tabbar', state.status === 'ready');
     flipPlay(flipBefore);
     if (state.map) mountMap();
@@ -428,7 +447,7 @@
     if (!btn || btn.disabled || btn.getAttribute('aria-disabled') === 'true' || !appEl.contains(btn)) return;
     var act = btn.getAttribute('data-act');
     if (act.indexOf('q-') === 0 && qc && qc.act(act, btn)) return; // 교환 쪽지 (js/app-question.js)
-    if (act === 'yq-reveal') { var yv = btn.getAttribute('data-v'); if (state.recap.list === null) { state.recap.pending = yv; state.tab = 'look'; state.review.mode = 'recap'; loadRecaps(); render(true); } else openRecap(yv); return; } // 연말 문답 펼쳐 보기 = 연말결산 덱 (문답 카드는 끝에)
+    if (act === 'yq-reveal') { var yv = btn.getAttribute('data-v'); if (state.recap.list === null) { state.recap.pending = yv; if (state.tab !== 'look') state.lookFrom = state.tab; state.tab = 'look'; state.review.mode = 'recap'; loadRecaps(); render(true); } else openRecap(yv); return; } // 연말 문답 펼쳐 보기 = 연말결산 덱 (문답 카드는 끝에)
     if (act.indexOf('yq-') === 0 && yc) { if (act === 'yq-open') { state.recap.open = null; state.recap.noteOpen = null; if (state.recap.list === null && !state.recap.loading) loadRecaps(); } if (yc.act(act, btn)) return; } // 연말 문답 (js/app-yearqa.js)
     if (act.indexOf('ek-') === 0 && ec && ec.act(act, btn)) return; // eat(쿠키) 기능 (js/app-eat.js)
     if (act === 'filter') { state.filter = btn.getAttribute('data-id'); state.page = 0; render(); }
@@ -482,6 +501,7 @@
     else if (act === 'rest-save') saveRest();
     else if (act === 'wake-routine') wakeRoutine(btn.getAttribute('data-key'));
     else if (act === 'tab') setTab(btn.getAttribute('data-tab'));
+    else if (act.indexOf('fc-') === 0 && fc) { if (act === 'fc-band' && state.tab !== 'focus') setTab('focus'); fc.act(act, btn); }
     else if (act === 'todo-toggle') toggleTodo(btn.getAttribute('data-id'));
     else if (act === 'todo-edit') editTodo(btn.getAttribute('data-id'));
     else if (act === 'todo-add') addTodo(btn.getAttribute('data-key'));
@@ -603,7 +623,9 @@
     else if (act === 'pref-miss') setMissNotify(!state.missNotifyOn);
     else if (act === 'open-grow') { state.growOpen = true; state.sheetEntering = true; focusAfter = ['[data-act="close-grow"]']; focusInSheet = true; render(true); }
     else if (act === 'close-grow') closeGrow();
-    else if (act === 'open-quest') { resetReview(); setTab('look'); }
+    else if (act === 'open-quest') openLook('week');
+    else if (act === 'open-look') openLook(btn.getAttribute('data-v'));
+    else if (act === 'look-back') closeLook();
     else if (act === 'open-anniv') openAnniv();
     else if (act === 'open-account') openAccount();
     else if (act === 'ava-open') openAva();
@@ -748,13 +770,32 @@
     if (qc && qc.isOpen()) qc.close(true);
     if (ec && ec.isOpen()) ec.close(true);
     state.ledger = null;
-    state.tab = t; lsSet(LS_TAB, t);
+    if (t === 'look') { state.lookFrom = state.tab; if (state.tab === 'all') state.allScroll = root.scrollY || 0; } // 돌아보기 화면은 연 곳 위에 쌓인다 → 뒤로 = 연 곳
+    state.tab = t; lsSet(LS_TAB, t === 'look' ? 'all' : t);
     if (t === 'look') { state.review.key = null; if (!state.recap.loading) state.recap.list = null; } // 돌아보기를 열 때마다 새로 불러온다 (결산 목록도)
     if (t === 'routine') state.grow.key = null; // 루틴 탭으로 돌아오면 토마토 · 퀘스트 기록도 새로
     state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.review.row = null; state.recap.open = null;
     state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaView = null; dropCrop();
     render(true);
     try { root.scrollTo(0, 0); } catch (e) {}
+  }
+  /** 집중 탭 (FT1 빈 껍데기 — FC1 에서 채움) */
+  function focusTabHtml() {
+    return '<section class="card notice" role="status"><h2 class="notice__title">준비 중이에요</h2><p class="notice__body">둘이 같이 쓰는 집중 타이머가 곧 여기에 생겨요.</p></section>';
+  }
+  /** 돌아보기 화면 열기 (FT1): 전체 탭 카드 [주] [달] [결산] · 루틴 탭 퀘스트 카드. 연 곳 위에 쌓이고 뒤로 = 연 곳 */
+  function openLook(view) {
+    resetReview();
+    state.review.mode = view === 'month' || view === 'recap' ? view : 'week';
+    if (state.tab === 'look') { render(true); return; }
+    setTab('look');
+  }
+  /** 돌아보기 화면 닫기: ‹ · 기기 뒤로 · Esc → 연 곳 (전체 탭이면 보던 스크롤 그대로) */
+  function closeLook() {
+    var to = state.lookFrom && state.lookFrom !== 'look' && TAB_IDS.indexOf(state.lookFrom) >= 0 ? state.lookFrom : 'all';
+    var y = to === 'all' ? state.allScroll || 0 : 0;
+    setTab(to);
+    if (y) { try { root.scrollTo(0, y); } catch (e) {} }
   }
   /** 주 ↔ 일 바꿀 때 보던 주를 이어서 본다 (일 → 주: 그 날짜의 주 · 그 요일 목록, 주 → 일: 고른 요일 · 오늘 · 월요일) */
   function setSchedMode(mode) {
@@ -824,12 +865,14 @@
     var V = RT.viewPlan, out = {};
     if (state.tab === 'todo' && other) out.tab = state.todoView === 'plane' ? V.uniTab(state.todoErr ? { error: state.todoErr } : { view: 'plane', uni: uniModel() }) : V.todoTab(todoModel());
     if (state.tab === 'schedule' && other) out.tab = V.scheduleTab(scheduleModel());
+    if (state.tab === 'focus' && other) { out.tab = fc ? fc.tabHtml() : focusTabHtml(); if (fc && fc.hasSheet()) out.sheet = fc.sheetHtml(); }
     if (state.tab === 'look' && other) out.tab = state.review.mode === 'recap' ? RT.viewRecap.tab(recapEntryModel()) : RT.viewReview.tab(reviewModel());
     if (state.tab === 'look' && state.recap.open) { var dmRc = recapDeckModel(); if (dmRc) out.sheet = RT.viewRecap.deck(dmRc, state.sheetEntering); else state.recap.open = null; }
     if (state.tab === 'look' && state.review.row && state.review.mode === 'month') { var rs = rvRowModel(); if (rs) out.sheet = RT.viewReview.rowSheet(rs, state.sheetEntering); else state.review.row = null; }
     if (state.status === 'ready' && yc) yc.tick();
     if (yc && yc.isOpen()) out.sheet = yc.sheetHtml(); // 연말 문답 쓰는 화면은 어느 탭에서나 맨 위
     if (state.status === 'ready' && qc) qc.tick();
+    if (state.status === 'ready' && fc) fc.tick();
     if (state.status === 'ready' && ec) ec.tick();
     if (state.tab === 'all' && other && qc && qc.isOpen()) { out.tab = qc.screenHtml(); var qsh = qc.sheetHtml(); if (qsh && !(yc && yc.isOpen())) out.sheet = qsh; return out; }
     if (state.tab === 'all' && other && ec && ec.isOpen()) { out.tab = ec.screenHtml(); var esh = ec.sheetHtml(); if (esh && !(yc && yc.isOpen())) out.sheet = esh; return out; }
@@ -1015,6 +1058,7 @@
   }
   function openRecap(key) {
     if (!key) return;
+    if (state.tab !== 'look') { state.lookFrom = state.tab; if (state.tab === 'all') state.allScroll = root.scrollY || 0; }
     state.tab = 'look'; state.review.mode = 'recap'; state.review.row = null;
     state.recap.open = key; state.recap.idx = 0; state.recap.noteOpen = null; state.sheetEntering = true;
     focusAfter = ['[data-act="rc-close"]']; focusInSheet = true;
@@ -2076,7 +2120,7 @@
   }
   /** 알림으로 연 지역 (v54): 「전체」 탭 → 단짝 지도 → 지도 데이터가 오면 그 지역 시트 */
   // ── 교환 쪽지 (docs/question) · eat(쿠키) 기능 (docs/eat) — 화면 상태는 각 모듈(js/app-question.js · js/app-eat.js)이 갖고, 여기선 이어 붙이기만 ──
-  var qc = null, ec = null, yc = null;
+  var qc = null, ec = null, yc = null, fc = null; // fc = 집중 (js/app-focus.js)
   function featureHost() {
     return {
       store: function () { return store; },
@@ -2096,13 +2140,25 @@
       openMapPaint: function (code, food) { return paintFromEat(code, food); },
       paintedSigungu: function () { return new Set(Object.keys(state.placeDocs || {}).filter(function (c) { var d = state.placeDocs[c]; return d && d.visits && d.visits.length; })); },
       areaName: function (code) { return mapData && mapData.names ? mapData.names[code] : null; },
-      reduceMotion: function () { try { return root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } }
+      reduceMotion: function () { try { return root.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } },
+      // 집중 (docs/focus)
+      cats: function () { return catList(); },
+      dateText: function () { return model().header.date; },
+      art: function (slot, cls, where) { return !RT.themes ? '' : where === 'focus' ? RT.themes.artFit(slot, cls, 140) : RT.themes.artHtml(slot, cls); },
+      isPixel: function () { return document.documentElement.getAttribute('data-skin') === 'pixel'; },
+      saveUser: function (k, v) { if (store && state.uid) store.saveValue(state.uid, k, v).catch(function () {}); if (state.userDoc) state.userDoc[k] = v; },
+      screenOpened: function () { if (state.tab !== 'focus') { state.tab = 'focus'; lsSet(LS_TAB, 'focus'); clearPlanSheets(); } }
     };
+  }
+  function clearPlanSheets() {
+    state.sheetDay = null; state.manage = null; state.todoForm = null; state.eventForm = null; state.catSheet = null; state.review.row = null; state.recap.open = null;
+    state.place = null; state.uniSheet = null; state.archive = null; state.anniv = null; state.account = false; state.ava = null; state.avaView = null;
   }
   function makeFeatures() {
     if (RT.appQuestion && RT.viewQuestion && RT.question) qc = RT.appQuestion.create(featureHost());
     if (RT.appEat && RT.viewEat && RT.eat) ec = RT.appEat.create(featureHost());
     if (RT.appYearqa && RT.viewYearqa && RT.yearqa) yc = RT.appYearqa.create(featureHost());
+    if (RT.appFocus && RT.viewFocus && RT.focus) fc = RT.appFocus.create(featureHost());
   }
   function openPendingFeature() {
     var f = state.pendingOpen;
@@ -3476,8 +3532,30 @@
   function avaTouching() { for (var k in acp) return true; return false; }
 
   // ── 「전체」 탭 (v47) ──
+  /** 전체 탭 돌아보기 카드 (FT1, docs/focus/tabs.md 2절): 이번 주 5단계 띠 · 모두 해낸 날 · 결산 「새로」 · 아래 한 줄 · 연말 문답 한 줄 */
+  function lookCardModel() {
+    var now = new Date(), wk = null;
+    try {
+      wk = RT.review.build({ mode: 'week', page: 0, today: state.today, config: fullConfig(), checks: RT.store.mergeChecks(state.server, state.pending),
+        persons: planPeople(), todos: [], kungs: null, events: [], nowMin: now.getHours() * 60 + now.getMinutes() });
+    } catch (e) { wk = null; }
+    var rc = state.recap;
+    if (rc.list === null && !rc.loading && !rc.error && store) setTimeout(loadRecaps, 0);
+    var p = D.parts(state.today), em = RT.viewRecap.entryModel(rc.list || [], { y: p.y, m: p.m, d: p.d }, {});
+    var fresh = em.banner && em.banner.fresh ? em.banner.key : null;
+    var nextM = p.m === 12 ? 1 : p.m + 1;
+    var line = fresh ? null : (p.m === 11 ? '12월 1일 아침에 11월 결산이 나와요 · 연말 문답도 여기서 열려요' : '다음 달 1일 아침에 이번 달 결산이 나와요');
+    var yq = yc ? yc.entryModel() : null;
+    return {
+      cells: wk ? wk.routine.all : [], todayIdx: RT.schedule.weekdayOf(state.today), allDays: wk ? wk.us.allDays : 0, hasRoutine: !!(wk && wk.routine.groups.length),
+      fresh: fresh ? { key: fresh, text: (fresh.length === 4 ? fresh + '년' : Number(fresh.slice(5, 7)) + '월') + ' 결산이 나왔어요' } : null,
+      line: line, nextM: nextM,
+      yq: yq && yq.phase !== 'before' ? { act: yq.phase === 'open' ? 'yq-reveal' : 'yq-open', year: yq.year } : null
+    };
+  }
   function allModel() {
     return {
+      look: lookCardModel(), // FT1: 돌아보기 카드 (「우리 둘」 바로 아래)
       us: usModel(), // 「우리 둘」 박스 (디데이 · 다음 기념일 · 사진)
       map: allMapModel(),
       question: qc ? qc.entryModel() : null, // 교환 쪽지 입구 E1 (식탁 자리)
@@ -4119,6 +4197,7 @@
     if (qc && /^q-/.test(id) && qc.input(id, ev.target.value)) return;
     if (yc && /^yq-/.test(id) && yc.input(id, ev.target.value)) return;
     if (ec && /^ek-/.test(id) && ec.input(id, ev.target.value)) return;
+    if (fc && /^fc-/.test(id) && fc.input(id, ev.target.value)) return;
     if (id === 'ava-zoom' && state.avaCrop) { var ac = state.avaCrop, vw = ac.view / 2; ac.st = RT.avatarCrop.zoomAt(ac.st, (ac.st.min * parseFloat(ev.target.value)) / ac.st.scale, vw, vw, ac.iw, ac.ih, ac.view); avaApply(); return; }
     if (state.ledger && state.ledger.sheet) {
       var lf = state.ledger.sheet;
@@ -4207,7 +4286,7 @@
   });
 
   function sheetIsOpen() {
-    return (state.sheetDay !== null || !!(yc && yc.isOpen()) || !!(qc && qc.hasSheet()) || !!(ec && ec.hasSheet()) || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
+    return (state.sheetDay !== null || !!(fc && fc.hasSheet() && state.tab === 'focus') || !!(yc && yc.isOpen()) || !!(qc && qc.hasSheet()) || !!(ec && ec.hasSheet()) || !!state.review.row || !!state.recap.open || !!(state.ledger && state.ledger.sheet) || !!state.anniv || !!state.account || !!state.ava || !!state.avaView || !!state.manage || state.notifyOpen || state.themeOpen || state.growOpen || !!state.todoForm || !!state.eventForm || !!state.catSheet || !!state.place || !!state.uniSheet || !!state.archive) && !!appEl.querySelector('.sheet');
   }
   /** 맨 위 시트 하나 닫기 (Esc · 뒤로가기) */
   function closeGrow() { state.growOpen = false; focusAfter = ['[data-act="open-grow"]']; render(true); }
@@ -4217,6 +4296,7 @@
     if (state.ava) { closeAva(); return; }
     if (state.account) { closeAccount(); return; }
     if (yc && yc.isOpen()) { yc.back(); return; }
+    if (fc && fc.hasSheet() && state.tab === 'focus') { fc.closeSheet(); return; }
     if (qc && qc.isOpen() && state.tab === 'all') { qc.back(); return; }
     if (ec && ec.isOpen() && state.tab === 'all') { ec.back(); return; }
     if (state.diet && state.diet.log && state.diet.log.find) { dietFindClose(); return; }
@@ -4327,9 +4407,18 @@
     clearTimeout(exitTimer);
     if (exitEl) return;
     if (sheetIsOpen() || state.map || state.diet) { closeTopSheet(); pushGuard(); return; } // 지도 화면도 뒤로 = 「전체」로
+    if (state.tab === 'look' && state.status === 'ready') { closeLook(); pushGuard(); return; } // 돌아보기 화면 뒤로 = 연 곳 (FT1)
+    if (state.tab === 'focus' && fc && fc.screenOpen() && state.status === 'ready') { fc.down(); pushGuard(); return; } // 집중 화면 뒤로 = ∨ (집중은 계속)
     askExit();
   });
 
+  // FT1: 돌아보기 화면에서 Esc = 연 곳으로 (포커스가 body 에 있어도 — 그래서 document 에서 듣는다)
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Escape' || ev.defaultPrevented || exitEl || state.status !== 'ready') return;
+    if (appEl.querySelector('.sheet') || (yc && yc.isOpen())) return;
+    if (state.tab === 'look') { ev.preventDefault(); closeLook(); }
+    else if (state.tab === 'focus' && fc && fc.screenOpen()) { ev.preventDefault(); fc.down(); }
+  });
   appEl.addEventListener('keydown', function (ev) {
     if ((state.sheetDay === null && !(yc && yc.isOpen()) && !(qc && qc.hasSheet()) && !(ec && ec.hasSheet()) && !state.review.row && !state.recap.open && !(state.ledger && state.ledger.sheet) && !state.anniv && !state.account && !state.ava && !state.avaView && !(state.map && (state.map.sel || state.map.find || state.map.rank)) && !(state.diet && (state.diet.form || state.diet.basis || state.diet.log || state.diet.meal || state.diet.cal || state.diet.set)) && !state.manage && !state.notifyOpen && !state.themeOpen && !state.growOpen && !state.todoForm && !state.eventForm && !state.catSheet && !state.place && !state.uniSheet && !state.archive) || !appEl.querySelector('.sheet')) return;
     if (placeKey(ev)) return;
@@ -4380,7 +4469,7 @@
   root.addEventListener('focus', checkToday);
   if (root.navigator.serviceWorker && root.navigator.serviceWorker.addEventListener) {
     root.navigator.serviceWorker.addEventListener('message', function (ev) {
-      var d = ev.data || {}, q = /[?&]tab=(routine|schedule|todo|look|all)/.exec(String(d.link || ''));
+      var d = ev.data || {}, lk2 = lookLink(String(d.link || '')), q = lk2.tab ? [null, lk2.tab] : null;
       var mq = /[?&]map=(\d{5})/.exec(String(d.link || ''));
       var oq2 = /[?&]open=(question|eat)/.exec(String(d.link || ''));
       if (d.type === 'open' && oq2) { state.pendingOpen = oq2[1]; openPendingFeature(); return; }
@@ -4388,10 +4477,10 @@
       var rq2 = /[?&]recap=(\d{4}(?:-\d{2})?)/.exec(String(d.link || '')); // 결산 알림: 앱이 이미 열려 있을 때도 그 결산으로 (11-23 점검 AI)
       if (d.type === 'open' && rq2) {
         state.recap.pending = rq2[1]; state.recap.open = null; state.review.mode = 'recap'; state.review.page = 0; state.review.key = null;
-        if (state.status === 'ready') { if (!state.recap.loading) state.recap.list = null; setTab('look'); render(true); } else state.tab = 'look'; // 다시 불러오면 loadRecaps 가 pending 을 연다 (이미 돌아보기 탭이어도)
+        if (state.status === 'ready') { if (!state.recap.loading) state.recap.list = null; if (state.tab !== 'look') setTab('look'); render(true); } else { state.tab = 'look'; state.lookFrom = 'all'; } // 다시 불러오면 loadRecaps 가 pending 을 연다 (이미 돌아보기 화면이어도)
         return;
       }
-      if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') resetReview(); setTab(q[1]); if (q[1] === 'look') render(true); }
+      if (d.type === 'open' && q && state.status === 'ready') { if (q[1] === 'look') openLook(lk2.view || 'week'); else setTab(q[1]); }
     });
   }
   root.addEventListener('pageshow', checkToday);
@@ -4486,7 +4575,7 @@
     kungUnsub = store.watchKungs(D.toKey(state.today), function (list) { state.kungs = list; state.kungOff = false; if (state.status === 'ready') render(); },
       function () { state.kungOff = true; state.kungs = []; if (state.status === 'ready') render(); }); // 규칙이 아직 없어도 기록 화면은 그대로 둔다 (lost로 보내지 않음)
   }
-  function unsubscribe() { if (yc) yc.stop(); if (qc) qc.stop(); if (ec) ec.stop(); subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
+  function unsubscribe() { if (fc) fc.stop(); if (yc) yc.stop(); if (qc) qc.stop(); if (ec) ec.stop(); subs.forEach(function (u) { try { u(); } catch (e) {} }); subs = []; if (kungUnsub) { try { kungUnsub(); } catch (e) {} kungUnsub = null; } if (spendUnsub) { try { spendUnsub(); } catch (e) {} spendUnsub = null; } }
   function subscribe() {
     unsubscribe();
     subs = [

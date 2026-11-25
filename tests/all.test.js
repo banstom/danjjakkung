@@ -16,8 +16,33 @@ const base = { us, dday: '단짝이 된 지 412일', annivOff: false, map: { rea
 test('아래 탭이 다섯 개, 마지막이 「전체」', () => {
   const html = P.tabbar('all');
   const tabs = [...html.matchAll(/data-tab="([a-z]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(tabs, ['routine', 'schedule', 'todo', 'look', 'all']);
+  assert.deepEqual(tabs, ['routine', 'schedule', 'focus', 'todo', 'all'], 'FT1: 루틴 · 시간표 · 집중 · 할 일 · 전체');
   assert.match(html, /data-tab="all" aria-current="page"[^]*?<span>전체<\/span>/);
+  assert.match(P.tabbar('look'), /data-tab="all" aria-current="page"/, 'FT1: 돌아보기 화면에서는 「전체」가 켜짐');
+  assert.doesNotMatch(P.tabbar('look'), /돌아보기/);
+  assert.match(P.tabbar('focus'), /data-tab="focus" aria-current="page"[^]*?<span>집중<\/span>/);
+});
+
+test('FT1 전체 탭: 「우리 둘」 바로 아래 돌아보기 카드 → 단짝 기능 → 설정, [주] [달] [결산] · 결산 「새로」 · 연말 문답 한 줄', () => {
+  const look = { cells: ['full', 's2', 'none', 'future', 'future', 'future', 'future'], todayIdx: 2, allDays: 1, line: '12월 1일 아침에 11월 결산이 나와요 · 연말 문답도 여기서 열려요', fresh: null, yq: null };
+  const html = ALL.tab(Object.assign({}, base, { look }));
+  assert.match(html, /우리 둘[^]*<h2 class="asec">돌아보기<\/h2>[^]*단짝 기능[^]*설정/);
+  for (const v of ['week', 'month', 'recap']) assert.match(html, new RegExp('data-act="open-look" data-v="' + v + '"'));
+  assert.match(html, /모두 해낸 날 1일/);
+  assert.match(html, /alook__c lv-full/); assert.match(html, /alook__c lv-s2/); assert.match(html, /alook__c lv-none alook__c--today/);
+  assert.match(html, /12월 1일 아침에 11월 결산이 나와요/);
+  assert.doesNotMatch(html, /alook__new/);
+  const fresh = ALL.tab(Object.assign({}, base, { look: Object.assign({}, look, { fresh: { key: '2026-11', text: '11월 결산이 나왔어요' }, line: null, yq: { act: 'yq-open', year: 2026 } }) }));
+  assert.match(fresh, /data-v="recap">결산<span class="alook__new">새로<\/span>/);
+  assert.match(fresh, /data-act="rc-open" data-v="2026-11">11월 결산이 나왔어요 ›/);
+  assert.match(fresh, /data-act="yq-open" data-v="2026">[^<]*<span aria-hidden="true">💌<\/span> 짝꿍과의 연말 문답 ›/);
+});
+
+test('FT1 돌아보기 화면 머리말: ‹ 뒤로 + 「돌아보기」, 날짜 · 칩 없음', () => {
+  const html = V.page('ready', { header: { date: '11월 25일 수요일', back: { title: '돌아보기', label: '전체로 돌아가기' }, meName: '준민' }, empty: true }, '', { tab: 'look', tabHtml: '<div class="rv"></div>' });
+  assert.match(html, /<header class="top top--back"><button type="button" class="top__back" data-act="look-back" aria-label="전체로 돌아가기">/);
+  assert.match(html, /<h1 class="title title--back">돌아보기<\/h1>/);
+  assert.doesNotMatch(html, /11월 25일 수요일/);
 });
 
 test('「전체」: 우리 둘 카드 · 단짝 기능 2×2(지도 · 교환 쪽지 · 출출 쿠키 · 영수증) · 설정 3줄이 각 시트를 연다', () => {
@@ -151,7 +176,8 @@ test('「전체」 탭 파일이 앱 · 오프라인 목록에 들어 있음, ?t
   assert.match(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), /js\/view-all\.js/);
   assert.match(fs.readFileSync(path.join(ROOT, 'sw.js'), 'utf8'), /'js\/view-all\.js'/);
   const app = fs.readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
-  assert.equal((app.match(/tab=\(routine\|schedule\|todo\|look\|all\)/g) || []).length, 2, '주소 · 알림 링크 둘 다');
+  assert.match(app, /tab=\(routine\|schedule\|focus\|todo\|look\|all\)/, 'FT1: 집중 탭 · 예전 ?tab=look 도 받음');
+  assert.equal((app.match(/lookLink\(/g) || []).length, 3, '주소 · 알림 링크 둘 다 같은 함수로 (정의 1 + 쓰는 곳 2)');
 });
 
 test('점검 AI 회귀: 규칙이 막히면 「정해 볼까요?」 없음 · 못 쓰는 설정 줄은 숨김 · 로그아웃은 닫기와 다른 모양', () => {

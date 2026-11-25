@@ -18,7 +18,7 @@ function recapMessage(period) {
   const label = period.kind === 'year' ? `${period.key}년` : `${Number(period.key.slice(5))}월`;
   return { title: `${label}의 단짝꿍이 나왔어요`, body: '한 장씩 넘겨 보세요' };
 }
-const recapLink = (appUrl, key) => `${appUrl}?tab=look&recap=${key}`;
+const recapLink = (appUrl, key) => `${appUrl}?tab=all&open=look&recap=${key}`; // FT1: 전체 탭 위 돌아보기(결산) — 예전 ?tab=look 도 앱이 받음
 
 /** 한 기간 결산을 계산해 recaps/{key} 에 덮어쓴다. 단짝이 된 날보다 이른 기간이면 만들지 않고 null.
     단짝이 된 달은 만들되 비교 없음(앞 기간 = null) */
