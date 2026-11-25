@@ -1,0 +1,30 @@
+/* 단짝꿍 · 집중 F1 — 새 토큰 (FT2)
+ * 기획 계정 2026-11-25. styles/tokens.css 끝에 붙여요.
+ *
+ * 새 토큰은 둘뿐이고, 둘 다 기존 토큰을 가리켜요 → 테마 블록 36개(낮·밤 58판)를 하나씩 고칠 필요 없음.
+ * 함께 배지 · 띠 · 칩 · 그래프는 기존 토큰(--both/--both-ink, --tint/--tint-text, --me, --her, --raised)만 써요.
+ *
+ *   --focus-ring   진행 링 색        = --strong (테마의 진한 메인 색)
+ *   --focus-track  진행 링 바탕 색   = --empty  (달력 빈 칸과 같은 색)
+ *
+ * 왜 --me가 아니라 --strong인가 (시안 A-2는 연보라 --me):
+ *   낮 테마의 사람 색은 옅은 파스텔이라 --me / --empty가 1.20~1.50:1 (35판) → 링이 어디까지 찼는지 안 보임.
+ *   --strong은 58판(도트 44 + 기본 14, 저장소 v84 값) 모두 링 바탕 · 화면 바탕과 3:1 이상 (contrast.md G1 · G2).
+ *   내 색은 링 끝 동그라미(--me, 바탕색 3px 테두리)로 남겨요.
+ */
+
+[data-theme] {
+  --focus-ring: var(--strong);
+  --focus-track: var(--empty);
+}
+
+/* Cosmic Dream: --strong이 없어 --primary(#7557C8)로 떨어지면 링 바탕(#2B3050)과 2.41:1 → --accent(#8F74E0) 3.50:1 */
+[data-theme="cosmic-dream"] {
+  --focus-ring: var(--accent);
+}
+
+/* 기본 묶음의 나머지 테마(기획 계정이 값을 모름)는 tests.md B3이 저장소 값으로 계산해요.
+ * --focus-ring / --focus-track 이 3:1 미만인 판이 있으면 그 판에만 아래처럼 한 줄 넣고 「바뀐 것」에 남겨요.
+ *   [data-theme="<id>"] { --focus-ring: var(--tab-active); }
+ * --tab-active는 탭 글자색이라 바탕과 4.5:1 이상이 이미 보장돼 있어요.
+ */
