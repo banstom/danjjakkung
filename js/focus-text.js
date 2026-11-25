@@ -9,7 +9,7 @@
   var T = {
     tab: '집중',
     title: '집중',
-    modeLoose: '느슨', modeStrict: '엄격', modeLooseBtn: '⚙ 느슨', modeStrictBtn: '🔒 엄격',
+    modeLoose: '느슨', modeStrict: '엄격', modeLooseBtn: '⚙ 느슨', modeStrictBtn: '🔒 엄격', setBtn: '⚙ 설정', modeHead: '집중 모드',
     modeAria: function (strict) { return '집중 설정 — 지금 ' + (strict ? '엄격' : '느슨') + ' 모드'; },
 
     // 오늘 카드 (2-1)

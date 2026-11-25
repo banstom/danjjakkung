@@ -195,7 +195,7 @@ test('그리기: 집중 탭 처음 · 쉬는 중 · 짝꿍 집중 중', () => {
     subjects: [{ id: 'study', name: '공부', icon: '📝', todayMs: 130 * M, labels: '해부학 1:30 · 영어 0:40', active: false }], moreCount: 13,
     week: { days: Array.from({ length: 7 }, (_, i) => ({ me: i < 3 ? H : 0, her: i < 3 ? H : 0, both: 0, meH: i < 3 ? 1 : 0, herH: i < 3 ? 1 : 0, bothH: 0, today: i === 2, future: i > 2 })), empty: false, pick: 2 } };
   const rest = V.tab(base);
-  assert.match(rest, /<h1 class="title">집중<\/h1>[^]*data-act="fc-settings"[^>]*>⚙ 느슨/);
+  assert.match(rest, /<h1 class="title">집중<\/h1>[^]*data-act="fc-settings"[^>]*aria-label="[^"]*느슨[^"]*">⚙ 설정/);
   assert.match(rest, /data-fc="today">3:20:15/);
   assert.match(rest, /어제보다 \+40분/);
   assert.match(rest, /🔥 함께 1:05/); assert.match(rest, /다진 2:58/);

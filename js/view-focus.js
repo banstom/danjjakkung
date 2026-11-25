@@ -19,7 +19,7 @@
   // ── 집중 탭 (2) ──
   function head(m) {
     return '<header class="top fc-head"><div class="top__text"><p class="caption">' + esc(m.date) + '</p><div class="top__row"><h1 class="title">' + esc(T.title) + '</h1></div></div>' +
-      '<button type="button" class="fc-mode" data-act="fc-settings" aria-label="' + esc(T.modeAria(m.strict)) + '">' + esc(m.strict ? T.modeStrictBtn : T.modeLooseBtn) + '</button></header>';
+      '<button type="button" class="fc-mode" data-act="fc-settings" aria-label="' + esc(T.modeAria(m.strict)) + '">' + esc(T.setBtn) + '</button></header>';
   }
   function todayCard(m) {
     var t = m.today, me = m.me, on = me.state === 'run' || me.state === 'pause' || me.state === 'away';
@@ -173,6 +173,7 @@
   }
   function settingsSheet(s, entering) {
     return sheetWrap('fc-set-t', '<h2 class="sheet__title" id="fc-set-t">' + esc(T.setTitle) + '</h2><p class="sheet__sub">' + esc(T.setSub(s.herName)) + '</p>' +
+      '<h3 class="fc-lab fc-set__h fc-set__h--first">' + esc(T.modeHead) + '</h3>' +
       '<div class="seg fc-seg" role="group"><button type="button" class="seg__btn" data-act="fc-mode" data-v="loose" aria-pressed="' + (!s.strict) + '"' + (s.busy ? ' disabled' : '') + '>' + esc(T.modeLoose) + '</button>' +
       '<button type="button" class="seg__btn" data-act="fc-mode" data-v="strict" aria-pressed="' + (!!s.strict) + '"' + (s.busy ? ' disabled' : '') + '>' + esc(T.modeStrictBtn) + '</button></div>' +
       '<p class="fc-explain">' + esc(s.strict ? T.setStrict : T.setLoose) + '</p>' +

@@ -972,7 +972,7 @@ async function tick(page, dateKey, key) {
     const fcText = (p, sel) => p.$eval(sel, (e) => [...e.querySelectorAll('*')].length ? [...e.childNodes].map((n) => n.textContent).join(' ') : e.textContent).then((t) => t.replace(/\s+/g, ' ').trim());
     await jm.click('[data-act="tab"][data-tab="focus"]'); await jm.waitForSelector('.fc-tab');
     assert.ok(await jm.$('.fc-tip'), '처음 안내');
-    assert.match(await fcText(jm, '.fc-mode'), /느슨/);
+    assert.match(await fcText(jm, '.fc-mode'), /설정/); assert.match(await jm.getAttribute('.fc-mode', 'aria-label'), /느슨/);
     await jm.screenshot({ path: path.join(OUT, 'fc-01-empty.png'), fullPage: true });
     await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
     assert.ok(await jm.evaluate(() => document.body.classList.contains('fc-full') && getComputedStyle(document.querySelector('.tabbar')).display === 'none'), '집중 화면 = 탭 줄 없음');
@@ -1034,7 +1034,7 @@ async function tick(page, dateKey, key) {
     await jm.click('[data-act="fc-mode"][data-v="strict"]'); await jm.waitForTimeout(100);
     assert.match(await jm.textContent('.fc-explain'), /5초가 지나면/);
     await jm.click('.fc-sheet [data-act="fc-sheet-close"]'); await jm.waitForTimeout(100);
-    assert.match(await jm.textContent('.fc-mode'), /엄격/);
+    assert.match(await jm.getAttribute('.fc-mode', 'aria-label'), /엄격/);
     const hide = (p, h) => p.evaluate((v) => { Object.defineProperty(document, 'hidden', { get: () => v, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); }, h);
     await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
     await jm.clock.fastForward(2 * 60000);
