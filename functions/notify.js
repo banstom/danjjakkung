@@ -21,7 +21,9 @@ function prefsOf(doc) {
   return { partner: n.partner !== false, remindAt: typeof n.remindAt === 'string' ? n.remindAt : null, hide: n.hide === true, weekly: !(doc && doc.weekly === false),
     todo: !(doc && doc.todoNotify === false), // 함께 할 일 알림 (v38, users.todoNotify — 없으면 켬)
     miss: !(doc && doc.missNotify === false), // 아침 8시 어제 놓친 루틴 알림 (v41, users.missNotify — 없으면 켬)
-    map: !(doc && doc.mapNudge === false) }; // 단짝 지도 새 방문 알림 (v54, users.mapNudge — 없으면 켬)
+    map: !(doc && doc.mapNudge === false), // 단짝 지도 새 방문 알림 (v54, users.mapNudge — 없으면 켬)
+    focusStart: !(doc && doc.focusStart === false), // 짝꿍 집중 시작 알림 (F2, users.focusStart — 없으면 켬)
+    focusCall: !(doc && doc.focusCall === false) }; // 같이 하자 받기 (F2, users.focusCall — 없으면 켬)
 }
 
 /** 짝꿍이 체크했을 때 문구. 오늘 · 어제 기록만 알린다 (지난 기록을 몰아서 채울 때 알림이 쏟아지지 않게). */
@@ -126,6 +128,24 @@ function mapMessage({ place }) {
   return { title: TITLE, body: `📍 ${name} 다녀온 기록이 생겼어요 · 별점을 남겨 주세요` };
 }
 
+/** 집중 문서(focus/<uid>)가 바뀐 것 → { start, call }. now: ms.
+    start: 새 집중이 막 시작됨 (start 값이 바뀌어 run, 10분 안). 쉬었다 다시 하는 것 · 고치기는 아님.
+    call: 「같이 하자」 시각이 새로 생김 (30분 안). */
+const FOCUS_FRESH = 10 * 60000, CALL_GAP = 30 * 60000;
+function focusEvents(before, after, now) {
+  const b = before || {}, a = after || {};
+  const start = a.state === 'run' && typeof a.start === 'number' && a.start !== b.start && now - a.start < FOCUS_FRESH && a.start <= now + 60000;
+  const call = typeof a.call === 'number' && a.call !== b.call && now - a.call < CALL_GAP && a.call <= now + 60000;
+  return { start, call };
+}
+function focusStartMessage({ who, cat, label, hide }) {
+  const what = hide || !cat ? '' : `${cat}${label && !hide ? ' · ' + label : ''} `;
+  return { title: TITLE, body: `🔥 ${who} 님이 ${what}집중을 시작했어요 · 같이 할래요?` };
+}
+function focusCallMessage({ who }) {
+  return { title: TITLE, body: `💌 ${who} 님이 같이 집중하재요 · 누르면 바로 같이 할 수 있어요` };
+}
+
 /** 한 주(dates: 'YYYY-MM-DD' 7개)에서 모두 해낸 날 수 — 앱 루틴 탭 달력의 「모두」와 같은 규칙 (js/model.js dayLevel).
     그날 하고 있는 루틴이 있고, 그날 참여 중인 사람(그만두지 않은 루틴이 있는 사람)이 각자 자기 루틴을 다 한 날. */
 const SAFE_ID = /^[A-Za-z0-9_-]{1,40}$/;
@@ -168,4 +188,4 @@ function weeklyMessage({ allDays, together }) {
   return { title: TITLE, body: '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?' };
 }
 
-module.exports = { newVisits, mapMessage, TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };
+module.exports = { focusEvents, focusStartMessage, focusCallMessage, newVisits, mapMessage, TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };

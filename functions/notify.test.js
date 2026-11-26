@@ -7,8 +7,8 @@ test('한국 시간: UTC 15:10 = 다음 날 00:10', () => {
   assert.deepStrictEqual(N.kstParts(new Date('2026-10-27T12:00:00Z')), { dateKey: '2026-10-27', hhmm: '21:00' });
 });
 test('설정 기본값', () => {
-  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true, miss: true, map: true });
-  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true, miss: true, map: true });
+  assert.deepStrictEqual(N.prefsOf(null), { partner: true, remindAt: null, hide: false, weekly: true, todo: true, miss: true, map: true, focusStart: true, focusCall: true });
+  assert.deepStrictEqual(N.prefsOf({ notify: { partner: false, remindAt: '21:30', hide: true } }), { partner: false, remindAt: '21:30', hide: true, weekly: true, todo: true, miss: true, map: true, focusStart: true, focusCall: true });
 });
 test('짝꿍 체크 문구: 오늘 · 어제만, 숨김', () => {
   const r = { name: '스쿼트 100개' };
@@ -104,4 +104,23 @@ test('v54 단짝 지도 새 방문: 새로 생긴 방문만 · 만든 사람이 
   assert.match(idx, /if \(!pf\.map\) continue;/); // 11-23: 짝꿍 알림을 꺼도 지도 알림은 온다
   assert.doesNotMatch(idx, /!pf\.partner \|\| !pf\.map/);
   assert.match(idx, /\?tab=all&map=\$\{code\}/);
+});
+
+test('집중 F2: 새 집중 시작 · 같이 하자만 알림', () => {
+  const now = 1764100000000, M = 60000;
+  assert.deepStrictEqual(N.focusEvents({ state: 'idle' }, { state: 'run', start: now - M }, now), { start: true, call: false });
+  assert.deepStrictEqual(N.focusEvents(null, { state: 'run', start: now - M }, now), { start: true, call: false });
+  assert.strictEqual(N.focusEvents({ state: 'pause', start: now - 20 * M }, { state: 'run', start: now - 20 * M }, now).start, false, '쉬었다 다시는 아님');
+  assert.strictEqual(N.focusEvents({ state: 'idle' }, { state: 'run', start: now - 30 * M }, now).start, false, '오래된 시작은 아님');
+  assert.deepStrictEqual(N.focusEvents({ state: 'idle' }, { state: 'idle', call: now }, now), { start: false, call: true });
+  assert.strictEqual(N.focusEvents({ state: 'idle', call: now }, { state: 'idle', call: now }, now).call, false, '같은 같이 하자는 한 번');
+  assert.strictEqual(N.focusEvents({}, { state: 'idle', call: now - 40 * M }, now).call, false);
+  assert.strictEqual(N.prefsOf({ focusStart: false }).focusStart, false);
+  assert.strictEqual(N.prefsOf({ focusCall: false }).focusCall, false);
+});
+test('집중 F2 문구: 과목 · 숨김', () => {
+  assert.strictEqual(N.focusStartMessage({ who: '준민', cat: '공부', label: '일반생물학' }).body, '🔥 준민 님이 공부 · 일반생물학 집중을 시작했어요 · 같이 할래요?');
+  assert.strictEqual(N.focusStartMessage({ who: '준민', cat: '공부', label: '토익', hide: true }).body, '🔥 준민 님이 집중을 시작했어요 · 같이 할래요?');
+  assert.strictEqual(N.focusStartMessage({ who: '준민', cat: '', label: '' }).body, '🔥 준민 님이 집중을 시작했어요 · 같이 할래요?');
+  assert.match(N.focusCallMessage({ who: '다진' }).body, /^💌 다진 님이 같이 집중하재요/);
 });

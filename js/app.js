@@ -56,6 +56,8 @@
     prefs: null,         // 내 알림 설정 { partner, remindAt, hide } (users/<uid>.notify)
     weeklyOn: true,      // 일요일 저녁 돌아보기 알림 (users/<uid>.weekly, 없으면 켬)
     todoNotifyOn: true,  // 함께 할 일 알림 (users/<uid>.todoNotify, 없으면 켬, v38)
+    focusStartOn: true,  // 짝꿍 집중 시작 알림 (users/<uid>.focusStart, 없으면 켬, F2)
+    focusCallOn: true,   // 같이 하자 받기 (users/<uid>.focusCall, 없으면 켬, F2)
     mapNudgeOn: true,    // 단짝 지도 새 방문 알림 (users/<uid>.mapNudge, 없으면 켬, v54)
     reviewMonthView: null, // 돌아보기 달 보기 모양 (users/<uid>.reviewMonthView, v54) — card | strip | null(아직 안 고름 → 루틴 수로)
     routineView: 'time', // 루틴 묶어 보기 (users/<uid>.routineView, v44) — time | kind | manual
@@ -620,6 +622,8 @@
     else if (act === 'pref-weekly') setWeekly(!state.weeklyOn);
     else if (act === 'pref-todo') setTodoNotify(!state.todoNotifyOn);
     else if (act === 'pref-map') setMapNudge(!state.mapNudgeOn);
+    else if (act === 'pref-fstart') setFocusPref('focusStart', 'focusStartOn', !state.focusStartOn);
+    else if (act === 'pref-fcall') setFocusPref('focusCall', 'focusCallOn', !state.focusCallOn);
     else if (act === 'pref-miss') setMissNotify(!state.missNotifyOn);
     else if (act === 'open-grow') { state.growOpen = true; state.sheetEntering = true; focusAfter = ['[data-act="close-grow"]']; focusInSheet = true; render(true); }
     else if (act === 'close-grow') closeGrow();
@@ -2086,7 +2090,7 @@
   var REMIND_TIMES = [];
   for (var hh = 17; hh <= 23; hh++) { REMIND_TIMES.push((hh < 10 ? '0' : '') + hh + ':00', (hh < 10 ? '0' : '') + hh + ':30'); }
   var DEFAULT_PREFS = { partner: true, remindAt: null, hide: false };
-  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { qRemind: !(state.userDoc && state.userDoc.qRemind === false), qPartner: !(state.userDoc && state.userDoc.qPartner === false), weekly: state.weeklyOn, recap: state.recapOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn }); }
+  function currentPrefs() { return Object.assign({}, DEFAULT_PREFS, state.prefs || {}, { qRemind: !(state.userDoc && state.userDoc.qRemind === false), qPartner: !(state.userDoc && state.userDoc.qPartner === false), weekly: state.weeklyOn, recap: state.recapOn, todo: state.todoNotifyOn, miss: state.missNotifyOn, map: state.mapNudgeOn, fstart: state.focusStartOn, fcall: state.focusCallOn }); }
   function notifyModel() {
     var P = RT.push;
     return {
@@ -3992,6 +3996,12 @@
     state.missNotifyOn = on; render(true);
     store.saveFlag(state.uid, 'missNotify', on).catch(function () { state.missNotifyOn = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
   }
+  function setFocusPref(field, key, on) {
+    if (!store || !state.uid || !state.prefsReady) return;
+    var before = state[key];
+    state[key] = on; render(true);
+    store.saveValue(state.uid, field, !!on).catch(function () { state[key] = before; pushFail('설정을 저장하지 못했어요. 잠시 뒤 다시 해 주세요'); });
+  }
   function setMapNudge(on) {
     if (!store || !state.uid || !state.prefsReady) return;
     var before = state.mapNudgeOn;
@@ -4594,6 +4604,8 @@
         state.todoNotifyOn = !(doc && doc.todoNotify === false);
         state.missNotifyOn = !(doc && doc.missNotify === false);
         state.mapNudgeOn = !(doc && doc.mapNudge === false);
+        state.focusStartOn = !(doc && doc.focusStart === false);
+        state.focusCallOn = !(doc && doc.focusCall === false);
         if (doc && (doc.routineView === 'time' || doc.routineView === 'kind' || doc.routineView === 'manual')) state.routineView = doc.routineView;
         if (doc && (doc.reviewMonthView === 'card' || doc.reviewMonthView === 'strip')) { var mvChanged = state.reviewMonthView !== doc.reviewMonthView; state.reviewMonthView = doc.reviewMonthView; if (mvChanged && state.tab === 'look' && state.status === 'ready') render(); }
         var colors = RT.themes ? RT.themes.cleanColors(doc && doc.colors) : {};

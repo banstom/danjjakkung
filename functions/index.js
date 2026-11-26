@@ -23,6 +23,7 @@ const RJ = require('./recap-job');
 const QJ = require('./question-job');
 const ET = require('./shared/eat-text');
 const SP = require('./search-place');
+const SC = require('./shared/cats');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const KAKAO_REST_KEY = defineSecret('KAKAO_REST_KEY');
@@ -34,6 +35,7 @@ setGlobalOptions({ region: 'asia-northeast3', maxInstances: 10, memory: '256MiB'
 const APP_URL = 'https://banstom.github.io/danjjakkung/';
 const OPEN_URL = APP_URL + '?tab=routine'; // 알림을 누르면 루틴 탭으로 연다
 const LOOK_URL = APP_URL + '?tab=all&open=look&view=week'; // 일요일 돌아보기 알림 → 전체 탭 위 돌아보기 「주」 (FT1 — 예전 ?tab=look 도 앱이 받음)
+const FOCUS_URL = APP_URL + '?tab=focus';   // 집중 알림은 집중 탭으로 (F2)
 const TODO_URL = APP_URL + '?tab=todo';    // 함께 할 일 알림은 할 일 탭으로
 const ICON = APP_URL + 'icons/icon-192.png';
 const REGIONS = require('./regions.json'); // 시군구코드 → 「서울 종로구」 (data/kr-map.json 에서 만든 표)
@@ -315,6 +317,30 @@ exports.onPlaceWritten = onDocumentWritten('places/{code}', async (event) => {
       const pf = await prefsFor(p);
       if (!pf.map) continue;
       await sendTo(p, N.mapMessage({ place: REGIONS[code] }), 'map', `map-${code}`, `${APP_URL}?tab=all&map=${code}`);
+    }
+  }
+});
+
+// 집중 F2: 짝꿍이 집중을 시작하면 · 「같이 하자」를 누르면 짝꿍에게 (users.focusStart · users.focusCall — 없으면 켬)
+//  한 집중에 한 번 (notifyLog focusStart_<uid>_<start>), 같이 하자 한 번에 한 번 (focusCall_<uid>_<call>). 잠금 화면 숨김을 켜면 과목 이름은 뺀다.
+exports.onFocusWritten = onDocumentWritten('focus/{uid}', async (event) => {
+  const uid = event.params.uid;
+  const before = event.data && event.data.before && event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  if (!after) return;
+  const ev = N.focusEvents(before, after, Date.now());
+  if (!ev.start && !ev.call) return;
+  const who = await nameOf(uid);
+  let catName = '';
+  if (ev.start && after.cat) {
+    try { const cs = await db.collection('cats').get(); const c = SC.find(SC.fromDocs(cs.docs.map((d) => Object.assign({ id: d.id }, d.data()))), after.cat); catName = (c && c.name) || ''; } catch (e) { catName = ''; }
+  }
+  for (const p of await partnersOf(uid)) {
+    const pf = await prefsFor(p);
+    if (ev.call && pf.focusCall && await once(`focusCall_${uid}_${after.call}`)) {
+      await sendTo(p, N.focusCallMessage({ who }), 'focus', 'focus-call', FOCUS_URL);
+    } else if (ev.start && pf.focusStart && await once(`focusStart_${uid}_${after.start}`)) {
+      await sendTo(p, N.focusStartMessage({ who, cat: catName, label: typeof after.label === 'string' ? after.label : '', hide: pf.hide }), 'focus', 'focus-start', FOCUS_URL);
     }
   }
 });
