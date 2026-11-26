@@ -124,3 +124,22 @@ test('집중 F2 문구: 과목 · 숨김', () => {
   assert.strictEqual(N.focusStartMessage({ who: '준민', cat: '', label: '' }).body, '🔥 준민 님이 집중을 시작했어요 · 같이 할래요?');
   assert.match(N.focusCallMessage({ who: '다진' }).body, /^💌 다진 님이 같이 집중하재요/);
 });
+
+test('집중 F2 서버 문구: 3시간 · 6시간', () => {
+  assert.match(N.focusLongMessage({ start: Date.UTC(2026, 10, 26, 1, 5) }).body, /10:05에 시작한 집중이 3시간째/);
+  assert.match(N.focusCloseMessage({ ms: (5 * 60 + 40) * 60000 }).body, /5시간 40분 남겼어요/);
+});
+test('집중 F2 서버 끝내기: 6시간+30분 · 쉬기 30분+10분, 기록은 05시로 나눔', () => {
+  const FF = require('./shared/focus');
+  const H = 3600000, M = 60000, s0 = Date.UTC(2026, 10, 25, 15, 0); // 26일 00:00 KST
+  const run = { state: 'run', start: s0, segStart: s0 + H, segs: [[s0, s0 + 30 * M]] };
+  assert.strictEqual(FF.autoCloseAt(run, s0 + 6 * H + 10 * M), null, '앱이 먼저');
+  assert.strictEqual(FF.autoCloseAt(run, s0 + 6 * H + 31 * M), s0 + 6 * H);
+  const logs = FF.sessionLogs(run, s0 + 6 * H, 'u');
+  assert.deepStrictEqual(logs.map((l) => [l.day, l.ms / M]), [['2026-11-25', 30 + 4 * 60], ['2026-11-26', 60]]);
+  const pause = { state: 'pause', start: s0, pauseAt: s0 + H, segs: [[s0, s0 + H]] };
+  assert.strictEqual(FF.autoCloseAt(pause, s0 + H + 35 * M), null);
+  assert.strictEqual(FF.autoCloseAt(pause, s0 + H + 41 * M), s0 + H);
+  assert.strictEqual(FF.longRun(run, s0 + 3 * H + M), true);
+  assert.strictEqual(FF.longRun(run, s0 + 2 * H), false);
+});

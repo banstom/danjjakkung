@@ -313,6 +313,25 @@
       }).join('') + '</div><span class="when__sub kind__hint">' + (k.picked ? '직접 골랐어요 · 「자동」을 누르면 아이콘대로' : '아이콘대로 골라졌어요 · 바꿀 수 있어요') + '</span></div>';
   }
 
+  // 「집중으로 채우기」 (F3) — 집중 탭 기록이 이 시간을 넘으면 그날 루틴이 저절로 체크
+  function focusGoalField(g) {
+    if (!g) return '';
+    var MINS = [30, 60, 90, 120, 180, 240];
+    var out = '<div class="field rfocus"><span class="field__label" id="rt-focus-label">집중 시간으로 자동 체크</span>' +
+      '<div class="seg" role="group" aria-labelledby="rt-focus-label"><button type="button" class="seg__btn" data-act="rt-focus" data-v="off" aria-pressed="' + !g.on + '">끄기</button>' +
+      '<button type="button" class="seg__btn" data-act="rt-focus" data-v="on" aria-pressed="' + !!g.on + '">켜기</button></div>';
+    if (!g.on) return out + '<span class="when__sub">켜면 집중 탭에서 쌓인 시간으로 그날 루틴이 체크돼요</span></div>';
+    out += '<div class="chips rfocus__chips" role="group" aria-label="어떤 집중">' + g.cats.map(function (c) {
+      return '<button type="button" class="chip chip--sm" data-act="rt-fcat" data-v="' + esc(c.id) + '" aria-pressed="' + c.on + '">' + (c.icon ? esc(c.icon) + ' ' : '') + esc(c.name) + '</button>';
+    }).join('') + '</div>' +
+      '<div class="chips rfocus__chips" role="group" aria-label="몇 분">' + MINS.map(function (m) {
+        return '<button type="button" class="chip chip--sm" data-act="rt-fmin" data-v="' + m + '" aria-pressed="' + (g.min === m) + '">' + (m < 60 ? m + '분' : m % 60 ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분' : (m / 60) + '시간') + '</button>';
+      }).join('') + '</div>' +
+      '<label class="rfocus__in"><span>직접</span><input id="rt-fmin" class="field__input" type="number" inputmode="numeric" min="10" max="720" step="5" value="' + esc(g.min) + '"><span>분</span></label>' +
+      '<span class="when__sub">하루(새벽 5시 기준)에 이만큼 집중하면 저절로 체크돼요 · 직접 끄면 그날은 다시 안 켜요</span></div>';
+    return out;
+  }
+
   // 「언제 할까요?」 (v41) — 무엇 다음에(문장) · 시각 둘 다 가능, 둘 다 비우면 언제든
   function whenField(w) {
     if (!w) return '';
@@ -353,6 +372,7 @@
       '<input id="rt-start" class="field__input" type="date" value="' + esc(f.start) + '"' + (f.error ? ' aria-describedby="rt-error"' : '') + '></label>' +
       kindField(f.kind) +
       whenField(f.when) +
+      focusGoalField(f.focus) +
       // 새로 생긴 안내만 소리 내어 읽게 한다 (다시 그릴 때마다 반복하지 않도록)
       (f.error ? '<p id="rt-error" class="rform__error"' + (f.errorFresh ? ' role="alert"' : '') + '>' + esc(f.error) + '</p>' : '') +
       '<div class="rform__actions">' +

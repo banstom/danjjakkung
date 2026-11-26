@@ -49,7 +49,8 @@
     var body = r.canEdit
       ? '<button type="button" class="trow__text" data-act="todo-edit" data-id="' + esc(r.id) + '" aria-label="' + esc(r.title) + ' 고치기">' + text + '</button>'
       : '<span class="trow__text">' + text + '</span>';
-    return '<div class="trow' + (mini ? ' trow--mini' : '') + (r.done ? ' is-done' : '') + '">' + box + body + '</div>';
+    var play = r.canFocus && !mini ? '<button type="button" class="trow__play" data-act="todo-focus" data-id="' + esc(r.id) + '" aria-label="' + esc(r.title) + ' 집중 시작"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg></button>' : '';
+    return '<div class="trow' + (mini ? ' trow--mini' : '') + (r.done ? ' is-done' : '') + '">' + box + body + play + '</div>';
   }
   function sectionFoot(s, mini) {
     var out = '';

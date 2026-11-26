@@ -263,3 +263,24 @@ test('이번 주 과목별: 월 05시부터, 이름별 합계, 진행 중 포함
   assert.deepEqual(out[0].labels, [{ label: '일반생물학', ms: 3 * H }, { label: '토익', ms: H }]);
   assert.equal(out[1].cat, 'work'); assert.equal(out[1].ms, H);
 });
+
+// ── F3 · 작은 것 (v89) ──
+test('그날 카테고리별 · 루틴 목표 · 하루 목표 · 기간 요약 · 요일별 과목', () => {
+  const F = require('../js/focus.js');
+  const H = F.H, M = F.M, now = Date.UTC(2026, 10, 26, 5, 0); // 14:00 KST
+  const day = F.dayKey(now);
+  const logs = [{ by: 'a', cat: 'study', label: '토익', day, ms: H, segs: [[now - 3 * H, now - 2 * H]] }, { by: 'a', cat: 'work', day, ms: 30 * M, segs: [[now - 5 * H, now - 4.5 * H]] },
+    { by: 'b', cat: 'study', day, ms: 2 * H, segs: [[now - 3.5 * H, now - 1.5 * H]] }];
+  const lv = { cat: 'study', label: '', segs: [[now - 20 * M, now]] };
+  const bc = F.dayByCat(logs, lv, 'a', day);
+  assert.equal(bc.study, H + 20 * M); assert.equal(bc['*'], H + 50 * M);
+  assert.equal(F.routineMet({ cat: 'study', min: 80 }, bc), true);
+  assert.equal(F.routineMet({ cat: 'study', min: 90 }, bc), false);
+  assert.equal(F.routineMet({ cat: null, min: 110 }, bc), true);
+  assert.equal(F.goalProgress(0, H), null);
+  assert.deepEqual(F.goalProgress(120, H), { goal: 2 * H, ms: H, ratio: 0.5, done: false });
+  const rs = F.rangeSummary(logs, 'a', 'b');
+  assert.equal(rs.me, 1.5 * H); assert.equal(rs.her, 2 * H); assert.equal(rs.both, H - 30 * M + 30 * M); assert.equal(rs.top[0].cat, 'study');
+  assert.equal(F.weekSubjects(logs, null, 'a', now, F.addDays(day, -1)).length, 0);
+  assert.equal(F.weekSubjects(logs, null, 'a', now, day)[0].cat, 'study');
+});

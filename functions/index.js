@@ -24,6 +24,7 @@ const QJ = require('./question-job');
 const ET = require('./shared/eat-text');
 const SP = require('./search-place');
 const SC = require('./shared/cats');
+const FF = require('./shared/focus');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const KAKAO_REST_KEY = defineSecret('KAKAO_REST_KEY');
@@ -344,3 +345,38 @@ exports.onFocusWritten = onDocumentWritten('focus/{uid}', async (event) => {
     }
   }
 });
+
+// 집중 F2: 10분마다 — 3시간째면 본인에게 「아직 하고 있어요?」, 6시간(+30분) · 쉬기 30분(+10분)이 지났는데 앱이 안 열리면 서버가 끝내고 기록을 남긴다.
+//  앱이 먼저 처리할 틈을 두고, 끝낼 때는 트랜잭션으로 같은 집중(start 같음)인지 다시 확인한다.
+exports.focusClock = onSchedule({ schedule: '*/10 * * * *', timeZone: 'Asia/Seoul' }, async () => {
+  const now = Date.now();
+  const q = await db.collection('focus').where('state', 'in', ['run', 'pause', 'away']).get();
+  for (const d of q.docs) {
+    const uid = d.id, f = focusDocIn(d.data());
+    const endAt = FF.autoCloseAt(f, now);
+    if (endAt) {
+      const closed = await db.runTransaction(async (tx) => {
+        const cur = await tx.get(d.ref);
+        const c = cur.exists ? focusDocIn(cur.data()) : null;
+        if (!c || c.start !== f.start || FF.autoCloseAt(c, now) == null) return null;
+        const logs = FF.sessionLogs(c, endAt, uid);
+        logs.forEach((l) => tx.set(db.collection('focusLogs').doc(), Object.assign({}, l, { segs: l.segs.map((x) => ({ s: Math.round(x[0]), e: Math.round(x[1]) })), createdAt: now })));
+        tx.set(d.ref, { state: 'idle', cat: c.cat || null, label: c.label || null, start: null, segStart: null, segs: [], pauseAt: null, strict: !!c.strict, call: c.call || null, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return { logs, pause: c.state === 'pause' };
+      });
+      if (closed && !closed.pause && await once(`focusClose_${uid}_${f.start}`)) {
+        const ms = closed.logs.reduce((t, l) => t + l.ms, 0);
+        await sendTo(uid, N.focusCloseMessage({ ms }), 'focus', 'focus-close', FOCUS_URL);
+      }
+      continue;
+    }
+    if (FF.longRun(f, now) && await once(`focusLong_${uid}_${f.start}`)) {
+      await sendTo(uid, N.focusLongMessage({ start: f.start }), 'focus', 'focus-long', FOCUS_URL);
+    }
+  }
+});
+function focusDocIn(d) {
+  const o = Object.assign({}, d || {});
+  o.segs = Array.isArray(o.segs) ? o.segs.map((x) => [Number(x && x.s), Number(x && x.e)]).filter((x) => isFinite(x[0]) && isFinite(x[1])) : [];
+  return o;
+}

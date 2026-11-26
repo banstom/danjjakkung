@@ -12,6 +12,11 @@
 .fc-today__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .fc-today__kick { font-size: 13px; font-weight: 700; color: var(--sub); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fc-today__kick--on { color: var(--tint-text); }
+.fc-goal { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.fc-goal__track { height: 8px; border-radius: 4px; background: var(--focus-track); overflow: hidden; }
+.fc-goal__fill { display: block; height: 100%; border-radius: 4px; background: var(--focus-ring); }
+.fc-goal__t { font-size: 13px; font-weight: 600; color: var(--sub); font-variant-numeric: tabular-nums; }
+.fc-goal.is-done .fc-goal__t { color: var(--tint-text); }
 .fc-today__right { flex-shrink: 0; font-size: 13px; color: var(--sub); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fc-big { font-size: 52px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fc-big.is-zero { color: var(--sub); }
@@ -26,6 +31,7 @@
 .fc-acts--one { grid-template-columns: 1fr; }
 .fc-btn { min-height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--primary-edge); background: var(--primary); color: var(--on-primary); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .fc-btn.is-sub { border-color: var(--line); background: var(--surface); color: var(--text); }
+.fc-todo { align-self: center; margin-top: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .fc-btn.is-off { border-color: var(--raised); background: var(--raised); color: var(--sub); cursor: default; }
 .fc-pcard { display: flex; flex-direction: row; align-items: center; gap: 12px; }
 .fc-pcard.is-away .fc-avatar { opacity: 0.55; }

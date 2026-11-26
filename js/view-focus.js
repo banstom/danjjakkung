@@ -21,6 +21,12 @@
     return '<header class="top fc-head"><div class="top__text"><p class="caption">' + esc(m.date) + '</p><div class="top__row"><h1 class="title">' + esc(T.title) + '</h1></div></div>' +
       '<button type="button" class="fc-mode" data-act="fc-settings" aria-label="' + esc(T.modeAria(m.strict)) + '">' + esc(T.setBtn) + '</button></header>';
   }
+  function goalBar(g) {
+    if (!g) return '';
+    var pct = Math.round(g.ratio * 100);
+    return '<div class="fc-goal' + (g.done ? ' is-done' : '') + '"><div class="fc-goal__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="' + esc(T.goalAria(g.goal, pct)) + '">' +
+      '<span class="fc-goal__fill" style="width:' + pct + '%"></span></div><span class="fc-goal__t">' + esc(g.done ? T.goalDone(g.goal) : T.goalLeft(g.goal, g.goal - g.ms)) + '</span></div>';
+  }
   function todayCard(m) {
     var t = m.today, me = m.me, on = me.state === 'run' || me.state === 'pause' || me.state === 'away';
     var kick = on ? '<span class="fc-today__kick fc-today__kick--on">' + esc(T.nowKick(me.subj)) + '</span><span class="fc-today__right" data-fc="nowR">' + esc(T.nowRight(me.runMs)) + '</span>'
@@ -35,6 +41,7 @@
       '<span class="fc-today__top">' + kick + '</span>' +
       '<span class="fc-big' + (zero ? ' is-zero' : '') + '" data-fc="today">' + esc(F.hms(t.me)) + '</span></button>' +
       (zero ? '<p class="fc-today__zero">' + esc(T.zero) + '</p>' : '') +
+      goalBar(m.goal) +
       (chips ? '<div class="fc-chips">' + chips + '</div>' : '') +
       (on ? '<div class="fc-today__acts"><button type="button" class="fc-btn is-sub" data-act="fc-open">' + esc(T.openScreen) + '</button><button type="button" class="fc-btn" data-act="fc-end">' + esc(T.end) + '</button></div>' : '') +
       '</section>';
@@ -90,11 +97,11 @@
     return '<section class="card fc-card fc-week"><div class="fc-week__head"><h2 class="fc-week__t">' + esc(T.week) + '</h2><span class="fc-legend">' +
       '<span><i class="fc-legend__me"></i>' + esc(T.legMe) + '</span><span><i class="fc-legend__her"></i>' + esc(m.herName) + '</span><span><i class="fc-legend__both"></i>' + esc(T.legBoth) + '</span></span></div>' +
       '<div class="fc-wgrid" role="img" aria-label="' + esc(T.weekAria(w.days.map(function (d, i) { return { dow: T.dows[i], me: d.me, her: d.her }; }), m.herName)) + '">' + cols + '</div>' +
-      '<p class="fc-week__line">' + esc(T.weekLine(p.today ? T.weekToday : T.dows[w.pick], p.me, m.herName, p.her, p.both)) + '</p>' + weekSubj(w.subjects) + '</section>';
+      '<p class="fc-week__line">' + esc(T.weekLine(p.today ? T.weekToday : T.dows[w.pick], p.me, m.herName, p.her, p.both)) + '</p>' + weekSubj(w.subjects, w.subjHead) + '</section>';
   }
-  function weekSubj(list) {
+  function weekSubj(list, head) {
     if (!list || !list.length) return '';
-    return '<div class="fc-wsub"><h3 class="fc-wsub__t">' + esc(T.weekSubjHead) + '</h3><ul class="fc-wsub__list">' + list.map(function (x) {
+    return '<div class="fc-wsub"><h3 class="fc-wsub__t">' + esc(head || T.weekSubjHead) + '</h3><ul class="fc-wsub__list">' + list.map(function (x) {
       return '<li class="fc-wsub__row"><span class="fc-wsub__tx"><span class="fc-wsub__name">' + (x.icon ? '<span class="fc-row__ic" aria-hidden="true">' + esc(x.icon) + '</span>' : '') + esc(x.name) + '</span>' +
         (x.labels ? '<span class="fc-wsub__labs">' + esc(x.labels) + '</span>' : '') + '</span><span class="fc-wsub__ms">' + esc(F.hm(x.ms)) + '</span></li>';
     }).join('') + '</ul></div>';
@@ -151,6 +158,7 @@
     return '<div class="fc-screen fc-screen--done" role="region" aria-label="' + esc(T.doneTitle(d.today)) + '">' + art +
       '<h2 class="fc-done__t">' + esc(T.doneTitle(d.today)) + '</h2><p class="fc-done__s">' + esc(T.doneThis(d.subj, d.thisMs)) + '</p>' +
       '<div class="fc-stats">' + a + '<div class="fc-stat"><span class="fc-stat__k">' + esc(T.doneMeWeek) + '</span><span class="fc-stat__v">' + esc(F.hm(d.meWeek)) + '</span></div></div>' +
+      (d.todo ? '<button type="button" class="fc-btn is-sub fc-todo" data-act="fc-todo-done" data-v="' + esc(d.todo.id) + '">' + esc(T.todoDoneBtn(d.todo.title)) + '</button>' : '') +
       '<div class="fc-grow"></div>' + (d.logId ? '<button type="button" class="fc-link fc-link--center" data-act="fc-edit" data-v="' + esc(d.logId) + '">' + esc(T.editTime) + '</button>' : '') +
       '<div class="fc-acts fc-acts--one"><button type="button" class="fc-btn" data-act="fc-done-ok">' + esc(T.ok) + '</button></div></div>';
   }
@@ -178,6 +186,8 @@
       '<button type="button" class="seg__btn" data-act="fc-mode" data-v="strict" aria-pressed="' + (!!s.strict) + '"' + (s.busy ? ' disabled' : '') + '>' + esc(T.modeStrictBtn) + '</button></div>' +
       '<p class="fc-explain">' + esc(s.strict ? T.setStrict : T.setLoose) + '</p>' +
       '<p class="fc-small">' + esc(T.setNote(s.herName)) + '</p>' + (s.busy ? '<p class="fc-small">' + esc(T.setBusy) + '</p>' : '') +
+      '<h3 class="fc-lab fc-set__h" id="fc-goal-h">' + esc(T.goalHead) + '</h3><div class="fc-lchips" role="group" aria-labelledby="fc-goal-h">' +
+        [0, 120, 180, 240, 360, 480].map(function (g) { return '<button type="button" class="chip" data-act="fc-goal" data-v="' + g + '" aria-pressed="' + (s.goal === g) + '">' + esc(g ? T.goalChip(g) : T.goalOff) + '</button>'; }).join('') + '</div>' +
       ((s.cats || []).length ? '<h3 class="fc-lab fc-set__h" id="fc-catvis-h">' + esc(T.catVisHead) + '</h3><p class="fc-small">' + esc(T.catVisSub) + '</p>' +
         '<div class="fc-lchips fc-catvis" role="group" aria-labelledby="fc-catvis-h">' + s.cats.map(function (c) {
           return '<button type="button" class="chip fc-cchip" data-act="fc-catvis" data-v="' + esc(c.id) + '" aria-pressed="' + (c.on ? 'true' : 'false') + '">' + (c.icon ? '<span aria-hidden="true">' + esc(c.icon) + '</span> ' : '') + esc(c.name) + '</button>';

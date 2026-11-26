@@ -87,6 +87,8 @@
       var cur = myDoc(), t = now();
       var go = function () {
         remember(cat, label);
+        if (opts.todo) loc.todo = { id: opts.todo.id, title: opts.todo.title, start: t }; else delete loc.todo; // F3: 할 일에서 시작
+        saveLoc();
         var call = cur && cur.call || null;
         write({ state: 'run', cat: cat || null, label: label || null, start: t, segStart: t, segs: [], pauseAt: null, strict: strictPref(), call: call });
         st.done = null; st.sheet = null;
@@ -144,6 +146,8 @@
       var temp = logs.map(function (l, i) { return Object.assign({ id: 'tmp' + now() + i }, l); });
       st.logs = (st.logs || []).concat(temp);
       if (showDone) st.done = doneModel(total, subj, null);
+      if (showDone && loc.todo && loc.todo.start === d.start) st.done.todo = { id: loc.todo.id, title: loc.todo.title };
+      delete loc.todo; saveLoc();
       render(true);
       if (!showDone && !opts.quiet) toast(T.tDone(total));
       return S().endFocus(me(), logs, idle).then(function (ids) {
@@ -286,7 +290,8 @@
       var w = F.week(logs, lives(), me(), her(), now());
       var pick = st.wpick != null && !w.days[st.wpick].future ? st.wpick : F.weekdayOf(t.day);
       var hm = herModel(t);
-      var ws = F.weekSubjects(logs, lv, me(), now()).slice(0, 4).map(function (x) {
+      var dayPick = st.wpick != null && w.days[st.wpick] && !w.days[st.wpick].future ? w.days[st.wpick] : null;
+      var ws = F.weekSubjects(logs, lv, me(), now(), dayPick ? dayPick.day : null).slice(0, 4).map(function (x) {
         return { name: catName(x.cat), icon: catIcon(x.cat), ms: x.ms, labels: x.labels.slice(0, 3).map(function (l) { return l.label + ' ' + F.hm(l.ms); }).join(' · ') };
       });
       return { date: host.dateText(), strict: on ? !!lv.strict : strictPref(), herName: host.nameOf(her()), herSlot: host.slotOf(her()),
@@ -294,7 +299,8 @@
         me: { state: lv.state, runMs: lv.runMs, subj: subjOf(lv.cat, lv.label) },
         today: { me: t.me, her: t.her, both: t.both, nowBoth: !!F.togetherSince(lv, herLive()), compare: on ? null : F.compare(t.me, t.yesterday) },
         her: hm, subjects: subjects, moreCount: Math.max(0, cats.length - subjects.length),
-        week: { days: w.days, empty: !w.weekMe && !w.weekHer, pick: pick, subjects: ws } };
+        week: { days: w.days, empty: !w.weekMe && !w.weekHer, pick: pick, subjects: ws, subjHead: dayPick ? T.daySubjHead(dayPick.today ? T.weekToday : T.dows[st.wpick]) : T.weekSubjHead },
+        goal: F.goalProgress(loc.goal, t.me) };
     }
     function screenModel() {
       var t = totals(), lv = myLive(), hl = herLive(), since = F.togetherSince(lv, hl);
@@ -373,7 +379,7 @@
       var s = st.sheet; if (!s) return '';
       var e = st.entering; st.entering = false;
       if (s.kind === 'subj') return V.subjSheet(subjSheetModel(), e);
-      if (s.kind === 'set') { var lv = myLive(); return V.settingsSheet({ cats: host.cats().map(function (c) { return { id: c.id, name: c.name, icon: c.icon, on: !F.catHidden(c, loc.hide) }; }), strict: strictPref(), busy: lv.state === 'run' || lv.state === 'pause' || lv.state === 'away', herName: host.nameOf(her()) }, e); }
+      if (s.kind === 'set') { var lv = myLive(); return V.settingsSheet({ goal: loc.goal || 0, cats: host.cats().map(function (c) { return { id: c.id, name: c.name, icon: c.icon, on: !F.catHidden(c, loc.hide) }; }), strict: strictPref(), busy: lv.state === 'run' || lv.state === 'pause' || lv.state === 'away', herName: host.nameOf(her()) }, e); }
       if (s.kind === 'still') return V.stillSheet({ start: (myDoc() || {}).start }, e);
       if (s.kind === 'end') return myDoc() && myDoc().start ? V.endSheet(endSheetModel(), e) : '';
       if (s.kind === 'log') {
@@ -402,6 +408,7 @@
         case 'fc-pause': pause(); return true;
         case 'fc-resume': resume(); return true;
         case 'fc-done-ok': st.done = null; st.screen = false; render(true); return true;
+        case 'fc-todo-done': if (st.done && st.done.todo) { var td = st.done.todo; st.done.todo = null; if (host.doneTodo(td.id)) toast(T.tTodoDone(td.title)); render(true); } return true;
         case 'fc-call': call(); return true;
         case 'fc-join': openSheet({ kind: 'subj', mode: 'join', cat: defCat(), label: '' }); return true;
         case 'fc-subj': openSheet({ kind: 'subj', mode: 'start', cat: defCat(), label: '', expanded: v !== 'label' }); if (v === 'label') host.focus(['#fc-label'], true); return true;
@@ -419,6 +426,7 @@
           var lv = myLive(); if (lv.state === 'run' || lv.state === 'pause' || lv.state === 'away') { toast(T.tBusyMode); return true; }
           loc.mode = v === 'strict' ? 'strict' : 'loose'; saveLoc(); host.saveUser('focusMode', loc.mode); render(true); return true;
         }
+        case 'fc-goal': loc.goal = Number(v) || 0; if (!loc.goal) delete loc.goal; saveLoc(); render(true); return true;
         case 'fc-catvis': {
           var c = host.cats().filter(function (x) { return x.id === v; })[0]; if (!c) return true;
           loc.hide = loc.hide || {}; loc.hide[v] = !F.catHidden(c, loc.hide); saveLoc(); render(true); return true;
@@ -440,7 +448,7 @@
         case 'fc-del': st.sheet.confirmDel = true; render(true); return true;
         case 'fc-delno': st.sheet.confirmDel = false; render(true); return true;
         case 'fc-delyes': { var id = st.sheet.id; st.sheet = null; st.logs = (st.logs || []).filter(function (x) { return x.id !== id; }); render(true); S().deleteFocusLog(id).then(function () { toast(T.tDeleted); }, function () { toast(T.tFail); }); return true; }
-        case 'fc-wday': st.wpick = Number(v); render(true); return true;
+        case 'fc-wday': st.wpick = st.wpick === Number(v) ? null : Number(v); render(true); return true; // 같은 요일을 다시 누르면 이번 주 전체로
         case 'fc-band': {
           if (v === 'partner') openSheet({ kind: 'subj', mode: 'join', cat: defCat(), label: '' });
           else { st.screen = true; host.screenOpened(); updateWake(); render(true); }
@@ -485,6 +493,11 @@
 
     return {
       tick: tick, stop: stop, act: act, input: input, tabHtml: tabHtml, sheetHtml: sheetHtml,
+      startTodo: function (t) {
+        var cats = host.cats(), cat = t.cat && cats.some(function (c) { return c.id === t.cat; }) ? t.cat : defCat();
+        start(cat, F.cleanLabel(t.short || t.title), { todo: t });
+      },
+      todayByCat: function () { var day = F.dayKey(now()); return { day: day, byCat: F.dayByCat(st.logs || [], myLive(), me(), day), ready: st.logs != null }; },
       hasSheet: function () { return !!st.sheet; }, closeSheet: closeSheet, screenOpen: function () { return st.screen; }, down: down,
       bandHtml: function () { return V.band(bandModel()); }, dot: dotModel, schedule: schedule,
       openScreen: function () { st.screen = true; updateWake(); },
