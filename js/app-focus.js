@@ -40,6 +40,14 @@
       }
       schedule();
     }
+    /** 실시간 연결 다시 붙이기 — 받아 둔 값은 그대로 두고 (화면이 비지 않게) 구독만 새로 */
+    var RESUB_AFTER = 15000;
+    function resub() {
+      if (!st.started) return;
+      unsub.forEach(function (f) { try { f(); } catch (e) {} }); unsub = []; stopLogs();
+      st.subbed = {};
+      tick();
+    }
     function stopLogs() { if (st.logUnsub) { try { st.logUnsub(); } catch (e) {} } st.logUnsub = null; st.logsFrom = null; }
     function stop() {
       unsub.forEach(function (f) { try { f(); } catch (e) {} }); unsub = []; stopLogs();
@@ -182,7 +190,7 @@
     function onVisibility() {
       var d = myDoc();
       if (document.hidden) {
-        loc.seen = now(); saveLoc();
+        loc.seen = now(); saveLoc(); st.leftAt = now();
         if (d && d.state === 'run' && d.strict) {
           st.hiddenAt = now(); loc.hiddenAt = st.hiddenAt; saveLoc();
           clearTimeout(st.awayTimer);
@@ -192,6 +200,8 @@
         return;
       }
       clearTimeout(st.awayTimer);
+      if (st.leftAt && now() - st.leftAt > RESUB_AFTER) resub(); // 폰이 잠겼다 돌아오면 실시간 연결이 멈춰 있을 때가 있어 다시 붙인다
+      st.leftAt = null;
       var hid = st.hiddenAt || loc.hiddenAt || null;
       st.hiddenAt = null; delete loc.hiddenAt; saveLoc();
       d = myDoc();
