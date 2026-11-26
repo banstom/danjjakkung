@@ -74,7 +74,13 @@ function toInput(raw, period) {
     date: s.date, amount: s.amount, paidBy: s.paidBy, shares: s.shares || undefined, cat: s.cat
   }));
 
-  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats };
+  // 함께 집중 (docs/focus-stats 4절): focusLogs — day(05시 기준) 기간 안, segs [{s, e}] → [[s, e]] (앱 store.focusIn 과 같은 모양)
+  const focusLogs = (raw.focusLogs || []).filter((l) => inRange(l.day, range) && typeof l.by === 'string' && Number.isFinite(l.ms)).map((l) => ({
+    by: l.by, cat: l.cat || null, label: l.label || '', day: l.day, start: Number(l.start), end: Number(l.end), ms: Number(l.ms),
+    segs: (Array.isArray(l.segs) ? l.segs : []).map((x) => (Array.isArray(x) ? [Number(x[0]), Number(x[1])] : [Number(x && x.s), Number(x && x.e)])).filter((x) => isFinite(x[0]) && isFinite(x[1]) && x[1] > x[0])
+  }));
+
+  return { period, people, coupleSince, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats, focusLogs };
 }
 
 const docs = (q) => q.docs.map((d) => Object.assign({ id: d.id }, d.data()));
@@ -87,7 +93,7 @@ async function fetchRaw(db, range) {
   const startIso = new Date(range.start + 'T00:00:00+09:00').toISOString();
   const endIso = new Date(R.addDays(range.end, 1) + 'T00:00:00+09:00').toISOString();
   const couple = await db.doc('couple/main').get();
-  const [members, routines, checks, todos, kungs, events, places, qdaysAll, spends, spendCats] = await Promise.all([
+  const [members, routines, checks, todos, kungs, events, places, qdaysAll, spends, spendCats, focusLogs] = await Promise.all([
     getAll(db.collection('members')),
     getAll(db.collection('routines')),
     getAll(between('checks', 'date')),
@@ -97,7 +103,8 @@ async function fetchRaw(db, range) {
     getAll(db.collection('places')),
     getAll(db.collection('qdays')), // 하루 하나 · 한 해 수백 개라 통째로 읽고 기간은 아래에서 거름 (색인 추가 없음)
     getAll(between('spends', 'date')),
-    getAll(db.collection('spendCats'))
+    getAll(db.collection('spendCats')),
+    getAll(between('focusLogs', 'day')) // 함께 집중 — 이번 주 쿼리와 같은 day 범위 (색인 추가 없음)
   ]);
   const qdays = qdaysAll.filter((d) => inRange(d.id, range));
   // 마음에 남은 쪽지 후보: 둘 다 남긴 날 · 좋아요가 있는 날 → 누른 사람의 상대(작성자) 쪽지만 읽는다
@@ -113,7 +120,7 @@ async function fetchRaw(db, range) {
       if (a.exists) { qanswers[d.id] = qanswers[d.id] || {}; qanswers[d.id][author] = { text: String(a.data().text || '') }; }
     }
   }
-  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats };
+  return { members, couple: couple.exists ? couple.data() : null, routines, checks, todos, kungs, events, places, qdays, qanswers, spends, spendCats, focusLogs };
 }
 
 async function loadPeriod(db, period) { return toInput(await fetchRaw(db, R.periodRange(period)), period); }

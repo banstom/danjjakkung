@@ -15,12 +15,17 @@
      qdays:       교환 쪽지 [{ date, text, done: { uid: 1 }, likes: { uid: true } }]   기간 안 (카드 8, 11-21 식탁 → 교환 쪽지)
      qanswers:    { date: { uid: { text } } }           마음에 남은 쪽지 후보 날의 작성자 쪽지만
      spends:      단짝 영수증 기록 (아직 없으면 [])
+     focusLogs:   집중 기록 [{ by, cat, label, day, start, end, ms, segs: [[s, e]] }]   day(05시 기준)가 기간 안 (함께 집중 카드, docs/focus-stats 4절)
    }
    prevData = 바로 앞 기간의 같은 모양 (없으면 null → 비교 숫자 없음) */
 'use strict';
 const N = require('./notify');
 const L = require('./shared/ledger-sum');
 const NC = require('./recap-note');
+const FS = require('./shared/focus-stats'); // 집중 통계 계산 (앱 js/focus-stats.js 사본)
+
+/** 함께 집중 카드 켜기 (docs/focus-stats plan ①). 11-30 밤 미리 돌려 보기에서 문제가 있으면 false 로 배포 → 이 카드만 빠지고 나머지 결산 그대로 */
+const FOCUS_CARD_ON = true;
 
 // ── 날짜 ──
 const D = (s) => new Date(s + 'T00:00:00Z');
@@ -256,6 +261,24 @@ function spendsCard(period, data) {
   };
 }
 
+/** 함께 집중 카드 (docs/focus-stats 4절). 달 = FS.recapCard, 해 = 그 해 열두 달 카드 → FS.recapYear (+ 날마다 대신 가장 많이 함께한 달).
+    비교 = 앞 기간 기록으로 같은 계산을 한 값 (다른 카드처럼 앞 기간에도 카드가 있었을 때만 — 기능을 쓰기 전 달은 null) */
+function focusCard(p, data, prev) {
+  if (!FOCUS_CARD_ON || data.uids.length !== 2) return null;
+  const logs = data.focusLogs || [];
+  if (p.kind === 'month') {
+    const pc = prev && prev.uids && prev.uids.length === 2 ? FS.recapCard(prev.focusLogs || [], prev.period.key, prev.uids, null) : null;
+    return FS.recapCard(logs, p.key, data.uids, pc);
+  }
+  const months = {};
+  for (let m = 1; m <= 12; m++) { const key = `${p.key}-${String(m).padStart(2, '0')}`; months[key] = FS.recapCard(logs, key, data.uids, null); }
+  const y = FS.recapYear(months);
+  if (!y) return null;
+  const people = {}; data.uids.forEach((u) => { people[u] = Object.keys(months).reduce((t, k) => t + (months[k] ? months[k].people[u] : 0), 0); });
+  const togetherDays = Object.keys(months).reduce((t, k) => t + (months[k] ? months[k].togetherDays : 0), 0);
+  return Object.assign(y, { people, togetherDays });
+}
+
 /** 비교 숫자: 앞 기간이 없으면 null */
 function diff(cur, prev) { return prev === null || prev === undefined ? null : cur - prev; }
 
@@ -291,6 +314,7 @@ function computeRecap(rawData, rawPrev) {
     c.diffPrev = pc ? diff(c[key], pc[key]) : null;
     cards.push(c);
   }
+  const fc = focusCard(p, data, prev); if (fc) cards.push(fc); // 함께 보낸 시간 다음 (docs/focus-stats 4-1)
   const pc = placesCard(p, data); if (pc) cards.push(pc);
   const nc = noteCard(p, data, prev); if (nc) cards.push(nc);
   const sc = spendsCard(p, data); if (sc) cards.push(sc);
@@ -301,6 +325,8 @@ function computeRecap(rawData, rawPrev) {
   if (pick('todos')) tiles.push({ id: 'todos', value: pick('todos').total, unit: '개', label: '끝낸 일' });
   if (pick('kungs')) tiles.push({ id: 'kungs', value: pick('kungs').total, unit: '번', label: '주고받은 꿍' });
   if (pick('time')) tiles.push({ id: 'time', value: pick('time').hours, unit: '시간', label: '함께 보낸 시간' });
+  const fo = pick('focus'); // 숫자만 (H:MM) — 함께가 0분이면 두 사람 합 「우리가 집중」. 옛 앱도 value + unit 으로 그릴 수 있게 글자 값
+  if (fo) { const solo = !fo.together; const min = solo ? Object.keys(fo.people).reduce((t, u) => t + fo.people[u], 0) : fo.together; tiles.push({ id: 'focus', value: Math.floor(min / 60) + ':' + String(min % 60).padStart(2, '0'), unit: '', label: solo ? '우리가 집중' : '함께 집중' }); }
   const pl = pick('places');
   if (pl) tiles.push({ id: 'places', value: pl.newPlaces.length || pl.places, unit: '곳', label: pl.newPlaces.length ? '새로 칠한 곳' : '다녀온 곳' });
   const nt = NC.noteTile(pick('note')); // 숫자만 — 쪽지 글 · 질문은 마무리(이미지)에 넣지 않음
@@ -311,4 +337,4 @@ function computeRecap(rawData, rawPrev) {
   return { v: 1, period: p, range: { start: range.start, end: range.end }, people: data.people, cards };
 }
 
-module.exports = { addDays, weekday, daysBetween, periodRange, prevPeriod, busiestDay, dayLevel, dayStates, bestRoutine, sharedMinutes, computeRecap };
+module.exports = { FOCUS_CARD_ON, focusCard, addDays, weekday, daysBetween, periodRange, prevPeriod, busiestDay, dayLevel, dayStates, bestRoutine, sharedMinutes, computeRecap };

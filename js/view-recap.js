@@ -136,6 +136,22 @@
               '<p class="rc-notecard__tx">' + esc(x.text) + '</p><span class="rc-notecard__ft"><span class="rc-notecard__by">' + dot(slots(x.author), true) + esc(x.by) + '</span>' +
               (longNote(x.text) ? '<button type="button" class="rc-notecard__more" data-act="rc-note" data-v="' + i + '">전체 보기</button>' : '') + '</span></div>';
           }).join('') : '') + '</div>';
+      case 'focus': { // 함께 집중 (docs/focus-stats 4-2)
+        var hm = (t.h ? esc(t.h) + '<small>시간</small>' + (t.m ? ' ' : '') : '') + (t.m || !t.h ? esc(t.m) + '<small>분</small>' : '');
+        var cal = '';
+        if (t.cal) {
+          var cells = '';
+          for (var ci = 0; ci < t.cal.lead; ci++) cells += '<span class="rc-d rc-d--pad"></span>';
+          t.cal.levels.forEach(function (lv) { cells += '<span class="rc-d rc-d--f' + lv + '"></span>'; });
+          cal = '<div class="rc-panel rc-fcal"><div class="rc-cal" aria-hidden="true">' + cells + '</div>' +
+            '<p class="rc-fcal__lg" aria-hidden="true">' + esc(t.cal.hint) + ' · ' + esc(t.cal.less) + ' <i class="rc-d--f0"></i><i class="rc-d--f1"></i><i class="rc-d--f2"></i><i class="rc-d--f3"></i><i class="rc-d--f4"></i> ' + esc(t.cal.more) + '</p></div>';
+        }
+        return '<div class="rc-body rc-body--focus"><p class="rc-kick">' + esc(t.kick) + '</p><h2 class="rc-ftitle">' + esc(t.title) + '</h2>' +
+          (t.soloKick ? '<p class="rc-fsolo">' + esc(t.soloKick) + '</p>' : '') + '<p class="rc-big rc-big--hm">' + hm + '</p>' +
+          '<p class="rc-lead">' + esc(t.lead) + '</p>' + cmp(t.cmp) + cal +
+          '<div class="rc-frows">' + t.rows.map(function (r) { return '<p class="rc-frow">' + dot(slots(r.uid)) + esc(r.text) + '</p>'; }).join('') +
+          t.more.map(function (x) { return '<p class="rc-frow">' + esc(x) + '</p>'; }).join('') + '</div></div>';
+      }
       case 'time':
         return '<div class="rc-body"><p class="rc-kick">' + esc(t.kick) + '</p>' + big(t.big, t.unit) + cmp(t.cmp) + '<p class="rc-lead">' + esc(t.lead) + '</p></div>';
       case 'places': {

@@ -51,6 +51,22 @@ test('읽기 → 계산 (진짜 쿼리): 목업 숫자 그대로', async () => {
   assert.deepEqual(saved.cards, r.cards);
 });
 
+test('F8 함께 집중 카드 (docs/focus-stats tests.md D1 · D4-2): 11월 집중 기록(저장소 모양 segs [{s, e}]) → 함께 보낸 시간 다음 · 첫 달 안내', async () => {
+  await clear();
+  const FX = require(path.join(ROOT, 'docs/focus-stats/reference/fixtures.js'));
+  await put('members/' + FX.ME, { name: '준민' }); await put('members/' + FX.HER, { name: '다진' });
+  await put('couple/main', { start: '2026-01-01' });
+  const logs = FX.november().filter((l) => l.day >= '2026-11-25');
+  await seed((w) => logs.forEach((l, i) => w.put('focusLogs/f' + i, { by: l.by, cat: l.cat || null, label: l.label || null, day: l.day, start: l.start, end: l.end, ms: l.ms, segs: l.segs.map((x) => ({ s: x[0], e: x[1] })), strict: false, createdAt: l.end })));
+  const r = (await RJ.runMonthly(db, kst('2026-12-01T03:00:00')))['2026-11'];
+  const ids = r.cards.map((c) => c.id);
+  assert.ok(ids.indexOf('focus') > 0 && ids.indexOf('focus') < ids.indexOf('final'), ids.join(','));
+  const c = card(r, 'focus');
+  assert.equal(c.since, '2026-11-25'); assert.equal(c.prevTogether, null); assert.equal(c.together, 130);
+  assert.equal(cardText(c, r, FX.ME).cmp, '11/25부터 모은 기록이에요');
+  assert.ok(card(r, 'final').tiles.some((t) => t.id === 'focus' && t.value === '2:10'));
+});
+
 test('F1 서울 시각 경계', async () => {
   await clear();
   await put('members/a', { name: '준민' }); await put('members/b', { name: '단짝' });

@@ -56,3 +56,18 @@ test('B6 도트가 아닌 테마: 집중 화면 그림 없음 · 도트 링 없�
   assert.match(app, /host\.isPixel\(\) && root\.innerHeight >= 700/, 'S3 는 도트 테마 · 700px 이상에서만');
   assert.match(app, /pixelRing: host\.isPixel\(\)/, '픽셀 링은 도트 테마에서만');
 });
+
+// 집중 통계 (docs/focus-stats/tokens.md 2절): 결산 「함께」 달력 4단계 --fb-4 / --tint 3:1 — color-mix(in srgb) 를 그대로 계산
+function hex(h) { return [1, 3, 5].map((i) => parseInt(h.substr(i, 2), 16)); }
+function mix(a, b, p) { const x = hex(a), y = hex(b); return '#' + x.map((v, i) => Math.round(v * p + y[i] * (1 - p)).toString(16).padStart(2, '0')).join(''); }
+test('FS 대비: 58판 --fb-4(= both 45% + text) / --tint ≥ 3:1', () => {
+  assert.match(common['fb-4'], /^color-mix\(in srgb, var\(--both\) 45%, var\(--text\)\)$/);
+  const bad = [];
+  for (const id of BOARDS) {
+    const v = board(id), f = /^color-mix\(in srgb, var\(--([a-z-]+)\) (\d+)%, var\(--([a-z-]+)\)\)$/.exec(v['fb-4']);
+    assert.ok(f, id + ' fb-4 ' + v['fb-4']);
+    const r = cr(mix(v[f[1]], v[f[3]], Number(f[2]) / 100), v.tint);
+    if (r < 3) bad.push(`${id} ${r.toFixed(2)}`);
+  }
+  assert.deepEqual(bad, []);
+});

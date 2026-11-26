@@ -5,6 +5,9 @@
   var NODE = typeof module !== 'undefined' && module.exports;
   var L = NODE ? require('./ledger-sum.js') : root.RT.ledgerSum;
   var QT = NODE ? require('./question-text.js') : root.RT.questionText; // 카드 8 머리 = 교환 쪽지 이름 (NAME 한 곳)
+  // 함께 집중 카드 문구 = js/focus-text.js 의 S.rc* (docs/focus-stats/text.md) · 단계 = js/focus-stats.js — 스크립트 순서와 상관없이 늦게 읽음
+  function FT() { return NODE ? require('./focus-text.js').S : root.RT.focusText.S; }
+  function FST() { return NODE ? require('./focus-stats.js') : root.RT.focusStats; }
 
   // ── 카드 8 「교환 쪽지」 화면 글 (docs/recap/changes/card8/src/note-card-text.js 글자 그대로) ──
   var WEEK = ['일', '월', '화', '수', '목', '금', '토'];
@@ -141,6 +144,24 @@
           rows: people.map(function (p) { return { uid: p.uid, name: p.name, pct: card.byPerson[p.uid].pct, value: L.manWon(card.byPerson[p.uid].amount) }; }),
           more: ['가장 많이 쓴 곳은 ' + (card.topCatLabel || L.CAT_LABEL[card.topCat] || '기타') + ' · ' + L.manWon(card.topCatAmount) + (card.topCatCount ? ' · ' + card.topCatCount + '건' : '')]
         };
+      case 'focus': { // 함께 집중 (docs/focus-stats 4절 · 목업 C1 · C3)
+        var S = FT(), FSM = FST(), MIN = 60000;
+        var solo = !card.together, total = solo ? people.reduce(function (t, p) { return t + ((card.people || {})[p.uid] || 0); }, 0) : card.together;
+        var month = kind === 'month', chip = null;
+        if (month && !solo && typeof card.prevTogether === 'number') chip = card.together === card.prevTogether ? '지난달과 같아요' : S.rcVsPrev((card.together - card.prevTogether) * MIN);
+        else if (month && typeof card.prevTogether !== 'number' && card.since && card.since.slice(8) !== '01') chip = S.rcSince(card.since);
+        var lines = [];
+        if (!solo && card.togetherDays) lines.push(S.rcTogetherDays(card.togetherDays));
+        if (month && !solo && card.best) lines.push(S.rcBestTogether(card.best.day, card.best.min * MIN));
+        if (!month && card.bestMonth) lines.push(S.rcYearBest(card.bestMonth.month, card.bestMonth.together * MIN));
+        return {
+          kick: recap.cards[0].dateLabel, title: S.rcTitle, soloKick: solo ? S.rcSoloBig : null,
+          h: Math.floor(total / 60), m: total % 60, lead: solo ? S.rcLeadSolo : S.rcLead, cmp: chip,
+          cal: month && !solo && Array.isArray(card.days) ? { lead: FSM.dow(recap.period.key + '-01'), levels: card.days.map(function (x) { return FSM.level(x * MIN, true); }), hint: S.rcCalHint, less: S.rvLegendLess, more: S.rvLegendMore } : null,
+          rows: people.map(function (p) { return { uid: p.uid, text: S.rcPerson(p.name, ((card.people || {})[p.uid] || 0) * MIN) }; }),
+          more: lines
+        };
+      }
       case 'final':
         return {
           kick: recap.cards[0].dateLabel, title: kind === 'year' ? '우리의 한 해 요약' : '우리의 한 달 요약',

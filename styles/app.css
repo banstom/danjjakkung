@@ -1595,6 +1595,20 @@ button.rv-srow { cursor: pointer; }
 .rc-d--none { background: var(--empty); }
 .rc-d--blank { background: repeating-linear-gradient(135deg, var(--line) 0 2px, transparent 2px 5px); }
 .rc-d--pad { background: none; }
+.rc-ftitle { margin: -6px 0 0; font-size: 24px; font-weight: 800; }
+.rc-fsolo { margin: 0 0 -8px; font-size: 14px; font-weight: 700; color: var(--sub); }
+.rc-big--hm { font-size: 64px; }
+.rc-big--hm small { font-size: 24px; }
+.rc-d--f0 { background: var(--focus-track); }
+.rc-d--f1 { background: var(--fb-1); }
+.rc-d--f2 { background: var(--fb-2); }
+.rc-d--f3 { background: var(--fb-3); }
+.rc-d--f4 { background: var(--fb-4); }
+.rc-fcal .rc-d { height: 24px; }
+.rc-fcal__lg { margin: 10px 0 0; font-size: 12px; color: var(--sub); }
+.rc-fcal__lg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; }
+.rc-frows { display: flex; flex-direction: column; gap: 4px; }
+.rc-frow { margin: 0; font-size: 15px; line-height: 1.5; display: flex; align-items: center; gap: 6px; }
 .rc-lg { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--sub); }
 .rc-lg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 .rc-rt { display: flex; flex-direction: column; gap: 8px; }
@@ -1674,6 +1688,7 @@ button.rv-srow { cursor: pointer; }
   .rc-tap { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
   .rc-body { gap: 10px; }
   .rc-big { font-size: 56px; }
+  .rc-big--hm { font-size: 56px; }
   .rc-big small { font-size: 26px; }
   .rc-title { font-size: 34px; }
   .rc-lead--h { font-size: 19px; }

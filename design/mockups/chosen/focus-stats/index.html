@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>단짝꿍 · 집중 통계 시안 (2026-11-26)</title>
+<style>
+/* ───────── 목업용 테마 토큰 (근사값 — 저장소의 실제 값으로 그려짐) ───────── */
+.phone[data-theme="soft-pastel"] {
+  --bg:#FBF7F4; --card:#FFFFFF; --raised:#F6F0EC; --text:#3B3340; --sub:#6E6474; --line:#E8DFE5;
+  --me:#F2A7B8; --me-ink:#7E2740; --her:#9CC7E8; --her-ink:#1F4F73; --both:#B9A2E0; --both-ink:#43307A;
+  --strong:#C2577A; --empty:#EEE7EB; --empty-text:#6E6474; --tint:#FCE9EF; --accent:#C2577A;
+}
+.phone[data-theme="midnight-noir"] {
+  --bg:#0E1014; --card:#171A20; --raised:#20242C; --text:#ECEEF2; --sub:#A2A8B4; --line:#2B3039;
+  --me:#E68AA3; --me-ink:#2A0E17; --her:#7FB3E0; --her-ink:#0B2236; --both:#B49BF0; --both-ink:#1D1238;
+  --strong:#F0A6BA; --empty:#262A32; --empty-text:#A2A8B4; --tint:#241A22; --accent:#F0A6BA;
+}
+.phone[data-theme="winter-snack"] {
+  --bg:#F3E9DA; --card:#FFF8EC; --raised:#F2E3CC; --text:#3A2A1E; --sub:#6A5541; --line:#D6C1A2;
+  --me:#E38B5B; --me-ink:#4F220C; --her:#6FA3C7; --her-ink:#133752; --both:#D4A53C; --both-ink:#3F2F06;
+  --strong:#AD6C33; --empty:#EADBC3; --empty-text:#6A5541; --tint:#F8E5C8; --accent:#AD6C33;
+}
+/* ───────── 새 토큰 — 테마마다 값을 적지 않고 이 식으로 만듦 (tokens.md) ───────── */
+.phone {
+  --focus-ring: var(--strong); --focus-track: var(--empty);
+  --fm-1: color-mix(in srgb, var(--me) 35%, var(--focus-track));
+  --fm-2: color-mix(in srgb, var(--me) 75%, var(--focus-track));
+  --fm-3: var(--me);
+  --fm-4: color-mix(in srgb, var(--me) 45%, var(--text));
+  --fh-1: color-mix(in srgb, var(--her) 35%, var(--focus-track));
+  --fh-2: color-mix(in srgb, var(--her) 75%, var(--focus-track));
+  --fh-3: var(--her);
+  --fh-4: color-mix(in srgb, var(--her) 45%, var(--text));
+  --fb-1: color-mix(in srgb, var(--both) 35%, var(--focus-track));
+  --fb-2: color-mix(in srgb, var(--both) 75%, var(--focus-track));
+  --fb-3: var(--both);
+  --fb-4: color-mix(in srgb, var(--both) 45%, var(--text));
+  --focus-goal: var(--sub);
+  --focus-num: var(--text);   /* 2 · 3단계 칸 위 날짜 숫자. 어두운 판은 var(--card) */
+}
+.phone[data-theme="midnight-noir"], .phone[data-theme="cosmic-dream"] { --focus-num: var(--card); }
+.phone[data-theme="cosmic-dream"] { --focus-ring: var(--accent); }
+
+/* ───────── 바깥 (모아 보기) ───────── */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: #E9E7E4; font-family: Pretendard, "Noto Sans CJK KR", "Noto Sans KR", system-ui, sans-serif; color: #222; }
+.wrap { padding: 24px; max-width: 1240px; margin: 0 auto; }
+.wrap > h1 { font-size: 22px; margin: 0 0 4px; }
+.wrap > p.note { margin: 0 0 18px; color: #555; font-size: 14px; line-height: 1.6; }
+.row { margin: 28px 0 8px; }
+.row h2 { font-size: 17px; margin: 0 0 4px; }
+.row p { margin: 0 0 12px; color: #555; font-size: 13px; line-height: 1.55; }
+.grid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+figure { margin: 0; }
+figcaption { font-size: 12px; color: #444; margin-top: 6px; max-width: 360px; line-height: 1.5; }
+figcaption b { color: #000; }
+
+/* ───────── 폰 ───────── */
+.phone { width: 360px; background: var(--bg); color: var(--text); border-radius: 22px; overflow: hidden;
+  font-family: Pretendard, "Noto Sans CJK KR", system-ui, sans-serif; font-size: 14px; line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 6px 22px rgba(0,0,0,.08); }
+.phone.w320 { width: 320px; }
+.phone i { font-style: normal; }
+.scr { padding: 12px 16px 16px; }
+.ctx { opacity: .45; margin-bottom: 12px; }
+.ctx .card { padding: 10px 14px; display: flex; justify-content: space-between; font-size: 13px; }
+.tabbar { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: var(--card); font-size: 11px; text-align: center; color: var(--sub); }
+.tabbar span { padding: 9px 0 11px; }
+.tabbar span.on { color: var(--text); font-weight: 700; }
+.card { background: var(--card); border-radius: 16px; padding: 16px; border: 1px solid var(--line); }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* 카드 머리 */
+.fs-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.fs-head h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.fs-total { font-size: 13px; color: var(--sub); }
+.fs-total b { font-size: 20px; color: var(--text); font-weight: 800; margin-left: 2px; }
+.chip { display: inline-block; font-size: 12px; padding: 3px 8px; border-radius: 999px; background: var(--raised); color: var(--text); }
+.fs-chiprow { margin-top: 6px; display: flex; justify-content: flex-end; min-height: 0; }
+
+/* 막대 */
+.ch { position: relative; height: 128px; margin-top: 12px; }
+.ch-top { position: absolute; left: 0; top: -2px; font-size: 11px; color: var(--sub); }
+.ch-base { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
+.ch-goal { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--focus-goal); z-index: 2; pointer-events: none; }
+.ch-goal span { position: absolute; right: 0; top: -17px; font-size: 11px; color: var(--sub); background: var(--card); padding: 0 0 0 4px; }
+.ch-cols { position: absolute; inset: 14px 0 0 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+.col { all: unset; position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 100%; cursor: pointer; border-radius: 8px 8px 0 0; }
+.col:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+.col.sel { background: var(--raised); }
+.col.dim .b { opacity: .38; }
+.col.future { cursor: default; }
+.b { position: relative; width: 10px; border-radius: 4px 4px 0 0; display: block; overflow: hidden; }
+.b.me { background: var(--me); }
+.b.her { background: var(--her); }
+.b .bb { position: absolute; left: 0; right: 0; bottom: 0; background: var(--both); display: block; }
+.b.zero { background: none; }
+.ch-days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; color: var(--sub); margin-top: 5px; }
+.ch-days .today { color: var(--text); font-weight: 700; }
+.ch-days .today::after { content: ""; display: block; width: 14px; height: 2px; background: var(--text); margin: 2px auto 0; border-radius: 2px; }
+.ch-days .future { opacity: .6; }
+.ch-empty { position: absolute; inset: 14px 0 0 0; display: grid; place-items: center; font-size: 13px; color: var(--sub); text-align: center; padding: 0 12px; }
+.ch-ghost { position: absolute; inset: 14px 0 0 0; display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; }
+.ch-ghost i { justify-self: center; width: 23px; height: 6px; border-radius: 3px 3px 0 0; background: var(--focus-track); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 12px; color: var(--sub); margin-top: 10px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.sw.me { background: var(--me); } .sw.her { background: var(--her); } .sw.both { background: var(--both); }
+.legend .hint { margin-left: auto; }
+.dayline { margin-top: 10px; font-size: 13px; padding: 8px 10px; background: var(--raised); border-radius: 10px; }
+.dayline b { font-weight: 700; }
+
+/* 시간대 띠 */
+.band { margin-top: 12px; }
+.band-h { font-size: 12px; color: var(--sub); margin-bottom: 6px; }
+.lane { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 0; margin-bottom: 3px; }
+.lane > span { font-size: 11px; color: var(--sub); }
+.lane .tr { position: relative; height: 12px; background: var(--focus-track); border-radius: 3px; overflow: hidden; }
+.lane.thin .tr { height: 6px; background: none; }
+.lane .tr i { position: absolute; top: 0; bottom: 0; min-width: 2px; display: block; }
+.lane.me i { background: var(--me); } .lane.her i { background: var(--her); } .lane.thin i { background: var(--both); border-radius: 2px; }
+.ticks { position: relative; margin-left: 34px; height: 14px; font-size: 10px; color: var(--sub); }
+.ticks span { position: absolute; transform: translateX(-50%); }
+.ticks span:first-child { transform: none; } .ticks span:last-child { transform: translateX(-100%); }
+.gridln { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--card); opacity: .9; }
+
+/* 과목 (순위 막대, 한 색) */
+.sj { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.sj-h { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+.sj-h b { font-weight: 700; } .sj-h span { color: var(--sub); }
+.sj-r { margin-bottom: 9px; }
+.sj-t { display: flex; justify-content: space-between; font-size: 13px; }
+.sj-t b { font-weight: 700; }
+.sj-bar { height: 6px; border-radius: 3px; background: var(--focus-track); margin-top: 4px; overflow: hidden; }
+.sj-bar i { display: block; height: 100%; background: var(--me); border-radius: 3px; }
+.sj-l { font-size: 12px; color: var(--sub); margin-top: 3px; }
+
+/* 기록 칸 */
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.tile { background: var(--raised); border-radius: 12px; padding: 10px; min-width: 0; }
+.tile .k { font-size: 11px; color: var(--sub); line-height: 1.3; }
+.tile .v { font-size: 20px; font-weight: 800; margin-top: 3px; }
+.tile .s { font-size: 11px; color: var(--sub); margin-top: 1px; line-height: 1.3; }
+/* 좁을 때(카드 안쪽 280px 미만) · 도트 스킨: 기록 칸을 세로 목록으로 */
+.card { container-type: inline-size; }
+@container (max-width: 279px) {
+  .tiles { grid-template-columns: 1fr; gap: 6px; }
+  .tile { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: center; padding: 8px 10px; }
+  .tile .k { grid-column: 1; } .tile .s { grid-column: 1; } .tile .v { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+}
+.phone[data-skin="pixel"] .tiles { grid-template-columns: 1fr; gap: 8px; }
+.phone[data-skin="pixel"] .tile { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: center; padding: 8px 12px; }
+.phone[data-skin="pixel"] .tile .k, .phone[data-skin="pixel"] .tile .s { grid-column: 1; }
+.phone[data-skin="pixel"] .tile .v { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+
+/* 돌아보기 */
+.rv-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.seg3 { display: inline-flex; background: var(--raised); border-radius: 10px; padding: 3px; font-size: 12px; }
+.seg3 span { padding: 4px 12px; border-radius: 8px; color: var(--sub); }
+.seg3 span.on { background: var(--card); color: var(--text); font-weight: 700; box-shadow: 0 0 0 1px var(--line); }
+.rv-head { display: flex; justify-content: space-between; align-items: center; }
+.rv-head h3 { margin: 0; font-size: 15px; font-weight: 700; }
+.rv-big { font-size: 28px; font-weight: 800; }
+.rv-line { font-size: 13px; color: var(--sub); margin-top: 2px; }
+.wk { margin-top: 14px; display: grid; grid-template-columns: 34px repeat(7, 1fr); gap: 4px; align-items: center; }
+.wk .h { font-size: 11px; color: var(--sub); text-align: center; }
+.wk .lb { font-size: 11px; color: var(--sub); }
+.cell { aspect-ratio: 1 / 1; border-radius: 6px; background: var(--focus-track); position: relative; }
+.wk .cell { height: 30px; aspect-ratio: auto; }
+.dotrow { display: flex; justify-content: center; }
+.tdot { width: 8px; height: 8px; border-radius: 50%; background: var(--both); box-shadow: 0 0 0 2px var(--card); }
+.cal { margin-top: 12px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal .h { font-size: 11px; color: var(--sub); text-align: center; padding-bottom: 2px; }
+.cal .cell { font-size: 10px; color: var(--text); padding: 3px 0 0 4px; line-height: 1; }
+.cal .cell.blank { background: none; }
+.cal .cell.future { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+.cal .cell.today { box-shadow: inset 0 0 0 2px var(--text); }
+.cal .cell .tdot { position: absolute; right: 3px; bottom: 3px; width: 7px; height: 7px; }
+.cell.l2, .cell.l3 { color: var(--focus-num); } .cell.l4 { color: var(--card); }
+.me .l1 { background: var(--fm-1); } .me .l2 { background: var(--fm-2); } .me .l3 { background: var(--fm-3); } .me .l4 { background: var(--fm-4); }
+.her .l1 { background: var(--fh-1); } .her .l2 { background: var(--fh-2); } .her .l3 { background: var(--fh-3); } .her .l4 { background: var(--fh-4); }
+.both .l1 { background: var(--fb-1); } .both .l2 { background: var(--fb-2); } .both .l3 { background: var(--fb-3); } .both .l4 { background: var(--fb-4); }
+.ramp { display: inline-flex; gap: 2px; vertical-align: -1px; margin: 0 4px; }
+.ramp i { width: 10px; height: 10px; border-radius: 2px; display: block; }
+.rv-meta { font-size: 12px; color: var(--sub); margin-top: 10px; }
+.cal .cell.picked { box-shadow: inset 0 0 0 2px var(--focus-ring); }
+
+/* 결산 카드 (시안 A · 꽉 찬 색) */
+.recap { height: 640px; background: var(--tint); padding: 18px 22px 22px; display: flex; flex-direction: column; }
+.prog { display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; }
+.prog i { height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--text) 18%, transparent); display: block; }
+.prog i.done { background: var(--text); }
+.rc-kicker { margin-top: 26px; font-size: 13px; color: var(--sub); }
+.rc-title { font-size: 22px; font-weight: 800; margin-top: 2px; }
+.rc-big { margin-top: 26px; font-weight: 800; line-height: 1; }
+.rc-big .n { font-size: 64px; letter-spacing: -1px; }
+.rc-big .u { font-size: 24px; margin: 0 6px 0 2px; }
+.rc-lead { margin-top: 12px; font-size: 15px; }
+.rc-chip { margin-top: 12px; }
+.rc-chip .chip { background: var(--card); font-size: 13px; padding: 4px 10px; }
+.rc-cal { margin-top: 22px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.rc-cal .cell { aspect-ratio: auto; height: 24px; border-radius: 5px; background: color-mix(in srgb, var(--focus-track) 70%, var(--card)); }
+.rc-cal .cell.blank { background: none; }
+.rc-cal .cell.l1 { background: var(--fb-1); } .rc-cal .cell.l2 { background: var(--fb-2); } .rc-cal .cell.l3 { background: var(--fb-3); } .rc-cal .cell.l4 { background: var(--fb-4); }
+.rc-cal-legend { font-size: 12px; color: var(--sub); margin-top: 6px; }
+.rc-lines { margin-top: auto; font-size: 14px; line-height: 1.75; }
+.rc-lines .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.fin { height: 640px; background: var(--tint); padding: 18px 22px; }
+.fin-grid { margin-top: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fin-t { background: var(--card); border-radius: 12px; padding: 12px; min-height: 74px; }
+.fin-t .k { font-size: 12px; color: var(--sub); }
+.fin-t .v { font-size: 22px; font-weight: 800; margin-top: 4px; }
+.fin-t.ghost { opacity: .45; }
+.fin-t.new { box-shadow: 0 0 0 2px var(--text); }
+.new-tag { font-size: 11px; font-weight: 700; margin-left: 4px; }
+
+/* ───────── 도트(픽셀) 스킨 — 둥근 모서리 없음 · 12 · 15 · 24 · 36px · 4px 격자 ───────── */
+.phone[data-skin="pixel"] { font-family: Unifont, "Galmuri11", monospace; font-size: 15px; border-radius: 0; -webkit-font-smoothing: none; }
+.phone[data-skin="pixel"] * { border-radius: 0 !important; }
+.phone[data-skin="pixel"] .card { border: 0; box-shadow: 0 0 0 2px var(--text), 4px 4px 0 0 var(--line); margin: 2px; }
+.phone[data-skin="pixel"] .fs-head h3, .phone[data-skin="pixel"] .rv-head h3 { font-size: 15px; }
+.phone[data-skin="pixel"] .fs-total, .phone[data-skin="pixel"] .ch-top, .phone[data-skin="pixel"] .ch-goal span,
+.phone[data-skin="pixel"] .ch-days, .phone[data-skin="pixel"] .legend, .phone[data-skin="pixel"] .chip,
+.phone[data-skin="pixel"] .band-h, .phone[data-skin="pixel"] .lane > span, .phone[data-skin="pixel"] .ticks,
+.phone[data-skin="pixel"] .sj-l, .phone[data-skin="pixel"] .tile .k, .phone[data-skin="pixel"] .tile .s,
+.phone[data-skin="pixel"] .wk .h, .phone[data-skin="pixel"] .wk .lb, .phone[data-skin="pixel"] .cal .h, .phone[data-skin="pixel"] .cal .cell,
+.phone[data-skin="pixel"] .rv-line, .phone[data-skin="pixel"] .rv-meta, .phone[data-skin="pixel"] .seg3,
+.phone[data-skin="pixel"] .tabbar, .phone[data-skin="pixel"] .rc-kicker, .phone[data-skin="pixel"] .fin-t .k { font-size: 12px; }
+.phone[data-skin="pixel"] .sj-h, .phone[data-skin="pixel"] .sj-t, .phone[data-skin="pixel"] .dayline, .phone[data-skin="pixel"] .ch-empty,
+.phone[data-skin="pixel"] .ctx .card, .phone[data-skin="pixel"] .rc-lead, .phone[data-skin="pixel"] .rc-lines, .phone[data-skin="pixel"] .rc-chip .chip { font-size: 15px; }
+.phone[data-skin="pixel"] .fs-total b, .phone[data-skin="pixel"] .tile .v, .phone[data-skin="pixel"] .rv-big,
+.phone[data-skin="pixel"] .rc-title, .phone[data-skin="pixel"] .rc-big .u, .phone[data-skin="pixel"] .fin-t .v { font-size: 24px; font-weight: 400; }
+.phone[data-skin="pixel"] .rc-big .n { font-size: 36px; font-weight: 400; letter-spacing: 0; }
+.phone[data-skin="pixel"] .b { width: 8px; }
+.phone[data-skin="pixel"] .col { gap: 4px; }
+.phone[data-skin="pixel"] .ch-goal { border-top: 0; height: 2px; background: repeating-linear-gradient(90deg, var(--focus-goal) 0 4px, transparent 4px 8px); }
+.phone[data-skin="pixel"] .ch-goal span { top: -18px; }
+.phone[data-skin="pixel"] .ch-days .today::after { height: 4px; width: 16px; }
+.phone[data-skin="pixel"] .tdot { width: 8px; height: 8px; box-shadow: 0 0 0 2px var(--card); }
+.phone[data-skin="pixel"] .cal .cell .tdot { width: 8px; height: 8px; right: 2px; bottom: 2px; }
+.phone[data-skin="pixel"] .lane .tr { height: 12px; }
+.phone[data-skin="pixel"] .lane.thin .tr { height: 4px; }
+.phone[data-skin="pixel"] .sj-bar { height: 8px; }
+.phone[data-skin="pixel"] .tile { box-shadow: 0 0 0 2px var(--line); background: var(--card); }
+.phone[data-skin="pixel"] .cal .cell.today { box-shadow: inset 0 0 0 4px var(--text); }
+.phone[data-skin="pixel"] .cal .cell.future { box-shadow: inset 0 0 0 2px var(--line); }
+.phone[data-skin="pixel"] .seg3 span.on { box-shadow: 0 0 0 2px var(--text); }
+.phone[data-skin="pixel"] .dayline { box-shadow: 0 0 0 2px var(--line); background: var(--card); }
+.phone[data-skin="pixel"] .sw { width: 8px; height: 8px; }
+.phone[data-skin="pixel"] .prog i { height: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>// 집중 통계 계산 — 참조 구현 (기획 계정, 2026-11-26)
+// 저장소 js/focus.js 에 이미 있는 것(week · weekSubjects · rangeSummary · overlap)과 뜻이 같으면 그것을 쓰고,
+// 없는 것만 옮겨 주세요. 뜻이 다르면 고치기 전에 차이를 먼저 알려 주세요.
+//
+// 입력 모양(참조용으로 맞춘 꼴 — 저장소 모양과 다르면 읽을 때 한 번 바꿔서 넘기기)
+//   log = { by, cat, label, day: 'YYYY-MM-DD'(05시 기준), start, end, ms, segs: [[s, e], …], strict }
+//   시각은 모두 ms(Unix). segs = 실제로 집중한 구간(쉬기 · 자리 비움 빠짐). ms = segs 길이 합.
+(function (root) {
+  'use strict';
+
+  var MIN = 60000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+  var C = {
+    DAY_START_HOUR: 5,          // 하루는 05:00 에 시작
+    TZ_OFFSET_MS: 9 * HOUR,     // 서울(UTC+9). 저장소가 기기 시각이면 그쪽을 따르기
+    FOCUSED_DAY_MS: 1 * MIN,    // 「집중한 날」 = 그날 합계 1분 이상
+    TOGETHER_DAY_MS: 10 * MIN,  // 「함께한 날」 = 그날 함께 10분 이상
+    LEVELS_MS: [1 * MIN, 60 * MIN, 120 * MIN, 240 * MIN], // 히트맵 1~4단계 시작점 (한 사람)
+    LEVELS_BOTH_MS: [1 * MIN, 30 * MIN, 60 * MIN, 120 * MIN], // 함께 달력(결산) 1~4단계
+    SUBJ_LIMIT: 4,              // 과목 줄 수 (넘치면 「그 밖」 한 줄)
+    LABEL_LIMIT: 3,             // 과목 줄 안 짧은 이름 수 (넘치면 「외 n개」)
+    STREAK_MAX_DAYS: 365        // 연속 날은 1년까지만 거슬러 셈
+  };
+
+  // ── 날짜 ──
+  function parts(day) { var p = day.split('-'); return [Number(p[0]), Number(p[1]), Number(p[2])]; }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function fromUTC(d) { return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function addDays(day, n) { var p = parts(day); return fromUTC(new Date(Date.UTC(p[0], p[1] - 1, p[2] + n))); }
+  function dow(day) { var p = parts(day); return (new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay() + 6) % 7; } // 0 = 월
+  function dayStartMs(day) { var p = parts(day); return Date.UTC(p[0], p[1] - 1, p[2], C.DAY_START_HOUR) - C.TZ_OFFSET_MS; }
+  function dayOf(ms) { return fromUTC(new Date(ms + C.TZ_OFFSET_MS - C.DAY_START_HOUR * HOUR)); }
+  function weekStart(day) { return addDays(day, -dow(day)); }
+  function monthDays(month) { // 'YYYY-MM' → 날짜 문자열 배열
+    var p = month.split('-').map(Number), n = new Date(Date.UTC(p[0], p[1], 0)).getUTCDate(), out = [];
+    for (var i = 1; i <= n; i++) out.push(month + '-' + pad(i));
+    return out;
+  }
+  function prevMonth(month) { var p = month.split('-').map(Number); var d = new Date(Date.UTC(p[0], p[1] - 2, 1)); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1); }
+
+  // ── 구간 ──
+  function merge(segs) {
+    var s = segs.filter(function (x) { return x[1] > x[0]; }).map(function (x) { return [x[0], x[1]]; })
+      .sort(function (a, b) { return a[0] - b[0]; });
+    var out = [];
+    s.forEach(function (x) {
+      var last = out[out.length - 1];
+      if (last && x[0] <= last[1]) last[1] = Math.max(last[1], x[1]); else out.push(x);
+    });
+    return out;
+  }
+  function intersect(a, b) { // 둘 다 merge 된 것
+    var out = [], i = 0, j = 0;
+    while (i < a.length && j < b.length) {
+      var s = Math.max(a[i][0], b[j][0]), e = Math.min(a[i][1], b[j][1]);
+      if (e > s) out.push([s, e]);
+      if (a[i][1] < b[j][1]) i++; else j++;
+    }
+    return out;
+  }
+  function length(segs) { return segs.reduce(function (t, x) { return t + (x[1] - x[0]); }, 0); }
+  function clip(segs, from, to) {
+    return segs.map(function (x) { return [Math.max(x[0], from), Math.min(x[1], to)]; }).filter(function (x) { return x[1] > x[0]; });
+  }
+  function segsOf(logs, uid, day) {
+    var out = [];
+    logs.forEach(function (l) { if (l.by === uid && (!day || l.day === day)) out = out.concat(l.segs || []); });
+    return merge(out);
+  }
+
+  // ── 날별 합계 ──
+  // 한 사람 합계 = ms 합(= segs 합). 함께 = 그날 두 사람 segs 합집합끼리의 교집합.
+  function byDay(logs, me, her) {
+    var map = {};
+    function cell(d) { return map[d] || (map[d] = { me: 0, her: 0, both: 0 }); }
+    logs.forEach(function (l) {
+      if (l.by === me) cell(l.day).me += l.ms;
+      else if (l.by === her) cell(l.day).her += l.ms;
+    });
+    Object.keys(map).forEach(function (d) {
+      if (map[d].me && map[d].her) map[d].both = length(intersect(segsOf(logs, me, d), segsOf(logs, her, d)));
+    });
+    return map;
+  }
+  function level(ms, both) {
+    var lv = 0;
+    (both ? C.LEVELS_BOTH_MS : C.LEVELS_MS).forEach(function (t, i) { if (ms >= t) lv = i + 1; });
+    return lv;
+  }
+  // 막대 눈금 꼭대기: 가장 큰 값(나 · 짝꿍 · 목표)을 1시간 단위로 올림, 적어도 1시간
+  function scaleTop(values) {
+    var mx = Math.max.apply(null, [0].concat(values));
+    return Math.max(HOUR, Math.ceil(mx / HOUR) * HOUR);
+  }
+
+  // ── 과목 ──
+  function subjects(logs, uid, filterDay) {
+    var cats = {}, total = 0;
+    logs.forEach(function (l) {
+      if (l.by !== uid || (filterDay && l.day !== filterDay)) return;
+      total += l.ms;
+      var c = cats[l.cat] || (cats[l.cat] = { cat: l.cat, ms: 0, labels: {} });
+      c.ms += l.ms;
+      var key = l.label || '';
+      if (key) c.labels[key] = (c.labels[key] || 0) + l.ms;
+    });
+    var rows = Object.keys(cats).map(function (k) {
+      var c = cats[k];
+      var labels = Object.keys(c.labels).map(function (n) { return { label: n, ms: c.labels[n] }; })
+        .sort(function (a, b) { return b.ms - a.ms || (a.label < b.label ? -1 : 1); });
+      return { cat: c.cat, ms: c.ms, labels: labels.slice(0, C.LABEL_LIMIT), moreLabels: Math.max(0, labels.length - C.LABEL_LIMIT) };
+    }).sort(function (a, b) { return b.ms - a.ms || (a.cat < b.cat ? -1 : 1); });
+    var shown = rows.length > C.SUBJ_LIMIT ? rows.slice(0, C.SUBJ_LIMIT - 1) : rows;
+    var rest = rows.slice(shown.length);
+    var other = rest.length ? { cat: null, ms: rest.reduce(function (t, r) { return t + r.ms; }, 0), count: rest.length } : null;
+    var top = rows.length ? rows[0].ms : 0;
+    return { total: total, top: top, rows: shown, other: other };
+  }
+
+  // ── 기록 ──
+  function longest(logs, uid, from, to) { // 한 번 집중(로그 하나)의 가장 긴 것. 같으면 먼저 한 것
+    var best = null;
+    logs.forEach(function (l) {
+      if (l.by !== uid || (from && l.day < from) || (to && l.day > to)) return;
+      if (!best || l.ms > best.ms || (l.ms === best.ms && l.start < best.start)) best = l;
+    });
+    return best && { ms: best.ms, day: best.day, cat: best.cat, label: best.label || '' };
+  }
+  // 연속: 오늘 했으면 오늘까지, 안 했으면 어제까지. 하루라도 빠지면 끊김.
+  function streak(dayTotals, today) { // dayTotals = { day: ms } (내 것)
+    function did(d) { return (dayTotals[d] || 0) >= C.FOCUSED_DAY_MS; }
+    var todayDone = did(today), d = todayDone ? today : addDays(today, -1), n = 0;
+    while (did(d) && n < C.STREAK_MAX_DAYS) { n++; d = addDays(d, -1); }
+    return { n: n, todayDone: todayDone, reachedDay: addDays(d, 1) };
+  }
+  // 앱이 가진 기록이 연속의 첫날까지 닿지 않았으면 더 읽어야 함
+  function needMoreForStreak(s, loadedFrom) { return s.n > 0 && s.reachedDay <= loadedFrom && s.n < C.STREAK_MAX_DAYS; }
+
+  // ── 집중 탭 · 이번 주 ──
+  // opts: { logs(이번 주), prevLogs(지난주), olderLogs(그 전 4주까지, 연속용), me, her, today, now, goalMs, selected }
+  function weekView(o) {
+    var mon = weekStart(o.today), map = byDay(o.logs, o.me, o.her), days = [], tot = { me: 0, her: 0, both: 0 };
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(mon, i), c = map[d] || { me: 0, her: 0, both: 0 };
+      days.push({ day: d, dow: i, me: c.me, her: c.her, both: c.both, isToday: d === o.today, future: d > o.today });
+      tot.me += c.me; tot.her += c.her; tot.both += c.both;
+    }
+    var goal = o.goalMs > 0 ? o.goalMs : 0;
+    var vals = [];
+    days.forEach(function (x) { vals.push(x.me, x.her); });
+    if (goal) vals.push(goal);
+
+    // 지난주 이맘때: 지난주 월 05:00 ~ (지금 − 7일)까지 내 segs
+    var lastMon = addDays(mon, -7), last = length(clip(segsOf(o.prevLogs || [], o.me), dayStartMs(lastMon), o.now - 7 * DAY));
+    var diff = tot.me - last;
+    var vs = last > 0 && diff >= MIN ? diff : null; // 늘었을 때만, 지난주에 기록이 있을 때만
+
+    // 연속(내 것): 이번 주 + 지난주 + 그 전
+    var mine = {};
+    [o.logs, o.prevLogs || [], o.olderLogs || []].forEach(function (arr) {
+      arr.forEach(function (l) { if (l.by === o.me) mine[l.day] = (mine[l.day] || 0) + l.ms; });
+    });
+    var st = streak(mine, o.today);
+
+    var sel = o.selected != null ? days[o.selected] : null;
+    var focusedDays = days.filter(function (x) { return x.me >= C.FOCUSED_DAY_MS; }).length;
+    var best = days.reduce(function (b, x) { return x.me > (b ? b.me : 0) ? x : b; }, null);
+
+    return {
+      days: days,
+      total: tot,
+      empty: tot.me === 0 && tot.her === 0,
+      scale: scaleTop(vals),
+      goal: goal,
+      vsLastWeek: vs,
+      selected: sel,
+      subjects: subjects(o.logs, o.me, sel ? sel.day : null),
+      band: sel ? band(o.logs, sel.day, o.me, o.her) : null,
+      tiles: {
+        streak: st,
+        focusedDays: focusedDays,
+        longest: longest(o.logs, o.me),
+        goalDays: goal ? days.filter(function (x) { return x.me >= goal; }).length : null,
+        bestDay: best && best.me > 0 ? { day: best.day, dow: best.dow, ms: best.me } : null
+      }
+    };
+  }
+
+  // ── 시간대 띠 (그날 05:00 ~ 다음 날 05:00, 0~1 비율) ──
+  function band(logs, day, me, her) {
+    var s = dayStartMs(day), e = s + DAY;
+    function toFrac(segs) { return clip(segs, s, e).map(function (x) { return [(x[0] - s) / DAY, (x[1] - s) / DAY]; }); }
+    var a = segsOf(logs, me, day), b = segsOf(logs, her, day);
+    return { me: toFrac(a), her: toFrac(b), both: toFrac(intersect(a, b)), ticks: [5, 9, 13, 17, 21, 1, 5] };
+  }
+
+  // ── 돌아보기 (주 · 달 공통) ──
+  // opts: { logs(기간 전체), me, her, from, to (날짜, 둘 다 포함), today }
+  function rangeView(o) {
+    var map = byDay(o.logs, o.me, o.her), cells = [], tot = { me: 0, her: 0, both: 0 }, togetherDays = 0;
+    var bestT = null, bestMe = null;
+    for (var d = o.from; d <= o.to; d = addDays(d, 1)) {
+      var c = map[d] || { me: 0, her: 0, both: 0 };
+      tot.me += c.me; tot.her += c.her; tot.both += c.both;
+      var together = c.both >= C.TOGETHER_DAY_MS;
+      if (together) togetherDays++;
+      if (c.both > 0 && (!bestT || c.both > bestT.ms)) bestT = { day: d, ms: c.both };
+      if (c.me > 0 && (!bestMe || c.me > bestMe.ms)) bestMe = { day: d, ms: c.me };
+      cells.push({ day: d, dow: dow(d), me: c.me, her: c.her, both: c.both,
+        lvMe: level(c.me), lvHer: level(c.her), together: together,
+        isToday: d === o.today, future: o.today ? d > o.today : false });
+    }
+    return {
+      cells: cells,
+      lead: cells.length ? dow(o.from) : 0, // 달력 앞 빈 칸 수 (월요일 시작)
+      total: tot,
+      empty: tot.me === 0 && tot.her === 0,
+      togetherDays: togetherDays,
+      bestTogether: bestT,
+      bestDayMe: bestMe,
+      longest: longest(o.logs, o.me, o.from, o.to),
+      subjects: subjects(o.logs.filter(function (l) { return l.day >= o.from && l.day <= o.to; }), o.me, null)
+    };
+  }
+  function monthView(o) { var ds = monthDays(o.month); return rangeView({ logs: o.logs, me: o.me, her: o.her, from: ds[0], to: ds[ds.length - 1], today: o.today }); }
+
+  // ── 월 결산 카드 (서버 functions/recap.js 에서) ──
+  // uids = [a, b] (결산의 사람 순서 그대로), prev = 지난달 결산의 focus 카드 또는 null
+  function recapCard(logs, month, uids, prev) {
+    var ds = monthDays(month), from = ds[0], to = ds[ds.length - 1];
+    var inMonth = logs.filter(function (l) { return l.day >= from && l.day <= to; });
+    var v = rangeView({ logs: inMonth, me: uids[0], her: uids[1], from: from, to: to });
+    if (v.empty) return null; // 둘 다 기록 없으면 카드 건너뜀
+    var toMin = function (ms) { return Math.floor(ms / MIN); };
+    var card = {
+      id: 'focus',
+      together: toMin(v.total.both),
+      people: {},
+      togetherDays: v.togetherDays,
+      best: v.bestTogether ? { day: v.bestTogether.day, min: toMin(v.bestTogether.ms) } : null,
+      days: v.cells.map(function (c) { return toMin(c.both); }), // 날마다 함께(분) — 카드의 작은 달력
+      since: inMonth.reduce(function (d, l) { return !d || l.day < d ? l.day : d; }, null), // 그 달 첫 기록 날 (첫 달 안내용)
+      prevTogether: prev && typeof prev.together === 'number' ? prev.together : null
+    };
+    card.people[uids[0]] = toMin(v.total.me);
+    card.people[uids[1]] = toMin(v.total.her);
+    return card;
+  }
+  // 연말: 열두 달 focus 카드 → 가장 많이 함께한 달
+  function recapYear(cardsByMonth) {
+    var best = null, total = 0;
+    Object.keys(cardsByMonth).sort().forEach(function (m) {
+      var c = cardsByMonth[m]; if (!c) return;
+      total += c.together;
+      if (!best || c.together > best.together) best = { month: m, together: c.together };
+    });
+    return best ? { id: 'focus', together: total, bestMonth: best } : null;
+  }
+
+  var API = {
+    C: C, MIN: MIN, HOUR: HOUR, DAY: DAY,
+    addDays: addDays, dow: dow, dayStartMs: dayStartMs, dayOf: dayOf, weekStart: weekStart, monthDays: monthDays, prevMonth: prevMonth,
+    merge: merge, intersect: intersect, length: length, clip: clip, segsOf: segsOf,
+    byDay: byDay, level: level, scaleTop: scaleTop, subjects: subjects, longest: longest,
+    streak: streak, needMoreForStreak: needMoreForStreak,
+    weekView: weekView, band: band, rangeView: rangeView, monthView: monthView,
+    recapCard: recapCard, recapYear: recapYear
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.FS = API;
+})(this);
+
+// 집중 통계 문구 — 참조 구현 (기획 계정, 2026-11-26)
+// 저장소에서는 js/focus-text.js 에 이 키 그대로 모아 주세요. 글자 하나까지 text.md 표와 같아요.
+// 꾸중하는 말투 금지: 줄어든 것 · 안 한 날은 말하지 않거나 다음 걸음으로만 말해요.
+(function (root) {
+  'use strict';
+
+  var DOW = ['월', '화', '수', '목', '금', '토', '일'];
+  var DOW_LONG = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
+
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function mins(ms) { return Math.max(0, Math.floor((ms || 0) / 60000)); }
+
+  // 짧은 곳: H:MM
+  function short(ms) {
+    var m = mins(ms);
+    return Math.floor(m / 60) + ':' + pad(m % 60);
+  }
+  // 문장: 「2시간 10분」 · 「2시간」 · 「48분」 · 「0분」
+  function long(ms) {
+    var m = mins(ms);
+    if (m < 60) return m + '분';
+    var h = Math.floor(m / 60), r = m % 60;
+    return r ? h + '시간 ' + r + '분' : h + '시간';
+  }
+  function md(day) { // '2026-11-18' → '11/18'
+    var p = day.split('-');
+    return Number(p[1]) + '/' + Number(p[2]);
+  }
+
+  var T = {
+    DOW: DOW,
+    DOW_LONG: DOW_LONG,
+    short: short,
+    long: long,
+    md: md,
+
+    // ── 집중 탭 · 이번 주 카드 ──
+    weekTitle: '이번 주',
+    weekTotal: function (ms) { return '나 ' + short(ms); },
+    vsLastWeek: function (diffMs) { return '지난주 이맘때보다 +' + long(diffMs); },
+    scaleTop: function (ms) { return long(ms); },
+    goalLine: function (ms) { return '목표 ' + short(ms); },
+    legendMe: '나',
+    legendBoth: '함께',
+    weekHint: '요일을 누르면 그날 것만 보여요',
+    dayLine: function (dow, me, herName, her, both) {
+      return DOW[dow] + ' · 나 ' + short(me) + ' · ' + herName + ' ' + short(her) + ' · 함께 ' + short(both);
+    },
+    dayLineDate: function (day, me, herName, her, both) {
+      return md(day) + ' · 나 ' + short(me) + ' · ' + herName + ' ' + short(her) + ' · 함께 ' + short(both);
+    },
+    dayAria: function (dow, me, herName, her, both) {
+      return DOW_LONG[dow] + ', 나 ' + long(me) + ', ' + herName + ' ' + long(her) + ', 함께 ' + long(both);
+    },
+    empty: '집중한 시간이 여기에 날마다 쌓여요.',
+    dayEmpty: '이날은 집중한 기록이 없어요.',
+
+    // 시간대 띠
+    bandTitle: function (dow) { return DOW_LONG[dow] + ' 언제 했을까'; },
+    bandMe: '나',
+    bandBoth: '함께',
+
+    // 과목
+    subjWeek: '이번 주 나는',
+    subjDay: function (dow) { return DOW_LONG[dow] + ' 나는'; },
+    subjMonth: '이번 달 나는',
+    subjMonthPast: '이 달 나는',
+    subjWeekPast: '이 주 나는',
+    subjOther: '그 밖',
+    subjOtherN: function (n) { return '그 밖 ' + n + '개'; },
+    labelsMore: function (n) { return '외 ' + n + '개'; },
+
+    // 기록 칸 (칸 = 이름 · 값 · 아래 한 줄)
+    days: function (n) { return n + '일'; },
+    streakLabel: '연속',
+    streak: function (n) { return n + '일 연속'; }, // 읽어 주기(aria)용
+    streakSub: '오늘도 했어요',
+    streakNext: function (n) { return '오늘 하면 ' + (n + 1) + '일째'; },
+    daysFocusedLabel: '이번 주 집중한 날',
+    longestLabel: '가장 긴 한 번',
+    longestSub: function (dow, label) { return DOW[dow] + (label ? ' · ' + label : ''); },
+    goalDaysLabel: '목표 채운 날',
+    goalDaysSub: function (goalMs) { return '하루 ' + short(goalMs) + ' 기준'; },
+    bestDayLabel: '가장 많이 한 날',
+    bestDaySub: function (dow) { return DOW_LONG[dow]; },
+
+    // ── 돌아보기 ──
+    rvTitle: '함께 집중',
+    rvPeople: function (me, herName, her) { return '나 ' + short(me) + ' · ' + herName + ' ' + short(her); },
+    rvTogetherDays: function (n) { return '함께한 날 ' + n + '일'; },
+    rvBestTogether: function (day, ms) { return '함께 가장 길었던 날 ' + md(day) + ' · ' + short(ms); },
+    rvNoTogether: '이번엔 따로따로 집중했어요',
+    noValue: '—',
+    rvEmptyWeek: '이 주에는 집중 기록이 없어요.',
+    rvEmptyMonth: '이 달에는 집중 기록이 없어요.',
+    rvSegMe: '나',
+    rvLegendLess: '적게',
+    rvLegendMore: '많이',
+    rvLegendTogether: '함께한 날',
+    rvBestDayLabel: '가장 많이 한 날',
+    rvLongestLabel: '가장 긴 한 번',
+    rvBestTogetherLabel: '함께 가장 길게',
+    rvDaySub: function (day) { return md(day); },
+
+    // ── 월 결산 카드 ──
+    rcTitle: '함께 집중',
+    rcLead: '둘이 같은 시간에 켜 둔 시간이에요.',
+    rcLeadSolo: '이번 달은 각자 집중했어요.',
+    rcSoloBig: '우리가 집중한 시간',
+    rcPerson: function (name, ms) { return name + ' ' + long(ms); },
+    rcPeople: function (meName, me, herName, her) { return meName + ' ' + long(me) + ' · ' + herName + ' ' + long(her); },
+    rcTogetherDays: function (n) { return '함께 집중한 날 ' + n + '일'; },
+    rcBestTogether: function (day, ms) { return '가장 길게 함께한 날 ' + md(day) + ' · ' + long(ms); },
+    rcVsPrev: function (diffMs) { return diffMs >= 0 ? '지난달보다 +' + long(diffMs) : '지난달보다 −' + long(-diffMs); },
+    rcCalHint: '날마다 함께한 시간',
+    rcSince: function (day) { return md(day) + '부터 모은 기록이에요'; },
+    rcTile: '함께 집중',
+    rcTileSolo: '우리가 집중',
+    rcYearBest: function (month, ms) { return '가장 많이 함께한 달 ' + Number(month.split('-')[1]) + '월 · ' + long(ms); }
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = T;
+  else root.FT = T;
+})(this);
+
+// 시험 · 목업 자료 (기획 계정). 오늘 = 2026-11-26(목) 15:00, 나 = jun(준민), 짝꿍 = dajin(다진)
+(function (root) {
+  'use strict';
+  var FS = typeof require !== 'undefined' ? require('./focus-stats.js') : root.FS;
+  var MIN = 60000;
+
+  var ME = 'jun', HER = 'dajin', HER_NAME = '다진';
+  var CATS = {
+    study: { name: '공부', emoji: '📝' },
+    read: { name: '독서', emoji: '📖' },
+    work: { name: '작업', emoji: '💻' },
+    cert: { name: '자격증', emoji: '🗂️' },
+    lang: { name: '외국어', emoji: '🗣️' }
+  };
+
+  // day 의 'HH:MM' (05시 전이면 다음 날 새벽) 에 시작해서 parts 분씩 집중, 사이에 쉬기 rest 분
+  function at(day, hm) {
+    var h = Number(hm.split(':')[0]), m = Number(hm.split(':')[1]);
+    var base = FS.dayStartMs(day) - 5 * 60 * MIN; // 그날 00:00
+    if (h < 5) h += 24;
+    return base + (h * 60 + m) * MIN;
+  }
+  var seq = 0;
+  function L(by, cat, label, day, hm, parts, rest) {
+    var t = at(day, hm), segs = [];
+    (Array.isArray(parts) ? parts : [parts]).forEach(function (p, i) {
+      if (i) t += (rest || 5) * MIN;
+      segs.push([t, t + p * MIN]); t += p * MIN;
+    });
+    var ms = segs.reduce(function (s, x) { return s + x[1] - x[0]; }, 0);
+    return { id: 'f' + (++seq), by: by, cat: cat, label: label, day: day, start: segs[0][0], end: t, ms: ms, segs: segs, strict: false };
+  }
+
+  var TODAY = '2026-11-26';
+  var NOW = at(TODAY, '15:00');
+
+  // ── 이번 주 (11-23 월 ~ 11-29 일) · 많음 ──
+  var weekMany = [
+    // 월
+    L(ME, 'study', '영단어', '2026-11-23', '07:10', [25, 25]),
+    L(ME, 'study', '수학', '2026-11-23', '20:00', [50, 40], 10),
+    L(HER, 'cert', '전산회계', '2026-11-23', '19:40', [60, 50], 10),
+    // 화
+    L(ME, 'study', '영단어', '2026-11-24', '07:05', [30]),
+    L(ME, 'read', '소설', '2026-11-24', '22:30', [40]),
+    L(HER, 'cert', '전산회계', '2026-11-24', '21:00', [55, 30]),
+    // 수 (함께 많이)
+    L(ME, 'study', '수학', '2026-11-25', '19:30', [50, 50, 30], 10),
+    L(ME, 'work', '기획서', '2026-11-25', '23:40', [35]),
+    L(HER, 'cert', '전산회계', '2026-11-25', '19:35', [45, 55], 10),
+    L(HER, 'read', '에세이', '2026-11-25', '00:10', [30]), // 목요일 00:10 이지만 05시 전 → 수요일 기록
+    // 목 (오늘, 15시까지)
+    L(ME, 'study', '영단어', TODAY, '07:00', [25]),
+    L(ME, 'lang', '토익 LC', TODAY, '12:20', [40]),
+    L(HER, 'cert', '전산회계', TODAY, '12:30', [45])
+  ];
+
+  // ── 지난주 (11-16 ~ 11-22) ──
+  var prevWeek = [
+    L(ME, 'study', '영단어', '2026-11-16', '07:10', [30]),
+    L(ME, 'study', '수학', '2026-11-16', '21:00', [60]),
+    L(ME, 'study', '영단어', '2026-11-17', '07:10', [25]),
+    L(ME, 'read', '소설', '2026-11-18', '22:00', [30]),
+    L(ME, 'study', '수학', '2026-11-19', '20:00', [45]),
+    L(ME, 'study', '영단어', '2026-11-20', '07:00', [30]),
+    L(ME, 'work', '기획서', '2026-11-21', '14:00', [90]),
+    L(ME, 'study', '수학', '2026-11-22', '16:00', [60]),
+    L(ME, 'study', '수학', '2026-11-17', '21:00', [60]),
+    L(ME, 'study', '수학', '2026-11-18', '19:00', [60]),
+    L(ME, 'study', '영단어', '2026-11-19', '07:00', [35]),
+    L(HER, 'cert', '전산회계', '2026-11-17', '21:10', [50]),
+    L(HER, 'cert', '전산회계', '2026-11-18', '19:00', [50]),
+    L(HER, 'cert', '전산회계', '2026-11-18', '20:00', [60]),
+    L(HER, 'cert', '전산회계', '2026-11-21', '14:30', [70]),
+    L(HER, 'cert', '전산회계', '2026-11-20', '20:00', [80])
+  ];
+  // 그 전: 11-12 ~ 11-15 매일 → 연속은 11-12 부터
+  var older = [
+    L(ME, 'study', '영단어', '2026-11-12', '07:00', [20]),
+    L(ME, 'study', '영단어', '2026-11-13', '07:00', [20]),
+    L(ME, 'study', '영단어', '2026-11-14', '07:00', [20]),
+    L(ME, 'study', '영단어', '2026-11-15', '07:00', [20]),
+    L(HER, 'cert', '전산회계', '2026-11-12', '20:00', [70]),
+    L(HER, 'cert', '전산회계', '2026-11-14', '13:00', [90]),
+    L(ME, 'work', '기획서', '2026-11-14', '13:10', [80])
+  ];
+
+  // ── 이번 주 · 조금 (오늘만) ──
+  var weekFew = [
+    L(ME, 'study', '영단어', TODAY, '07:00', [25]),
+    L(HER, 'cert', '전산회계', TODAY, '07:10', [40])
+  ];
+
+  // ── 11월 한 달 (돌아보기 달 · 결산) ──
+  function rng(seed) { return function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }; }
+  function november() {
+    var r = rng(1126), out = [];
+    FS.monthDays('2026-11').forEach(function (d) {
+      if (d >= '2026-11-12') return; // 12일부터는 위의 실제 자료
+      var w = FS.dow(d);
+      if (r() < 0.85) out.push(L(ME, r() < 0.6 ? 'study' : 'read', r() < 0.5 ? '수학' : '영단어', d, '20:00', [Math.round(20 + r() * 70), Math.round(r() * 60)].filter(Boolean)));
+      if (r() < 0.7) out.push(L(HER, 'cert', '전산회계', d, r() < 0.6 ? '20:10' : '22:00', [Math.round(30 + r() * 60), Math.round(r() * 50)].filter(Boolean)));
+      if (w >= 5 && r() < 0.6) out.push(L(ME, 'work', '기획서', d, '14:00', [Math.round(60 + r() * 120)]));
+    });
+    return out.concat(older, prevWeek, weekMany);
+  }
+
+  // ── 10월 (결산 지난달 비교) — 결산 카드에 넣을 값만 ──
+  var octCard = { id: 'focus', together: 640 };
+
+  var API = { ME: ME, HER: HER, HER_NAME: HER_NAME, CATS: CATS, TODAY: TODAY, NOW: NOW, L: L, at: at,
+    weekMany: weekMany, prevWeek: prevWeek, older: older, weekFew: weekFew, november: november, octCard: octCard };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.FX = API;
+})(this);
+</script>
+<script>
+(function () {
+  'use strict';
+  var T = FT, MIN = 60000;
+  var THEMES = [
+    { id: 'soft-pastel', name: '소프트 파스텔 (기본)' },
+    { id: 'midnight-noir', name: '미드나잇 누아르 (어둡게)' },
+    { id: 'winter-snack', name: '겨울 간식 낮 (도트)', skin: 'pixel' }
+  ];
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pct(v, top) { return Math.max(0, Math.min(100, v / top * 100)); }
+  function snap(px, on) { return on ? (px > 0 ? Math.max(4, Math.round(px / 4) * 4) : 0) : px; }
+  function catName(id) { var c = FX.CATS[id]; return c ? c.emoji + ' ' + c.name : T.subjOther; }
+
+  function ctx() { return '<div class="ctx"><div class="card"><span>📝 공부 · 영단어 0:25</span><span>▶</span></div></div>'; }
+  function tabbar() { return '<div class="tabbar"><span>루틴</span><span>시간표</span><span class="on">집중</span><span>할 일</span><span>전체</span></div>'; }
+
+  // ── 집중 탭 · 이번 주 카드 ──
+  function weekCard(v, pixel) {
+    var h = 114; // 막대 영역 높이(px)
+    var html = '<section class="card fs" aria-label="이번 주 집중">';
+    html += '<div class="fs-head"><h3>' + T.weekTitle + '</h3>' + (v.empty ? '' : '<div class="fs-total tnum">나 <b>' + T.short(v.total.me) + '</b></div>') + '</div>';
+    if (v.vsLastWeek) html += '<div class="fs-chiprow"><span class="chip">' + T.vsLastWeek(v.vsLastWeek) + '</span></div>';
+    html += '<div class="ch"><span class="ch-top">' + (v.empty ? '' : T.scaleTop(v.scale)) + '</span><div class="ch-base"></div>';
+    if (v.empty) {
+      html += '<div class="ch-ghost">' + v.days.map(function () { return '<i></i>'; }).join('') + '</div><div class="ch-empty">' + T.empty + '</div>';
+    } else {
+      if (v.goal) html += '<div class="ch-goal" style="bottom:' + snap(v.goal / v.scale * h, pixel) + 'px"><span>' + T.goalLine(v.goal) + '</span></div>';
+      html += '<div class="ch-cols">' + v.days.map(function (d) {
+        var cls = 'col' + (v.selected ? (v.selected.dow === d.dow ? ' sel' : ' dim') : '') + (d.future ? ' future' : '');
+        function bar(who, ms) {
+          var px = snap(ms / v.scale * h, pixel), bpx = ms ? snap(d.both / v.scale * h, pixel) : 0;
+          return '<i class="b ' + who + (ms ? '' : ' zero') + '" style="height:' + px + 'px">' + (bpx ? '<i class="bb" style="height:' + bpx + 'px"></i>' : '') + '</i>';
+        }
+        return '<button class="' + cls + '"' + (d.future ? ' disabled' : '') + ' aria-pressed="' + (v.selected && v.selected.dow === d.dow) + '" aria-label="' + esc(T.dayAria(d.dow, d.me, FX.HER_NAME, d.her, d.both)) + '">' + bar('me', d.me) + bar('her', d.her) + '</button>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="ch-days">' + v.days.map(function (d) { return '<span class="' + (d.isToday ? 'today' : d.future ? 'future' : '') + '">' + T.DOW[d.dow] + '</span>'; }).join('') + '</div>';
+    if (v.empty) return html + '</section>';
+
+    if (v.selected) {
+      var s = v.selected;
+      html += '<div class="dayline tnum">' + esc(T.dayLine(s.dow, s.me, FX.HER_NAME, s.her, s.both)) + '</div>';
+      html += bandHTML(v.band, s.dow);
+    } else {
+      html += '<div class="legend"><span><i class="sw me"></i>' + T.legendMe + '</span><span><i class="sw her"></i>' + FX.HER_NAME + '</span><span><i class="sw both"></i>' + T.legendBoth + '</span><span class="hint">' + T.weekHint + '</span></div>';
+    }
+    html += subjHTML(v.subjects, v.selected ? T.subjDay(v.selected.dow) : T.subjWeek);
+    html += tilesWeek(v);
+    return html + '</section>';
+  }
+
+  function bandHTML(b, dow) {
+    function segs(arr) { return arr.map(function (x) { return '<i style="left:' + (x[0] * 100).toFixed(2) + '%;width:' + ((x[1] - x[0]) * 100).toFixed(2) + '%"></i>'; }).join(''); }
+    var grid = [1, 2, 3, 4, 5].map(function (i) { return '<span class="gridln" style="left:' + (i / 6 * 100).toFixed(2) + '%"></span>'; }).join('');
+    var html = '<div class="band"><div class="band-h">' + T.bandTitle(dow) + '</div>';
+    html += '<div class="lane me"><span>' + T.bandMe + '</span><div class="tr">' + segs(b.me) + grid + '</div></div>';
+    html += '<div class="lane thin"><span>' + T.bandBoth + '</span><div class="tr">' + segs(b.both) + '</div></div>';
+    html += '<div class="lane her"><span>' + FX.HER_NAME + '</span><div class="tr">' + segs(b.her) + grid + '</div></div>';
+    html += '<div class="ticks">' + b.ticks.map(function (t, i) { return '<span style="left:' + (i / 6 * 100).toFixed(2) + '%">' + (t < 10 ? '0' + t : t) + '</span>'; }).join('') + '</div></div>';
+    return html;
+  }
+
+  function subjHTML(s, title) {
+    if (!s.rows.length) return '';
+    var html = '<div class="sj"><div class="sj-h"><b>' + title + '</b><span class="tnum">' + T.short(s.total) + '</span></div>';
+    s.rows.forEach(function (r) {
+      var labels = r.labels.map(function (l) { return esc(l.label) + ' ' + T.short(l.ms); });
+      if (r.moreLabels) labels.push(T.labelsMore(r.moreLabels));
+      html += '<div class="sj-r"><div class="sj-t"><span>' + catName(r.cat) + '</span><b class="tnum">' + T.short(r.ms) + '</b></div><div class="sj-bar"><i style="width:' + pct(r.ms, s.top).toFixed(1) + '%"></i></div>' + (labels.length ? '<div class="sj-l">' + labels.join(' · ') + '</div>' : '') + '</div>';
+    });
+    if (s.other) html += '<div class="sj-r"><div class="sj-t"><span>' + T.subjOtherN(s.other.count) + '</span><b class="tnum">' + T.short(s.other.ms) + '</b></div><div class="sj-bar"><i style="width:' + pct(s.other.ms, s.top).toFixed(1) + '%"></i></div></div>';
+    return html + '</div>';
+  }
+
+  function tile(k, v, s) { return '<div class="tile"><div class="k">' + k + '</div><div class="v tnum">' + v + '</div>' + (s ? '<div class="s">' + s + '</div>' : '') + '</div>'; }
+  function tilesWeek(v) {
+    var t = v.tiles, out = [];
+    if (t.streak.n >= 2) out.push(tile(T.streakLabel, T.days(t.streak.n), t.streak.todayDone ? T.streakSub : T.streakNext(t.streak.n)));
+    else out.push(tile(T.daysFocusedLabel, T.days(t.focusedDays), ''));
+    if (t.longest) out.push(tile(T.longestLabel, T.short(t.longest.ms), esc(T.longestSub(FS.dow(t.longest.day), t.longest.label))));
+    if (t.goalDays != null) out.push(tile(T.goalDaysLabel, T.days(t.goalDays), T.goalDaysSub(v.goal)));
+    else if (t.bestDay) out.push(tile(T.bestDayLabel, T.short(t.bestDay.ms), T.bestDaySub(t.bestDay.dow)));
+    return '<div class="tiles">' + out.join('') + '</div>';
+  }
+
+  // ── 돌아보기 ──
+  function rvHead(v, kind) {
+    var html = '<div class="rv-head"><h3>⏱️ ' + T.rvTitle + '</h3><div class="rv-big tnum">' + T.short(v.total.both) + '</div></div>';
+    html += '<div class="rv-line tnum">' + T.rvPeople(v.total.me, FX.HER_NAME, v.total.her) + ' · ' + T.rvTogetherDays(v.togetherDays) + '</div>';
+    return html;
+  }
+  function rvWeek(v, label) {
+    var html = '<div class="rv-top"><span class="seg3"><span class="on">주</span><span>달</span><span>결산</span></span><span style="font-size:13px">‹ ' + label + ' ›</span></div>';
+    html += '<section class="card">' + rvHead(v);
+    html += '<div class="wk"><span></span>' + v.cells.map(function (c) { return '<span class="h">' + T.DOW[c.dow] + '</span>'; }).join('');
+    html += '<span class="lb">' + T.bandMe + '</span>' + v.cells.map(function (c) { return '<span class="me"><i class="cell l' + c.lvMe + '" style="display:block"></i></span>'; }).join('');
+    html += '<span class="lb">' + FX.HER_NAME + '</span>' + v.cells.map(function (c) { return '<span class="her"><i class="cell l' + c.lvHer + '" style="display:block"></i></span>'; }).join('');
+    html += '<span class="lb">' + T.bandBoth + '</span>' + v.cells.map(function (c) { return '<span class="dotrow">' + (c.together ? '<i class="tdot"></i>' : '') + '</span>'; }).join('') + '</div>';
+    html += legendRamp();
+    html += subjHTML(v.subjects, T.subjWeekPast);
+    html += '<div class="tiles">' + tile(T.rvBestTogetherLabel, v.bestTogether ? T.short(v.bestTogether.ms) : T.noValue, v.bestTogether ? T.rvDaySub(v.bestTogether.day) + ' ' + T.DOW[FS.dow(v.bestTogether.day)] : T.rvNoTogether) +
+      tile(T.rvBestDayLabel, v.bestDayMe ? T.short(v.bestDayMe.ms) : T.noValue, v.bestDayMe ? T.rvDaySub(v.bestDayMe.day) + ' ' + T.DOW[FS.dow(v.bestDayMe.day)] : '') +
+      tile(T.rvLongestLabel, v.longest ? T.short(v.longest.ms) : T.noValue, v.longest ? esc(T.longestSub(FS.dow(v.longest.day), v.longest.label)) : '') + '</div>';
+    return html + '</section>';
+  }
+  function legendRamp(who) {
+    who = who || 'me';
+    return '<div class="legend"><span>' + T.rvLegendLess + '<span class="ramp ' + who + '"><i class="l0" style="background:var(--focus-track)"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i></span>' + T.rvLegendMore + '</span><span><i class="tdot" style="display:inline-block;margin-right:5px;vertical-align:0"></i>' + T.rvLegendTogether + '</span></div>';
+  }
+  function rvMonth(v, who, pick) {
+    var html = '<div class="rv-top"><span class="seg3"><span>주</span><span class="on">달</span><span>결산</span></span><span style="font-size:13px">‹ 2026년 11월 ›</span></div>';
+    html += '<section class="card">' + rvHead(v);
+    html += '<div style="display:flex;justify-content:flex-end;margin-top:10px"><span class="seg3"><span class="' + (who === 'me' ? 'on' : '') + '">' + T.rvSegMe + '</span><span class="' + (who === 'her' ? 'on' : '') + '">' + FX.HER_NAME + '</span></span></div>';
+    html += '<div class="cal ' + who + '">' + T.DOW.map(function (d) { return '<span class="h">' + d + '</span>'; }).join('');
+    for (var i = 0; i < v.lead; i++) html += '<i class="cell blank"></i>';
+    v.cells.forEach(function (c) {
+      var lv = who === 'me' ? c.lvMe : c.lvHer;
+      var cls = 'cell' + (c.future ? ' future' : ' l' + lv) + (c.isToday ? ' today' : '') + (pick === c.day ? ' picked' : '');
+      html += '<i class="' + cls + '" aria-label="' + c.day + '">' + Number(c.day.slice(8)) + (c.together ? '<i class="tdot"></i>' : '') + '</i>';
+    });
+    html += '</div>' + legendRamp(who);
+    if (pick) {
+      var c = v.cells.filter(function (x) { return x.day === pick; })[0];
+      html += '<div class="dayline tnum">' + esc(T.dayLineDate(c.day, c.me, FX.HER_NAME, c.her, c.both)) + '</div>';
+      html += bandHTML(FS.band(FX.november(), pick, FX.ME, FX.HER), c.dow);
+    }
+    html += subjHTML(v.subjects, T.subjMonth);
+    html += '<div class="tiles">' + tile(T.rvBestDayLabel, T.short(v.bestDayMe.ms), T.rvDaySub(v.bestDayMe.day)) +
+      tile(T.rvLongestLabel, T.short(v.longest.ms), T.rvDaySub(v.longest.day)) +
+      tile(T.rvBestTogetherLabel, T.short(v.bestTogether.ms), T.rvDaySub(v.bestTogether.day)) + '</div>';
+    return html + '</section>';
+  }
+
+  // ── 결산 ──
+  function bigLong(min) {
+    var h = Math.floor(min / 60), m = min % 60;
+    return (h ? '<span class="n">' + h + '</span><span class="u">시간</span>' : '') + (m || !h ? '<span class="n">' + m + '</span><span class="u">분</span>' : '');
+  }
+  function recapCard(c) {
+    var prog = ''; for (var i = 0; i < 11; i++) prog += '<i class="' + (i <= 6 ? 'done' : '') + '"></i>';
+    var html = '<div class="recap"><div class="prog">' + prog + '</div>';
+    html += '<div class="rc-kicker">2026년 11월</div><div class="rc-title">' + T.rcTitle + '</div>';
+    html += '<div class="rc-big tnum">' + bigLong(c.together) + '</div><div class="rc-lead">' + T.rcLead + '</div>';
+    if (c.prevTogether != null) html += '<div class="rc-chip"><span class="chip">' + T.rcVsPrev((c.together - c.prevTogether) * MIN) + '</span></div>';
+    else if (c.since && c.since.slice(8) !== '01') html += '<div class="rc-chip"><span class="chip">' + T.rcSince(c.since) + '</span></div>';
+    html += '<div class="rc-cal both">';
+    var lead = FS.dow('2026-11-01'); for (var j = 0; j < lead; j++) html += '<i class="cell blank"></i>';
+    c.days.forEach(function (m) { html += '<i class="cell l' + FS.level(m * MIN, true) + '"></i>'; });
+    html += '</div><div class="rc-cal-legend">' + T.rcCalHint + ' · ' + T.rvLegendLess + '<span class="ramp both"><i style="background:color-mix(in srgb, var(--focus-track) 70%, var(--card))"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i></span>' + T.rvLegendMore + '</div>';
+    html += '<div class="rc-lines tnum"><div><i class="dot" style="background:var(--me)"></i>준민 ' + T.long(c.people.jun * MIN) + '</div><div><i class="dot" style="background:var(--her)"></i>' + T.rcPerson(FX.HER_NAME, c.people.dajin * MIN) + '</div>';
+    html += '<div>' + T.rcTogetherDays(c.togetherDays) + '</div><div>' + T.rcBestTogether(c.best.day, c.best.min * MIN) + '</div></div></div>';
+    return html;
+  }
+  function finCard(c) {
+    var prog = ''; for (var i = 0; i < 11; i++) prog += '<i class="done"></i>';
+    var tiles = [['함께 해낸 날', '15일'], ['끝낸 일', '23개'], ['꿍', '153번'], ['함께 보낸 시간', '50시간'], [T.rcTile, T.short(c.together * MIN), true], ['단짝 지도', '3번'], ['교환 쪽지', '15일'], ['단짝 영수증', '446,200원']];
+    return '<div class="fin"><div class="prog">' + prog + '</div><div class="rc-kicker" style="margin-top:26px">2026년 11월</div><div class="rc-title">이번 달의 단짝꿍</div><div class="fin-grid">' +
+      tiles.map(function (t) { return '<div class="fin-t' + (t[2] ? ' new' : ' ghost') + '"><div class="k">' + t[0] + (t[2] ? '<span class="new-tag">· 새로</span>' : '') + '</div><div class="v tnum">' + t[1] + '</div></div>'; }).join('') + '</div></div>';
+  }
+
+  // ── 자료 ──
+  var base = { prevLogs: FX.prevWeek, olderLogs: FX.older, me: FX.ME, her: FX.HER, today: FX.TODAY, now: FX.NOW };
+  function wv(extra) { return FS.weekView(Object.assign({}, base, extra)); }
+  var V = {
+    empty: wv({ logs: [], prevLogs: [], olderLogs: [], goalMs: 0 }),
+    few: wv({ logs: FX.weekFew, goalMs: 0 }),
+    many: wv({ logs: FX.weekMany, goalMs: 120 * MIN }),
+    day: wv({ logs: FX.weekMany, goalMs: 120 * MIN, selected: 2 })
+  };
+  var NOV = FX.november();
+  var RW = FS.rangeView({ logs: FX.prevWeek.concat(FX.older), me: FX.ME, her: FX.HER, from: '2026-11-16', to: '2026-11-22', today: FX.TODAY });
+  var RM = FS.monthView({ logs: NOV, me: FX.ME, her: FX.HER, month: '2026-11', today: FX.TODAY });
+  var RC = FS.recapCard(NOV, '2026-11', [FX.ME, FX.HER], FX.octCard);
+  var RC1 = FS.recapCard(NOV.filter(function (l) { return l.day >= '2026-11-25'; }), '2026-11', [FX.ME, FX.HER], null);
+
+  var SCREENS = [
+    { id: 'F1-empty', row: 'F', name: '집중 탭 · 기록 없음', note: '처음 쓰는 사람. 빈 칸 7개 + 한 줄, 과목 · 기록 칸 없음', html: function () { return ctx() + weekCard(V.empty) ; } },
+    { id: 'F2-few', row: 'F', name: '집중 탭 · 조금 (오늘만)', note: '목표 안 정함 → 목표선 없음, 셋째 칸 = 가장 많이 한 날. 연속 1일이라 첫 칸 = 이번 주 집중한 날. 지난주보다 적어 비교 칩 없음', html: function () { return ctx() + weekCard(V.few); } },
+    { id: 'F3-many', row: 'F', name: '집중 탭 · 많음 (목표 2:00)', note: '지난주 이맘때보다 늘어서 칩. 점선 = 내 목표. 막대 아래쪽 보라 = 함께', html: function (p) { return ctx() + weekCard(V.many, p); } },
+    { id: 'F4-day', row: 'F', name: '집중 탭 · 수요일 누름', note: '다른 요일은 흐리게, 한 줄 + 그날 시간대 띠, 과목이 「수요일 나는」. 다시 누르면 이번 주로', html: function (p) { return weekCard(V.day, p); } },
+    { id: 'R1-week', row: 'R', name: '돌아보기 · 주 (지난주)', note: '비교 없음. 날마다 진하기 두 줄 + 함께한 날 점. 칸을 누르면 그날 한 줄 + 띠(F4와 같은 부품)', html: function () { return rvWeek(RW, '11월 16일 ~ 22일'); } },
+    { id: 'R2-month', row: 'R', name: '돌아보기 · 달 (나)', note: '달력 진하기 4단계 + 함께한 날 점. 오늘 = 굵은 테두리, 지나지 않은 날 = 테두리만', html: function () { return rvMonth(RM, 'me'); } },
+    { id: 'R3-month-day', row: 'R', name: '돌아보기 · 달 (다진 · 25일 누름)', note: '「나 | 다진」은 진하기만 바꿈(점은 그대로). 날을 누르면 달력 아래에 한 줄 + 띠', html: function () { return rvMonth(RM, 'her', '2026-11-25'); } },
+    { id: 'C1-recap', row: 'C', name: '결산 · 함께 집중 (보통 달, 카드 6 다음)', note: '꽉 찬 색. 큰 숫자 = 함께, 지난달 결산에 이 카드가 있을 때만 비교 칩(줄면 「−」, 빨강 없음). 작은 달력 = 날마다 함께. 12월 결산부터 이 모양(숫자는 시험 자료)', html: function () { return recapCard(RC); } },
+    { id: 'C3-recap-first', row: 'C', name: '결산 · 첫 달 (11월 결산, 12-01)', note: '지난달 카드가 없고 첫 기록이 1일이 아니면 비교 칩 자리에 「11/25부터 모은 기록이에요」. 달력 앞쪽은 빈 칸', html: function () { return recapCard(RC1); } },
+    { id: 'C2-finale', row: 'C', name: '결산 · 마무리 타일', note: '「함께 집중」 타일 하나만 더함(자리 시안 — 다른 타일은 흐리게). 이미지에도 숫자만', html: function () { return finCard(RC); } }
+  ];
+  var ROWS = { F: ['집중 탭 · 통계 카드', '오늘 · 이번 주 「지금 하는 중」. 이번 주는 실시간, 지난주 · 그 전 4주는 한 번 읽음(비교 · 연속용).'],
+    R: ['돌아보기 · 집중 부분', '지난 주 · 달 「돌아보기」. 그 기간만, 비교 없음. 주 = 7칸 두 줄, 달 = 달력.'],
+    C: ['월 결산 · 함께 집중', '한 달 「자랑하기」. 서버가 계산, <b>12-01(11월 결산)부터</b> (11-26 사용자 결정). 11월은 집중 기록이 25일쯤부터라 첫 달 모양(C3).'] };
+
+  var q = new URLSearchParams(location.search);
+  var only = q.get('only'), onlyTheme = q.get('theme'), width = q.get('w');
+  var app = document.getElementById('app'), out = '';
+  if (!only) out += '<h1>단짝꿍 · 집중 통계 다듬기 — 시안</h1><p class="note">기획 계정 2026-11-26 · 오늘 = 11월 26일(목) 오후 3시 · 나 = 준민, 짝꿍 = 다진 · 숫자는 모두 참조 구현(docs/focus-stats/reference)이 시험 자료로 계산한 값<br>색은 목업용 근사 토큰 — 저장소에서는 실제 테마 값으로 그려져요. 도트 글꼴 자리는 대체 글꼴(Unifont)로 찍음.</p>';
+  Object.keys(ROWS).forEach(function (r) {
+    var list = SCREENS.filter(function (s) { return s.row === r && (!only || s.id === only); });
+    if (!list.length) return;
+    if (!only) out += '<div class="row"><h2>' + ROWS[r][0] + '</h2><p>' + ROWS[r][1] + '</p></div>';
+    list.forEach(function (s) {
+      out += only ? '' : '<div class="grid">';
+      THEMES.forEach(function (th) {
+        if (onlyTheme && th.id !== onlyTheme) return;
+        var pixel = th.skin === 'pixel';
+        var inner = s.row === 'C' ? s.html(pixel) : '<div class="scr">' + s.html(pixel) + '</div>' + (s.id === 'F1-empty' || s.id === 'F2-few' || s.id === 'F3-many' ? tabbar() : '');
+        out += '<figure><div class="phone' + (width === '320' ? ' w320' : '') + '" data-id="' + s.id + '-' + th.id + '" data-theme="' + th.id + '"' + (pixel ? ' data-skin="pixel"' : '') + '>' + inner + '</div>' +
+          (only ? '' : '<figcaption><b>' + s.id + ' · ' + s.name + '</b> — ' + th.name + '<br>' + s.note + '</figcaption>') + '</figure>';
+      });
+      out += only ? '' : '</div>';
+    });
+  });
+  app.innerHTML = out;
+})();
+</script>
+</body>
+</html>
