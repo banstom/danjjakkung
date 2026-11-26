@@ -1065,6 +1065,44 @@ async function tick(page, dateKey, key) {
     const rowNames = await jm.$$eval('.fc-row__name', (els) => els.map((e) => e.textContent));
     assert.ok(!rowNames.some((t) => /공부|운동|약속/.test(t)), '끈 카테고리는 집중 목록에 없음 ' + rowNames);
     await jm.click('[data-act="fc-settings"]'); await jm.click('[data-act="fc-catvis"][data-v="study"]'); await jm.click('.fc-sheet [data-act="fc-sheet-close"]');
+    // (v89) 하루 목표 · 요일 누르면 그날 과목 · 할 일 ▶ 로 집중 → 끝내며 할 일 체크 · 돌아보기 집중 카드 · 루틴 「집중 시간으로 자동 체크」
+    await jm.click('[data-act="fc-settings"]'); await jm.click('[data-act="fc-goal"][data-v="120"]'); await jm.click('.fc-sheet [data-act="fc-sheet-close"]'); await jm.waitForTimeout(100);
+    assert.match(await fcText(jm, '.fc-goal__t'), /목표 2:00 · .+ 남음/);
+    const pickIdx = await jm.$eval('.fc-wcol.is-today', (e) => e.getAttribute('data-v'));
+    await jm.click('.fc-wcol.is-today'); await jm.waitForTimeout(80);
+    assert.match(await jm.textContent('.fc-wsub__t'), /^오늘 나는$/);
+    await jm.click('.fc-wcol[data-v="' + pickIdx + '"]'); await jm.waitForTimeout(80);
+    assert.match(await jm.textContent('.fc-wsub__t'), /^이번 주 나는$/);
+    await jm.click('[data-act="tab"][data-tab="todo"]'); await jm.waitForSelector('.trow__play');
+    const tdTitle = await jm.$eval('.trow__play', (e) => e.closest('.trow').querySelector('.trow__title').textContent);
+    await jm.click('.trow__play'); await jm.waitForSelector('.fc-screen');
+    await jm.clock.fastForward(3 * 60000); await jm.waitForTimeout(300);
+    await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-screen--done .fc-todo');
+    await jm.click('.fc-todo'); await jm.waitForTimeout(150);
+    assert.match(await jm.textContent('.toast'), /끝! 할 일에 체크했어요/);
+    await jm.click('[data-act="fc-done-ok"]');
+    await jm.click('[data-act="tab"][data-tab="todo"]'); await jm.waitForTimeout(150);
+    const stillOpen = await jm.$$eval('.trow:not(.is-done) .trow__title', (els, t) => els.some((e) => e.textContent === t), tdTitle);
+    assert.ok(!stillOpen, '할 일이 끝남으로 ' + tdTitle);
+    await jm.click('[data-act="tab"][data-tab="all"]'); await jm.click('[data-act="open-look"][data-v="week"]');
+    await jm.waitForSelector('[aria-label="집중 돌아보기"]', { timeout: 5000 });
+    assert.match(await jm.textContent('[aria-label="집중 돌아보기"]'), /함께 집중.*나 \d+:\d\d · 다진 \d+:\d\d/);
+    await jm.click('[data-act="look-back"]');
+    await jm.click('[data-act="tab"][data-tab="routine"]'); await jm.waitForTimeout(100);
+    await jm.click('[data-act="open-manage"]'); await jm.click('[data-act="new-routine"]'); await jm.waitForSelector('[data-act="rt-focus"][data-v="on"]');
+    await jm.click('[data-act="rt-focus"][data-v="on"]'); await jm.waitForSelector('[data-act="rt-fcat"][data-v="any"]');
+    assert.equal(await jm.getAttribute('[data-act="rt-fmin"][data-v="60"]', 'aria-pressed'), 'true');
+    await jm.fill('#rt-name', '집중 10분'); await jm.click('[data-act="pick-icon"][data-icon="📚"]');
+    await jm.fill('#rt-fmin', '10'); await jm.click('[data-act="save-routine"]'); await jm.waitForTimeout(200);
+    const rdoc = [...docs.keys()].filter((k) => k.startsWith('routines/')).map((k) => docs.get(k)).filter((r) => r.name === '집중 10분')[0];
+    assert.deepStrictEqual(rdoc && rdoc.focus, { cat: null, min: 10 });
+    const rkey = [...docs.keys()].filter((k) => k.startsWith('routines/') && docs.get(k).name === '집중 10분')[0].split('/')[1];
+    await jm.waitForTimeout(600); assert.match(await jm.textContent('.toast'), /집중 10분 채워서 「집중 10분」 체크했어요/); // 오늘 이미 10분 넘게 집중 → 저장하자마자
+    await jm.$eval('[data-act="close-manage"]', (e) => e.click()); await jm.waitForTimeout(100);
+    await jm.click('[data-act="tab"][data-tab="focus"]'); await jm.click('.fc-row [data-act="fc-play"]'); await jm.waitForSelector('.fc-screen');
+    assert.ok([...docs.keys()].some((k) => k.startsWith('checks/' + rkey + '_')), '집중으로 루틴 체크');
+    await jm.clock.fastForward(2 * 60000); await jm.waitForTimeout(300);
+    await jm.click('.fc-acts [data-act="fc-end"]'); await jm.waitForSelector('.fc-screen--done'); await jm.click('[data-act="fc-done-ok"]');
     await jm.click('[data-act="tab"][data-tab="routine"]'); await dj.click('[data-act="tab"][data-tab="routine"]');
     console.log('FC1 집중 확인 끝 (시작 · 띠 · 점 · 같이 하기 · 함께 배지 · 쉬기 · 끝냄 요약 · 기록 고치기 · 1분 미만)');
   }

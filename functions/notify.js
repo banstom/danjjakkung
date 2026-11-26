@@ -142,6 +142,14 @@ function focusStartMessage({ who, cat, label, hide }) {
   const what = hide || !cat ? '' : `${cat}${label && !hide ? ' · ' + label : ''} `;
   return { title: TITLE, body: `🔥 ${who} 님이 ${what}집중을 시작했어요 · 같이 할래요?` };
 }
+function hmText(ms) { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? ' ' + (m % 60) + '분' : ''}`; }
+function clockText(ms) { const d = new Date(ms + 9 * 3600000); return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`; }
+function focusLongMessage({ start }) {
+  return { title: TITLE, body: `⏱️ ${clockText(start)}에 시작한 집중이 3시간째예요 · 아직 하고 있어요?` };
+}
+function focusCloseMessage({ ms }) {
+  return { title: TITLE, body: `⏹️ 6시간이 지나 집중을 멈췄어요 · ${hmText(ms)} 남겼어요, 끝난 시각은 기록에서 고칠 수 있어요` };
+}
 function focusCallMessage({ who }) {
   return { title: TITLE, body: `💌 ${who} 님이 같이 집중하재요 · 누르면 바로 같이 할 수 있어요` };
 }
@@ -188,4 +196,4 @@ function weeklyMessage({ allDays, together }) {
   return { title: TITLE, body: '📅 이번 주도 수고했어요 · 한 주를 돌아볼까요?' };
 }
 
-module.exports = { focusEvents, focusStartMessage, focusCallMessage, newVisits, mapMessage, TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };
+module.exports = { focusEvents, focusStartMessage, focusCallMessage, focusLongMessage, focusCloseMessage, newVisits, mapMessage, TITLE, kstParts, addDays, prefsOf, checkMessage, activeOn, aliveOn, restOn, dueRemind, remindMessage, kungMessage, cleanRoutines, allDoneDays, weeklyMessage, todoMessage, whenOf, dueAt, dueMorning, atMessage, missMessage };

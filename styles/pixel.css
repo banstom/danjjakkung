@@ -117,7 +117,8 @@
 [data-skin="pixel"] :is(.fc-chip, .fc-badge:not(.fc-badge--none), .fc-subject, .fc-avatar, .fc-cat) { border: 0; border-radius: 0; box-shadow: var(--px-frame-2); margin: 2px; }
 [data-skin="pixel"] .fc-cat[aria-pressed="true"] { box-shadow: var(--px-frame-2), inset 0 -3px 0 var(--btn-lo); }
 [data-skin="pixel"] .fc-btn { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); margin: 3px; }
-[data-skin="pixel"] :is(.fc-btn.is-sub, .fc-btn.is-off, .fc-play, .fc-mode) { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--sh); margin: 3px; }
+[data-skin="pixel"] :is(.fc-goal__track, .fc-goal__fill) { border-radius: 0; }
+[data-skin="pixel"] :is(.fc-btn.is-sub, .fc-btn.is-off, .fc-play, .fc-mode, .trow__play) { border: 0; border-radius: 0; box-shadow: var(--px-frame), inset 0 -4px 0 var(--sh); margin: 3px; }
 [data-skin="pixel"] .fc-play.is-on { box-shadow: var(--px-frame), inset 0 -4px 0 var(--btn-lo), inset 0 3px 0 var(--btn-hi); }
 [data-skin="pixel"] :is(.fc-btn, .fc-play, .fc-mode):active:not(:disabled) { transform: translateY(2px); }
 [data-skin="pixel"] :is(.fc-dot, .tabbar__dot, .fc-legend i, .fc-donecheck) { border-radius: 0; }
@@ -331,6 +332,7 @@
 [data-skin="pixel"]:not([data-font="plain"]) .rsub__head { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .morder { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .mitem--order .mitem__no { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .rfocus__in { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .kind__chips small { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .dday { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .anniv__icon { font-size: 24px; font-family: var(--px-font-11); }
@@ -751,6 +753,7 @@
 [data-skin="pixel"]:not([data-font="plain"]) .fc-mode { font-size: 15px; font-family: var(--px-font-14); }
 [data-skin="pixel"]:not([data-font="plain"]) .fc-tip { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .fc-today__kick { font-size: 12px; font-family: var(--px-font-11); }
+[data-skin="pixel"]:not([data-font="plain"]) .fc-goal__t { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .fc-today__right { font-size: 12px; font-family: var(--px-font-11); }
 [data-skin="pixel"]:not([data-font="plain"]) .fc-big { font-size: 36px; font-family: var(--px-font-11); letter-spacing: 0; }
 [data-skin="pixel"]:not([data-font="plain"]) .fc-today__zero { font-size: 12px; font-family: var(--px-font-11); }

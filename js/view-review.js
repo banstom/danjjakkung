@@ -158,6 +158,14 @@
         : '<p class="muted">이 기간에 끝낸 일이 없어요</p>') + '</section>';
   }
 
+  function focusCard(f) {
+    if (!f || !RT.focus) return '';
+    var hm = RT.focus.hm;
+    var top = f.top.length ? ' · 많이 한 과목 ' + f.top.map(function (t) { return (t.icon ? t.icon + ' ' : '') + t.name + ' ' + hm(t.ms); }).join(', ') : '';
+    return '<section class="card both" aria-label="집중 돌아보기"><div class="both__text"><span class="both__title">⏱️ 함께 집중</span>' +
+      '<span class="both__hint">나 ' + esc(hm(f.me)) + ' · ' + esc(f.herName) + ' ' + esc(hm(f.her)) + esc(top) + '</span></div>' +
+      '<span class="both__value">' + esc(hm(f.both)) + '</span></section>';
+  }
   function kungCard(k) {
     if (!k) return ''; // 꿍을 불러오지 못했으면(규칙이 아직 없는 등) 칸을 숨긴다
     return '<section class="card both" aria-label="꿍 돌아보기"><div class="both__text"><span class="both__title">💞 꿍 주고받음</span>' +
@@ -237,7 +245,7 @@
     var quest = m.quest && RT.view ? '<section class="card quest quest--review" aria-label="이 주 퀘스트"><span class="quest__head"><span class="quest__title">' +
       (m.page === 0 ? '이번 주 퀘스트' : '이 주 퀘스트') + '</span><span class="quest__hint">' + (m.quest.allDone ? '보너스까지 성공!' : m.quest.done ? '퀘스트 성공 · 토마토 +5' : m.page === 0 ? '일요일까지 둘이 함께' : '이 주는 아쉬웠어요') + '</span></span>' +
       RT.view.questBody(m.quest) + '</section>' : '';
-    return out + quest + routineCard(m.routine, m) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : todoCard(m.todos) + kungCard(m.kung));
+    return out + quest + routineCard(m.routine, m) + (m.loading ? '<section class="card " aria-busy="true"><p class="muted">끝낸 일과 꿍을 불러오는 중…</p></section>' : focusCard(m.focus) + todoCard(m.todos) + kungCard(m.kung));
   }
 
   var api = { tab: tab, annivCard: annivCard, annivSheet: annivSheet, rowSheet: rowSheet, viewSwitch: viewSwitch };

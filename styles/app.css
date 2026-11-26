@@ -321,6 +321,7 @@ body.has-tabbar .app { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0
 .tcheck[aria-disabled="true"] { border-style: dashed; opacity: .75; }
 .tcheck:focus-visible, .trow__text:focus-visible, .more-btn:focus-visible, .add-line:focus-visible, .pick:focus-visible, .seg__btn:focus-visible,
 .sday:focus-visible, .sblock:focus-visible, .sstrip__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.trow__play { flex-shrink: 0; width: 40px; height: 40px; margin: -4px -4px -4px 0; border: 0; border-radius: 50%; background: var(--tint); color: var(--text); display: inline-flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
 .trow__text { flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; border: 0; background: none; padding: 0; text-align: left; font: inherit; color: var(--text); }
 .trow__title { font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
 .trow--mini .trow__title { font-size: 14px; }
@@ -902,6 +903,10 @@ button.card { display: block; width: 100%; border: 0; text-align: left; font: in
 .mitem--order .mitem__no { flex: none; width: 18px; font-size: 13px; font-weight: 700; color: var(--sub); text-align: center; }
 .mitem--order .small-btn { min-width: 40px; }
 .kind__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rfocus { display: flex; flex-direction: column; gap: 8px; }
+.rfocus__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rfocus__in { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sub); }
+.rfocus__in .field__input { width: 96px; }
 .kind__chips small { font-size: 10px; font-weight: 700; opacity: .7; }
 .kind__hint { display: block; margin-top: 6px; }
 

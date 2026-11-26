@@ -91,18 +91,26 @@
   }
 
   function model() {
-    return RT.model.build({
+    var bm = RT.model.build({
       config: fullConfig(), manage: state.manage,
       checks: RT.store.mergeChecks(state.server, state.pending), meta: state.meta,
       me: state.me, identity: state.me ? 'account' : 'pending',
       today: state.today, filter: state.filter, page: state.page, sheetDay: state.sheetDay, routineView: state.routineView,
       kungs: state.kungs, kungOff: state.kungOff
     });
+    var mf = bm.manage && bm.manage.form, sf = state.manage && state.manage.form;
+    if (mf && sf) { // F3: 「집중으로 채우기」 칸
+      var fo = sf.focus || { on: false, cat: '', min: 60 };
+      var vis = RT.focus ? RT.focus.visibleCats(catList(), null) : catList();
+      if (fo.cat && !vis.some(function (c) { return c.id === fo.cat; })) vis = vis.concat(catList().filter(function (c) { return c.id === fo.cat; }));
+      mf.focus = { on: !!fo.on, min: fo.min, cats: [{ id: 'any', name: '아무 집중', on: !fo.cat }].concat(vis.map(function (c) { return { id: c.id, name: c.name, icon: c.icon, on: c.id === fo.cat }; })) };
+    }
+    return bm;
   }
 
   // 입력칸에서 글자를 치는 동안에는 다시 그리지 않는다 (폰 키보드가 닫히거나 한글 조합이 깨지지 않게)
   var composing = false, deferred = false, deferTimer = null;
-  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'fc-label', 'fc-endtime', 'fc-es', 'fc-ee', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
+  var INPUT_IDS = ['q-text', 'q-qtext', 'ek-food', 'ek-place', 'ek-memo', 'ek-note', 'ek-place-q', 'ek-place-nm', 'lg-line', 'lg-what', 'lg-amount', 'lg-sh-me', 'lg-sh-partner', 'lg-cat-name', 'dl-text', 'dp-q', 'di-amt', 'dw-time', 'dfe-unit', 'dfe-g', 'dfe-kcal', 'dfe-carb', 'dfe-protein', 'dfe-fat', 'dq-0', 'dq-1', 'dq-2', 'dg-age', 'dg-height', 'dg-weight', 'dg-e-kcal', 'dg-e-protein', 'dg-e-fat', 'dg-e-carb', 'mp-date', 'mp-note', 'mp-q', 'mp-wnote', 'an-label', 'an-start', 'cat-name', 'rt-name', 'rt-start', 'rt-fmin', 'rt-cue', 'rt-at', 'au-email', 'au-pass', 'me-name', 'nt-remind', 'td-title', 'td-date', 'td-short', 'td-memo', 'fc-label', 'fc-endtime', 'fc-es', 'fc-ee', 'ev-title', 'ev-short', 'ev-date', 'ev-start', 'ev-end', 'ev-from', 'ev-until'];
   for (var iw = 0; iw < 7; iw++) INPUT_IDS.push('ev-ts-' + iw, 'ev-te-' + iw); // 요일마다 시간
   if (RT.yearqa) RT.yearqa.ALL.forEach(function (q) { INPUT_IDS.push('yq-a-' + q.id); }); // 연말 문답 답 칸
   for (var ix = 0; ix < 4; ix++) INPUT_IDS.push('ev-xs-' + ix, 'ev-xe-' + ix, 'ev-ms-' + ix, 'ev-me-' + ix); // 하루에 한 번 더 · 그날만 시간
@@ -245,8 +253,8 @@
     'routine-view': 'data-v', 'pick-kind': 'data-v', 'rt-order': null, 'rt-order-done': null, 'rt-move': 'data-key',
     'when-mode': 'data-v', 'when-cue': 'data-v', 'when-remind': null, 'when-clear-at': null,
     'rest-open': null, 'rest-from': 'data-v', 'rest-until': 'data-v', 'rest-save': null, 'rest-cancel': null, 'wake-routine': 'data-key',
-    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-key', 'theme-mode': 'data-v', 'theme-font': 'data-v', 'theme-group': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
-    tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
+    'open-notify': null, 'close-notify': null, 'open-theme': null, 'close-theme': null, 'pick-theme': 'data-key', 'theme-mode': 'data-v', 'theme-font': 'data-v', 'theme-group': 'data-v', 'pick-color': 'data-key', 'reset-colors': null, 'push-on': null, 'push-off': null, 'push-test': null, 'pref-partner': null, 'pref-hide': null, 'pref-weekly': null, 'pref-todo': null, 'pref-map': null, 'pref-miss': null, 'pref-fstart': null, 'pref-fcall': null, 'rt-focus': 'data-v', 'rt-fcat': 'data-v', 'rt-fmin': 'data-v', 'send-kung': null, 'open-grow': null, 'close-grow': null, 'open-quest': null,
+    tab: 'data-tab', 'todo-toggle': 'data-id', 'todo-focus': 'data-id', 'todo-edit': 'data-id', 'todo-more': 'data-key', 'todo-donelist': 'data-key', 'todo-add': 'data-key',
     'todo-due': 'data-v', 'todo-cancel': null, 'todo-delete': null, 'sched-mode': 'data-mode', 'sched-day': 'data-day', 'sched-open-day': null, 'sched-week': 'data-dir',
     'sched-thisweek': null, 'event-add': null, 'event-open': 'data-at', 'event-edit': null, 'event-cancel': null, 'event-delete': null, 'ev-skip': 'data-v', 'ev-unskip': 'data-v',
     'ev-move': 'data-v', 'ev-move-save': null, 'ev-move-cancel': null, 'ev-unmove': 'data-v', 'ev-solo': 'data-v', 'ev-unsolo': 'data-v', 'ev-move-day': 'data-v',
@@ -405,6 +413,40 @@
     });
   }
 
+  // ── F3: 집중 시간으로 루틴 자동 체크 ── 하루(05시 기준) 한 루틴에 한 번만 시도 (직접 끄면 다시 안 켬)
+  var FAUTO_LS = 'danjjakkung-focus-auto';
+  var fauto = (function () { try { return JSON.parse(localStorage.getItem(FAUTO_LS) || '{}') || {}; } catch (e) { return {}; } })();
+  function fautoMark(id) {
+    fauto[id] = 1;
+    var keys = Object.keys(fauto); if (keys.length > 200) keys.slice(0, keys.length - 200).forEach(function (k) { delete fauto[k]; });
+    try { localStorage.setItem(FAUTO_LS, JSON.stringify(fauto)); } catch (e) {}
+  }
+  function autoCheckFocus() {
+    if (!fc || !store || !state.me || !RT.focus) return;
+    var goals = state.routineDocs.filter(function (r) { return r.owner === state.me && r.focus && r.focus.min >= 10; });
+    if (!goals.length) return;
+    var t = fc.todayByCat(); if (!t.ready) return;
+    var dayNum = D.parse(t.day), current = RT.store.mergeChecks(state.server, state.pending);
+    var list = routines();
+    goals.forEach(function (raw) {
+      var r = list.filter(function (x) { return x.key === raw.key; })[0];
+      var id = raw.key + '|' + t.day;
+      if (!r || fauto[id] || !RT.model.activeOn(r, dayNum)) return;
+      if (current[id]) { fautoMark(id); return; }
+      if (!RT.focus.routineMet(raw.focus, t.byCat)) return;
+      fautoMark(id);
+      state.pending = Object.assign({}, state.pending); state.pending[id] = true;
+      state.meta = Object.assign({}, state.meta); state.meta[id] = { by: state.me, at: new Date().toISOString() };
+      store.setDone(raw.key, t.day, true, { person: state.me, uid: state.uid }).then(function () {
+        if (state.pending[id] === true) { state.pending = Object.assign({}, state.pending); delete state.pending[id]; state.server = Object.assign({}, state.server); state.server[id] = true; }
+        var gm = raw.focus.min; showToast('⏱️ 집중 ' + (gm < 60 ? gm + '분' : Math.floor(gm / 60) + '시간' + (gm % 60 ? ' ' + (gm % 60) + '분' : '')) + ' 채워서 「' + r.name + '」 체크했어요');
+      }, function () {
+        if (state.pending[id] === true) { state.pending = Object.assign({}, state.pending); delete state.pending[id]; }
+        delete fauto[id];
+      });
+    });
+  }
+
   function toggle(key) {
     if (!store || state.sheetDay === null || state.sheetDay > state.today) return;
     var r = routines().filter(function (x) { return x.key === key; })[0];
@@ -466,7 +508,17 @@
     else if (act === 'verify-resend') resendVerification();
     else if (act === 'open-manage') { state.sheetDay = null; state.manage = { open: true, form: null }; state.sheetEntering = true; render(); }
     else if (act === 'close-manage') closeManage();
-    else if (act === 'new-routine') { setForm({ key: null, name: '', icon: '', start: D.toKey(state.today), when: RT.model.whenEdit(null) }); focusName(); }
+    else if (act === 'new-routine') { setForm({ key: null, name: '', icon: '', start: D.toKey(state.today), when: RT.model.whenEdit(null), focus: { on: false, cat: '', min: 60 } }); focusName(); }
+    else if (act === 'rt-focus' || act === 'rt-fcat' || act === 'rt-fmin') {
+      var ff = state.manage && state.manage.form;
+      if (ff) {
+        ff.focus = ff.focus || { on: false, cat: '', min: 60 }; var fv = btn.getAttribute('data-v');
+        if (act === 'rt-focus') ff.focus.on = fv === 'on';
+        else if (act === 'rt-fcat') ff.focus.cat = fv === 'any' ? '' : fv;
+        else ff.focus.min = parseInt(fv, 10) || 60;
+        render(true);
+      }
+    }
     else if (act === 'routine-view') setRoutineView(btn.getAttribute('data-v'));
     else if (act === 'pick-kind') {
       var kf = state.manage && state.manage.form;
@@ -505,6 +557,7 @@
     else if (act === 'tab') setTab(btn.getAttribute('data-tab'));
     else if (act.indexOf('fc-') === 0 && fc) { if (act === 'fc-band' && state.tab !== 'focus') setTab('focus'); fc.act(act, btn); }
     else if (act === 'todo-toggle') toggleTodo(btn.getAttribute('data-id'));
+    else if (act === 'todo-focus') { var tf = findTodo(btn.getAttribute('data-id')); if (tf && fc && !tf.done) { setTab('focus'); fc.startTodo({ id: tf.id, title: tf.title, short: tf.short, cat: tf.cat }); } }
     else if (act === 'todo-edit') editTodo(btn.getAttribute('data-id'));
     else if (act === 'todo-add') addTodo(btn.getAttribute('data-key'));
     else if (act === 'todo-more') { var km = btn.getAttribute('data-key'); state.todoUi.expanded[km] = !state.todoUi.expanded[km]; render(true); }
@@ -842,7 +895,7 @@
       if (tog) bits.push(t.done ? nameOf(t.doneBy) + ' 님이 했어요' : nameOf(t.createdBy) + ' 님이 추가');
       else if (t.done) bits.push('완료');
       var cat = catOf(t.cat);
-      return { id: t.id, title: t.title, icon: cat ? cat.icon : '', done: t.done, slot: tog ? 'both' : (slotOf[t.scope] || 'me'), canCheck: canCheck, canEdit: canCheck,
+      return { id: t.id, title: t.title, icon: cat ? cat.icon : '', done: t.done, slot: tog ? 'both' : (slotOf[t.scope] || 'me'), canCheck: canCheck, canEdit: canCheck, canFocus: canCheck && !t.done && !!fc,
         memo: TD.memoLine(t.memo), lockText: nameOf(t.scope) + ' 님만 체크할 수 있어요', meta: bits.join(' · '), over: !t.done && TD.bucket(t, today) === 'overdue' };
     }
     function sec(key, items) {
@@ -876,7 +929,7 @@
     if (state.status === 'ready' && yc) yc.tick();
     if (yc && yc.isOpen()) out.sheet = yc.sheetHtml(); // 연말 문답 쓰는 화면은 어느 탭에서나 맨 위
     if (state.status === 'ready' && qc) qc.tick();
-    if (state.status === 'ready' && fc) fc.tick();
+    if (state.status === 'ready' && fc) { fc.tick(); autoCheckFocus(); }
     if (state.status === 'ready' && ec) ec.tick();
     if (state.tab === 'all' && other && qc && qc.isOpen()) { out.tab = qc.screenHtml(); var qsh = qc.sheetHtml(); if (qsh && !(yc && yc.isOpen())) out.sheet = qsh; return out; }
     if (state.tab === 'all' && other && ec && ec.isOpen()) { out.tab = ec.screenHtml(); var esh = ec.sheetHtml(); if (esh && !(yc && yc.isOpen())) out.sheet = esh; return out; }
@@ -925,6 +978,10 @@
     m.loading = rv.loading; m.error = rv.error;
     if (m.routine.month) { var pi = partnerInfo(); m.monthView = RT.review.monthView(state.reviewMonthView, m.routine.month.count); m.meName = pi.meName; m.partnerName = pi.partnerName; }
     m.anniv = annivView(true);
+    if (rv.focus && RT.focus && !rv.loading) { // F3: 집중 카드 (기록이 하나라도 있을 때만)
+      var fs = RT.focus.rangeSummary(rv.focus, state.me, ledgerPartner());
+      if (fs.me || fs.her) m.focus = { me: fs.me, her: fs.her, both: fs.both, herName: partnerInfo().partnerName, top: fs.top.map(function (x) { var c = catOf(x.cat); return { name: c ? c.name : '기타', icon: c ? c.icon : '', ms: x.ms }; }) };
+    }
     m.quest = rv.mode === 'week' && state.extras && state.extras.quests ? state.extras.quests[RT.review.rangeOf('week', state.today, rv.page).from] || null : null;
     return m;
   }
@@ -951,10 +1008,11 @@
     var fromIso = new Date(a.y, a.m - 1, a.d).toISOString(), toIso = new Date(b.y, b.m - 1, b.d).toISOString();
     Promise.all([
       store.loadDoneBetween(fromIso, toIso),
-      store.loadKungs(D.toKey(r.from), D.toKey(r.to + 1)).catch(function () { return null; }) // 꿍 규칙이 아직 없으면 꿍 칸만 숨긴다
+      store.loadKungs(D.toKey(r.from), D.toKey(r.to + 1)).catch(function () { return null; }), // 꿍 규칙이 아직 없으면 꿍 칸만 숨긴다
+      store.loadFocusLogs ? store.loadFocusLogs(D.toKey(r.from), D.toKey(r.to)).catch(function () { return null; }) : Promise.resolve(null) // F3: 집중 카드
     ]).then(function (res) {
       if (state.review.key !== key) return;
-      rv.todos = res[0]; rv.kungs = res[1]; rv.loading = false; render();
+      rv.todos = res[0]; rv.kungs = res[1]; rv.focus = res[2]; rv.loading = false; render();
     }, function () {
       if (state.review.key !== key) return;
       rv.loading = false; rv.error = '끝낸 일을 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 불러와 주세요.'; render();
@@ -2127,6 +2185,7 @@
   var qc = null, ec = null, yc = null, fc = null; // fc = 집중 (js/app-focus.js)
   function featureHost() {
     return {
+      doneTodo: function (id) { var t = findTodo(id); if (t && !t.done) toggleTodo(id); return !!t; },
       store: function () { return store; },
       searchPlace: function (q) { return RT.firebase && RT.firebase.callFn ? RT.firebase.callFn('searchPlace', { q: q }) : Promise.reject({ code: 'unavailable' }); },
       render: function (f) { render(f); },
@@ -4100,7 +4159,8 @@
   function editRoutine(key) {
     var r = rawRoutine(key);
     if (!r || r.owner !== state.me) return;
-    setForm({ key: key, name: r.name || '', icon: r.icon || '', start: r.start || D.toKey(state.today), when: RT.model.whenEdit(r.when), kind: r.kind || null });
+    setForm({ key: key, name: r.name || '', icon: r.icon || '', start: r.start || D.toKey(state.today), when: RT.model.whenEdit(r.when), kind: r.kind || null,
+      focus: r.focus && r.focus.min ? { on: true, cat: r.focus.cat || '', min: r.focus.min } : { on: false, cat: '', min: 60 } });
     focusName();
   }
   function migrateIfNeeded() { return Promise.resolve(); }
@@ -4123,6 +4183,7 @@
     var old = f.key ? rawRoutine(f.key) : null;
     if (f.key && !old) { setForm(null); showToast('다른 기기에서 지워진 루틴이에요'); return; }
     if (!err && old && old.end && f.start > old.end) err = '시작일이 그만둔 날(' + D.label(D.parse(old.end)) + ')보다 늦어요';
+    if (!err && f.focus && f.focus.on && !(f.focus.min >= 10 && f.focus.min <= 720)) err = '집중 시간은 10분에서 12시간 사이로 정해 주세요';
     if (err) { fail(f, err); return; }
     // 시작일을 뒤로 미루면 그 전 기록이 안 보이게 된다 → 한 번 더 확인
     if (old && f.start > old.start && !f.confirmStart) {
@@ -4144,6 +4205,7 @@
     r.who = nm[state.me] || r.who || '';
     r.when = RT.model.whenSave(f.when); // v41: null = 언제든 (저장할 때 지움)
     r.kind = RT.model.kindSave(f.kind, r.icon); // v44: 아이콘이 정한 종류와 같으면 null (자동)
+    if (f.focus) r.focus = f.focus.on ? { cat: f.focus.cat || null, min: Math.round(f.focus.min) } : null; // F3: 집중으로 채우기
     persist(r, old ? '루틴을 고쳤어요' : '🌱 새 루틴을 추가했어요', true);
   }
   function stopRoutine() {
@@ -4282,6 +4344,7 @@
     if (!f) return;
     if (ev.target.id === 'rt-name') f.name = ev.target.value;
     else if (ev.target.id === 'rt-start') { f.start = ev.target.value; f.confirmStart = false; }
+    else if (ev.target.id === 'rt-fmin') { f.focus = f.focus || { on: true, cat: '', min: 60 }; f.focus.min = parseInt(ev.target.value, 10) || 0; }
     else if (ev.target.id === 'rt-cue') { f.when = f.when || RT.model.whenEdit(null); f.when.cue = ev.target.value; }
     else return;
     if (f.error && !f.confirmStart) { f.error = ''; var e = document.getElementById('rt-error'); if (e) e.remove(); }

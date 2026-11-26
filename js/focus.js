@@ -185,19 +185,76 @@
     return v.length ? v : (cats || []).slice();
   }
   /** 이번 주(월 05시~) 나의 카테고리별 · 이름별 합계 → [{ cat, ms, labels: [{ label, ms }] }] 큰 순 */
-  function weekSubjects(logs, lv, me, now) {
+  function weekSubjects(logs, lv, me, now, onlyDay) {
     var ws = weekStart(dayKey(now)), by = {};
+    function inRange(k) { return onlyDay ? k === onlyDay : k >= ws; }
     function add(cat, label, ms) {
       if (!(ms > 0)) return;
       var k = cat || '', o = by[k] || (by[k] = { cat: cat || null, ms: 0, lab: {} });
       o.ms += ms; if (label) o.lab[label] = (o.lab[label] || 0) + ms;
     }
-    (logs || []).forEach(function (l) { if (l.by === me && l.day >= ws) add(l.cat, l.label, l.ms != null ? l.ms : sum(l.segs || [])); });
-    if (lv && lv.segs && lv.segs.length) { var d = byDay(lv.segs); Object.keys(d).forEach(function (k) { if (k >= ws) add(lv.cat, lv.label, sum(d[k])); }); }
+    (logs || []).forEach(function (l) { if (l.by === me && inRange(l.day)) add(l.cat, l.label, l.ms != null ? l.ms : sum(l.segs || [])); });
+    if (lv && lv.segs && lv.segs.length) { var d = byDay(lv.segs); Object.keys(d).forEach(function (k) { if (inRange(k)) add(lv.cat, lv.label, sum(d[k])); }); }
     return Object.keys(by).map(function (k) {
       var o = by[k];
       return { cat: o.cat, ms: o.ms, labels: Object.keys(o.lab).map(function (n) { return { label: n, ms: o.lab[n] }; }).sort(function (a, b) { return b.ms - a.ms; }) };
     }).sort(function (a, b) { return b.ms - a.ms; });
+  }
+
+  /** 기간 요약 (돌아보기 F3): logs 는 이미 기간 안 것 → { me, her, both, top: [{ cat, ms }] (나, 큰 순 3개) } */
+  function rangeSummary(logs, me, partner) {
+    var mine = [], hers = [], me$ = 0, her$ = 0, byCat = {};
+    (logs || []).forEach(function (l) {
+      var ms = l.ms != null ? l.ms : sum(l.segs || []);
+      if (l.by === me) { me$ += ms; mine = mine.concat(l.segs || []); byCat[l.cat || ''] = (byCat[l.cat || ''] || 0) + ms; }
+      else if (l.by === partner) { her$ += ms; hers = hers.concat(l.segs || []); }
+    });
+    var top = Object.keys(byCat).map(function (c) { return { cat: c || null, ms: byCat[c] }; }).sort(function (a, b) { return b.ms - a.ms; }).slice(0, 3);
+    return { me: me$, her: her$, both: overlap(mine, hers), top: top };
+  }
+
+  // ── 서버가 대신 끝내기 (F2) · 루틴 자동 체크 (F3) ──
+  var SERVER_GRACE = 30 * M; // 앱이 먼저 처리할 틈 (6시간 · 쉬기 30분 뒤 이만큼 더 지나면 서버가)
+  /** 서버가 이 집중을 끝내야 하면 끝 시각, 아니면 null */
+  function autoCloseAt(doc, now) {
+    if (!doc || !doc.start || !doc.state || doc.state === 'idle') return null;
+    if (doc.state === 'pause' && doc.pauseAt && now - doc.pauseAt >= PAUSE_END + SERVER_GRACE / 3) return doc.pauseAt;
+    var cap = doc.start + AUTO_STOP;
+    if (now >= cap + SERVER_GRACE) return doc.state === 'pause' && doc.pauseAt ? Math.min(doc.pauseAt, cap) : cap;
+    return null;
+  }
+  /** 3시간째 집중 중인지 (서버 알림) */
+  function longRun(doc, now) { return !!doc && doc.state === 'run' && !!doc.start && now - doc.start >= LONG_ASK && now < doc.start + AUTO_STOP; }
+  /** 집중 문서를 endAt 에서 끝낸 기록들 (하루 05시로 나눔, 1분 미만 버림) */
+  function sessionLogs(doc, endAt, by) {
+    var cap = doc.start + AUTO_STOP, segs = (doc.segs || []).slice();
+    if (doc.state === 'run' && doc.segStart) segs.push([doc.segStart, endAt]);
+    segs = clip(segs, doc.start, Math.min(endAt, cap));
+    var parts = byDay(segs);
+    return Object.keys(parts).sort().map(function (k) {
+      var ss = parts[k];
+      return { by: by, cat: doc.cat || null, label: doc.label || null, day: k, start: ss[0][0], end: ss[ss.length - 1][1], ms: sum(ss), segs: ss, strict: !!doc.strict };
+    }).filter(function (l) { return l.ms >= MIN_SAVE; });
+  }
+  /** 그날(집중 하루) 나의 카테고리별 합계 { cat: ms, '*': 전체 } — 진행 중 포함 */
+  function dayByCat(logs, lv, me, day) {
+    var out = { '*': 0 };
+    function add(c, ms) { if (!(ms > 0)) return; out[c || ''] = (out[c || ''] || 0) + ms; out['*'] += ms; }
+    (logs || []).forEach(function (l) { if (l.by === me && l.day === day) add(l.cat, l.ms != null ? l.ms : sum(l.segs || [])); });
+    if (lv && lv.segs && lv.segs.length) { var d = byDay(lv.segs)[day]; if (d) add(lv.cat, sum(d)); }
+    return out;
+  }
+  /** 루틴의 집중 목표 { cat: id|null(아무 집중), min } 를 채웠는지 */
+  function routineMet(goal, byCat) {
+    if (!goal || !(goal.min > 0)) return false;
+    var ms = goal.cat ? byCat[goal.cat] || 0 : byCat['*'] || 0;
+    return ms >= goal.min * M;
+  }
+  /** 하루 목표 진행: goalMin(분) → { goal, ms, ratio(0~1), done } 또는 null */
+  function goalProgress(goalMin, ms) {
+    if (!(goalMin > 0)) return null;
+    var g = goalMin * M;
+    return { goal: g, ms: ms, ratio: Math.min(1, ms / g), done: ms >= g };
   }
 
   var api = { H: H, M: M, LONG_ASK: LONG_ASK, AUTO_STOP: AUTO_STOP, PAUSE_END: PAUSE_END, MIN_SAVE: MIN_SAVE, STRICT_GRACE: STRICT_GRACE, CALL_GAP: CALL_GAP,
@@ -205,7 +262,8 @@
     norm: norm, sum: sum, clip: clip, overlap: overlap, byDay: byDay, live: live, shownState: shownState, totals: totals, week: week,
     hms: hms, hm: hm, mins: mins, clock: clock, compare: compare, partnerButton: partnerButton, band: band, dot: dot, togetherSince: togetherSince,
     recentCats: recentCats, recentLabels: recentLabels, cleanLabel: cleanLabel, checkEdit: checkEdit,
-    catHidden: catHidden, visibleCats: visibleCats, weekSubjects: weekSubjects };
+    catHidden: catHidden, visibleCats: visibleCats, weekSubjects: weekSubjects,
+    rangeSummary: rangeSummary, SERVER_GRACE: SERVER_GRACE, autoCloseAt: autoCloseAt, longRun: longRun, sessionLogs: sessionLogs, dayByCat: dayByCat, routineMet: routineMet, goalProgress: goalProgress };
   root.RT = root.RT || {};
   root.RT.focus = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

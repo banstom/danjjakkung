@@ -63,7 +63,11 @@ service cloud.firestore {
     // 루틴: 만든 사람(owner)만 고치고 지운다
     function validRoutine() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'rest', 'when', 'kind', 'updatedAt'])
+      return d.keys().hasOnly(['icon', 'name', 'who', 'owner', 'start', 'end', 'order', 'rest', 'when', 'kind', 'focus', 'updatedAt'])
+        // 집중으로 채우기 (F3): { cat: 카테고리 id | null(아무 집중), min: 10~720분 } 또는 null
+        && (!('focus' in d) || d.focus == null || (d.focus is map && d.focus.keys().hasOnly(['cat', 'min'])
+            && (d.focus.cat == null || (d.focus.cat is string && d.focus.cat.matches('^[a-z0-9]{1,24}$')))
+            && d.focus.min is int && d.focus.min >= 10 && d.focus.min <= 720))
         && d.owner == request.auth.uid
         // 쉬기 (v38): [{ from, to|null }] 30개까지 — 기간 하나하나는 규칙에서 반복 검사를 못 해 앱이 정리하고 이상한 값은 화면에서 무시한다
         && (!('rest' in d) || (d.rest is list && d.rest.size() <= 30))

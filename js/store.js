@@ -499,6 +499,12 @@
         b.set(db.doc('focus/' + uid), Object.assign(focusOut(idle), { updatedAt: ts() }));
         return b.commit().then(function () { return ids; });
       },
+      /** 돌아보기 (F3): 집중 기록 [fromDay, toDay] 한 번 읽기 */
+      loadFocusLogs: function (fromDay, toDay) {
+        return db.collection('focusLogs').where('day', '>=', fromDay).where('day', '<=', toDay).get().then(function (q) {
+          return q.docs.map(function (doc) { return Object.assign(focusIn(doc.data()), { id: doc.id }); });
+        });
+      },
       updateFocusLog: function (id, body) { return db.doc('focusLogs/' + id).set(Object.assign(focusOut(body), { editedAt: Date.now() })); },
       deleteFocusLog: function (id) { return db.doc('focusLogs/' + id).delete(); },
       // ── 출출 쿠키 (docs/eat) ── eats/{id} · eatState/today · eatDraws/{id}. 시각은 서버 시각 → 앱에는 ms
@@ -608,7 +614,8 @@
         if (Array.isArray(r.rest)) { body.rest = r.rest.map(function (p) { return { from: p.from, to: p.to || null }; }); fields.push('rest'); }
         // 언제 할지 (v41): 고친 때만 넣는다. null = 언제든
         if ('when' in r) { body.when = r.when && root.RT.model ? root.RT.model.whenFrom(r.when) : null; fields.push('when'); }
-        if ('kind' in r) { body.kind = r.kind || null; fields.push('kind'); } // 종류 (v44): null = 아이콘대로
+        if ('kind' in r) { body.kind = r.kind || null; fields.push('kind'); }
+        if ('focus' in r) { body.focus = r.focus && r.focus.min >= 10 ? { cat: r.focus.cat || null, min: Math.round(r.focus.min) } : null; fields.push('focus'); } // 집중으로 채우기 (F3) // 종류 (v44): null = 아이콘대로
         return db.doc('routines/' + r.key).set(body, { mergeFields: fields });
       },
       deleteRoutine: function (key) { return db.doc('routines/' + key).delete(); },
